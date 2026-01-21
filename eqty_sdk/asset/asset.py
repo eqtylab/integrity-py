@@ -1,0 +1,478 @@
+import json
+import logging
+import os
+from enum import Enum
+from pathlib import Path
+from typing import Any, Optional, Union, cast
+
+import dill as pickle
+
+from eqty_sdk._rust import statements as eqty_core_statements
+from eqty_sdk.config import Config
+from eqty_sdk.context import ContextType, GraphIDCtx, OriginalCtx
+from eqty_sdk.core import (
+    get_cid_for_bytes,
+    get_cid_for_path,
+)
+from eqty_sdk.feature_flags import FEATURE_FLAGS, FeatureFlags, feature_gate_when_disabled
+from eqty_sdk.metadata import Metadata
+from eqty_sdk.statements import (
+    add_association_statement,
+    add_data_statement,
+    add_governance_statement,
+    add_metadata_statement,
+)
+from eqty_sdk.types.cid import Cid
+from eqty_sdk.types.declaration import Declaration
+
+logger = logging.getLogger("eqty.sdk.Asset")
+
+
+# This determines the icon that is used on the graph.
+# These are the 'known' types, but actual value can be anything
+class AssetType(Enum):
+    ATTRIBUTION = "Attribution"
+    BENCHMARK = "Benchmark"
+    BENCHMARK_RESULT = "Benchmark_Result"
+    CERTIFICATE = "Certificate"
+    CODE = "Code"
+    CUSTOM = "Custom"
+    DATABASE = "Database"
+    DATASET = "Dataset"
+    DOCUMENT = "Document"
+    MEDIA = "Media"
+    MODEL = "Model"
+    TOKEN = "Token"
+
+
+def _init_path_input(path: Union[str, Path]) -> Path:
+    """Gets the resolved Path."""
+    path2 = Path(path) if isinstance(path, str) else path
+    resolved_path = path2.resolve()
+    return resolved_path
+
+
+def serialize_for_hashing(obj: Any) -> bytes:
+    """Serializes the object to a format suitable for hashing based on its type."""
+    if isinstance(obj, str):
+        return obj.encode("utf-8")  # Encode strings
+    elif isinstance(obj, (int, float)):
+        return str(obj).encode("utf-8")  # Encode numbers as strings
+    elif isinstance(obj, list) or isinstance(obj, dict):
+        return json.dumps(obj).encode("utf-8")  # JSON-encode complex data structures
+    elif hasattr(obj, "serialize_for_hashing"):  # Check for custom implementation
+        return cast(bytes, obj.serialize_for_hashing())
+    # Because 'object' types can be arbitrary, we'll pickle them. This is not recommended for untrusted data.
+    elif isinstance(obj, object):
+        try:
+            # Check if the object has a 'model' attribute
+            if hasattr(obj, "model"):
+                # Serialize the state dictionary of the model
+                state_dict = getattr(obj, "model").state_dict()
+                return cast(bytes, pickle.dumps(state_dict))
+            return cast(bytes, pickle.dumps(obj))  # Pickle objects
+        except (pickle.PickleError, TypeError) as e:
+            raise TypeError(f"Unsupported data type for hashing: {type(obj)} - {e}")
+    # Add more cases for other data types as needed
+    else:
+        raise TypeError(f"Unsupported data type for hashing: {type(obj)}")
+
+
+def get_asset_name(asset_type: Union[AssetType, str], cid: str) -> str:
+    if isinstance(asset_type, AssetType):
+        return f"{asset_type.value}-{cid[-4:]}"
+    else:
+        return f"{asset_type}-{cid[-4:]}"
+
+
+def _should_skip_proof(**kwargs):
+    """Checks if skip_proof is set in kwargs, then checks the env var, finally defaults to False."""
+    skip = kwargs.pop("skip_proof", None)
+    if skip is not None:
+        return skip
+    else:
+        return os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
+
+
+class Asset:
+    def __init__(
+        self,
+        ctx: ContextType,
+        obj: Any,
+        asset_type: Union[AssetType, str],
+        cid: str,
+        is_dir: bool,
+        **kwargs,
+    ):
+        if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
+            assert isinstance(ctx, GraphIDCtx)
+        else:
+            assert isinstance(ctx, OriginalCtx)
+
+        self._ctx = ctx
+
+        self._value: Any = obj
+        self._skip_proof = _should_skip_proof(**kwargs)
+
+        self._cid = cid
+        self._is_dir = is_dir
+        self.statement_ids: list[str] = []
+
+        if isinstance(asset_type, AssetType):
+            kwargs.update({"assetType": asset_type.value})
+        else:
+            kwargs.update({"assetType": asset_type})
+
+        self._metadata = Metadata(**kwargs)
+
+        if not kwargs.get("skip_registration", False):
+            try:
+                self._create_eqty_statements()
+                if isinstance(self._ctx, OriginalCtx):
+                    if self._ctx.project_id:
+                        self.add_attribute(__project_id=self._ctx.project_id)
+                elif isinstance(self._ctx, GraphIDCtx):
+                    for id in self.statement_ids:
+                        logger.info(f"Registering data statement {id} to graph: {self._ctx.uuid}")
+                        eqty_core_statements.register_statement_to_graph(id, str(self._ctx.uuid))
+
+            except RuntimeError as e:
+                logger.error(f"Error creating new asset: {e}")
+                raise e
+
+    @staticmethod
+    def _from_object(
+        ctx: ContextType,
+        obj: Any,
+        asset_type: Union[AssetType, str],
+        store: Optional[bool] = None,
+        **kwargs,
+    ) -> "Asset":
+        logger.debug(f"Asset Context: {ctx!r}")
+        if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
+            assert isinstance(ctx, GraphIDCtx)
+        else:
+            assert isinstance(ctx, OriginalCtx)
+        serialized_bytes = serialize_for_hashing(obj)
+        cid = get_cid_for_bytes(serialized_bytes, store)
+        kwargs.setdefault("name", get_asset_name(asset_type, cid))
+
+        asset = Asset(ctx, obj, asset_type, cid, is_dir=False, **kwargs)
+        return asset
+
+    @staticmethod
+    def _from_path(
+        ctx: ContextType,
+        path: Union[Path, str],
+        asset_type: Union[AssetType, str],
+        store: Optional[bool] = None,
+        **kwargs,
+    ) -> "Asset":
+        if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
+            assert isinstance(ctx, GraphIDCtx)
+        else:
+            assert isinstance(ctx, OriginalCtx)
+        resolved_path = _init_path_input(path)
+        cid = get_cid_for_path(resolved_path, store)
+        is_dir = resolved_path.is_dir()
+        kwargs.setdefault("name", get_asset_name(asset_type, cid))
+
+        asset = Asset(ctx, resolved_path, asset_type, cid, is_dir, **kwargs)
+        return asset
+
+    @staticmethod
+    def _from_cid(
+        ctx: ContextType, cid: str, asset_type: Union[AssetType, str], **kwargs
+    ) -> "Asset":
+        if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
+            assert isinstance(ctx, GraphIDCtx)
+        else:
+            assert isinstance(ctx, OriginalCtx)
+        kwargs.setdefault("name", get_asset_name(asset_type, cid))
+
+        asset = Asset(ctx, cid, asset_type, cid, is_dir=False, **kwargs)
+        return asset
+
+    @staticmethod
+    def _factory_with_context(ctx: ContextType, asset_type: AssetType):
+        class _Factory:
+            def from_path(
+                self, path: Union[str, Path], store: Optional[bool] = None, **kwargs
+            ) -> "Asset":
+                return Asset._from_path(ctx, path, asset_type, store, **kwargs)
+
+            def from_cid(self, cid: Union[Cid, str], **kwargs) -> "Asset":
+                if isinstance(cid, Cid):
+                    return Asset._from_cid(ctx, cid.cid, asset_type, **kwargs)
+                else:
+                    return Asset._from_cid(ctx, cid, asset_type, **kwargs)
+
+            def from_object(self, obj: Any, store: Optional[bool] = None, **kwargs) -> "Asset":
+                return Asset._from_object(ctx, obj, asset_type, store, **kwargs)
+
+        return _Factory()
+
+    @property
+    def name(self) -> str:
+        """Get the name of the asset."""
+        return cast(str, self._metadata.name)
+
+    @property
+    def cid(self) -> str:
+        """Get the CID of the asset."""
+        return self._cid
+
+    @property
+    def asset_type(self) -> str:
+        """Get the type of the asset."""
+        return self._metadata._additional_metadata.get("assetType") or ""
+
+    @property
+    def value(self) -> Any:
+        """Get the underlying value."""
+        return self._value
+
+    def add_declaration(self, declaration: Declaration) -> "Asset":
+        document_cid = declaration.cid()
+        ids = add_governance_statement(self.cid, document_cid, self._skip_proof)
+        self.statement_ids.extend(ids)
+        return self
+
+    @feature_gate_when_disabled(FEATURE_FLAGS.GRAPH_IDS)
+    def add_attribute(self, **kwargs) -> "Asset":
+        logger.info(f"adding attributes {kwargs} to {self.statement_ids}")
+        eqty_core_statements.add_attributes_to_statements(self.statement_ids, kwargs)
+        return self
+
+    @feature_gate_when_disabled(FEATURE_FLAGS.GRAPH_IDS)
+    def remove_attribute(self, **kwargs) -> "Asset":
+        logger.info(f"removing attributes {kwargs} from {self.statement_ids}")
+        eqty_core_statements.remove_attributes(self.statement_ids, kwargs)
+        return self
+
+    def _create_eqty_statements(self) -> None:
+        """Creates DataStatement, MetadataStatement, and VcStatement."""
+        statement_ids = add_data_statement([self.cid], self._skip_proof)
+        self.statement_ids.extend(statement_ids)
+        meta_ids = add_metadata_statement(self.cid, self._metadata.to_json_str(), self._skip_proof)
+        self.statement_ids.extend(meta_ids)
+        if isinstance(self._ctx, OriginalCtx):
+            if self._ctx.project_id:
+                association_statement_ids = add_association_statement(
+                    f"urn:cid:{self.cid}", f"urn:uuid:{self._ctx.project_id}", self._skip_proof
+                )
+                self.statement_ids.extend(association_statement_ids)
+        if Config().generate_model_signing_signatures and self._is_dir:
+            model_signing_statement_id = eqty_core_statements.create_model_signing_statement(
+                collection_cid=self.cid,
+                blobs_dir=Config().blob_dir(),
+                model_signing_name=self._metadata.name or "Unnamed Asset",
+                allow_symlinks=Config().cid_ignore.include_symlinks,
+                ignore_paths=[],  # TODO: populate this, ok for now, just makes recreation require more out-of-band info
+                timestamp=None,
+            )
+            self.statement_ids.extend([model_signing_statement_id])
+
+    def __repr__(self) -> str:
+        return f"Asset({self._value!r})"
+
+    def __str__(self) -> str:
+        return cast(str, self._value.__str__())
+
+    def __getattr__(self, key):
+        logger.info(f"Getting key: {key}")
+        # Handle specific attributes directly
+        if key in {"asset_type", "cid", "name", "value", "add_attribute"}:
+            return object.__getattribute__(self, key)
+
+        # Attempt to get the attribute from the wrapped object
+        try:
+            return getattr(self._value, key)
+        except AttributeError:
+            # Check the _metadata dictionary if the key is not found
+            if key in self._metadata:
+                return self._metadata[key]
+            else:
+                raise AttributeError(
+                    f"'{type(self._value).__name__}' object has no attribute '{key}'"
+                )
+
+    def __setattr__(self, key, value):
+        # logger.info(f"Setting key: {key}")
+        # Special handling to set attributes on the wrapper, not the wrapped object
+        if key in {
+            "_ctx",
+            "_value",
+            "_name",
+            "_cid",
+            "_is_dir",
+            "_metadata",
+            "_asset_type",
+            "_skip_proof",
+            "statement_ids",
+        }:
+            object.__setattr__(self, key, value)
+        else:
+            setattr(self._value, key, value)
+
+    def __getitem__(self, key):
+        # Delegate indexing to the wrapped object
+        return self._value[key]
+
+    def __setitem__(self, key, value):
+        # Delegate item assignment to the wrapped object
+        self._value[key] = value
+
+    def __hash__(self):
+        return hash(self._value)
+
+    def __iter__(self):
+        try:
+            # Try to delegate iteration to the wrapped object
+            return iter(self._value)
+        except TypeError:
+            raise TypeError(f"{type(self._value).__name__} object is not iterable")
+
+    def __len__(self):
+        try:
+            # Try to get the length of the wrapped object
+            return len(self._value)
+        except TypeError:
+            raise TypeError(f"{type(self._value).__name__} object has no len()")
+
+    def __eq__(self, other):
+        """Check if two Asset objects are equal based on their underlying values."""
+        if not isinstance(other, Asset):
+            if self._value is None and other is None:
+                return True
+            if self._value is None or other is None:
+                return False
+            return self._value == other
+        if self._value is None and other._value is None:
+            return True
+        if self._value is None or other._value is None:
+            return False
+        return self._value == other._value
+
+    def __add__(self, other):
+        """Overload the + operator to support adding Asset objects if their underlying types are compatible,
+        otherwise fallback to delegating to the underlying value.
+        """
+        try:
+            if (
+                isinstance(self._value, list)
+                and isinstance(other, Asset)
+                and isinstance(other._value, list)
+            ):
+                # If both underlying values are lists, add them directly
+                return self._value + other._value
+            elif isinstance(other, Asset):
+                return self._value + other._value
+            else:
+                # Delegate addition to the underlying value if possible
+                return self._value + other
+        except TypeError:
+            # Raise specific error if addition fails entirely
+            raise TypeError("Cannot add Asset objects together")
+
+    def __mul__(self, other):
+        """Overload the * operator to potentially support multiplication of Asset objects
+        based on the underlying value's behavior.
+        """
+        try:
+            if isinstance(other, (int, float)) and isinstance(self._value, (int, float)):
+                # If both are numbers, multiply them directly
+                return self._value * other
+            elif isinstance(other, Asset):
+                return self._value * other._value
+            else:
+                # Delegate multiplication to the underlying value if possible
+                return self._value * other
+        except TypeError:
+            # Raise specific error if multiplication fails entirely
+            raise TypeError(f"Unsupported operand types for *: 'Asset' and '{type(other)}'")
+
+    def __truediv__(self, other):
+        """Overload the / operator to potentially support division of Asset objects
+        based on the underlying value's behavior.
+        """
+        try:
+            if isinstance(other, (int, float)) and isinstance(self._value, (int, float)):
+                # If both are numbers, divide them directly
+                return self._value / other
+            elif isinstance(other, Asset):
+                return self._value / other._value
+            else:
+                # Delegate division to the underlying value if possible
+                return self._value / other
+        except TypeError:
+            # Raise specific error if division fails entirely
+            raise TypeError(f"Unsupported operand types for /: 'Asset' and '{type(other)}'")
+
+    def __floordiv__(self, other):
+        """Overload the // operator to potentially support floor division of Asset objects
+        based on the underlying value's behavior.
+        """
+        try:
+            if isinstance(other, (int, float)) and isinstance(self._value, (int, float)):
+                # If both are numbers, divide them directly
+                return self._value // other
+            elif isinstance(other, Asset):
+                return self._value // other._value
+            else:
+                # Delegate floor division to the underlying value if possible
+                return self._value // other
+        except TypeError:
+            # Raise specific error if floor division fails entirely
+            raise TypeError(f"Unsupported operand types for //: 'Asset' and '{type(other)}'")
+
+    def __mod__(self, other):
+        """Overload the % operator to potentially support modulo of Asset objects
+        based on the underlying value's behavior.
+        """
+        try:
+            if isinstance(other, (int, float)) and isinstance(self._value, (int, float)):
+                # If both are numbers, divide them directly
+                return self._value % other
+            elif isinstance(other, Asset):
+                return self._value % other._value
+            else:
+                # Delegate modulo to the underlying value if possible
+                return self._value % other
+        except TypeError:
+            # Raise specific error if modulo fails entirely
+            raise TypeError(f"Unsupported operand types for %: 'Asset' and '{type(other)}'")
+
+    def __pow__(self, other):
+        """Overload the ** operator to potentially support exponentiation of Asset objects
+        based on the underlying value's behavior.
+        """
+        try:
+            if isinstance(other, (int, float)) and isinstance(self._value, (int, float)):
+                # If both are numbers, divide them directly
+                return self._value**other
+            elif isinstance(other, Asset):
+                return self._value**other._value
+            else:
+                # Delegate exponentiation to the underlying value if possible
+                return self._value**other
+        except TypeError:
+            # Raise specific error if exponentiation fails entirely
+            raise TypeError(f"Unsupported operand types for **: 'Asset' and '{type(other)}'")
+
+    def __sub__(self, other):
+        """Overload the - operator to potentially support subtraction of Asset objects
+        based on the underlying value's behavior.
+        """
+        try:
+            if isinstance(other, (int, float)) and isinstance(self._value, (int, float)):
+                # If both are numbers, subtract them directly
+                return self._value - other
+            elif isinstance(other, Asset):
+                return self._value - other._value
+            else:
+                # Delegate subtraction to the underlying value if possible
+                return self._value - other
+        except TypeError:
+            # Raise specific error if subtraction fails entirely
+            raise TypeError(f"Unsupported operand types for -: 'Asset' and '{type(other)}'")

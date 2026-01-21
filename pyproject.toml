@@ -1,0 +1,117 @@
+[tool.uv]
+name = "eqty_sdk"
+version = "0.0.0"
+description = ""
+authors = [
+    "support@eqtylab.io",
+]
+readme = "README.md"
+packages = [{ include = "eqty_sdk" }]
+
+[tool.uv.dependencies]
+python = "^3.9"
+nest-asyncio = "^1.6.0"
+click = "^8.1.7"
+toml = "^0.10.2"
+rich = "^13.7.1"
+pydantic = "^2.6.4"
+dill = "^0.3.8"
+types-requests = "<2.32.0"
+urllib3 = "=2.0.7"
+
+[tool.uv.group.dev.dependencies]
+flake8 = "^7.0.0"
+mypy = "^1.8.0"
+black = "^23.1.0"
+types-toml = "^0.10.8.20240310"
+coverage = "^7.4.4"
+pydoc-markdown = "^4.8.2"
+base58 = "^2.1.1"
+model-signing = "1.1.1"
+
+[tool.uv.group.test.dependencies]
+pytest = "^7.2.2"
+
+[[tool.uv.source]]
+name = "eqty"
+url = "http://eqty-pypi.westus2.cloudapp.azure.com/simple/"
+priority = "explicit"
+
+[[tool.uv.source]]
+name = "eqty-publish"
+url = "http://eqty-pypi.westus2.cloudapp.azure.com/"
+priority = "explicit"
+
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+dynamic = ["version"] # synced to fields in Cargo.toml
+name = "eqty_sdk"
+requires-python = ">=3.9"
+# TODO: dedup this with uv dependencies
+dependencies = [
+  "nest-asyncio>=1.6.0",
+  "click>=8.1.7",
+  "toml>=0.10.2",
+  "rich>=13.7.1",
+  "pydantic>=2.6.4",
+  "dill>=0.3.8",
+  "types-requests<2.32.0",
+  "urllib3==2.0.7",
+]
+classifiers = [
+  "Programming Language :: Rust",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+[tool.maturin]
+module-name = "eqty_sdk._rust"
+features = ["pyo3/extension-module"]
+
+[tool.mypy]
+exclude = [".venv", "tests/*"]
+check_untyped_defs = true
+pretty = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unreachable = true
+implicit_reexport = true
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["I001", "F", "E", "D"]
+exclude = ["generate_stubs.py", "_rust.pyi"]
+ignore = [
+  "E501",
+  "D200", # (one-line docstring should fit)
+  "D205", # (blank line after summary)
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105", # magic method
+  "D107", # __init__
+  "D203",
+  "D211",
+  "D213",
+  "D400", # (one-line docstring should fit)
+  "D401",
+  "D417",
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-wrap-aliases = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+

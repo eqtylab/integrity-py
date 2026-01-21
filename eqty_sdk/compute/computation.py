@@ -1,0 +1,224 @@
+import logging
+import os
+from pathlib import Path
+from typing import Any, List, Optional, Union, cast
+
+from eqty_sdk._rust import statements as eqty_core_statements
+from eqty_sdk.asset import serialize_for_hashing
+from eqty_sdk.config.config import Config
+from eqty_sdk.context import Context, ContextType, GraphIDCtx, OriginalCtx
+from eqty_sdk.core import get_cid_for_bytes, get_cid_for_path
+from eqty_sdk.errors import UsageError
+from eqty_sdk.feature_flags import FEATURE_FLAGS, FeatureFlags, feature_gate_when_disabled
+from eqty_sdk.metadata import Metadata
+from eqty_sdk.statements import add_computation_statement
+from eqty_sdk.types.cid import Cid
+
+logger = logging.getLogger("eqty.sdk.computation")
+
+
+def __cid_path__(path: Union[str, Path], store: Optional[bool] = None) -> str:
+    """Resolves the path, and then calculates the CID."""
+    path2 = Path(path) if isinstance(path, str) else path
+    resolved_path = path2.resolve()
+
+    if resolved_path.is_dir():
+        return get_cid_for_path(resolved_path, store)
+    else:
+        try:
+            return get_cid_for_path(resolved_path, store)
+        except (IOError, OSError):
+            raise UsageError(f"The input path '{resolved_path}' was not found.")
+
+
+class Computation:
+    def __init__(self, *args, **kwargs):
+        raise TypeError("Use Computation.new() to create instances of this class.")
+
+    def __init_internal__(
+        self, ctx: ContextType, metadata: Metadata, skip_proof: Optional[bool] = None
+    ):
+        if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
+            assert isinstance(ctx, GraphIDCtx)
+        else:
+            assert isinstance(ctx, OriginalCtx)
+
+        self._ctx = ctx
+        self._metadata = metadata
+        self._input_cids: List[str] = []
+        self._output_cids: List[str] = []
+        self._computation_cid: Union[str, None] = None
+        self._associated_statement_ids: List[str] = []
+
+        if skip_proof is not None:
+            self._skip_proof = skip_proof
+        else:
+            self._skip_proof = os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
+
+    @classmethod
+    def new(cls, **kwargs) -> "Computation":
+        skip_proof = kwargs.pop("skip_proof", None)
+
+        metadata = Metadata(**kwargs)
+        instance = object.__new__(cls)
+        ctx = (
+            Config().root_context if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS) else Context()
+        )
+        instance.__init_internal__(ctx, metadata, skip_proof)
+        return instance
+
+    @staticmethod
+    def with_context(ctx: ContextType):
+        class _Factory:
+            def new(self, **kwargs) -> "Computation":
+                skip_proof = kwargs.pop("skip_proof", None)
+
+                metadata = Metadata(**kwargs)
+                instance = object.__new__(Computation)
+                instance.__init_internal__(ctx, metadata, skip_proof)
+                return instance
+
+        return _Factory()
+
+    def add_input_cid(self, cid: Union[List[Cid], List[str], Cid, str]) -> "Computation":
+        """Adds the CID(s) to the computations input list."""
+        if isinstance(cid, Cid):
+            self._input_cids.append(cid.cid)
+        elif isinstance(cid, list) and all(isinstance(item, Cid) for item in cid):
+            cids = [cast(Cid, item).cid for item in cid]
+            self._input_cids.extend(cids)
+        elif isinstance(cid, str):
+            self._input_cids.append(cid)
+        elif isinstance(cid, list) and all(isinstance(item, str) for item in cid):
+            self._input_cids.extend(cast(List[str], cid))
+        else:
+            raise ValueError("Invalid type for cid")
+
+        return self
+
+    def add_input_path(self, path: Union[List[Path], List[str], Path, str]) -> "Computation":
+        """Resolves the provide path(s) and adds the computed CID(s) to the computations input list."""
+        if isinstance(path, Path):
+            self._input_cids.append(__cid_path__(path))
+        elif isinstance(path, list) and all(isinstance(item, Path) for item in path):
+            self._input_cids.extend([__cid_path__(p) for p in path])
+        elif isinstance(path, str):
+            self._input_cids.append(__cid_path__(path))
+        elif isinstance(path, list) and all(isinstance(item, str) for item in path):
+            for p in path:
+                self._input_cids.append(__cid_path__(p))
+        else:
+            raise ValueError("Invalid type for path")
+        return self
+
+    def add_input_object(self, obj: Union[List[Any], Any]) -> "Computation":
+        """Serializes the obj(s), then calculates the CID for the serialized bytes. The CID(s) are appended to the computations input list."""
+        if isinstance(obj, list):
+            for o in obj:
+                serialized_bytes = serialize_for_hashing(o)
+                cid = get_cid_for_bytes(serialized_bytes)
+                self._input_cids.append(cid)
+        else:
+            serialized_bytes = serialize_for_hashing(obj)
+            cid = get_cid_for_bytes(serialized_bytes)
+            self._input_cids.append(cid)
+
+        return self
+
+    def add_output_cid(self, cid: Union[List[Cid], List[str], Cid, str]) -> "Computation":
+        """Adds the CID(s) to the computations output list."""
+        if isinstance(cid, Cid):
+            self._output_cids.append(cid.cid)
+        elif isinstance(cid, list) and all(isinstance(item, Cid) for item in cid):
+            cids = [cast(Cid, item).cid for item in cid]
+            self._output_cids.extend(cids)
+        elif isinstance(cid, str):
+            self._output_cids.append(cid)
+        elif isinstance(cid, list) and all(isinstance(item, str) for item in cid):
+            self._output_cids.extend(cast(List[str], cid))
+        else:
+            raise ValueError("Invalid type for cid")
+
+        return self
+
+    def add_output_path(self, path: Union[List[Path], List[str], Path, str]) -> "Computation":
+        """Resolves the provide path(s) and adds the computed CID(s) to the computations output list."""
+        if isinstance(path, Path):
+            self._output_cids.append(__cid_path__(path))
+        elif isinstance(path, list) and all(isinstance(item, Path) for item in path):
+            self._output_cids.extend([__cid_path__(p) for p in path])
+        elif isinstance(path, str):
+            self._output_cids.append(__cid_path__(path))
+        elif isinstance(path, list) and all(isinstance(item, str) for item in path):
+            for p in path:
+                self._output_cids.append(__cid_path__(p))
+        else:
+            raise ValueError("Invalid type for path")
+        return self
+
+    def add_output_object(self, obj: Union[List[Any], Any]) -> "Computation":
+        """Serializes the obj(s), then calculates the CID for the serialized bytes. The CID(s) are appended to the computations output list."""
+        if isinstance(obj, list):
+            for o in obj:
+                serialized_bytes = serialize_for_hashing(o)
+                cid = get_cid_for_bytes(serialized_bytes)
+                self._output_cids.append(cid)
+        else:
+            serialized_bytes = serialize_for_hashing(obj)
+            cid = get_cid_for_bytes(serialized_bytes)
+            self._output_cids.append(cid)
+
+        return self
+
+    def set_computation_cid(self, cid: Union[Cid, str]) -> "Computation":
+        """Sets the computation CID with the provided cid."""
+        if isinstance(cid, Cid):
+            self._computation_cid = cid.cid
+        elif isinstance(cid, str):
+            self._computation_cid = cid
+        return self
+
+    def set_computation_path(self, path: Union[Path, str]) -> "Computation":
+        """Resolves the path; cids the contents, then sets the computations CID."""
+        self._computation_cid = __cid_path__(path)
+        return self
+
+    def set_computation_object(self, obj: Any) -> "Computation":
+        """Serializes the obj, then calculates the CID for the serialized bytes and sets the computations cid."""
+        serialized_bytes = serialize_for_hashing(obj)
+        cid = get_cid_for_bytes(serialized_bytes)
+        self._computation_cid = cid
+        return self
+
+    def finalize(self) -> "Computation":
+        """Creates the computation statement, and adds a metadata statement for the computation statement."""
+        statement_ids = add_computation_statement(
+            inputs=self._input_cids,
+            outputs=self._output_cids,
+            computation=self._computation_cid,
+            skip_proof=self._skip_proof,
+        )
+        self._associated_statement_ids.extend(statement_ids)
+
+        ids = self._metadata.create_statement(statement_ids[0], self._skip_proof)
+        self._associated_statement_ids.extend(ids)
+
+        if isinstance(self._ctx, OriginalCtx):
+            if self._ctx.project_id:
+                self.add_attribute(__project_id=self._ctx.project_id)
+        elif isinstance(self._ctx, GraphIDCtx):
+            for id in self._associated_statement_ids:
+                logger.info(f"Registering data statement {id} to graph: {self._ctx.uuid}")
+                eqty_core_statements.register_statement_to_graph(id, str(self._ctx.uuid))
+
+        return self
+
+    @feature_gate_when_disabled(FEATURE_FLAGS.GRAPH_IDS)
+    def add_attribute(self, **kwargs) -> None:
+        logger.info(f"adding attributes {kwargs} to {self._associated_statement_ids}")
+        eqty_core_statements.add_attributes_to_statements(self._associated_statement_ids, kwargs)
+
+    @feature_gate_when_disabled(FEATURE_FLAGS.GRAPH_IDS)
+    def remove_attribute(self, **kwargs) -> None:
+        logger.info(f"removing attributes {kwargs} from {self._associated_statement_ids}")
+        eqty_core_statements.remove_attributes(self._associated_statement_ids, kwargs)
