@@ -1,4 +1,4 @@
-[tool.uv]
+[tool.poetry]
 name = "eqty_sdk"
 version = "0.0.0"
 description = ""
@@ -8,7 +8,7 @@ authors = [
 readme = "README.md"
 packages = [{ include = "eqty_sdk" }]
 
-[tool.uv.dependencies]
+[tool.poetry.dependencies]
 python = "^3.9"
 nest-asyncio = "^1.6.0"
 click = "^8.1.7"
@@ -19,7 +19,7 @@ dill = "^0.3.8"
 types-requests = "<2.32.0"
 urllib3 = "=2.0.7"
 
-[tool.uv.group.dev.dependencies]
+[tool.poetry.group.dev.dependencies]
 flake8 = "^7.0.0"
 mypy = "^1.8.0"
 black = "^23.1.0"
@@ -29,15 +29,15 @@ pydoc-markdown = "^4.8.2"
 base58 = "^2.1.1"
 model-signing = "1.1.1"
 
-[tool.uv.group.test.dependencies]
+[tool.poetry.group.test.dependencies]
 pytest = "^7.2.2"
 
-[[tool.uv.source]]
+[[tool.poetry.source]]
 name = "eqty"
 url = "http://eqty-pypi.westus2.cloudapp.azure.com/simple/"
 priority = "explicit"
 
-[[tool.uv.source]]
+[[tool.poetry.source]]
 name = "eqty-publish"
 url = "http://eqty-pypi.westus2.cloudapp.azure.com/"
 priority = "explicit"

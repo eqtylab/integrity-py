@@ -1,9 +1,21 @@
+//! EQTY SDK - Python bindings for the Integrity framework.
+//!
+//! This crate provides Python bindings via PyO3 for cryptographic signing,
+//! content-addressed storage, and lineage statement management functionality.
+
+/// Content identifier (CID) computation and utilities.
 pub mod cid;
+/// Global application context and configuration management.
 pub mod context;
+/// Feature flag management for enabling/disabling SDK capabilities.
 pub mod feature_flags;
+/// Manifest generation, import, and registration for integrity graphs.
 pub mod manifest;
+/// Cryptographic signer creation and management.
 pub mod signer;
+/// Lineage statement creation and storage operations.
 pub mod statements;
+/// Streaming computation support for real-time data processing.
 pub mod stream;
 
 use core::fmt::Display;
@@ -56,6 +68,14 @@ fn to_py_err<E: Display>(error: E) -> PyErr {
     PyRuntimeError::new_err(format!("{error}"))
 }
 
+/// Converts a Python dictionary to a Rust HashMap of JSON values.
+///
+/// # Arguments
+/// * `attributes` - Python dictionary containing key-value pairs to convert
+///
+/// # Returns
+/// * `Result<HashMap<String, Value>>` - HashMap with string keys and JSON values,
+///   or an error if conversion fails
 pub fn convert_attributes(attributes: &PyDict) -> Result<HashMap<String, Value>> {
     let mut attr_map: HashMap<String, Value> = HashMap::new();
     for (key, value) in attributes {

@@ -3,14 +3,14 @@ repos:
     hooks:
       - id: cargo-fmt
         name: Rust format (cargo fmt)
-        entry: cargo fmt --all --
+        entry: cargo fmt -p eqty-sdk --
         language: system
         types: [rust]
         pass_filenames: false
 
       - id: cargo-clippy
         name: Rust lint (cargo clippy)
-        entry: cargo clippy --workspace --all-targets -- -Dwarnings --no-deps
+        entry: cargo clippy -p eqty-sdk --all-targets -- -Dwarnings --no-deps
         language: system
         types: [rust]
         pass_filenames: false
@@ -31,3 +31,13 @@ repos:
       - id: detect-private-key
       - id: check-toml
       - id: check-yaml
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.14.13
+    hooks:
+      # Run the linter.
+      - id: ruff-check
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format

@@ -16,19 +16,28 @@ use crate::{
     to_py_err,
 };
 
+/// Canonicalization algorithm for computing content identifiers.
 #[derive(Clone, Copy, Debug)]
 #[pyclass]
 pub enum Canon {
+    /// RDF Dataset Canonicalization 1.0 algorithm.
     RDFC1,
+    /// JSON Canonicalization Scheme (JCS) algorithm.
     JSONJCS,
 }
 
+/// Result of computing a CID for a directory.
+///
+/// Contains the collection CID, metadata CID, and individual file hashes.
 #[derive(Clone, Debug)]
 #[pyclass]
 pub struct DirCidResult {
+    /// CID result for the directory collection.
     pub collection: CidResult,
+    /// CID result for the directory metadata.
     pub meta: CidResult,
-    pub file_hashes: Vec<(String, String)>, // (File Name, CID)
+    /// List of tuples containing (file name, CID) for each file in the directory.
+    pub file_hashes: Vec<(String, String)>,
 }
 
 impl From<integrity::cid::iroh::DirCidResult> for DirCidResult {
@@ -59,10 +68,15 @@ impl DirCidResult {
     }
 }
 
+/// Result of computing a content identifier (CID).
+///
+/// Contains both the CID string and the raw blob data.
 #[derive(Clone, Debug)]
 #[pyclass]
 pub struct CidResult {
+    /// The computed content identifier string.
     pub cid: String,
+    /// The raw blob data used to compute the CID.
     pub blob: Bytes,
 }
 

@@ -2,31 +2,26 @@
 _:
   @just --list
 
-# Configure poetry to create virtualenvs in the project directory
-poetry-config:
+_poetry-config:
   @echo "Configuring poetry"
   poetry config virtualenvs.in-project true
 
 # Install all Python dependencies via poetry
-install: poetry-config
+install: _poetry-config
   @echo "Installing dependencies"
   poetry install
 
-# Set up development environment and enter poetry shell
-dev: install
-  poetry shell
-
 # Build the Rust/Python wheel using maturin
 build:
-  SQLX_OFFLINE=true maturin build
+  maturin build
 
 # Install the local build of the wheel into the venv
 install-package: generate-stubs
-  SQLX_OFFLINE=true maturin develop
+  maturin develop
 
 # Run linters without auto-fixing (Rust clippy + Python ruff)
 lint-check:
-  SQLX_OFFLINE=true cargo clippy -- -Dwarnings --no-deps
+  cargo clippy -- -Dwarnings --no-deps
   ruff check .
 
 # Run linters and auto-fix issues (Rust clippy + Python ruff)
@@ -57,8 +52,12 @@ type-check:
   poetry run mypy ./eqty_sdk
 
 # Run Python unit tests
-test:
+test-py:
   poetry run python -m unittest discover tests
+
+# Run rust unit tests
+test-rs:
+  cargo test
 
 # Generate type stubs from Rust code
 generate-stubs:
@@ -78,4 +77,4 @@ _tmp:
     mkdir -p tmp
 
 # Run full CI pipeline: format check, lint, type check, build, and test
-ci: fmt-check readme-check lint-docs lint-check type-check install-package test
+ci: fmt-check readme-check lint-docs lint-check type-check install-package test-py test-rs

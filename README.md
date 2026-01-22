@@ -102,21 +102,22 @@ Run `just` to see all available commands.
 
 ```present just --list
 Available recipes:
-    build                  # Build the project for native target
-    build-wasm             # Build WebAssembly package with wasm-pack
-    ci                     # Run all CI checks (format, build, lint, test)
-    fix                    # Auto-fix clippy warnings where possible
-    fmt                    # Format Rust code using rustfmt
-    fmt-check              # Check if code is formatted correctly without modifying files
-    lint                   # Run clippy lints to check code quality
-    lint-docs              # Check that all public items have documentation (warnings only for now)
-    pre-commit             # Run all prek pre-commit hooks on all files
-    pre-push               # Called by git pre-push hook
-    readme-check           # Check if README.md is up to date with auto-generated content
-    readme-update          # Update README.md with auto-generated content (Justfile commands, etc.)
-    test                   # Run unit tests with cargo
-    test-wasm              # Run WASM tests in Node.js and browsers (Chrome, Firefox) Note: for macOS test Safari with --safari
-    update-static-contexts # Rebuild static JSON-LD context files
+    build           # Build the Rust/Python wheel using maturin
+    ci              # Run full CI pipeline: format check, lint, type check, build, and test
+    fix             # Auto-fix Rust clippy warnings
+    fmt             # Auto-format code (Rust + Python)
+    fmt-check       # Check code formatting without changes (Rust + Python)
+    generate-stubs  # Generate type stubs from Rust code
+    install         # Install all Python dependencies via poetry
+    install-package # Install the local build of the wheel into the venv
+    lint            # Run linters and auto-fix issues (Rust clippy + Python ruff)
+    lint-check      # Run linters without auto-fixing (Rust clippy + Python ruff)
+    lint-docs       # Check that all public items have documentation
+    readme-check    # Check if README.md is up to date with auto-generated content
+    readme-update   # Update README.md with auto-generated content (Justfile commands, etc.)
+    test-py         # Run Python unit tests
+    test-rs         # Run rust unit tests
+    type-check      # Run mypy type checking on the Python SDK
 ```
 
 ### Project Structure

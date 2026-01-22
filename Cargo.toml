@@ -30,4 +30,4 @@ uuid = { version = "1.4", features = ["v4", "js", "serde"] }
 
 # generated openapi clients
 integrity-service-client = { path = "../integrity-monorepo/openapi/generated/clients/integrity-service/rust" }
-integrity = { path = "../integrity" }
+integrity = { git = "https://github.com/eqtylab/integrity", branch = "dev" }

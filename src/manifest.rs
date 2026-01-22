@@ -112,6 +112,16 @@ pub fn generate(
     Ok(manifest_json)
 }
 
+/// Generates a v4 integrity graph manifest JSON string from multiple graphs.
+///
+/// # Arguments
+/// * `py` - Python interpreter reference
+/// * `graphs` - Python list of graph dictionaries, each containing 'id', 'name', 'parent', and 'statements'
+/// * `blobs_dir` - Path to directory containing blob files referenced by statements
+/// * `include_context` - Whether to include context information in the manifest (default: false)
+///
+/// # Returns
+/// * `PyResult<String>` - JSON string representation of the manifest, or error on failure
 #[pyfunction]
 pub fn generate_v4(
     py: Python,

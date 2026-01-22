@@ -34,11 +34,16 @@ pub fn signer(py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
+/// Python-exposed signer information.
+///
+/// Contains the name and DID key of a cryptographic signer.
 #[pyclass]
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PySigner {
+    /// Human-readable name for the signer.
     pub name: String,
+    /// Decentralized Identifier (DID) key for the signer.
     pub did_key: String,
 }
 
@@ -52,11 +57,19 @@ impl ToPyObject for PySigner {
 }
 #[pymethods]
 impl PySigner {
+    /// Returns the human-readable name of the signer.
+    ///
+    /// # Returns
+    /// * `&str` - The signer's name
     #[getter]
     pub fn name(&self) -> &str {
         &self.name
     }
 
+    /// Returns the DID key of the signer.
+    ///
+    /// # Returns
+    /// * `&str` - The signer's DID key string
     #[getter]
     pub fn did_key(&self) -> &str {
         &self.did_key
@@ -188,7 +201,7 @@ fn create_auth_service_signer(py: Python, url: String, api_key: String) -> PyRes
 /// # Arguments
 /// * `name` - Name to assign to the signer
 /// * `auth_key_id` - Authentication key ID for YubiHSM2
-/// * `signing_key_id` - Signing key ID for YubiHSM2  
+/// * `signing_key_id` - Signing key ID for YubiHSM2
 /// * `password` - Password for YubiHSM2 authentication
 #[pyfunction]
 fn create_yubihsm2_signer(
@@ -348,6 +361,11 @@ fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<PySigner> {
 
 /// Subdirectory name for storing signer key files.
 static SIGNER_DIR: &str = "signers";
+
+/// Returns the path to the signer storage folder.
+///
+/// # Returns
+/// * `PathBuf` - Path to the directory where signer key files are stored
 pub fn get_signer_folder() -> PathBuf {
     ctx().app_dir.join(SIGNER_DIR)
 }

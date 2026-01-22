@@ -44,6 +44,7 @@
             pkg-config
             poetry
             prek
+            present-cli
             python312
             ruff
             rustfmt-nightly

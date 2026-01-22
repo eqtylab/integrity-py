@@ -18,6 +18,10 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{context::ctx, to_py_err};
+
+/// Result of finalizing a stream computation.
+///
+/// Contains the computation statement CID and the streamed output data.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StreamCIDs {
     compute_id: String,

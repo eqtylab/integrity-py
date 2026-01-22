@@ -16,6 +16,7 @@ mod entity;
 mod governance;
 mod metadata;
 mod model_signing;
+/// Storage statement creation for referencing external data stores.
 pub mod storage;
 mod vc;
 

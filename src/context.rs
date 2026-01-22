@@ -246,6 +246,13 @@ impl Context {
         Ok(())
     }
 
+    /// Updates the global context using a closure that modifies it in place.
+    ///
+    /// # Arguments
+    /// * `updater` - Closure that receives a mutable reference to the context
+    ///
+    /// # Returns
+    /// * `Result<()>` - Success or error if context is not initialized or lock fails
     pub fn update_context<F>(updater: F) -> Result<()>
     where
         F: FnOnce(&mut Context),
@@ -262,6 +269,10 @@ impl Context {
         }
     }
 
+    /// Retrieves the DID key of the currently active signer.
+    ///
+    /// # Returns
+    /// * `Result<String>` - The DID key string, or error if no active signer is set
     pub fn get_active_signer_did_key(self) -> Result<String> {
         let signer = self
             .active_signer
@@ -269,6 +280,13 @@ impl Context {
         Ok(signer.get_did_doc().id)
     }
 
+    /// Sets the active signer for the current context.
+    ///
+    /// # Arguments
+    /// * `signer` - The signer to set as active
+    ///
+    /// # Returns
+    /// * `Result<()>` - Success or error if context update fails
     pub fn set_active_signer(&self, signer: SignerType) -> Result<()> {
         Context::update_context(|ctx| ctx.active_signer = Some(signer))
     }
@@ -298,6 +316,15 @@ impl Context {
         })
     }
 
+    /// Registers a statement in the local database.
+    ///
+    /// # Arguments
+    /// * `statement` - The statement to register
+    /// * `attributes` - Optional attributes to associate with the statement (legacy mode)
+    /// * `graph_id` - Optional graph ID to associate the statement with (graph_ids feature)
+    ///
+    /// # Returns
+    /// * `Result<()>` - Success or error if registration fails
     pub async fn register_statement_locally(
         &self,
         statement: Statement,
