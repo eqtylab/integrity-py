@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs,
     fs::File,
     path::PathBuf,
@@ -12,12 +11,11 @@ use integrity::{
     cid::iroh::{CidIgnoreConfig, HashingConfig},
     lineage::{
         graph_indexer::{sql_indexer::IStatementIdx as IStatementIdx2, sql_lite::Sqlite},
-        indexer::{sql_indexer::IStatementIdx, sql_lite::SqlLite},
+        indexer::sql_lite::SqlLite,
         models::statements::{Statement, StatementTrait},
     },
     signer::SignerType,
 };
-use serde_json::Value;
 use tokio::runtime::Runtime;
 use uuid::Uuid;
 
@@ -29,9 +27,9 @@ pub fn get_runtime() -> &'static Runtime {
     RUNTIME.get_or_init(|| Runtime::new().expect("Failed to create tokio runtime"))
 }
 
-use pyo3::{pyfunction, pymodule, types::PyModule, wrap_pyfunction, PyErr, PyResult, Python};
+use pyo3::{pyfunction, pymodule, types::PyModule, wrap_pyfunction, PyResult, Python};
 
-use crate::{to_py_err, FeatureFlags};
+use crate::to_py_err;
 
 /// `context` submodule.
 #[pymodule]
@@ -111,23 +109,17 @@ fn create_graph_from_context(
     name: String,
     parent_id: Option<String>,
 ) -> PyResult<()> {
-    let feature_flag = "graph_ids";
-    if FeatureFlags::is_enabled(feature_flag) {
-        let id = Uuid::parse_str(&id).map_err(to_py_err)?;
-        let parent_id = if let Some(parent_id) = parent_id {
-            let id = Uuid::parse_str(&parent_id).map_err(to_py_err)?;
-            Some(id)
-        } else {
-            None
-        };
-        get_runtime()
-            .block_on(ctx().sql_lite2.create_graph(&id, &name, parent_id.as_ref()))
-            .map_err(to_py_err)?;
-        Ok(())
+    let id = Uuid::parse_str(&id).map_err(to_py_err)?;
+    let parent_id = if let Some(parent_id) = parent_id {
+        let id = Uuid::parse_str(&parent_id).map_err(to_py_err)?;
+        Some(id)
     } else {
-        let msg = format!("Feature {feature_flag} must be disabled to use this fn.");
-        Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(msg))
-    }
+        None
+    };
+    get_runtime()
+        .block_on(ctx().sql_lite2.create_graph(&id, &name, parent_id.as_ref()))
+        .map_err(to_py_err)?;
+    Ok(())
 }
 
 /// Gets a clone of the global application context.
@@ -320,35 +312,21 @@ impl Context {
     ///
     /// # Arguments
     /// * `statement` - The statement to register
-    /// * `attributes` - Optional attributes to associate with the statement (legacy mode)
-    /// * `graph_id` - Optional graph ID to associate the statement with (graph_ids feature)
+    /// * `graph_id` - Graph ID to associate the statement with
     ///
     /// # Returns
     /// * `Result<()>` - Success or error if registration fails
     pub async fn register_statement_locally(
         &self,
         statement: Statement,
-        attributes: Option<&HashMap<String, Value>>,
         graph_id: Option<&Uuid>,
     ) -> Result<()> {
-        if FeatureFlags::is_enabled("graph_ids") {
-            let id = statement.get_id();
-            let s_type = statement.get_type_string()?;
-            log::info!("registering {s_type} statement {id} to graph database");
-            self.sql_lite2
-                .register_statement(&statement, graph_id)
-                .await?;
-        } else {
-            log::info!("registering statement with attributes: {attributes:?}");
-
-            let attrs = if let Some(a) = attributes {
-                serde_json::to_value(a.clone())
-            } else {
-                Ok(serde_json::json!({}))
-            }?;
-
-            self.sql_lite.register_statement(statement, attrs).await?;
-        }
+        let id = statement.get_id();
+        let s_type = statement.get_type_string()?;
+        log::info!("registering {s_type} statement {id} to graph database");
+        self.sql_lite2
+            .register_statement(&statement, graph_id)
+            .await?;
         Ok(())
     }
 }

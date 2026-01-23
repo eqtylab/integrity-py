@@ -79,7 +79,7 @@ pub fn create_model_signing_statement(
     };
 
     context::get_runtime()
-        .block_on(ctx.register_statement_locally(sigstore_bundle_statement.clone(), None, None))
+        .block_on(ctx.register_statement_locally(sigstore_bundle_statement.clone(), None))
         .map_err(to_py_err)?;
 
     Ok(sigstore_bundle_statement.get_id())

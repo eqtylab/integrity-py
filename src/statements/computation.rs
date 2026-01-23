@@ -62,7 +62,7 @@ pub fn create_computation_statement(
     );
 
     context::get_runtime()
-        .block_on(ctx().register_statement_locally(statement.clone(), None, None))
+        .block_on(ctx().register_statement_locally(statement.clone(), None))
         .map_err(to_py_err)?;
 
     Ok(statement.get_id())

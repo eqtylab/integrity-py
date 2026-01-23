@@ -7,8 +7,8 @@
 pub mod cid;
 /// Global application context and configuration management.
 pub mod context;
-/// Feature flag management for enabling/disabling SDK capabilities.
-pub mod feature_flags;
+/// Indexes integrity information in sql database.
+pub mod indexer;
 /// API functions for connecting to the integrity service.
 pub mod integrity_service;
 /// Manifest generation, import, and registration for integrity graphs.
@@ -32,8 +32,6 @@ use pyo3::{
 };
 use serde_json::{json, Value};
 
-use crate::feature_flags::FeatureFlags;
-
 /// SDK rust module
 ///
 /// This module is accessible in the Python package as `eqty_sdk._rust`
@@ -43,7 +41,6 @@ fn _rust(py: Python, m: &PyModule) -> PyResult<()> {
 
     m.add_wrapped(wrap_pymodule!(cid::cid))?;
     m.add_wrapped(wrap_pymodule!(context::context))?;
-    m.add_wrapped(wrap_pymodule!(feature_flags::feature_flags))?;
     m.add_wrapped(wrap_pymodule!(signer::signer))?;
     m.add_wrapped(wrap_pymodule!(manifest::manifest))?;
     m.add_wrapped(wrap_pymodule!(statements::statements))?;

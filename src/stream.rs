@@ -284,7 +284,7 @@ async fn create_statement_from_stream(
     );
 
     ctx()
-        .register_statement_locally(statement.clone(), None, None)
+        .register_statement_locally(statement.clone(), None)
         .await?;
 
     Ok(statement.get_id())

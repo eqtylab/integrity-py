@@ -10,7 +10,6 @@ use integrity::{
         models::{
             graph::Graph,
             manifest::{
-                generate_manifest as lineage_generate_manifest,
                 manifest_v4::{generate_manifest_v4, ManifestV4},
                 merge_async, Manifest,
             },
@@ -29,8 +28,6 @@ use uuid::Uuid;
 
 use crate::{
     context::{self, ctx},
-    convert_attributes,
-    feature_flags::FeatureFlags,
     integrity_service::{
         blobs::put_jcs,
         statements::{create_statement, CreateStatementRequestBody},
@@ -43,7 +40,6 @@ use crate::{
 #[pymodule]
 pub fn manifest(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(generate, m)?)?;
-    m.add_function(wrap_pyfunction!(generate_v4, m)?)?;
     m.add_function(wrap_pyfunction!(import_manifest, m)?)?;
     m.add_function(wrap_pyfunction!(merge, m)?)?;
     m.add_function(wrap_pyfunction!(register, m)?)?;
@@ -51,66 +47,7 @@ pub fn manifest(_py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
-/// Generates an integrity graph manifest json string
-#[pyfunction]
-pub fn generate(
-    py: Python,
-    statements: Vec<PyObject>,
-    blobs_dir: PathBuf,
-    attributes: Option<PyObject>,
-    include_context: Option<bool>,
-) -> PyResult<String> {
-    if FeatureFlags::is_enabled("graph_ids") {
-        let msg = "Feature 'graph_ids' must be disabled to use this fn.".to_string();
-        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(msg));
-    }
-    // Convert PyObjects to Statements
-    let rust_statements: PyResult<Vec<Statement>> = statements
-        .into_iter()
-        .map(|py_obj| {
-            let json_value = python_to_json_value(py, &py_obj)?;
-            serde_json::from_value(json_value).map_err(to_py_err)
-        })
-        .collect();
-
-    let rust_statements = rust_statements?;
-
-    let blobs = context::get_runtime()
-        .block_on(resolve_blobs(&rust_statements, blobs_dir))
-        .map_err(to_py_err)?;
-
-    log::info!("Generating manifest");
-
-    // Convert PyObject attributes to HashMap
-    let attributes_map = if let Some(attr) = attributes {
-        let json_value = python_to_json_value(py, &attr)?;
-        match json_value {
-            Value::Object(map) => Some(map.into_iter().collect::<HashMap<String, Value>>()),
-            Value::Null => None,
-            _ => {
-                return Err(pyo3::exceptions::PyTypeError::new_err(
-                    "attributes must be a dict or None",
-                ))
-            }
-        }
-    } else {
-        None
-    };
-
-    let manifest = context::get_runtime()
-        .block_on(lineage_generate_manifest(
-            include_context.unwrap_or(true),
-            rust_statements,
-            attributes_map,
-            blobs,
-        ))
-        .map_err(to_py_err)?;
-
-    let manifest_json = serde_json::to_string(&manifest).map_err(to_py_err)?;
-    Ok(manifest_json)
-}
-
-/// Generates a v4 integrity graph manifest JSON string from multiple graphs.
+/// Generates an integrity graph manifest JSON string from multiple graphs.
 ///
 /// # Arguments
 /// * `py` - Python interpreter reference
@@ -121,17 +58,12 @@ pub fn generate(
 /// # Returns
 /// * `PyResult<String>` - JSON string representation of the manifest, or error on failure
 #[pyfunction]
-pub fn generate_v4(
+pub fn generate(
     py: Python,
     graphs: &PyList,
     blobs_dir: PathBuf,
     include_context: Option<bool>,
 ) -> PyResult<String> {
-    if !FeatureFlags::is_enabled("graph_ids") {
-        let msg = "Feature 'graph_ids' must be enabled to use this fn.".to_string();
-        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(msg));
-    }
-
     let include_context = include_context.unwrap_or(false);
 
     // Convert Python graphs list to Rust Graph structs
@@ -213,13 +145,9 @@ pub fn generate_v4(
 pub fn import_manifest<'py>(
     py: Python<'py>,
     manifest: String,
-    attributes: &'py PyDict,
 ) -> PyResult<HashMap<String, &'py PyBytes>> {
-    let attributes = convert_attributes(attributes).map_err(to_py_err)?;
-    log::info!("Importing manifest with attributes {:?}", attributes);
-
     let blobs = context::get_runtime()
-        .block_on(rust_import(manifest, Some(&attributes)))
+        .block_on(rust_import(manifest))
         .map_err(to_py_err)?;
 
     let py_blobs = blobs
@@ -277,65 +205,41 @@ fn python_to_json_value(py: Python, obj: &PyObject) -> PyResult<Value> {
     }
 }
 
-async fn rust_import(
-    manifest: String,
-    attributes: Option<&HashMap<String, Value>>,
-) -> Result<HashMap<String, Vec<u8>>> {
-    if FeatureFlags::is_enabled("graph_ids") {
-        let manifest = serde_json::from_str::<ManifestV4>(&manifest)?;
-        log::trace!("Importing manifest V4");
+async fn rust_import(manifest: String) -> Result<HashMap<String, Vec<u8>>> {
+    let manifest = serde_json::from_str::<ManifestV4>(&manifest)?;
+    log::trace!("Importing manifest V4");
 
-        for graph in manifest.graphs {
-            ctx()
-                .sql_lite2
-                .create_graph(&graph.id, &graph.name, graph.parent.as_ref())
-                .await?;
+    for graph in manifest.graphs {
+        ctx()
+            .sql_lite2
+            .create_graph(&graph.id, &graph.name, graph.parent.as_ref())
+            .await?;
 
-            if let Some(statements) = graph.statements {
-                for statement in statements {
-                    ctx()
-                        .register_statement_locally(statement.clone(), None, Some(&graph.id))
-                        .await?
-                }
+        if let Some(statements) = graph.statements {
+            for statement in statements {
+                ctx()
+                    .register_statement_locally(statement.clone(), Some(&graph.id))
+                    .await?
             }
         }
-
-        log::debug!("Decoding {} blobs", manifest.blobs.len());
-        // Decode base64 values in the blobs HashMap
-        let decoded_blobs = manifest
-            .blobs
-            .into_iter()
-            .map(|(key, base64_value)| {
-                log::debug!("Decoding blob key: {}", key);
-                log::trace!("Base64 value length: {} chars", base64_value.len());
-                let decoded_bytes = BASE64.decode(&base64_value)?;
-                log::debug!("Decoded {} bytes for key: {key}", decoded_bytes.len());
-
-                Ok((key, decoded_bytes))
-            })
-            .collect::<Result<HashMap<String, Vec<u8>>, anyhow::Error>>()?;
-
-        Ok(decoded_blobs)
-    } else {
-        let manifest = serde_json::from_str::<Manifest>(&manifest)?;
-        log::trace!("Manifest str: \n{manifest:?}");
-        log::debug!("{} statements imported", manifest.statements.keys().len());
-        for statement in manifest.statements.values() {
-            ctx()
-                .register_statement_locally(statement.clone(), attributes, None)
-                .await?
-        }
-        // Decode base64 values in the blobs HashMap
-        let decoded_blobs = manifest
-            .blobs
-            .into_iter()
-            .map(|(key, base64_value)| {
-                let decoded_bytes = BASE64.decode(&base64_value)?;
-                Ok((key, decoded_bytes))
-            })
-            .collect::<Result<HashMap<String, Vec<u8>>, anyhow::Error>>()?;
-        Ok(decoded_blobs)
     }
+
+    log::debug!("Decoding {} blobs", manifest.blobs.len());
+    // Decode base64 values in the blobs HashMap
+    let decoded_blobs = manifest
+        .blobs
+        .into_iter()
+        .map(|(key, base64_value)| {
+            log::debug!("Decoding blob key: {}", key);
+            log::trace!("Base64 value length: {} chars", base64_value.len());
+            let decoded_bytes = BASE64.decode(&base64_value)?;
+            log::debug!("Decoded {} bytes for key: {key}", decoded_bytes.len());
+
+            Ok((key, decoded_bytes))
+        })
+        .collect::<Result<HashMap<String, Vec<u8>>, anyhow::Error>>()?;
+
+    Ok(decoded_blobs)
 }
 
 /// Register the manfiest with integrity platform
