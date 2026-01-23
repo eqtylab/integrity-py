@@ -18,13 +18,6 @@ use integrity::{
         },
     },
 };
-use integrity_service_client::{
-    apis::{
-        configuration::Configuration, statements_api::create as create_statement,
-        store_api::put_jcs,
-    },
-    models::StatementsCreateRequestBody,
-};
 use pyo3::{
     prelude::*,
     pyfunction, pymodule,
@@ -38,6 +31,11 @@ use crate::{
     context::{self, ctx},
     convert_attributes,
     feature_flags::FeatureFlags,
+    integrity_service::{
+        blobs::put_jcs,
+        statements::{create_statement, CreateStatementRequestBody},
+        Configuration,
+    },
     to_py_err,
 };
 
@@ -378,11 +376,7 @@ async fn register_statement(
     log::debug!("Registering statement: {statement:?}");
 
     let statement_str = serde_json::to_value(&statement)?;
-    let body = StatementsCreateRequestBody {
-        attributes: attributes.cloned(),
-        statement: Some(statement_str),
-        ..StatementsCreateRequestBody::default()
-    };
+    let body = CreateStatementRequestBody::new(attributes.cloned(), Some(statement_str));
 
     match create_statement(ig_service_config, body).await {
         Ok(result) => {

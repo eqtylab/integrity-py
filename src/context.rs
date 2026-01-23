@@ -6,6 +6,7 @@ use std::{
     sync::{Arc, OnceLock, RwLock},
 };
 
+use crate::integrity_service::Configuration as IntegrityServiceConfig;
 use anyhow::{anyhow, Result};
 use integrity::{
     cid::iroh::{CidIgnoreConfig, HashingConfig},
@@ -16,7 +17,6 @@ use integrity::{
     },
     signer::SignerType,
 };
-use integrity_service_client::apis::configuration::Configuration as IntegrityServiceConfig;
 use serde_json::Value;
 use tokio::runtime::Runtime;
 use uuid::Uuid;

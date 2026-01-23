@@ -9,6 +9,8 @@ pub mod cid;
 pub mod context;
 /// Feature flag management for enabling/disabling SDK capabilities.
 pub mod feature_flags;
+/// API functions for connecting to the integrity service.
+pub mod integrity_service;
 /// Manifest generation, import, and registration for integrity graphs.
 pub mod manifest;
 /// Cryptographic signer creation and management.
