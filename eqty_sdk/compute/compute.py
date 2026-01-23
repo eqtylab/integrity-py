@@ -5,14 +5,13 @@ import os
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from eqty_sdk._rust import (
-    statements as eqty_core_statements,
     stream as eqty_core_stream,
 )
 from eqty_sdk.asset import Asset, AssetType, Code, Custom, Dataset, Model
-from eqty_sdk.context import Context, ContextType, OriginalCtx
+from eqty_sdk.config.config import Config
+from eqty_sdk.context import Context
 from eqty_sdk.core import get_cid_for_bytes
 from eqty_sdk.errors import UsageError
-from eqty_sdk.feature_flags import FEATURE_FLAGS, FeatureFlags, feature_gate_when_disabled
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement
 from eqty_sdk.statements.common import add_vc_statement
@@ -58,16 +57,12 @@ class Compute:
         func: Callable[..., Any],
         metadata: Optional[Dict[str, Any]] = None,
         store: Optional[None] = None,
-        ctx: Optional[ContextType] = None,
+        ctx: Optional[Context] = None,
         **kwargs,
     ) -> None:
         logger.debug("Initalizing Compute")
 
-        if FeatureFlags.is_disabled(FEATURE_FLAGS.GRAPH_IDS):
-            self._ctx = ctx if ctx is not None else Context()
-        else:
-            # get current root context
-            pass
+        self._ctx = ctx if ctx is not None else Config().root_context
 
         if metadata is None:
             metadata = {}
@@ -93,11 +88,6 @@ class Compute:
 
         # local flag to track if any hashed data should be stored as a blob
         self._store = store
-
-        if FeatureFlags.is_disabled(FEATURE_FLAGS.GRAPH_IDS):
-            # attributes to apply to statements. Needs tracked due to async fns not having all statements available when
-            # the compute returns to the caller
-            self._attributes: dict[str, str] = {}
 
         # source code is created as an input asset to the compute node
         self._code_asset = Code.from_object(
@@ -241,26 +231,18 @@ class Compute:
         self.statement_ids.extend(ids)
 
         stream_cid = get_cid_for_bytes(stream, self._store)
-        asset = Custom.from_cid(
+        Custom.from_cid(
             stream_cid,
             AssetType.CUSTOM,
             name=f"{self.name}-stream",
             skip_proof=self.skip_proof,
         )
-        asset.add_attribute(**self._attributes)
-        self.__add_attribute__(**self._attributes)
-
-        if isinstance(self._ctx, OriginalCtx):
-            if self._ctx.project_id:
-                asset.add_attribute(__project_id=self._ctx.project_id)
-                self.__add_attribute__(__project_id=self._ctx.project_id)
 
     async def __call_async__(self, input_cids, *args: Any, **kwargs: Any) -> Any:
         """Execute the wrapped function asynchronously."""
         result = await self._func(*args, **kwargs)
         self.__finalize__(input_cids, result)
         logger.debug("Finalizing async fn")
-        self.__add_attribute__(**self._attributes)
         return result
 
     def __call_sync__(self, input_cids, *args: Any, **kwargs: Any) -> Any:
@@ -323,14 +305,4 @@ class Compute:
         ids = self.metadata.create_statement(statement_ids[0], self.skip_proof)
         self.statement_ids.extend(ids)
 
-        if isinstance(self._ctx, OriginalCtx):
-            if self._ctx.project_id:
-                self.__add_attribute__(__project_id=self._ctx.project_id)
-
         return output_cids
-
-    @feature_gate_when_disabled(FEATURE_FLAGS.GRAPH_IDS)
-    def __add_attribute__(self, **kwargs) -> None:
-        logger.info(f"adding attributes {kwargs} to {self.statement_ids}")
-        eqty_core_statements.add_attributes_to_statements(self.statement_ids, kwargs)
-        self._attributes = kwargs

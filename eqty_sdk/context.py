@@ -1,7 +1,7 @@
 """Context module with feature flag-based class selection."""
 
 import logging
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 from uuid import uuid4
 
 from pydantic.types import UUID4
@@ -9,32 +9,21 @@ from pydantic.types import UUID4
 from eqty_sdk._rust import (
     context as eqty_core_context,
 )
-from eqty_sdk.feature_flags import FEATURE_FLAGS, FeatureFlags
 
 logger = logging.getLogger("eqty.sdk.context")
 
 
-class OriginalCtx:
-    """Original context implementation used when GRAPH_IDS feature is disabled."""
-
-    def __init__(self, project_id: Optional[str] = None):
-        self.project_id = project_id
-
-    def __repr__(self) -> str:
-        return f"OriginalCtx(project_id={self.project_id!r})"
-
-
-class GraphIDCtx:
+class Context:
     """New context implementation used when GRAPH_IDS feature is enabled."""
 
     def __init__(self, *args, **kwargs):
         raise TypeError(
-            "Use GraphIDCtx.new() or GraphIDCtx.from_parent() to create instances of this class."
+            "Use Context.new() or Context.from_parent() to create instances of this class."
         )
 
     def __init_internal__(
         self, name: Optional[str] = None, id: Optional[UUID4] = None
-    ) -> "GraphIDCtx":
+    ) -> "Context":
         uuid = id if id else uuid4()
         logger.info(f"Creating new root context {str(uuid)[-12:]}")
         self.name: str = name if name else str(uuid)
@@ -43,7 +32,7 @@ class GraphIDCtx:
         return self
 
     @classmethod
-    def new(cls, name: Optional[str] = None, id: Optional[UUID4] = None) -> "GraphIDCtx":
+    def new(cls, name: Optional[str] = None, id: Optional[UUID4] = None) -> "Context":
         """Creates a new Object with the provided UUID and Name.
 
         Args:
@@ -67,7 +56,7 @@ class GraphIDCtx:
     @classmethod
     def from_parent(
         cls, ctx: UUID4, name: Optional[str] = None, id: Optional[UUID4] = None
-    ) -> "GraphIDCtx":
+    ) -> "Context":
         """Creates a new context as a child of ctx.
 
         Args:
@@ -97,7 +86,7 @@ class GraphIDCtx:
         return item
 
     def __repr__(self) -> str:
-        return f"GraphIDCtx(name={self.name!r}, uuid={str(self.uuid)[-12:]}, parent_ctx={str(self.parent_ctx)[-12:]})"
+        return f"Context(name={self.name!r}, uuid={str(self.uuid)[-12:]}, parent_ctx={str(self.parent_ctx)[-12:]})"
 
     def to_dict(self) -> Dict:
         return {
@@ -107,41 +96,5 @@ class GraphIDCtx:
         }
 
 
-def Context(
-    project_id: Optional[str] = None,
-    name: Optional[str] = None,
-    id: Optional[UUID4] = None,
-) -> Union[OriginalCtx, GraphIDCtx]:
-    """Factory function that returns appropriate Context type based on feature flags.
-
-    Args:
-        project_id: Project ID for original context (used when GRAPH_IDS is disabled)
-        name: Name for new context (used when GRAPH_IDS is enabled)
-        id: Parent Context UUID
-
-    Returns:
-        Originalctx when GRAPH_IDS feature is disabled
-        GraphIDctx when GRAPH_IDS feature is enabled
-
-    Examples:
-        # Original usage (when GRAPH_IDS is disabled)
-        context = Context(project_id="my-project")
-        print(context.project_id)  # "my-project"
-
-        # New usage (when GRAPH_IDS is enabled)
-        context = Context(name="MyContext")
-        print(context.name)  # "MyContext"
-        print(context.uuid)  # UUID4 object
-
-    """
-    if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
-        return GraphIDCtx.new(name=name, id=id)
-    else:
-        return OriginalCtx(project_id=project_id)
-
-
-# Type aliases for type checking
-ContextType = Union[OriginalCtx, GraphIDCtx]
-
 # Export the classes and factory for external use
-__all__ = ["Context", "OriginalCtx", "GraphIDCtx", "ContextType"]
+__all__ = ["Context"]

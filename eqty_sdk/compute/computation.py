@@ -6,10 +6,9 @@ from typing import Any, List, Optional, Union, cast
 from eqty_sdk._rust import statements as eqty_core_statements
 from eqty_sdk.asset import serialize_for_hashing
 from eqty_sdk.config.config import Config
-from eqty_sdk.context import Context, ContextType, GraphIDCtx, OriginalCtx
+from eqty_sdk.context import Context
 from eqty_sdk.core import get_cid_for_bytes, get_cid_for_path
 from eqty_sdk.errors import UsageError
-from eqty_sdk.feature_flags import FEATURE_FLAGS, FeatureFlags, feature_gate_when_disabled
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement
 from eqty_sdk.types.cid import Cid
@@ -36,13 +35,8 @@ class Computation:
         raise TypeError("Use Computation.new() to create instances of this class.")
 
     def __init_internal__(
-        self, ctx: ContextType, metadata: Metadata, skip_proof: Optional[bool] = None
+        self, ctx: Context, metadata: Metadata, skip_proof: Optional[bool] = None
     ):
-        if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
-            assert isinstance(ctx, GraphIDCtx)
-        else:
-            assert isinstance(ctx, OriginalCtx)
-
         self._ctx = ctx
         self._metadata = metadata
         self._input_cids: List[str] = []
@@ -61,14 +55,11 @@ class Computation:
 
         metadata = Metadata(**kwargs)
         instance = object.__new__(cls)
-        ctx = (
-            Config().root_context if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS) else Context()
-        )
-        instance.__init_internal__(ctx, metadata, skip_proof)
+        instance.__init_internal__(Config().root_context, metadata, skip_proof)
         return instance
 
     @staticmethod
-    def with_context(ctx: ContextType):
+    def with_context(ctx: Context):
         class _Factory:
             def new(self, **kwargs) -> "Computation":
                 skip_proof = kwargs.pop("skip_proof", None)
@@ -203,22 +194,8 @@ class Computation:
         ids = self._metadata.create_statement(statement_ids[0], self._skip_proof)
         self._associated_statement_ids.extend(ids)
 
-        if isinstance(self._ctx, OriginalCtx):
-            if self._ctx.project_id:
-                self.add_attribute(__project_id=self._ctx.project_id)
-        elif isinstance(self._ctx, GraphIDCtx):
-            for id in self._associated_statement_ids:
-                logger.info(f"Registering data statement {id} to graph: {self._ctx.uuid}")
-                eqty_core_statements.register_statement_to_graph(id, str(self._ctx.uuid))
+        for id in self._associated_statement_ids:
+            logger.info(f"Registering data statement {id} to graph: {self._ctx.uuid}")
+            eqty_core_statements.register_statement_to_graph(id, str(self._ctx.uuid))
 
         return self
-
-    @feature_gate_when_disabled(FEATURE_FLAGS.GRAPH_IDS)
-    def add_attribute(self, **kwargs) -> None:
-        logger.info(f"adding attributes {kwargs} to {self._associated_statement_ids}")
-        eqty_core_statements.add_attributes_to_statements(self._associated_statement_ids, kwargs)
-
-    @feature_gate_when_disabled(FEATURE_FLAGS.GRAPH_IDS)
-    def remove_attribute(self, **kwargs) -> None:
-        logger.info(f"removing attributes {kwargs} from {self._associated_statement_ids}")
-        eqty_core_statements.remove_attributes(self._associated_statement_ids, kwargs)

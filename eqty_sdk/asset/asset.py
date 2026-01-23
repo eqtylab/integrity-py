@@ -9,15 +9,13 @@ import dill as pickle
 
 from eqty_sdk._rust import statements as eqty_core_statements
 from eqty_sdk.config import Config
-from eqty_sdk.context import ContextType, GraphIDCtx, OriginalCtx
+from eqty_sdk.context import Context
 from eqty_sdk.core import (
     get_cid_for_bytes,
     get_cid_for_path,
 )
-from eqty_sdk.feature_flags import FEATURE_FLAGS, FeatureFlags, feature_gate_when_disabled
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import (
-    add_association_statement,
     add_data_statement,
     add_governance_statement,
     add_metadata_statement,
@@ -97,18 +95,13 @@ def _should_skip_proof(**kwargs):
 class Asset:
     def __init__(
         self,
-        ctx: ContextType,
+        ctx: Context,
         obj: Any,
         asset_type: Union[AssetType, str],
         cid: str,
         is_dir: bool,
         **kwargs,
     ):
-        if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
-            assert isinstance(ctx, GraphIDCtx)
-        else:
-            assert isinstance(ctx, OriginalCtx)
-
         self._ctx = ctx
 
         self._value: Any = obj
@@ -128,13 +121,9 @@ class Asset:
         if not kwargs.get("skip_registration", False):
             try:
                 self._create_eqty_statements()
-                if isinstance(self._ctx, OriginalCtx):
-                    if self._ctx.project_id:
-                        self.add_attribute(__project_id=self._ctx.project_id)
-                elif isinstance(self._ctx, GraphIDCtx):
-                    for id in self.statement_ids:
-                        logger.info(f"Registering data statement {id} to graph: {self._ctx.uuid}")
-                        eqty_core_statements.register_statement_to_graph(id, str(self._ctx.uuid))
+                for id in self.statement_ids:
+                    logger.info(f"Registering data statement {id} to graph: {self._ctx.uuid}")
+                    eqty_core_statements.register_statement_to_graph(id, str(self._ctx.uuid))
 
             except RuntimeError as e:
                 logger.error(f"Error creating new asset: {e}")
@@ -142,17 +131,13 @@ class Asset:
 
     @staticmethod
     def _from_object(
-        ctx: ContextType,
+        ctx: Context,
         obj: Any,
         asset_type: Union[AssetType, str],
         store: Optional[bool] = None,
         **kwargs,
     ) -> "Asset":
         logger.debug(f"Asset Context: {ctx!r}")
-        if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
-            assert isinstance(ctx, GraphIDCtx)
-        else:
-            assert isinstance(ctx, OriginalCtx)
         serialized_bytes = serialize_for_hashing(obj)
         cid = get_cid_for_bytes(serialized_bytes, store)
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
@@ -162,16 +147,12 @@ class Asset:
 
     @staticmethod
     def _from_path(
-        ctx: ContextType,
+        ctx: Context,
         path: Union[Path, str],
         asset_type: Union[AssetType, str],
         store: Optional[bool] = None,
         **kwargs,
     ) -> "Asset":
-        if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
-            assert isinstance(ctx, GraphIDCtx)
-        else:
-            assert isinstance(ctx, OriginalCtx)
         resolved_path = _init_path_input(path)
         cid = get_cid_for_path(resolved_path, store)
         is_dir = resolved_path.is_dir()
@@ -181,20 +162,14 @@ class Asset:
         return asset
 
     @staticmethod
-    def _from_cid(
-        ctx: ContextType, cid: str, asset_type: Union[AssetType, str], **kwargs
-    ) -> "Asset":
-        if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
-            assert isinstance(ctx, GraphIDCtx)
-        else:
-            assert isinstance(ctx, OriginalCtx)
+    def _from_cid(ctx: Context, cid: str, asset_type: Union[AssetType, str], **kwargs) -> "Asset":
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
         asset = Asset(ctx, cid, asset_type, cid, is_dir=False, **kwargs)
         return asset
 
     @staticmethod
-    def _factory_with_context(ctx: ContextType, asset_type: AssetType):
+    def _factory_with_context(ctx: Context, asset_type: AssetType):
         class _Factory:
             def from_path(
                 self, path: Union[str, Path], store: Optional[bool] = None, **kwargs
@@ -238,30 +213,13 @@ class Asset:
         self.statement_ids.extend(ids)
         return self
 
-    @feature_gate_when_disabled(FEATURE_FLAGS.GRAPH_IDS)
-    def add_attribute(self, **kwargs) -> "Asset":
-        logger.info(f"adding attributes {kwargs} to {self.statement_ids}")
-        eqty_core_statements.add_attributes_to_statements(self.statement_ids, kwargs)
-        return self
-
-    @feature_gate_when_disabled(FEATURE_FLAGS.GRAPH_IDS)
-    def remove_attribute(self, **kwargs) -> "Asset":
-        logger.info(f"removing attributes {kwargs} from {self.statement_ids}")
-        eqty_core_statements.remove_attributes(self.statement_ids, kwargs)
-        return self
-
     def _create_eqty_statements(self) -> None:
         """Creates DataStatement, MetadataStatement, and VcStatement."""
         statement_ids = add_data_statement([self.cid], self._skip_proof)
         self.statement_ids.extend(statement_ids)
         meta_ids = add_metadata_statement(self.cid, self._metadata.to_json_str(), self._skip_proof)
         self.statement_ids.extend(meta_ids)
-        if isinstance(self._ctx, OriginalCtx):
-            if self._ctx.project_id:
-                association_statement_ids = add_association_statement(
-                    f"urn:cid:{self.cid}", f"urn:uuid:{self._ctx.project_id}", self._skip_proof
-                )
-                self.statement_ids.extend(association_statement_ids)
+
         if Config().generate_model_signing_signatures and self._is_dir:
             model_signing_statement_id = eqty_core_statements.create_model_signing_statement(
                 collection_cid=self.cid,

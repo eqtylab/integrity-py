@@ -7,8 +7,7 @@ from eqty_sdk._rust import (
     statements as eqty_core_statements,
 )
 from eqty_sdk.config import Config
-from eqty_sdk.context import Context, ContextType, OriginalCtx
-from eqty_sdk.feature_flags import FEATURE_FLAGS, feature_gate_when_disabled
+from eqty_sdk.context import Context
 from eqty_sdk.statements import add_did_statement, add_metadata_statement
 from eqty_sdk.types.signer import Signer
 
@@ -16,7 +15,7 @@ logger = logging.getLogger("eqty.sdk.Did")
 
 
 class Did:
-    def __init__(self, ctx: ContextType, did: str, signer: Optional[Signer], **kwargs):
+    def __init__(self, ctx: Context, did: str, signer: Optional[Signer], **kwargs):
         self.ctx = ctx
         self.statement_ids = []
 
@@ -55,10 +54,6 @@ class Did:
         metadata_statement_ids = add_metadata_statement(did, json.dumps(kwargs))
         self.statement_ids.extend(metadata_statement_ids)
 
-        if isinstance(self.ctx, OriginalCtx):
-            if self.ctx.project_id:
-                self.add_attribute(__project_id=self.ctx.project_id)
-
     @staticmethod
     def from_signer(signer: Signer, **kwargs) -> "Did":
         return Did(Context(), signer.did_key, signer, **kwargs)
@@ -68,7 +63,7 @@ class Did:
         return Did(Context(), did, None, **kwargs)
 
     @staticmethod
-    def with_context(ctx: ContextType):
+    def with_context(ctx: Context):
         class _Factory:
             def from_signer(self, signer: Signer, **kwargs) -> "Did":
                 return Did(ctx, signer.did_key, signer, **kwargs)
@@ -77,15 +72,3 @@ class Did:
                 return Did(ctx, did, None, **kwargs)
 
         return _Factory()
-
-    @feature_gate_when_disabled(FEATURE_FLAGS.GRAPH_IDS)
-    def add_attribute(self, **kwargs) -> "Did":
-        logger.info(f"adding attributes {kwargs} to {self.statement_ids}")
-        eqty_core_statements.add_attributes_to_statements(self.statement_ids, kwargs)
-        return self
-
-    @feature_gate_when_disabled(FEATURE_FLAGS.GRAPH_IDS)
-    def remove_attribute(self, **kwargs) -> "Did":
-        logger.info(f"removing attributes {kwargs} from {self.statement_ids}")
-        eqty_core_statements.remove_attributes(self.statement_ids, kwargs)
-        return self

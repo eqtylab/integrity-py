@@ -10,8 +10,7 @@ from pydantic import UUID4
 from eqty_sdk._rust import (
     context as eqty_core_context,
 )
-from eqty_sdk.context import GraphIDCtx
-from eqty_sdk.feature_flags import FEATURE_FLAGS, feature_gate
+from eqty_sdk.context import Context
 
 from .cid_ignore import CidIgnore
 
@@ -71,8 +70,7 @@ class Config:
         return self._settings.generate_model_signing_signatures
 
     @property
-    @feature_gate(FEATURE_FLAGS.GRAPH_IDS)
-    def root_context(self) -> GraphIDCtx:
+    def root_context(self) -> Context:
         """Returns the root context object."""
         if not self._root_context:
             # lazy create a default context
@@ -94,7 +92,7 @@ class Config:
             return
 
         # create a default context, that can be overwritten only once
-        self._root_context: Optional[GraphIDCtx] = None
+        self._root_context: Optional[Context] = None
 
         # Set all the property defaults when the singleton is created
         self._settings = Settings()
@@ -188,7 +186,6 @@ class Config:
         self.save()
         return self
 
-    @feature_gate(FEATURE_FLAGS.GRAPH_IDS)
     def with_context(self, name: Optional[str] = None, id: Optional[UUID4] = None) -> "Config":
         """Creates a root context.
 
@@ -201,11 +198,10 @@ class Config:
             logger.error("Context can only be set once.")
             return self
 
-        self._root_context = GraphIDCtx.new(name=name, id=id)
+        self._root_context = Context.new(name=name, id=id)
         logger.debug(f"{self._root_context}")
         return self
 
-    @feature_gate(FEATURE_FLAGS.GRAPH_IDS)
     def from_context(
         self, ctx: UUID4, name: Optional[str] = None, id: Optional[UUID4] = None
     ) -> "Config":
@@ -221,7 +217,7 @@ class Config:
             logger.error("Context can only be set once.")
             return self
 
-        self._root_context = GraphIDCtx.from_parent(ctx, name, id)
+        self._root_context = Context.from_parent(ctx, name, id)
 
         logger.debug(f"Created root context ({self._root_context.uuid!r}) from parent ({ctx!r}) ")
         return self
