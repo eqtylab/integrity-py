@@ -5,7 +5,7 @@ use std::{
     sync::{Arc, OnceLock, RwLock},
 };
 
-use crate::indexer::sql_lite::Sqlite;
+use crate::indexer::Sqlite;
 use crate::integrity_service::Configuration as IntegrityServiceConfig;
 use anyhow::{anyhow, Result};
 use integrity::{

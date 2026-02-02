@@ -1,4 +1,4 @@
-use crate::indexer::graph::Graph;
+use crate::indexer::Graph;
 use pyo3::{
     pyfunction,
     types::{PyDict, PyList},

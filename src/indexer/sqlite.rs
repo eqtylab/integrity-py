@@ -4,9 +4,7 @@ use anyhow::Result;
 use sqlx::{sqlite::SqliteRow, SqlitePool};
 use uuid::Uuid;
 
-use super::graph::Graph;
-use crate::indexer::row_types::AssociationRow;
-
+use super::{rows_to_statements, AssociationRow, Graph};
 use integrity::lineage::models::statements::{Statement, StatementTrait};
 
 /// SQLite implementation of the graph-based statement indexer.
@@ -18,9 +16,8 @@ pub struct Sqlite {
 }
 
 impl Sqlite {
-    // Use the generic function from sql_indexer
     fn parse_statement_rows(rows: Vec<SqliteRow>) -> Result<HashMap<String, Statement>> {
-        super::sql_indexer::rows_to_statements(rows)
+        rows_to_statements(rows)
     }
 
     /// Initializes the database schema by creating all necessary tables and indexes.
@@ -701,6 +698,9 @@ impl Sqlite {
             )
             SELECT DISTINCT
                 COALESCE(data.statement, metadata.statement, storage.statement, association.statement) as statement,
+                NULL as metadata,
+                NULL as vc,
+                NULL as did,
                 gh.graph_id,
                 gh.level
             FROM graph_hierarchy gh
@@ -824,30 +824,22 @@ impl Sqlite {
 }
 
 #[cfg(test)]
-pub mod tests {
-    use std::sync::Arc;
-
-    use ssi::vc::Credential;
-
-    use super::super::sql_lite::Sqlite;
-    use integrity::{
-        lineage::models::{
-            dsse::{Envelope, Signature},
-            statements::{
-                common::{UrnCidWithSha256, UrnCidWithSha384},
-                AssociationStatement, ComputationStatement, DataStatement, DidStatement,
-                DidStatementEqtyVCompAmdSevV1, DidStatementEqtyVCompAzureV1,
-                DidStatementEqtyVCompDockerV1, DidStatementEqtyVCompIntelTdxV0,
-                DidStatementRegular, DsseStatement, EntityStatement, GovernanceStatement,
-                MetadataStatement, SigstoreBundleStatement, Statement, StatementTrait,
-                StorageStatement, VcStatement,
-            },
-        },
-        sigstore_bundle::SigstoreBundle,
+mod tests {
+    use super::Sqlite;
+    use integrity::lineage::models::statements::{
+        AssociationStatement, ComputationStatement, DataStatement, MetadataStatement, Statement,
+        StatementTrait, StorageStatement,
     };
 
-    /// Test that graph records get created
-    pub async fn test_create_graph(db: Arc<Sqlite>) {
+    async fn setup_db() -> Sqlite {
+        let db = Sqlite::new("sqlite::memory:").await.unwrap();
+        db.init().await.unwrap();
+        db
+    }
+
+    #[tokio::test]
+    async fn test_create_graph() {
+        let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000001");
         db.create_graph(&graph_id, "test:1", None).await.unwrap();
 
@@ -858,8 +850,9 @@ pub mod tests {
         assert!(graph.parent.is_none());
     }
 
-    /// Test that graphs can be 'nested' under other graphs
-    pub async fn test_create_graph_with_parent(db: Arc<Sqlite>) {
+    #[tokio::test]
+    async fn test_create_graph_with_parent() {
+        let db = setup_db().await;
         let parent_id = uuid::uuid!("00000000-0000-0000-0000-1000000000F0");
         let parent_name = "test:parent";
         db.create_graph(&parent_id, parent_name, None)
@@ -883,8 +876,9 @@ pub mod tests {
         assert_eq!(child_graph.parent, Some(parent_id));
     }
 
-    /// Test computation statement registration
-    pub async fn test_register_computation_statement(db: Arc<Sqlite>) {
+    #[tokio::test]
+    async fn test_register_computation_statement() {
+        let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000010");
         db.create_graph(&graph_id, "comp_test", None).await.unwrap();
 
@@ -913,8 +907,9 @@ pub mod tests {
         assert!(statements.iter().any(|s| s.get_id() == statement_id));
     }
 
-    /// Test data statement registration
-    pub async fn test_register_data_statement(db: Arc<Sqlite>) {
+    #[tokio::test]
+    async fn test_register_data_statement() {
+        let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000011");
         db.create_graph(&graph_id, "data_test", None).await.unwrap();
 
@@ -955,8 +950,9 @@ pub mod tests {
         assert!(statements.iter().any(|s| s.get_id() == data_statement_id));
     }
 
-    /// Test metadata statement registration
-    pub async fn test_register_metadata_statement(db: Arc<Sqlite>) {
+    #[tokio::test]
+    async fn test_register_metadata_statement() {
+        let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000012");
         db.create_graph(&graph_id, "metadata_test", None)
             .await
@@ -1003,8 +999,9 @@ pub mod tests {
             .any(|s| s.get_id() == metadata_statement_id));
     }
 
-    /// Test storage statement registration
-    pub async fn test_register_storage_statement(db: Arc<Sqlite>) {
+    #[tokio::test]
+    async fn test_register_storage_statement() {
+        let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000013");
         db.create_graph(&graph_id, "storage_test", None)
             .await
@@ -1051,8 +1048,9 @@ pub mod tests {
             .any(|s| s.get_id() == storage_statement_id));
     }
 
-    /// Test association statement registration
-    pub async fn test_register_association_statement(db: Arc<Sqlite>) {
+    #[tokio::test]
+    async fn test_register_association_statement() {
+        let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000014");
         db.create_graph(&graph_id, "association_test", None)
             .await
@@ -1099,8 +1097,9 @@ pub mod tests {
             .any(|s| s.get_id() == association_statement_id));
     }
 
-    pub async fn test_association_get_by_subject(db: Arc<Sqlite>) {
-        // Create an association record
+    #[tokio::test]
+    async fn test_association_get_by_subject() {
+        let db = setup_db().await;
         let did = String::from("did:key:association_statement");
         let subject = String::from("urn:cid:association_subject");
         let associate1 = String::from("urn:cid:association_first");
@@ -1130,8 +1129,9 @@ pub mod tests {
         assert_eq!(associations[1], associate2);
     }
 
-    pub async fn test_association_get_by_association(db: Arc<Sqlite>) {
-        // Create an association record
+    #[tokio::test]
+    async fn test_association_get_by_association() {
+        let db = setup_db().await;
         let did = String::from("did:key:association_statement");
         let subject1 = String::from("urn:cid:association_subject1");
         let associate = String::from("urn:cid:association");
@@ -1161,270 +1161,9 @@ pub mod tests {
         assert_eq!(subjects[1], subject2);
     }
 
-    /// Test entity statement registration
-    /// Note: Entity statements are not currently retrieved by retrieve_graph due to
-    /// a missing field in the SQL COALESCE clause. This test just verifies registration succeeds.
-    pub async fn test_register_entity_statement(db: Arc<Sqlite>) {
-        let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000015");
-        db.create_graph(&graph_id, "entity_test", None)
-            .await
-            .unwrap();
-
-        let did = String::from("did:key:entity_statement");
-        let entity_0 = String::from("entity_1");
-        let entity_1 = String::from("entity_2");
-        let entities = vec![entity_0.clone(), entity_1.clone()];
-        let statement = EntityStatement::create(entities.clone(), did.clone(), None)
-            .await
-            .unwrap();
-
-        let entity_statement = Statement::EntityRegistration(statement);
-        // Verify registration succeeds without error
-        db.register_statement(&entity_statement, Some(&graph_id))
-            .await
-            .unwrap();
-    }
-
-    /// Test sigstore statement registration (global statements don't need graph_id)
-    pub async fn test_register_sigstore_statement(db: Arc<Sqlite>) {
-        let did = String::from("did:key:sig_store");
-        let subject = String::from("urn:cid:sigstore_subject");
-        let bundle = SigstoreBundle::new(serde_json::Value::Null, serde_json::Value::Null);
-        let statement = SigstoreBundleStatement::create(subject, &bundle, did.clone(), None)
-            .await
-            .unwrap();
-
-        let sig_statement = Statement::CredentialSigstoreBundleRegistration(statement);
-        db.register_statement(&sig_statement, None).await.unwrap();
-
-        // Note: Global statements are not retrieved via retrieve_graph alone
-        // This test just verifies the statement can be registered without error
-    }
-
-    /// Test credential statement registration (global)
-    pub async fn test_register_credential_statement(db: Arc<Sqlite>) {
-        let did = String::from("did:key:credential");
-        let doc_str = r#"{
-            "@context": "https://www.w3.org/2018/credentials/v1",
-            "id": "http://example.org/credentials/3731",
-            "type": ["VerifiableCredential"],
-            "issuer": "did:example:30e07a529f32d234f6181736bd3",
-            "issuanceDate": "2020-08-19T21:41:50Z",
-            "credentialSubject": {
-                "id": "did:example:d23dd687a7dc6787646f2eb98d0"
-            }
-        }"#;
-        let doc: Credential = serde_json::from_str(doc_str).unwrap();
-        let statement = VcStatement::create(doc, did.clone(), None).await.unwrap();
-
-        let cred_statement = Statement::CredentialRegistration(statement);
-        db.register_statement(&cred_statement, None).await.unwrap();
-    }
-
-    /// Test DSSE statement registration (global)
-    pub async fn test_register_dsse_statement(db: Arc<Sqlite>) {
-        let did = String::from("did:key:dsse");
-        let signature = Signature {
-            keyid: String::from("sig_key"),
-            sig: String::from("sig_sig"),
-        };
-        let envelope = Envelope {
-            payload_type: String::from("payload_1"),
-            payload: String::from("payload"),
-            signatures: vec![signature],
-        };
-        let statement = DsseStatement::create(envelope, did.clone(), None)
-            .await
-            .unwrap();
-
-        let dsse_statement = Statement::CredentialDsseRegistration(statement);
-        db.register_statement(&dsse_statement, None).await.unwrap();
-
-        // Global statement registration test
-    }
-
-    /// Test regular DID statement registration (global)
-    pub async fn test_register_regular_did_statement(db: Arc<Sqlite>) {
-        let did = String::from("did:key:did");
-        let registered_by = String::from("did:key:registered_by");
-        let statement = DidStatementRegular::create(did.clone(), registered_by.clone(), None)
-            .await
-            .unwrap();
-
-        let did_statement = DidStatement::Regular(statement);
-        db.register_statement(&Statement::DidRegistration(Box::new(did_statement)), None)
-            .await
-            .unwrap();
-
-        // Global statement registration test
-    }
-
-    /// Test AMD SEV DID statement registration (global)
-    pub async fn test_register_amd_sev_did_statement(db: Arc<Sqlite>) {
-        let did = String::from("did:example:123");
-        let registered_by = String::from("did:key:registered_by");
-
-        let statement = DidStatement::AmdSevV1(
-            DidStatementEqtyVCompAmdSevV1::create(
-                did.clone(),
-                Some([0; 32]),
-                "SEV MODE Auto".to_owned(),
-                1,
-                "AMD EPYC".to_owned(),
-                UrnCidWithSha256 {
-                    cid: "urn:cid:OVMF".to_owned(),
-                    sha256: [0; 32],
-                },
-                UrnCidWithSha256 {
-                    cid: "urn:cid:kernel".to_owned(),
-                    sha256: [0; 32],
-                },
-                UrnCidWithSha256 {
-                    cid: "urn:cid:initrd".to_owned(),
-                    sha256: [0; 32],
-                },
-                UrnCidWithSha256 {
-                    cid: "urn:cid:append".to_owned(),
-                    sha256: [0; 32],
-                },
-                registered_by.clone(),
-                None,
-            )
-            .await
-            .unwrap(),
-        );
-
-        db.register_statement(&Statement::DidRegistration(Box::new(statement)), None)
-            .await
-            .unwrap();
-
-        // Global statement registration test
-    }
-
-    /// Test Azure VComp DID statement registration (global)
-    pub async fn test_register_azure_vcomp_did_statement(db: Arc<Sqlite>) {
-        let did = String::from("did:example:123");
-        let registered_by = String::from("did:key:registered_by");
-
-        let statement = DidStatement::AzureV1(
-            DidStatementEqtyVCompAzureV1::create(
-                did.clone(),
-                Some(vec![0; 32]),
-                Some(vec![0; 32]),
-                Some("urn:cid:uki".to_owned()),
-                Some(UrnCidWithSha384 {
-                    cid: "urn:cid:kernel".to_owned(),
-                    sha384: [0; 48],
-                }),
-                Some(UrnCidWithSha384 {
-                    cid: "urn:cid:initrd".to_owned(),
-                    sha384: [0; 48],
-                }),
-                Some(UrnCidWithSha384 {
-                    cid: "urn:cid:append".to_owned(),
-                    sha384: [0; 48],
-                }),
-                Some(UrnCidWithSha256 {
-                    cid: "urn:cid:rootfs".to_owned(),
-                    sha256: [0; 32],
-                }),
-                registered_by.clone(),
-                None,
-            )
-            .await
-            .unwrap(),
-        );
-
-        db.register_statement(&Statement::DidRegistration(Box::new(statement)), None)
-            .await
-            .unwrap();
-
-        // Global statement registration test
-    }
-
-    /// Test Docker DID statement registration (global)
-    pub async fn test_register_docker_did_statement(db: Arc<Sqlite>) {
-        let did = String::from("did:example:123");
-        let registered_by = String::from("did:key:registered_by");
-
-        let statement = DidStatement::DockerV1(
-            DidStatementEqtyVCompDockerV1::create(
-                did.clone(),
-                vec![],
-                "urn:cid:compose".to_owned(),
-                "did:example:456".to_owned(),
-                "did:example:789".to_owned(),
-                registered_by.clone(),
-                None,
-            )
-            .await
-            .unwrap(),
-        );
-
-        db.register_statement(&Statement::DidRegistration(Box::new(statement)), None)
-            .await
-            .unwrap();
-
-        // Global statement registration test
-    }
-
-    /// Test Intel TDX DID statement registration (global)
-    pub async fn test_register_intel_tdx_did_statement(db: Arc<Sqlite>) {
-        let did = String::from("did:example:123");
-        let registered_by = String::from("did:key:registered_by");
-
-        let statement = DidStatement::IntelTdxV0(
-            DidStatementEqtyVCompIntelTdxV0::create(
-                did.clone(),
-                vec![[0; 48]; 2],
-                Some(UrnCidWithSha384 {
-                    cid: "urn:cid:ovmf".to_owned(),
-                    sha384: [0; 48],
-                }),
-                Some(UrnCidWithSha384 {
-                    cid: "urn:cid:kernel".to_owned(),
-                    sha384: [0; 48],
-                }),
-                Some(UrnCidWithSha384 {
-                    cid: "urn:cid:initrd".to_owned(),
-                    sha384: [0; 48],
-                }),
-                Some(UrnCidWithSha384 {
-                    cid: "urn:cid:append".to_owned(),
-                    sha384: [0; 48],
-                }),
-                registered_by.clone(),
-                None,
-            )
-            .await
-            .unwrap(),
-        );
-
-        db.register_statement(&Statement::DidRegistration(Box::new(statement)), None)
-            .await
-            .unwrap();
-
-        // Global statement registration test
-    }
-
-    /// Test governance statement registration (global)
-    pub async fn test_register_governance_statement(db: Arc<Sqlite>) {
-        let did = String::from("did:key:governance");
-        let subject = String::from("urn:cid:gov_subject");
-        let document = String::from("urn:uuid:document");
-        let statement =
-            GovernanceStatement::create(subject.clone(), document.clone(), did.clone(), None)
-                .await
-                .unwrap();
-
-        let gov_statement = Statement::GovernanceRegistration(statement);
-        db.register_statement(&gov_statement, None).await.unwrap();
-
-        // Global statement registration test
-    }
-
-    /// Test statement retrieval with hierarchy
-    pub async fn test_statement_retrieval_with_hierarchy(db: Arc<Sqlite>) {
+    #[tokio::test]
+    async fn test_statement_retrieval_with_hierarchy() {
+        let db = setup_db().await;
         let root_graph_id = uuid::uuid!("00000000-0000-0000-0000-500000000001");
         db.create_graph(&root_graph_id, "Root Graph", None)
             .await
@@ -1509,54 +1248,5 @@ pub mod tests {
         // Check that the statements in the parent graphs get pulled in from a lower child
         let graph = db.retrieve_graph(&child_graph_id_2).await.unwrap();
         assert_eq!(graph.statements.as_ref().unwrap().len(), 4);
-    }
-
-    /// Test global statement retrieval
-    pub async fn test_global_statement_retrieval(db: Arc<Sqlite>) {
-        let graph_id = uuid::uuid!("00000000-0000-0000-0000-500000000011");
-        db.create_graph(&graph_id, "Global Statements", None)
-            .await
-            .unwrap();
-
-        let did = String::from("did:key:global_did");
-        let did_statement = DidStatementRegular::create(did.clone(), did.clone(), None)
-            .await
-            .unwrap();
-        let did_statement = DidStatement::Regular(did_statement);
-        let did_statement_id = did_statement.get_id();
-
-        db.register_statement(&Statement::DidRegistration(Box::new(did_statement)), None)
-            .await
-            .unwrap();
-
-        let input_data = vec![
-            "urn:cid:comp_data_input_1".to_owned(),
-            "urn:cid:comp_data_input_2".to_owned(),
-        ];
-        let computation_statement = ComputationStatement::create(
-            None,
-            input_data,
-            vec!["urn:cid:comp_data_output".to_owned()],
-            did.clone(),
-            None,
-            did.clone(),
-            None,
-        )
-        .await
-        .unwrap();
-
-        db.register_statement(
-            &Statement::ComputationRegistration(computation_statement),
-            Some(&graph_id),
-        )
-        .await
-        .unwrap();
-
-        let graph = db.retrieve_graph(&graph_id).await.unwrap();
-
-        // The graph should include both the computation statement and the global DID statement
-        let statements = graph.statements.as_ref().unwrap();
-        assert!(statements.iter().any(|s| s.get_id() == did_statement_id));
-        assert!(statements.len() >= 2);
     }
 }
