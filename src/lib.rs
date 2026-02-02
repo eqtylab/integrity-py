@@ -21,17 +21,9 @@ pub mod statements;
 pub mod stream;
 
 use core::fmt::Display;
-use std::collections::HashMap;
 
-use anyhow::Result;
 use pyo3::prelude::*;
-use pyo3::{
-    exceptions::PyRuntimeError,
-    pyfunction, pymodule,
-    types::{PyDict, PyModule},
-    wrap_pyfunction, wrap_pymodule, PyErr, PyResult,
-};
-use serde_json::{json, Value};
+use pyo3::{exceptions::PyRuntimeError, wrap_pyfunction, wrap_pymodule, PyErr, PyResult};
 
 /// SDK rust module
 ///
@@ -64,32 +56,4 @@ fn enable_rust_logging(is_unit_test: Option<bool>) {
 // Helper fn to reduce boilerplate error handling
 fn to_py_err<E: Display>(error: E) -> PyErr {
     PyRuntimeError::new_err(format!("{error}"))
-}
-
-/// Converts a Python dictionary to a Rust HashMap of JSON values.
-///
-/// # Arguments
-/// * `attributes` - Python dictionary containing key-value pairs to convert
-///
-/// # Returns
-/// * `Result<HashMap<String, Value>>` - HashMap with string keys and JSON values,
-///   or an error if conversion fails
-pub fn convert_attributes(attributes: &PyDict) -> Result<HashMap<String, Value>> {
-    let mut attr_map: HashMap<String, Value> = HashMap::new();
-    for (key, value) in attributes {
-        let key_str: String = key.extract()?;
-        // Handle different Python value types
-        let converted_value = if let Ok(i) = value.extract::<i64>() {
-            json!(i)
-        } else if let Ok(u) = value.extract::<u64>() {
-            json!(u)
-        } else if let Ok(f) = value.extract::<f64>() {
-            json!(f)
-        } else {
-            json!(value.to_string())
-        };
-
-        attr_map.insert(key_str, converted_value);
-    }
-    Ok(attr_map)
 }

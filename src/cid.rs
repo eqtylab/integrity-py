@@ -7,6 +7,7 @@ use integrity::cid::{
 };
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
+use pyo3::Bound;
 
 use crate::{
     context::{self, ctx},
@@ -94,8 +95,8 @@ impl CidResult {
     }
 
     #[getter]
-    fn blob<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
-        Ok(PyBytes::new_bound(py, &self.blob).into_gil_ref())
+    fn blob<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyBytes>> {
+        Ok(PyBytes::new(py, &self.blob))
     }
 }
 

@@ -1,9 +1,6 @@
 use crate::indexer::Graph;
-use pyo3::{
-    pyfunction,
-    types::{PyDict, PyList},
-    PyObject, PyResult, Python, ToPyObject,
-};
+use pyo3::types::{PyDict, PyList};
+use pyo3::{prelude::*, IntoPyObjectExt};
 
 mod association;
 mod computation;
@@ -17,8 +14,6 @@ mod model_signing;
 pub mod storage;
 mod vc;
 
-use pyo3::prelude::*;
-use pyo3::{pymodule, wrap_pyfunction};
 use uuid::Uuid;
 
 use crate::{
@@ -67,7 +62,7 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
 ///     List of graph objects with their statements
 #[pyfunction]
 #[pyo3(signature = (graph_ids), text_signature = "(graph_ids: list[str]) -> list[dict]")]
-pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<PyObject> {
+pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<Py<PyList>> {
     let sql_client = ctx().sql_lite;
 
     log::info!("Retrieving graphs {graph_ids:?}");
@@ -83,11 +78,11 @@ pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<PyObject> 
     }
 
     // Convert graphs to Python objects
-    let py_graphs: Vec<PyObject> = graphs
+    let py_graphs: Vec<Py<PyAny>> = graphs
         .into_iter()
         .map(|graph| {
             // Convert each graph to a Python dict
-            let py_dict = PyDict::new_bound(py);
+            let py_dict = PyDict::new(py);
 
             // Set graph metadata
             py_dict.set_item("id", graph.id.to_string())?;
@@ -95,7 +90,7 @@ pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<PyObject> 
             py_dict.set_item("parent", graph.parent.map(|p| p.to_string()))?;
 
             // Convert statements to Python objects
-            let py_statements: Vec<PyObject> = graph
+            let py_statements: Vec<Py<PyAny>> = graph
                 .statements
                 .unwrap_or_default()
                 .into_iter()
@@ -105,41 +100,41 @@ pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<PyObject> 
                 })
                 .collect::<PyResult<Vec<_>>>()?;
 
-            py_dict.set_item("statements", PyList::new_bound(py, py_statements))?;
+            py_dict.set_item("statements", PyList::new(py, py_statements)?)?;
 
             Ok(py_dict.into())
         })
         .collect::<PyResult<Vec<_>>>()?;
 
-    Ok(PyList::new_bound(py, py_graphs).into())
+    Ok(PyList::new(py, py_graphs)?.unbind())
 }
 
-fn json_value_to_python(py: Python, value: &serde_json::Value) -> PyResult<PyObject> {
+fn json_value_to_python(py: Python, value: &serde_json::Value) -> PyResult<Py<PyAny>> {
     use serde_json::Value;
     match value {
         Value::Null => Ok(py.None()),
-        Value::Bool(b) => Ok(b.to_object(py)),
+        Value::Bool(b) => b.into_py_any(py),
         Value::Number(n) => {
             if let Some(i) = n.as_i64() {
-                Ok(i.to_object(py))
+                i.into_py_any(py)
             } else if let Some(f) = n.as_f64() {
-                Ok(f.to_object(py))
+                f.into_py_any(py)
             } else {
-                Ok(n.to_string().to_object(py))
+                n.to_string().into_py_any(py)
             }
         }
-        Value::String(s) => Ok(s.to_object(py)),
+        Value::String(s) => s.into_py_any(py),
         Value::Array(arr) => {
-            let py_list: PyResult<Vec<PyObject>> =
+            let py_list: PyResult<Vec<Py<PyAny>>> =
                 arr.iter().map(|v| json_value_to_python(py, v)).collect();
-            Ok(PyList::new_bound(py, py_list?).to_object(py))
+            PyList::new(py, py_list?)?.into_py_any(py)
         }
         Value::Object(obj) => {
-            let py_dict = PyDict::new_bound(py);
+            let py_dict = PyDict::new(py);
             for (k, v) in obj {
                 py_dict.set_item(k, json_value_to_python(py, v)?)?;
             }
-            Ok(py_dict.to_object(py))
+            py_dict.into_py_any(py)
         }
     }
 }

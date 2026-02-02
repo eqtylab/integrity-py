@@ -9,8 +9,6 @@ use integrity::{
 };
 use once_cell::sync::Lazy;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyModule};
-use pyo3::Bound;
 use pyo3_async_runtimes::tokio::future_into_py;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -20,20 +18,10 @@ use crate::{context::ctx, to_py_err};
 /// Result of finalizing a stream computation.
 ///
 /// Contains the computation statement CID and the streamed output data.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, IntoPyObject)]
 pub struct StreamCIDs {
     compute_id: String,
     stream: Vec<u8>,
-}
-
-impl ToPyObject for StreamCIDs {
-    fn to_object(&self, py: Python) -> PyObject {
-        let dict = pyo3::types::PyDict::new_bound(py);
-        dict.set_item("compute_id", &self.compute_id).unwrap();
-        dict.set_item("stream", PyBytes::new_bound(py, &self.stream))
-            .unwrap();
-        dict.into()
-    }
 }
 
 /// `stream` submodule.
@@ -104,9 +92,7 @@ fn finalize(
             .await
             .map_err(to_py_err)?;
 
-        let cids = StreamCIDs { compute_id, stream };
-
-        Python::with_gil(|py| Ok(cids.to_object(py)))
+        Ok(StreamCIDs { compute_id, stream })
     };
 
     future_into_py(py, fut)

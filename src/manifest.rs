@@ -12,6 +12,7 @@ use integrity::{
 };
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList};
+use pyo3::Bound;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -49,7 +50,7 @@ pub fn manifest(m: &Bound<'_, PyModule>) -> PyResult<()> {
 #[pyfunction]
 pub fn generate(
     py: Python,
-    statements: Vec<PyObject>,
+    statements: Vec<Py<PyAny>>,
     blobs_dir: PathBuf,
     include_context: Option<bool>,
 ) -> PyResult<String> {
@@ -88,16 +89,16 @@ pub fn import_manifest<'py>(
     py: Python<'py>,
     manifest: String,
     graph_id: Option<String>,
-) -> PyResult<HashMap<String, &'py PyBytes>> {
+) -> PyResult<HashMap<String, Bound<'py, PyBytes>>> {
     let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
     let blobs = context::get_runtime()
         .block_on(rust_import(manifest, &graph_id))
         .map_err(to_py_err)?;
 
-    // Convert Vec<u8> to &PyBytes
-    let py_blobs: HashMap<String, &'py PyBytes> = blobs
+    // Convert Vec<u8> to PyBytes
+    let py_blobs: HashMap<String, Bound<'py, PyBytes>> = blobs
         .into_iter()
-        .map(|(k, v)| (k, PyBytes::new_bound(py, &v).into_gil_ref()))
+        .map(|(k, v)| (k, PyBytes::new(py, &v)))
         .collect();
 
     Ok(py_blobs)
@@ -117,7 +118,7 @@ pub fn merge(_py: Python, a: String, b: String) -> PyResult<String> {
     rust_merge(a, b).map_err(to_py_err)
 }
 
-fn python_to_json_value(py: Python, obj: &PyObject) -> PyResult<Value> {
+fn python_to_json_value(py: Python, obj: &Py<PyAny>) -> PyResult<Value> {
     if obj.is_none(py) {
         Ok(Value::Null)
     } else if let Ok(b) = obj.extract::<bool>(py) {
@@ -130,13 +131,13 @@ fn python_to_json_value(py: Python, obj: &PyObject) -> PyResult<Value> {
         ))
     } else if let Ok(s) = obj.extract::<String>(py) {
         Ok(Value::String(s))
-    } else if let Ok(py_list) = obj.downcast_bound::<PyList>(py) {
+    } else if let Ok(py_list) = obj.bind(py).downcast::<PyList>() {
         let mut vec = Vec::new();
         for item in py_list {
             vec.push(python_to_json_value(py, &item.into())?);
         }
         Ok(Value::Array(vec))
-    } else if let Ok(py_dict) = obj.downcast_bound::<PyDict>(py) {
+    } else if let Ok(py_dict) = obj.bind(py).downcast::<PyDict>() {
         let mut map = serde_json::Map::new();
         for (key, value) in py_dict {
             let key_str = key.extract::<String>()?;

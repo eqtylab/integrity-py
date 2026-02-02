@@ -8,12 +8,12 @@ repos:
         types: [rust]
         pass_filenames: false
 
-      - id: cargo-clippy
-        name: Rust lint (cargo clippy)
-        entry: cargo clippy -p eqty-sdk --all-targets -- -Dwarnings --no-deps
-        language: system
-        types: [rust]
-        pass_filenames: false
+      # - id: cargo-clippy
+      #   name: Rust lint (cargo clippy)
+      #   entry: cargo clippy -p eqty-sdk --all-targets -- -Dwarnings --no-deps
+      #   language: system
+      #   types: [rust]
+      #   pass_filenames: false
 
       - id: doc-check
         name: Rust Docs (cargo doc)

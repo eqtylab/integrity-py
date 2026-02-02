@@ -8,6 +8,7 @@ use integrity::signer::{
 };
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
+use pyo3::Bound;
 
 use serde::Serialize;
 
@@ -43,14 +44,6 @@ pub struct PySigner {
     pub did_key: String,
 }
 
-impl ToPyObject for PySigner {
-    fn to_object(&self, py: Python) -> PyObject {
-        let dict = pyo3::types::PyDict::new_bound(py);
-        dict.set_item("name", &self.name).unwrap();
-        dict.set_item("did_key", &self.did_key).unwrap();
-        dict.into()
-    }
-}
 #[pymethods]
 impl PySigner {
     /// Returns the human-readable name of the signer.
@@ -298,7 +291,7 @@ fn get_signer_statements(_py: Python, name: String) -> PyResult<Vec<String>> {
 /// # Arguments
 /// * `name` - Name of the signer to retrieve blobs from
 #[pyfunction]
-fn get_signer_blobs(py: Python<'_>, name: String) -> PyResult<HashMap<String, &PyBytes>> {
+fn get_signer_blobs(py: Python<'_>, name: String) -> PyResult<HashMap<String, Bound<'_, PyBytes>>> {
     let signer_file = get_signer_folder().join(name);
     if !signer_file.exists() {
         return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
@@ -313,7 +306,7 @@ fn get_signer_blobs(py: Python<'_>, name: String) -> PyResult<HashMap<String, &P
             if let Some(blobs) = vcomp_signer.did_blobs {
                 let blobs = blobs
                     .into_iter()
-                    .map(|(k, v)| (k, PyBytes::new_bound(py, &v).into_gil_ref()))
+                    .map(|(k, v)| (k, PyBytes::new(py, &v)))
                     .collect();
                 Ok(blobs)
             } else {
