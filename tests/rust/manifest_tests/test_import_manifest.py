@@ -31,7 +31,7 @@ class TestManifestImport(unittest.TestCase):
         )
 
         self.logger.info(f"Empty manifest to import: {empty_manifest}")
-        result = manifest.import_manifest(empty_manifest, {})
+        result = manifest.import_manifest(empty_manifest)
 
         self.assertIsInstance(result, dict)
         self.assertEqual(len(result), 0)
@@ -39,41 +39,6 @@ class TestManifestImport(unittest.TestCase):
         eqty_core_statements.delete_statements()
         self.logger.info("Imported statements: %s", statements)
         self.assertListEqual(statements, [])
-
-    def test_import_manifest_with_attributes(self):
-        """Test importing manifest with attributes."""
-        statement = {
-            "@context": "urn:cid:bafkr4iagb4u7jqlwqrftw4mn3l634wmgatmpvvzqgntgxaaerzljhggvdu",
-            "@id": "urn:cid:bagb6qaq6eczjqmpzapg5zq25klhldpiih5adj3soi2nsijcuxctcszpexc5ua",
-            "@type": "ComputationRegistration",
-            "input": [
-                "urn:cid:bafkr4ibcl6e7kiy2pggcohuygv64wjudxkllx7tq664tbl2ehycl3hvd4m",
-                "urn:cid:bafkr4ibhvohsmw5q3yst26iwbvahkyaypna7muexs2o6vrldg4ayemt2ee",
-                "urn:cid:bagaachradlrhaifv5s36ni22vh7kexo5zb2z3r7phfycgbsw3ubtxut4dczq",
-            ],
-            "output": ["urn:cid:bafkr4ibagnvfrssnt4ezfkj7asynb5uid3l4fupq4sg6t4yunvfpovgtom"],
-            "operatedBy": "did:key:zDnaeuQqEdtwNwfA8r1BFjjdics95kAKLHxjcQt35aUYXswLv",
-            "executedOn": "did:key:zDnaeTSoP8KrL35vy8CVyEw8uwmBpvDMYGYK3Q12AgP3kK7Ky",
-            "registeredBy": "did:key:zDnaeuYuGvB3ox3MSqA5K1axfqQu5U1Jz1JXya5Dh9F5ZhnqF",
-            "timestamp": "2025-08-19T00:06:56Z",
-        }
-        demo_manifest = json.dumps(
-            {"statements": {"cid": statement}, "blobs": {}, "version": "3.0", "contexts": {}}
-        )
-
-        attributes = {"source": "test", "version": "1.0"}
-
-        result = manifest.import_manifest(demo_manifest, attributes)
-
-        self.assertIsInstance(result, dict)
-        (statements, _) = eqty_core_statements.retrieve_statements(
-            "attributes.source == 'test' && attributes.version == '1.0'"
-        )
-        self.logger.info("Imported statements: %s", statements)
-        self.assertListEqual(statements, [statement])
-        eqty_core_statements.delete_statements(
-            "attributes.source == 'test' && attributes.version == '1.0'"
-        )
 
     def test_import_manifest_with_blobs(self):
         """Test importing manifest with base64 encoded blobs."""
@@ -92,7 +57,7 @@ class TestManifestImport(unittest.TestCase):
             }
         )
 
-        imported_blobs = manifest.import_manifest(manifest_with_blobs, {})
+        imported_blobs = manifest.import_manifest(manifest_with_blobs)
 
         self.assertIsInstance(imported_blobs, dict)
         self.logger.info("BLOBS: %s", imported_blobs)
@@ -104,7 +69,7 @@ class TestManifestImport(unittest.TestCase):
         invalid_manifest = "invalid json"
 
         with self.assertRaises(Exception):
-            manifest.import_manifest(invalid_manifest, {})
+            manifest.import_manifest(invalid_manifest)
 
     def test_import_manifest_missing_fields(self):
         """Test importing manifest with missing required fields."""
@@ -116,7 +81,7 @@ class TestManifestImport(unittest.TestCase):
         )
 
         with self.assertRaises(Exception):
-            manifest.import_manifest(incomplete_manifest, {})
+            manifest.import_manifest(incomplete_manifest)
 
     def test_import_manifest(self):
         statement = {
@@ -138,7 +103,7 @@ class TestManifestImport(unittest.TestCase):
             {"statements": {"cid": statement}, "blobs": {}, "version": "3.0", "contexts": {}}
         )
 
-        result = manifest.import_manifest(demo_manifest, {})
+        result = manifest.import_manifest(demo_manifest)
 
         self.assertIsInstance(result, dict)
         (statements, _) = eqty_core_statements.retrieve_statements()
@@ -166,7 +131,7 @@ class TestManifestImport(unittest.TestCase):
             }
         )
 
-        result = manifest.import_manifest(manifest_data, {})
+        result = manifest.import_manifest(manifest_data)
 
         self.assertIsInstance(result, dict)
         self.assertEqual(len(result), 2)

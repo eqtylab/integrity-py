@@ -85,7 +85,7 @@ pub fn generate(
     Ok(manifest_json)
 }
 
-/// Imports a manifest and eturns the decoded blobs that must be saved
+/// Imports a manifest and returns the decoded blobs that must be saved
 #[pyfunction]
 pub fn import_manifest<'py>(
     py: Python<'py>,

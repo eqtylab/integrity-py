@@ -60,8 +60,10 @@ jobs:
       - name: build
         run: nix develop . -c just build
 
-      - name: test-py
-        run: nix develop . -c just test-py
-
       - name: test-rs
         run: nix develop . -c just test-rs
+
+      - name: test-py
+        run: |
+          nix develop . -c just install-package
+          nix develop . -c just test-py

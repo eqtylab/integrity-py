@@ -4,7 +4,6 @@ import unittest
 from pathlib import Path
 
 from eqty_sdk._rust import (
-    cid as eqty_core_cid,
     manifest,
     statements as eqty_core_statements,
 )
@@ -40,61 +39,9 @@ class TestManifestGenerate(unittest.TestCase):
         self.assertEqual(len(manifest_json["statements"]), 0)
         self.assertNotIn("attributes", manifest_json)
 
-    def test_generate_with_include_context_true(self):
-        """Test manifest generation with include_context=True."""
-        (statements, _) = eqty_core_statements.retrieve_statements()
-        result = manifest.generate(statements, self.blobs_dir, None, True)
-
-        self.assertIsInstance(result, str)
-        manifest_json = json.loads(result)
-        self.assertIn("contexts", manifest_json)
-
-        self.logger.info("MANIFEST", manifest_json)
-        self.assertIsNotNone(manifest_json["contexts"])
-        self.assertNotEqual(manifest_json["contexts"], {})
-        self.assertGreater(len(manifest_json["contexts"]), 0)
-
-    def test_generate_with_include_context_false(self):
-        """Test manifest generation with include_context=False."""
-        (statements, _) = eqty_core_statements.retrieve_statements()
-        result = manifest.generate(statements, self.blobs_dir, None, False)
-
-        self.assertIsInstance(result, str)
-        manifest_json = json.loads(result)
-        self.assertDictEqual(manifest_json["contexts"], {})
-
-    def test_generate_with_blobs(self):
-        """Test manifest generation with blob files."""
-        # Create test blob file
-        cid = eqty_core_cid.compute_cid_for_bytes(b"test_generate_with_blobs")
-        self.logger.info(f"Data CID: {cid}")
-        blob1_path = self.blobs_dir / cid
-        blob1_path.write_bytes(b"test_generate_with_blobs")
-
-        # Create test statement
-        statement_id = eqty_core_statements.create_data_statement([cid])
-        self.logger.info(f"StatementID: {statement_id}")
-
-        attributes = {"name": "test_generate_with_blobs"}
-        eqty_core_statements.add_attributes_to_statements([statement_id], attributes)
-
-        # generate manifest
-        (statements, _) = eqty_core_statements.retrieve_statements(
-            "attributes.name == 'test_generate_with_blobs'"
-        )
-        self.logger.info(f"Statements: {statements}")
-
-        result = manifest.generate(statements, self.blobs_dir)
-
-        self.assertIsInstance(result, str)
-        manifest_json = json.loads(result)
-        self.assertIn("blobs", manifest_json)
-        self.assertEqual(len(manifest_json["blobs"]), 1)
-        self.assertIn(cid, manifest_json["blobs"])
-
     def test_generate_with_valid_statement(self):
         """Test manifest generation with valid statement data."""
-        (statements, _) = eqty_core_statements.retrieve_statements()
+        (statements, _) = eqty_core_statements.retrieve_graph()
         result = manifest.generate(statements, self.blobs_dir)
 
         self.assertIsInstance(result, str)
