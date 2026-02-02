@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[pyfunction]
-#[pyo3(signature = (inputs, outputs, *, computation=None, operated_by=None, executed_on=None, timestamp=None))]
+#[pyo3(signature = (inputs, outputs, *, computation=None, operated_by=None, executed_on=None, timestamp=None, graph_id=None))]
 pub fn create_computation_statement(
     _py: Python,
     inputs: Vec<String>,
@@ -19,7 +19,9 @@ pub fn create_computation_statement(
     operated_by: Option<String>,
     executed_on: Option<String>,
     timestamp: Option<String>,
+    graph_id: Option<String>,
 ) -> PyResult<String> {
+    let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
     let signer = ctx()
         .active_signer
         .ok_or_else(|| to_py_err("No active signer available"))?;
@@ -62,7 +64,7 @@ pub fn create_computation_statement(
     );
 
     context::get_runtime()
-        .block_on(ctx().register_statement_locally(statement.clone(), None))
+        .block_on(ctx().sql_lite.register_statement(&statement, &graph_id))
         .map_err(to_py_err)?;
 
     Ok(statement.get_id())

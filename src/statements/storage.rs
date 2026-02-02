@@ -8,13 +8,16 @@ use crate::{
 
 /// Creates a storage statement.
 #[pyfunction]
+#[pyo3(signature = (data, stored_on, *, operated_by=None, timestamp=None, graph_id=None))]
 pub fn create_storage_statement(
     _py: Python,
     data: String,
     stored_on: String,
     operated_by: Option<String>,
     timestamp: Option<String>,
+    graph_id: Option<String>,
 ) -> PyResult<String> {
+    let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
     let registered_by = ctx().get_active_signer_did_key().map_err(to_py_err)?;
 
     let statement = Statement::StorageRegistration(
@@ -30,7 +33,7 @@ pub fn create_storage_statement(
     );
 
     context::get_runtime()
-        .block_on(ctx().register_statement_locally(statement.clone(), None))
+        .block_on(ctx().sql_lite.register_statement(&statement, &graph_id))
         .map_err(to_py_err)?;
 
     Ok(statement.get_id())

@@ -204,11 +204,7 @@ impl Sqlite {
     /// Graph-specific statements (computation, data, metadata, etc.) are linked to the
     /// provided graph_id. Global statements (credentials, DIDs, governance) are stored
     /// without graph association.
-    pub async fn register_statement(
-        &self,
-        statement: &Statement,
-        graph_id: Option<&Uuid>,
-    ) -> Result<()> {
+    pub async fn register_statement(&self, statement: &Statement, graph_id: &Uuid) -> Result<()> {
         log::trace!("Registering statement");
         match statement {
             Statement::ComputationRegistration(_)
@@ -456,26 +452,8 @@ impl Sqlite {
         Ok(rows)
     }
 
-    /// Helper to handle optionally associating a statement with a graph_id
-    async fn opt_associate_statement_to_graph(
-        &self,
-        statement_id: &str,
-        graph_id: Option<&Uuid>,
-    ) -> Result<()> {
-        if let Some(graph_id) = graph_id {
-            log::debug!("Registering '{statement_id}' under graph {graph_id:?}");
-            self.associate_statement_to_graph(statement_id, graph_id)
-                .await?;
-        }
-        Ok(())
-    }
-
     /// Used to register statements associtated with a specific graph_id (aka NON-Global)
-    async fn register_graph_statement(
-        &self,
-        statement: &Statement,
-        graph_id: Option<&Uuid>,
-    ) -> Result<()> {
+    async fn register_graph_statement(&self, statement: &Statement, graph_id: &Uuid) -> Result<()> {
         match statement {
             Statement::ComputationRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
@@ -494,7 +472,7 @@ impl Sqlite {
                 .execute(&self.pool)
                 .await?;
 
-                self.opt_associate_statement_to_graph(&id, graph_id).await
+                self.associate_statement_to_graph(&id, graph_id).await
             }
             Statement::DataRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
@@ -513,7 +491,7 @@ impl Sqlite {
                 .execute(&self.pool)
                 .await?;
 
-                self.opt_associate_statement_to_graph(&id, graph_id).await?;
+                self.associate_statement_to_graph(&id, graph_id).await?;
 
                 for data_item in s.data.to_vec_string() {
                     sqlx::query(
@@ -547,7 +525,7 @@ impl Sqlite {
                 .execute(&self.pool)
                 .await?;
 
-                self.opt_associate_statement_to_graph(&id, graph_id).await
+                self.associate_statement_to_graph(&id, graph_id).await
             }
             Statement::StorageRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
@@ -567,7 +545,7 @@ impl Sqlite {
                 .execute(&self.pool)
                 .await?;
 
-                self.opt_associate_statement_to_graph(&id, graph_id).await
+                self.associate_statement_to_graph(&id, graph_id).await
             }
             Statement::EntityRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
@@ -586,7 +564,7 @@ impl Sqlite {
                 .execute(&self.pool)
                 .await?;
 
-                self.opt_associate_statement_to_graph(&id, graph_id).await?;
+                self.associate_statement_to_graph(&id, graph_id).await?;
 
                 for entity in s.entity.to_vec_string() {
                     sqlx::query(
@@ -622,7 +600,7 @@ impl Sqlite {
                 .execute(&self.pool)
                 .await?;
 
-                self.opt_associate_statement_to_graph(&id, graph_id).await
+                self.associate_statement_to_graph(&id, graph_id).await
             }
             Statement::CredentialSigstoreBundleRegistration(_)
             | Statement::DidRegistration(_)

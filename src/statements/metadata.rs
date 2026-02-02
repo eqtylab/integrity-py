@@ -10,12 +10,15 @@ use crate::{
 /// Creates a metadata statement and returns the ID of the statement and the CID of the metadata
 /// Json
 #[pyfunction]
+#[pyo3(signature = (subject, metadata, *, timestamp=None, graph_id=None))]
 pub fn create_metadata_statement(
     _py: Python,
     subject: String,
     metadata: String,
     timestamp: Option<String>,
+    graph_id: Option<String>,
 ) -> PyResult<(String, String)> {
+    let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
     let metadata_json: Value = serde_json::from_str(&metadata).map_err(to_py_err)?;
 
     let signer = ctx()
@@ -35,7 +38,7 @@ pub fn create_metadata_statement(
     let statement = Statement::MetadataRegistration(metadata_statement);
 
     context::get_runtime()
-        .block_on(ctx().register_statement_locally(statement.clone(), None))
+        .block_on(ctx().sql_lite.register_statement(&statement, &graph_id))
         .map_err(to_py_err)?;
 
     Ok((statement.get_id(), metadata))

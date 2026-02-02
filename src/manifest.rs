@@ -17,6 +17,7 @@ use pyo3::{
     wrap_pyfunction, PyResult, Python,
 };
 use serde_json::Value;
+use uuid::Uuid;
 
 use crate::{
     context::{self, ctx},
@@ -90,9 +91,11 @@ pub fn generate(
 pub fn import_manifest<'py>(
     py: Python<'py>,
     manifest: String,
+    graph_id: Option<String>,
 ) -> PyResult<HashMap<String, &'py PyBytes>> {
+    let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
     let blobs = context::get_runtime()
-        .block_on(rust_import(manifest))
+        .block_on(rust_import(manifest, &graph_id))
         .map_err(to_py_err)?;
 
     let py_blobs = blobs
@@ -150,13 +153,14 @@ fn python_to_json_value(py: Python, obj: &PyObject) -> PyResult<Value> {
     }
 }
 
-async fn rust_import(manifest: String) -> Result<HashMap<String, Vec<u8>>> {
+async fn rust_import(manifest: String, graph_id: &Uuid) -> Result<HashMap<String, Vec<u8>>> {
     let manifest = serde_json::from_str::<Manifest>(&manifest)?;
     log::trace!("Manifest str: \n{manifest:?}");
     log::debug!("{} statements imported", manifest.statements.keys().len());
     for statement in manifest.statements.values() {
         ctx()
-            .register_statement_locally(statement.clone(), None)
+            .sql_lite
+            .register_statement(statement, graph_id)
             .await?
     }
     // Decode base64 values in the blobs HashMap

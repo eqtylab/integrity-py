@@ -7,12 +7,15 @@ use crate::{
 };
 
 #[pyfunction]
-#[pyo3(signature = (data, *, timestamp=None))]
+#[pyo3(signature = (data, *, timestamp=None, graph_id=None))]
 pub fn create_data_statement(
     _py: Python,
     data: Vec<String>,
     timestamp: Option<String>,
+    graph_id: Option<String>,
 ) -> PyResult<String> {
+    let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
+
     let registered_by = ctx().get_active_signer_did_key().map_err(to_py_err)?;
 
     let statement = Statement::DataRegistration(
@@ -22,7 +25,7 @@ pub fn create_data_statement(
     );
 
     context::get_runtime()
-        .block_on(ctx().register_statement_locally(statement.clone(), None))
+        .block_on(ctx().sql_lite.register_statement(&statement, &graph_id))
         .map_err(to_py_err)?;
 
     Ok(statement.get_id())

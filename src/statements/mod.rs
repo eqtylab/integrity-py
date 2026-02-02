@@ -47,52 +47,12 @@ pub fn statements(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(vc::create_vc_statement, m)?)?;
 
     m.add_function(wrap_pyfunction!(storage::create_storage_statement, m)?)?;
-    m.add_function(wrap_pyfunction!(register_statement_locally, m)?)?;
     m.add_function(wrap_pyfunction!(retrieve_graph, m)?)?;
 
     m.add_function(wrap_pyfunction!(
         model_signing::create_model_signing_statement,
         m
     )?)?;
-
-    m.add_function(wrap_pyfunction!(register_statement_to_graph, m)?)?;
-
-    Ok(())
-}
-
-/// Register a statement locally in the database.
-///
-/// Args:
-///     statement: JSON string representation of the statement to register
-#[pyfunction]
-#[pyo3(signature = (statement), text_signature = "(statement: str) -> None")]
-pub fn register_statement_locally(_py: Python, statement: String) -> PyResult<()> {
-    let statement = serde_json::from_str(&statement).map_err(to_py_err)?;
-
-    context::get_runtime()
-        .block_on(ctx().register_statement_locally(statement, None))
-        .map_err(to_py_err)?;
-
-    Ok(())
-}
-
-/// Register a statement to a specific graph.
-///
-/// Args:
-///     statement_id: The statement ID to register
-///     graph_id: The graph ID to register the statement to
-#[pyfunction]
-#[pyo3(signature = (statement_id, graph_id), text_signature = "(statement_id: str, graph_id: str) -> None")]
-pub fn register_statement_to_graph(
-    _py: Python,
-    statement_id: String,
-    graph_id: String,
-) -> PyResult<()> {
-    let graph_id = Uuid::parse_str(&graph_id).map_err(to_py_err)?;
-    let sql_client = ctx().sql_lite;
-    context::get_runtime()
-        .block_on(sql_client.associate_statement_to_graph(&statement_id, &graph_id))
-        .map_err(to_py_err)?;
 
     Ok(())
 }

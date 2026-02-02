@@ -94,13 +94,15 @@ fn finalize(
     py: Python<'_>,
     id: String,
     static_output_cids: Option<Vec<String>>,
+    graph_id: Option<String>,
 ) -> PyResult<&PyAny> {
+    let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
     let id = Uuid::parse_str(&id).map_err(to_py_err)?;
 
     log::debug!("Finalizing stream computation with ID: {id:?}");
 
     let fut = async move {
-        let (compute_id, stream) = finalize_stream(id, static_output_cids)
+        let (compute_id, stream) = finalize_stream(id, static_output_cids, &graph_id)
             .await
             .map_err(to_py_err)?;
 
@@ -192,6 +194,7 @@ async fn update_stream_computation(id: Uuid, new_streamed_output: Vec<u8>) -> Re
 async fn finalize_stream(
     id: Uuid,
     static_output_cids: Option<Vec<String>>,
+    graph_id: &Uuid,
 ) -> Result<(String, Vec<u8>)> {
     let stream_computation = load_stream(id).await?;
 
@@ -203,7 +206,8 @@ async fn finalize_stream(
         output_cids.append(&mut cids);
     }
 
-    let compute_cid = create_statement_from_stream(&stream_computation, output_cids).await?;
+    let compute_cid =
+        create_statement_from_stream(&stream_computation, output_cids, graph_id).await?;
     let stream = stream_computation.streamed_output.unwrap_or_default();
 
     delete_stream(id)?;
@@ -233,6 +237,7 @@ async fn get_stream_cid(stream_computation: &StreamComputation) -> Result<String
 async fn create_statement_from_stream(
     stream_computation: &StreamComputation,
     output_cids: Vec<String>,
+    graph_id: &Uuid,
 ) -> Result<String> {
     let StreamComputation {
         operated_by,
@@ -284,7 +289,8 @@ async fn create_statement_from_stream(
     );
 
     ctx()
-        .register_statement_locally(statement.clone(), None)
+        .sql_lite
+        .register_statement(&statement, graph_id)
         .await?;
 
     Ok(statement.get_id())

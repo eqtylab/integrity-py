@@ -10,7 +10,6 @@ use crate::integrity_service::Configuration as IntegrityServiceConfig;
 use anyhow::{anyhow, Result};
 use integrity::{
     cid::iroh::{CidIgnoreConfig, HashingConfig},
-    lineage::models::statements::{Statement, StatementTrait},
     signer::SignerType,
 };
 use tokio::runtime::Runtime;
@@ -297,25 +296,19 @@ impl Context {
         })
     }
 
-    /// Registers a statement in the local database.
+    /// Resolves the Optional graph id, or the default graph id
     ///
     /// # Arguments
-    /// * `statement` - The statement to register
-    /// * `graph_id` - Graph ID to associate the statement with
+    /// * `Option<graph_id>` - Optional graph id. MUST BE A VALID UUID
     ///
     /// # Returns
-    /// * `Result<()>` - Success or error if registration fails
-    pub async fn register_statement_locally(
-        &self,
-        statement: Statement,
-        graph_id: Option<&Uuid>,
-    ) -> Result<()> {
-        let id = statement.get_id();
-        let s_type = statement.get_type_string()?;
-        log::info!("registering {s_type} statement {id} to graph database");
-        self.sql_lite
-            .register_statement(&statement, graph_id)
-            .await?;
-        Ok(())
+    /// * `Result<Uuid>` - The opional graph id converted to a UUID, or the default graph id
+    pub fn resolve_graph_id(&self, graph_id: Option<String>) -> Result<Uuid> {
+        let graph_id = match graph_id {
+            Some(id) => Uuid::parse_str(&id).map_err(to_py_err),
+            None => todo!("Get default graph_id from py context"),
+        }?;
+
+        Ok(graph_id)
     }
 }

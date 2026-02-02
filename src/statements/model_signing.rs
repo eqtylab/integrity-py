@@ -15,6 +15,7 @@ use crate::{
 };
 
 #[pyfunction]
+#[pyo3(signature = (collection_cid, blobs_dir, model_signing_name, allow_symlinks, ignore_paths, *, timestamp=None, graph_id=None))]
 pub fn create_model_signing_statement(
     _py: Python,
     collection_cid: String,
@@ -23,8 +24,10 @@ pub fn create_model_signing_statement(
     allow_symlinks: bool,
     ignore_paths: Vec<String>,
     timestamp: Option<String>,
+    graph_id: Option<String>,
 ) -> PyResult<String> {
     let ctx = ctx();
+    let graph_id = ctx.resolve_graph_id(graph_id).map_err(to_py_err)?;
 
     let blob_store = Arc::new(blob_store::local_fs::LocalFs::new(blobs_dir));
 
@@ -79,7 +82,10 @@ pub fn create_model_signing_statement(
     };
 
     context::get_runtime()
-        .block_on(ctx.register_statement_locally(sigstore_bundle_statement.clone(), None))
+        .block_on(
+            ctx.sql_lite
+                .register_statement(&sigstore_bundle_statement, &graph_id),
+        )
         .map_err(to_py_err)?;
 
     Ok(sigstore_bundle_statement.get_id())

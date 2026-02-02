@@ -35,7 +35,7 @@ class Did:
             # save statements locally
             for stmt_str in statements:
                 stmt = json.loads(stmt_str)
-                eqty_core_statements.register_statement_locally(stmt_str)
+                eqty_core_statements.register_statement(stmt_str)
                 self.statement_ids.append(stmt.get("@id"))
 
             # save blobs locally

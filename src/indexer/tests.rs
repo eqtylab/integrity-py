@@ -72,7 +72,7 @@ mod sql_tests {
         let statement_id = statement.get_id();
 
         let comp_statement = Statement::ComputationRegistration(statement);
-        db.register_statement(&comp_statement, Some(&graph_id))
+        db.register_statement(&comp_statement, &graph_id)
             .await
             .unwrap();
 
@@ -96,7 +96,7 @@ mod sql_tests {
         let data_statement_id = statement.get_id();
 
         let data_statement = Statement::DataRegistration(statement);
-        db.register_statement(&data_statement, Some(&graph_id))
+        db.register_statement(&data_statement, &graph_id)
             .await
             .unwrap();
 
@@ -114,7 +114,7 @@ mod sql_tests {
         .unwrap();
         db.register_statement(
             &Statement::ComputationRegistration(comp_statement),
-            Some(&graph_id),
+            &graph_id,
         )
         .await
         .unwrap();
@@ -143,7 +143,7 @@ mod sql_tests {
         let metadata_statement_id = statement.get_id();
 
         let meta_statement = Statement::MetadataRegistration(statement);
-        db.register_statement(&meta_statement, Some(&graph_id))
+        db.register_statement(&meta_statement, &graph_id)
             .await
             .unwrap();
 
@@ -161,7 +161,7 @@ mod sql_tests {
         .unwrap();
         db.register_statement(
             &Statement::ComputationRegistration(comp_statement),
-            Some(&graph_id),
+            &graph_id,
         )
         .await
         .unwrap();
@@ -192,7 +192,7 @@ mod sql_tests {
         let storage_statement_id = statement.get_id();
 
         let storage_statement = Statement::StorageRegistration(statement);
-        db.register_statement(&storage_statement, Some(&graph_id))
+        db.register_statement(&storage_statement, &graph_id)
             .await
             .unwrap();
 
@@ -210,7 +210,7 @@ mod sql_tests {
         .unwrap();
         db.register_statement(
             &Statement::ComputationRegistration(comp_statement),
-            Some(&graph_id),
+            &graph_id,
         )
         .await
         .unwrap();
@@ -241,7 +241,7 @@ mod sql_tests {
         let association_statement_id = statement.get_id();
 
         let assoc_statement = Statement::AssociationRegistration(statement);
-        db.register_statement(&assoc_statement, Some(&graph_id))
+        db.register_statement(&assoc_statement, &graph_id)
             .await
             .unwrap();
 
@@ -259,7 +259,7 @@ mod sql_tests {
         .unwrap();
         db.register_statement(
             &Statement::ComputationRegistration(comp_statement),
-            Some(&graph_id),
+            &graph_id,
         )
         .await
         .unwrap();
@@ -284,7 +284,10 @@ mod sql_tests {
                 .unwrap();
 
         let assoc_statement = Statement::AssociationRegistration(statement);
-        db.register_statement(&assoc_statement, None).await.unwrap();
+        let uuid = uuid::uuid!("00000000-0000-0000-0000-000000000000");
+        db.register_statement(&assoc_statement, &uuid)
+            .await
+            .unwrap();
 
         let associations = db.get_associations_for_subject(&subject).await.unwrap();
         assert_eq!(associations.len(), 1);
@@ -297,7 +300,9 @@ mod sql_tests {
                 .unwrap();
 
         let assoc_statement = Statement::AssociationRegistration(statement);
-        db.register_statement(&assoc_statement, None).await.unwrap();
+        db.register_statement(&assoc_statement, &uuid)
+            .await
+            .unwrap();
         let associations = db.get_associations_for_subject(&subject).await.unwrap();
         assert_eq!(associations.len(), 2);
         assert_eq!(associations[0], associate1);
@@ -314,9 +319,9 @@ mod sql_tests {
             AssociationStatement::create(subject1.clone(), associate.clone(), did.clone(), None)
                 .await
                 .unwrap();
-
+        let uuid = &uuid::uuid!("00000000-0000-0000-1000-500000000000");
         let assoc_statement = Statement::AssociationRegistration(statement);
-        db.register_statement(&assoc_statement, None).await.unwrap();
+        db.register_statement(&assoc_statement, uuid).await.unwrap();
 
         let subjects = db.get_subjects_for_association(&associate).await.unwrap();
         assert_eq!(subjects.len(), 1);
@@ -329,7 +334,7 @@ mod sql_tests {
                 .unwrap();
 
         let assoc_statement = Statement::AssociationRegistration(statement);
-        db.register_statement(&assoc_statement, None).await.unwrap();
+        db.register_statement(&assoc_statement, uuid).await.unwrap();
         let subjects = db.get_subjects_for_association(&associate).await.unwrap();
         assert_eq!(subjects.len(), 2);
         assert_eq!(subjects[0], subject1);
@@ -364,7 +369,7 @@ mod sql_tests {
                 .unwrap();
 
         let data_input = Statement::DataRegistration(statement);
-        db.register_statement(&data_input, Some(&root_graph_id))
+        db.register_statement(&data_input, &root_graph_id)
             .await
             .unwrap();
 
@@ -375,7 +380,7 @@ mod sql_tests {
                 .unwrap();
 
         let data_output = Statement::DataRegistration(statement);
-        db.register_statement(&data_output, Some(&child_graph_id))
+        db.register_statement(&data_output, &child_graph_id)
             .await
             .unwrap();
 
@@ -389,7 +394,7 @@ mod sql_tests {
         .unwrap();
 
         let metadata = Statement::MetadataRegistration(statement);
-        db.register_statement(&metadata, Some(&child_graph_id_2))
+        db.register_statement(&metadata, &child_graph_id_2)
             .await
             .unwrap();
 
@@ -407,7 +412,7 @@ mod sql_tests {
         .unwrap();
 
         let comp_statement = Statement::ComputationRegistration(statement);
-        db.register_statement(&comp_statement, Some(&child_graph_id))
+        db.register_statement(&comp_statement, &child_graph_id)
             .await
             .unwrap();
 
@@ -416,7 +421,7 @@ mod sql_tests {
         assert_eq!(graph.statements.as_ref().unwrap().len(), 3);
 
         // Register the same statement in a lower child project
-        db.register_statement(&comp_statement, Some(&child_graph_id_2))
+        db.register_statement(&comp_statement, &child_graph_id_2)
             .await
             .unwrap();
 
