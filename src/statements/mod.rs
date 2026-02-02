@@ -14,12 +14,10 @@ mod model_signing;
 pub mod storage;
 mod vc;
 
+use anyhow::Context as AnyhowContext;
 use uuid::Uuid;
 
-use crate::{
-    context::{self, ctx},
-    to_py_err,
-};
+use crate::context::{self, ctx};
 
 /// `statements` submodule to create lineage statements
 #[pymodule]
@@ -69,10 +67,8 @@ pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<Py<PyList>
 
     let mut graphs: Vec<Graph> = Vec::new();
     for graph_id in graph_ids.clone() {
-        let graph_uuid = Uuid::parse_str(&graph_id).map_err(to_py_err)?;
-        let graph = context::get_runtime()
-            .block_on(sql_client.retrieve_graph(&graph_uuid))
-            .map_err(to_py_err)?;
+        let graph_uuid = Uuid::parse_str(&graph_id).context("Invalid graph ID")?;
+        let graph = context::get_runtime().block_on(sql_client.retrieve_graph(&graph_uuid))?;
 
         graphs.push(graph);
     }
@@ -95,7 +91,8 @@ pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<Py<PyList>
                 .unwrap_or_default()
                 .into_iter()
                 .map(|stmt| {
-                    let value = serde_json::to_value(&stmt).map_err(to_py_err)?;
+                    let value =
+                        serde_json::to_value(&stmt).context("Failed to serialize statement")?;
                     json_value_to_python(py, &value)
                 })
                 .collect::<PyResult<Vec<_>>>()?;

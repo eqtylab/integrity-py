@@ -20,10 +20,8 @@ pub mod statements;
 /// Streaming computation support for real-time data processing.
 pub mod stream;
 
-use core::fmt::Display;
-
 use pyo3::prelude::*;
-use pyo3::{exceptions::PyRuntimeError, wrap_pyfunction, wrap_pymodule, PyErr, PyResult};
+use pyo3::wrap_pymodule;
 
 /// SDK rust module
 ///
@@ -52,8 +50,4 @@ fn enable_rust_logging(is_unit_test: Option<bool>) {
     let _ = env_logger::builder()
         .is_test(is_unit_test.unwrap_or_default())
         .try_init();
-}
-// Helper fn to reduce boilerplate error handling
-fn to_py_err<E: Display>(error: E) -> PyErr {
-    PyRuntimeError::new_err(format!("{error}"))
 }

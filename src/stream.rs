@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Mutex};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context as AnyhowContext, Result};
 use bytes::Bytes;
 use integrity::{
     cid::{iroh::compute_blob_cid, multicodec, prepend_urn_cid},
@@ -13,7 +13,7 @@ use pyo3_async_runtimes::tokio::future_into_py;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{context::ctx, to_py_err};
+use crate::context::ctx;
 
 /// Result of finalizing a stream computation.
 ///
@@ -45,9 +45,8 @@ fn create(
 ) -> PyResult<Bound<'_, PyAny>> {
     log::debug!("Creating new stream");
     let fut = async move {
-        let uuid = create_stream_computation(input_cids, operated_by, executed_on, timestamp)
-            .await
-            .map_err(to_py_err)?;
+        let uuid =
+            create_stream_computation(input_cids, operated_by, executed_on, timestamp).await?;
 
         log::debug!("New stream created. UUID: {uuid:?}");
         Ok(uuid.to_string())
@@ -58,14 +57,12 @@ fn create(
 /// updates an existing computation stream with new data
 #[pyfunction]
 fn update(py: Python<'_>, id: String, chunk: Vec<u8>) -> PyResult<Bound<'_, PyAny>> {
-    let id = Uuid::parse_str(&id).map_err(to_py_err)?;
+    let id = Uuid::parse_str(&id).context("Invalid stream ID")?;
 
     log::debug!("Updating stream computation with ID: {id:?}");
 
     let fut = async move {
-        update_stream_computation(id, chunk)
-            .await
-            .map_err(to_py_err)?;
+        update_stream_computation(id, chunk).await?;
 
         Ok(())
     };
@@ -82,15 +79,13 @@ fn finalize(
     static_output_cids: Option<Vec<String>>,
     graph_id: Option<String>,
 ) -> PyResult<Bound<'_, PyAny>> {
-    let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
-    let id = Uuid::parse_str(&id).map_err(to_py_err)?;
+    let graph_id = ctx().resolve_graph_id(graph_id)?;
+    let id = Uuid::parse_str(&id).context("Invalid stream ID")?;
 
     log::debug!("Finalizing stream computation with ID: {id:?}");
 
     let fut = async move {
-        let (compute_id, stream) = finalize_stream(id, static_output_cids, &graph_id)
-            .await
-            .map_err(to_py_err)?;
+        let (compute_id, stream) = finalize_stream(id, static_output_cids, &graph_id).await?;
 
         Ok(StreamCIDs { compute_id, stream })
     };
@@ -232,7 +227,7 @@ async fn create_statement_from_stream(
 
     let signer = ctx()
         .active_signer
-        .ok_or_else(|| to_py_err("No active signer available"))?;
+        .ok_or_else(|| anyhow!("No active signer available"))?;
 
     // If VComp notary is being used, we fetch `operatedBy` and `executedOn`` from the signer
     let (operated_by, executed_on) = match &signer {

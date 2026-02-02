@@ -4,10 +4,8 @@ use integrity::{
 };
 use pyo3::{pyfunction, PyResult, Python};
 
-use crate::{
-    context::{self, ctx},
-    to_py_err,
-};
+use crate::context::{self, ctx};
+use anyhow::anyhow;
 
 #[pyfunction]
 #[pyo3(signature = (subject, *, timestamp=None, graph_id=None))]
@@ -17,25 +15,19 @@ pub fn create_vc_statement(
     timestamp: Option<String>,
     graph_id: Option<String>,
 ) -> PyResult<String> {
-    let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
+    let graph_id = ctx().resolve_graph_id(graph_id)?;
     let signer = ctx()
         .active_signer
-        .ok_or_else(|| to_py_err("No active signer available"))?;
+        .ok_or_else(|| anyhow!("No active signer available"))?;
     let registered_by = signer.get_did_doc().id;
 
-    let vc = context::get_runtime()
-        .block_on(vc::issue_vc(&subject, signer))
-        .map_err(to_py_err)?;
+    let vc = context::get_runtime().block_on(vc::issue_vc(&subject, signer))?;
 
     let statement = Statement::CredentialRegistration(
-        context::get_runtime()
-            .block_on(VcStatement::create(vc, registered_by, timestamp))
-            .map_err(to_py_err)?,
+        context::get_runtime().block_on(VcStatement::create(vc, registered_by, timestamp))?,
     );
 
-    context::get_runtime()
-        .block_on(ctx().sql_lite.register_statement(&statement, &graph_id))
-        .map_err(to_py_err)?;
+    context::get_runtime().block_on(ctx().sql_lite.register_statement(&statement, &graph_id))?;
 
     Ok(statement.get_id())
 }

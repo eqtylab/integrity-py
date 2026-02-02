@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context as AnyhowContext, Result};
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
 use integrity::{
     blob_store::{self, BlobStore},
@@ -23,7 +23,6 @@ use crate::{
         statements::{create_statement, CreateStatementRequestBody},
         Configuration,
     },
-    to_py_err,
 };
 
 /// `manifest` submodule.
@@ -59,27 +58,25 @@ pub fn generate(
         .into_iter()
         .map(|py_obj| {
             let json_value = python_to_json_value(py, &py_obj)?;
-            serde_json::from_value(json_value).map_err(to_py_err)
+            serde_json::from_value(json_value)
+                .context("Failed to deserialize statement")
+                .map_err(Into::into)
         })
         .collect();
 
     let rust_statements = rust_statements?;
 
-    let blobs = context::get_runtime()
-        .block_on(resolve_blobs(&rust_statements, blobs_dir))
-        .map_err(to_py_err)?;
+    let blobs = context::get_runtime().block_on(resolve_blobs(&rust_statements, blobs_dir))?;
 
     log::info!("Generating manifest");
 
-    let manifest = context::get_runtime()
-        .block_on(generate_manifest(
-            include_context.unwrap_or(true),
-            rust_statements,
-            blobs,
-        ))
-        .map_err(to_py_err)?;
+    let manifest = context::get_runtime().block_on(generate_manifest(
+        include_context.unwrap_or(true),
+        rust_statements,
+        blobs,
+    ))?;
 
-    let manifest_json = serde_json::to_string(&manifest).map_err(to_py_err)?;
+    let manifest_json = serde_json::to_string(&manifest).context("Failed to serialize manifest")?;
     Ok(manifest_json)
 }
 
@@ -90,10 +87,8 @@ pub fn import_manifest<'py>(
     manifest: String,
     graph_id: Option<String>,
 ) -> PyResult<HashMap<String, Bound<'py, PyBytes>>> {
-    let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
-    let blobs = context::get_runtime()
-        .block_on(rust_import(manifest, &graph_id))
-        .map_err(to_py_err)?;
+    let graph_id = ctx().resolve_graph_id(graph_id)?;
+    let blobs = context::get_runtime().block_on(rust_import(manifest, &graph_id))?;
 
     // Convert Vec<u8> to PyBytes
     let py_blobs: HashMap<String, Bound<'py, PyBytes>> = blobs
@@ -115,7 +110,7 @@ pub fn merge(_py: Python, a: String, b: String) -> PyResult<String> {
         Ok(manifest_str)
     }
 
-    rust_merge(a, b).map_err(to_py_err)
+    Ok(rust_merge(a, b)?)
 }
 
 fn python_to_json_value(py: Python, obj: &Py<PyAny>) -> PyResult<Value> {
@@ -131,13 +126,13 @@ fn python_to_json_value(py: Python, obj: &Py<PyAny>) -> PyResult<Value> {
         ))
     } else if let Ok(s) = obj.extract::<String>(py) {
         Ok(Value::String(s))
-    } else if let Ok(py_list) = obj.bind(py).downcast::<PyList>() {
+    } else if let Ok(py_list) = obj.cast_bound::<PyList>(py) {
         let mut vec = Vec::new();
         for item in py_list {
             vec.push(python_to_json_value(py, &item.into())?);
         }
         Ok(Value::Array(vec))
-    } else if let Ok(py_dict) = obj.bind(py).downcast::<PyDict>() {
+    } else if let Ok(py_dict) = obj.cast_bound::<PyDict>(py) {
         let mut map = serde_json::Map::new();
         for (key, value) in py_dict {
             let key_str = key.extract::<String>()?;
@@ -177,14 +172,11 @@ async fn rust_import(manifest: String, graph_id: &Uuid) -> Result<HashMap<String
 /// Register the manfiest with integrity platform
 #[pyfunction]
 fn register(_py: Python, manifest: String, api_key: Option<String>) -> PyResult<()> {
-    let manifest = serde_json::from_str::<Manifest>(&manifest).map_err(to_py_err)?;
-    let ig_service_config = ctx()
-        .get_integrity_service_config(api_key)
-        .map_err(to_py_err)?;
+    let manifest =
+        serde_json::from_str::<Manifest>(&manifest).context("Failed to parse manifest")?;
+    let ig_service_config = ctx().get_integrity_service_config(api_key)?;
 
-    context::get_runtime()
-        .block_on(register_async(&ig_service_config, manifest))
-        .map_err(to_py_err)?;
+    context::get_runtime().block_on(register_async(&ig_service_config, manifest))?;
     Ok(())
 }
 

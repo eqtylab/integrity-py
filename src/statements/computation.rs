@@ -4,10 +4,8 @@ use integrity::{
 };
 use pyo3::{pyfunction, PyResult, Python};
 
-use crate::{
-    context::{self, ctx},
-    to_py_err,
-};
+use crate::context::{self, ctx};
+use anyhow::anyhow;
 
 #[pyfunction]
 #[pyo3(signature = (inputs, outputs, *, computation=None, operated_by=None, executed_on=None, timestamp=None, graph_id=None))]
@@ -21,10 +19,10 @@ pub fn create_computation_statement(
     timestamp: Option<String>,
     graph_id: Option<String>,
 ) -> PyResult<String> {
-    let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
+    let graph_id = ctx().resolve_graph_id(graph_id)?;
     let signer = ctx()
         .active_signer
-        .ok_or_else(|| to_py_err("No active signer available"))?;
+        .ok_or_else(|| anyhow!("No active signer available"))?;
     // If VComp notary is being used, we fetch `operatedBy` and `executedOn`` from the signer
     let (operated_by, executed_on) = match &signer {
         SignerType::VCompNotarySigner(signer) => {
@@ -49,23 +47,19 @@ pub fn create_computation_statement(
         Some(operated_by) => operated_by,
         None => registered_by.clone(),
     };
-    let statement = Statement::ComputationRegistration(
-        context::get_runtime()
-            .block_on(ComputationStatement::create(
-                computation,
-                inputs,
-                outputs,
-                operated_by,
-                executed_on,
-                registered_by,
-                timestamp,
-            ))
-            .map_err(to_py_err)?,
-    );
+    let statement = Statement::ComputationRegistration(context::get_runtime().block_on(
+        ComputationStatement::create(
+            computation,
+            inputs,
+            outputs,
+            operated_by,
+            executed_on,
+            registered_by,
+            timestamp,
+        ),
+    )?);
 
-    context::get_runtime()
-        .block_on(ctx().sql_lite.register_statement(&statement, &graph_id))
-        .map_err(to_py_err)?;
+    context::get_runtime().block_on(ctx().sql_lite.register_statement(&statement, &graph_id))?;
 
     Ok(statement.get_id())
 }

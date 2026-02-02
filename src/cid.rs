@@ -9,10 +9,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 use pyo3::Bound;
 
-use crate::{
-    context::{self, ctx},
-    to_py_err,
-};
+use crate::context::{self, ctx};
 
 /// Canonicalization algorithm for computing content identifiers.
 #[derive(Clone, Copy, Debug)]
@@ -131,13 +128,11 @@ pub fn cid(m: &Bound<'_, PyModule>) -> PyResult<()> {
 fn compute_cid_for_directory(_py: Python, path: PathBuf) -> PyResult<DirCidResult> {
     let ctx = ctx();
 
-    let dir_cid_result = context::get_runtime()
-        .block_on(compute_dir_cid(
-            path.clone(),
-            ctx.hashing.clone(),
-            ctx.cid_ignore.clone(),
-        ))
-        .map_err(to_py_err)?;
+    let dir_cid_result = context::get_runtime().block_on(compute_dir_cid(
+        path.clone(),
+        ctx.hashing.clone(),
+        ctx.cid_ignore.clone(),
+    ))?;
 
     Ok(dir_cid_result.into())
 }
@@ -149,8 +144,7 @@ fn compute_cid_for_file(_py: Python, path: PathBuf) -> PyResult<CidResult> {
     let context = ctx();
 
     Ok(context::get_runtime()
-        .block_on(compute_file_cid(path.clone(), context.hashing))
-        .map_err(to_py_err)?
+        .block_on(compute_file_cid(path.clone(), context.hashing))?
         .into())
 }
 
@@ -158,5 +152,5 @@ fn compute_cid_for_file(_py: Python, path: PathBuf) -> PyResult<CidResult> {
 #[pyfunction]
 #[pyo3(signature = (bytes), text_signature = "(bytes: bytes) -> str")]
 fn compute_cid_for_bytes(_py: Python, bytes: &[u8]) -> PyResult<String> {
-    blake3_cid_raw_binary(bytes).map_err(to_py_err)
+    Ok(blake3_cid_raw_binary(bytes)?)
 }

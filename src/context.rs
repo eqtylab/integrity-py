@@ -7,7 +7,7 @@ use std::{
 
 use crate::indexer::Sqlite;
 use crate::integrity_service::Configuration as IntegrityServiceConfig;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context as AnyhowContext, Result};
 use integrity::{
     cid::iroh::{CidIgnoreConfig, HashingConfig},
     signer::SignerType,
@@ -24,8 +24,6 @@ pub fn get_runtime() -> &'static Runtime {
 }
 
 use pyo3::prelude::*;
-
-use crate::to_py_err;
 
 /// `context` submodule.
 #[pymodule]
@@ -44,20 +42,22 @@ pub fn context(m: &Bound<'_, PyModule>) -> PyResult<()> {
 /// Initializes the sdk context. Must be called before setting individual context values
 #[pyfunction]
 fn init(_py: Python, app_dir: PathBuf) -> PyResult<()> {
-    Context::init(app_dir).map_err(to_py_err)?;
+    Context::init(app_dir)?;
     Ok(())
 }
 
 /// Resets the global context, allowing it to be reinitialized with a new app directory
 #[pyfunction]
 fn reset(_py: Python) -> PyResult<()> {
-    Context::reset().map_err(to_py_err)?;
+    Context::reset()?;
     Ok(())
 }
 
 #[pyfunction]
 fn set_integrity_service_url(_py: Python, url: String) -> PyResult<()> {
-    Context::update_context(|ctx| ctx.integrity_service = Some(url)).map_err(to_py_err)
+    Ok(Context::update_context(|ctx| {
+        ctx.integrity_service = Some(url)
+    })?)
 }
 
 #[pyfunction]
@@ -70,7 +70,7 @@ fn set_hashing_config(
         multithread: multithread.unwrap_or(false),
         memory_map: memory_map.unwrap_or(false),
     };
-    Context::update_context(|ctx| ctx.hashing = hash_config).map_err(to_py_err)
+    Ok(Context::update_context(|ctx| ctx.hashing = hash_config)?)
 }
 
 #[pyfunction]
@@ -87,12 +87,14 @@ fn set_cid_ignore_rules(
         include_symlinks: include_symlinks.unwrap_or_default(),
     };
 
-    Context::update_context(|ctx| ctx.cid_ignore = cid_ignore).map_err(to_py_err)
+    Ok(Context::update_context(|ctx| ctx.cid_ignore = cid_ignore)?)
 }
 
 #[pyfunction]
 fn set_generate_model_signing_signatures(_py: Python, enable: bool) -> PyResult<()> {
-    Context::update_context(|ctx| ctx.generate_model_signing_signatures = enable).map_err(to_py_err)
+    Ok(Context::update_context(|ctx| {
+        ctx.generate_model_signing_signatures = enable
+    })?)
 }
 
 #[pyfunction]
@@ -103,16 +105,14 @@ fn create_graph_from_context(
     name: String,
     parent_id: Option<String>,
 ) -> PyResult<()> {
-    let id = Uuid::parse_str(&id).map_err(to_py_err)?;
+    let id = Uuid::parse_str(&id).context("Invalid graph ID")?;
     let parent_id = if let Some(parent_id) = parent_id {
-        let id = Uuid::parse_str(&parent_id).map_err(to_py_err)?;
+        let id = Uuid::parse_str(&parent_id).context("Invalid parent graph ID")?;
         Some(id)
     } else {
         None
     };
-    get_runtime()
-        .block_on(ctx().sql_lite.create_graph(&id, &name, parent_id.as_ref()))
-        .map_err(to_py_err)?;
+    get_runtime().block_on(ctx().sql_lite.create_graph(&id, &name, parent_id.as_ref()))?;
     Ok(())
 }
 
@@ -177,28 +177,22 @@ impl Context {
 
         let db_path = app_dir.join("statements.db");
         if !db_path.exists() {
-            File::create(&db_path).map_err(to_py_err)?;
+            File::create(&db_path)?;
         }
 
         let db_path = app_dir.join("graphs.db");
         let db_init_required = !db_path.exists();
         if !db_path.exists() {
-            File::create(&db_path).map_err(to_py_err)?;
+            File::create(&db_path)?;
         }
         let db_url = format!("sqlite:{}", db_path.display());
-        let sql_lite2 = get_runtime()
-            .block_on(Sqlite::new(&db_url))
-            .map_err(to_py_err)?;
+        let sql_lite2 = get_runtime().block_on(Sqlite::new(&db_url))?;
 
         if db_init_required {
-            get_runtime()
-                .block_on(sql_lite2.init())
-                .map_err(to_py_err)?;
+            get_runtime().block_on(sql_lite2.init())?;
         }
 
-        get_runtime()
-            .block_on(sql_lite2.init())
-            .map_err(to_py_err)?;
+        get_runtime().block_on(sql_lite2.init())?;
 
         let ctx = Context {
             app_dir,
@@ -254,7 +248,7 @@ impl Context {
     pub fn get_active_signer_did_key(self) -> Result<String> {
         let signer = self
             .active_signer
-            .ok_or_else(|| to_py_err("No active signer available"))?;
+            .ok_or_else(|| anyhow!("No active signer available"))?;
         Ok(signer.get_did_doc().id)
     }
 
@@ -302,11 +296,9 @@ impl Context {
     /// # Returns
     /// * `Result<Uuid>` - The opional graph id converted to a UUID, or the default graph id
     pub fn resolve_graph_id(&self, graph_id: Option<String>) -> Result<Uuid> {
-        let graph_id = match graph_id {
-            Some(id) => Uuid::parse_str(&id).map_err(to_py_err),
+        match graph_id {
+            Some(id) => Ok(Uuid::parse_str(&id)?),
             None => todo!("Get default graph_id from py context"),
-        }?;
-
-        Ok(graph_id)
+        }
     }
 }

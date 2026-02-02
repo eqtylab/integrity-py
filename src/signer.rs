@@ -1,5 +1,6 @@
 use std::{collections::HashMap, fs, path::PathBuf};
 
+use anyhow::Context as AnyhowContext;
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
 use integrity::signer::{
     load_signer as utils_load_signer, save_signer as utils_save_signer, AuthServiceSigner,
@@ -12,7 +13,7 @@ use pyo3::Bound;
 
 use serde::Serialize;
 
-use crate::{context::ctx, to_py_err};
+use crate::context::ctx;
 
 /// `signer` submodule.
 #[pymodule]
@@ -74,22 +75,22 @@ impl PySigner {
 fn create_new_signer(py: Python, key_type: String, name: Option<&str>) -> PyResult<Py<PySigner>> {
     signer_exists(name)?;
 
-    let key_type: KeyType = key_type.parse().map_err(to_py_err)?;
+    let key_type: KeyType = key_type.parse().context("Invalid key type")?;
 
     let signer = match key_type {
         KeyType::SECP256K1 => {
             log::trace!("Generating a new secp256k1 signer");
-            let signer = Secp256k1Signer::create().map_err(to_py_err)?;
+            let signer = Secp256k1Signer::create()?;
             SignerType::SECP256K1(signer)
         }
         KeyType::SECP256R1 => {
             log::trace!("Generating a new secp256r1 signer");
-            let signer = P256Signer::create().map_err(to_py_err)?;
+            let signer = P256Signer::create()?;
             SignerType::P256(signer)
         }
         KeyType::ED25519 => {
             log::trace!("Generating a new ed25519 signer");
-            let signer = Ed25519Signer::create().map_err(to_py_err)?;
+            let signer = Ed25519Signer::create()?;
             SignerType::ED25519(signer)
         }
     };
@@ -113,26 +114,28 @@ fn create_signer_from_private_key(
 ) -> PyResult<Py<PySigner>> {
     signer_exists(name)?;
 
-    let key_type: KeyType = key_type.parse().map_err(to_py_err)?;
+    let key_type: KeyType = key_type.parse().context("Invalid key type")?;
 
     log::info!("Creating a signer of type '{key_type}'");
 
-    let secret_key = BASE64.decode(key.as_bytes()).map_err(to_py_err)?;
+    let secret_key = BASE64
+        .decode(key.as_bytes())
+        .context("Invalid base64 key")?;
 
     let signer = match key_type {
         KeyType::SECP256R1 => {
             log::trace!("Creating a P256 signer from a private key.");
-            let signer = P256Signer::import(&secret_key).map_err(to_py_err)?;
+            let signer = P256Signer::import(&secret_key)?;
             SignerType::P256(signer)
         }
         KeyType::SECP256K1 => {
             log::trace!("Creating a SECP256K1 signer from a private key.");
-            let signer = Secp256k1Signer::import(&secret_key).map_err(to_py_err)?;
+            let signer = Secp256k1Signer::import(&secret_key)?;
             SignerType::SECP256K1(signer)
         }
         KeyType::ED25519 => {
             log::trace!("Creating a ED25519 signer from a private key.");
-            let signer = Ed25519Signer::import(&secret_key).map_err(to_py_err)?;
+            let signer = Ed25519Signer::import(&secret_key)?;
             SignerType::ED25519(signer)
         }
     };
@@ -154,9 +157,7 @@ fn create_vcomp_signer(py: Python, url: String, pub_key: Option<String>) -> PyRe
         .enable_all()
         .build()?;
 
-    let signer = rt
-        .block_on(VCompNotarySigner::create(&url, pub_key))
-        .map_err(to_py_err)?;
+    let signer = rt.block_on(VCompNotarySigner::create(&url, pub_key))?;
 
     let signer_type = SignerType::VCompNotarySigner(signer);
     let signer = save_signer(&signer_type, None)?;
@@ -176,9 +177,7 @@ fn create_auth_service_signer(py: Python, url: String, api_key: String) -> PyRes
         .build()?;
     log::debug!("Creating auth service signer {url:?}");
 
-    let signer = rt
-        .block_on(AuthServiceSigner::create(api_key, url))
-        .map_err(to_py_err)?;
+    let signer = rt.block_on(AuthServiceSigner::create(api_key, url))?;
 
     let signer_type = SignerType::AuthService(signer);
     let signer = save_signer(&signer_type, None)?;
@@ -201,8 +200,7 @@ fn create_yubihsm2_signer(
 ) -> PyResult<Py<PySigner>> {
     log::trace!("Importing a YubiHSM2 ed25519 signer");
 
-    let yubi_signer =
-        YubiHsmSigner::create(auth_key_id, signing_key_id, password).map_err(to_py_err)?;
+    let yubi_signer = YubiHsmSigner::create(auth_key_id, signing_key_id, password)?;
 
     let signer_type = SignerType::YubiHsm2Signer(yubi_signer);
     let signer = save_signer(&signer_type, None)?;
@@ -224,14 +222,14 @@ fn set_active_signer(_py: Python, name: String) -> PyResult<()> {
         ));
     }
 
-    let signer = utils_load_signer(signer_file).map_err(to_py_err)?;
-    ctx().set_active_signer(signer).map_err(to_py_err)
+    let signer = utils_load_signer(signer_file)?;
+    Ok(ctx().set_active_signer(signer)?)
 }
 
 /// Get the active signers Did Key
 #[pyfunction]
 fn get_active_signer_did_key(_py: Python) -> PyResult<String> {
-    ctx().get_active_signer_did_key().map_err(to_py_err)
+    Ok(ctx().get_active_signer_did_key()?)
 }
 
 /// Get signer type string ('vcomp_notary', 'yubihsm2', etc) by name.
@@ -247,7 +245,7 @@ fn get_signer_type(_py: Python, name: String) -> PyResult<String> {
         ));
     }
 
-    let signer = utils_load_signer(signer_file).map_err(to_py_err)?;
+    let signer = utils_load_signer(signer_file)?;
     let signer_type = format!("{signer}");
 
     Ok(signer_type)
@@ -266,7 +264,7 @@ fn get_signer_statements(_py: Python, name: String) -> PyResult<Vec<String>> {
         ));
     }
 
-    let signer = utils_load_signer(signer_file).map_err(to_py_err)?;
+    let signer = utils_load_signer(signer_file)?;
 
     match signer {
         SignerType::VCompNotarySigner(vcomp_signer) => {
@@ -274,9 +272,8 @@ fn get_signer_statements(_py: Python, name: String) -> PyResult<Vec<String>> {
                 let statements = statements
                     .values()
                     .cloned()
-                    .map(|v| serde_json::to_string(&v))
-                    .collect::<Result<Vec<_>, _>>()
-                    .map_err(to_py_err)?;
+                    .map(|v| serde_json::to_string(&v).context("Failed to serialize statement"))
+                    .collect::<Result<Vec<_>, _>>()?;
                 Ok(statements)
             } else {
                 Ok(vec![])
@@ -299,7 +296,7 @@ fn get_signer_blobs(py: Python<'_>, name: String) -> PyResult<HashMap<String, Bo
         ));
     }
 
-    let signer = utils_load_signer(signer_file).map_err(to_py_err)?;
+    let signer = utils_load_signer(signer_file)?;
 
     match signer {
         SignerType::VCompNotarySigner(vcomp_signer) => {
@@ -340,8 +337,8 @@ fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<PySigner> {
     let did_key = signer.get_did_doc().id;
     let name = name.unwrap_or(&did_key);
     let signer_dir = get_signer_folder();
-    fs::create_dir_all(signer_dir.clone()).map_err(to_py_err)?;
-    utils_save_signer(signer, signer_dir, name).map_err(to_py_err)?;
+    fs::create_dir_all(signer_dir.clone())?;
+    utils_save_signer(signer, signer_dir, name)?;
     Ok(PySigner {
         name: name.to_owned(),
         did_key,
