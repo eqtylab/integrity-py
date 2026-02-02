@@ -1,5 +1,4 @@
 use crate::indexer::graph::Graph;
-use crate::indexer::sql_indexer::IStatementIdx;
 use pyo3::{
     pyfunction,
     types::{PyDict, PyList},

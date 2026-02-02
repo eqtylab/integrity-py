@@ -1,12 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
-use async_trait::async_trait;
 use sqlx::{sqlite::SqliteRow, SqlitePool};
 use uuid::Uuid;
 
 use super::graph::Graph;
-use crate::indexer::{row_types::AssociationRow, sql_indexer::IStatementIdx};
+use crate::indexer::row_types::AssociationRow;
 
 use integrity::lineage::models::statements::{Statement, StatementTrait};
 
@@ -560,10 +559,9 @@ impl Sqlite {
     }
 }
 
-#[async_trait]
-impl IStatementIdx for Sqlite {
+impl Sqlite {
     /// Creates a record in the "graphs" table
-    async fn create_graph(
+    pub async fn create_graph(
         &self,
         graph_id: &Uuid,
         name: &str,
@@ -585,7 +583,7 @@ impl IStatementIdx for Sqlite {
         Ok(())
     }
 
-    async fn register_statement(
+    pub async fn register_statement(
         &self,
         statement: &Statement,
         graph_id: Option<&Uuid>,
@@ -611,7 +609,7 @@ impl IStatementIdx for Sqlite {
     }
 
     /// Updates the link table to assign a statement to a graph
-    async fn associate_statement_to_graph(
+    pub async fn associate_statement_to_graph(
         &self,
         statement_id: &str,
         graph_id: &Uuid,
@@ -631,7 +629,7 @@ impl IStatementIdx for Sqlite {
         Ok(())
     }
 
-    async fn retrieve_graph(&self, graph_id: &Uuid) -> Result<Graph> {
+    pub async fn retrieve_graph(&self, graph_id: &Uuid) -> Result<Graph> {
         log::info!("Retieving statements for graph {graph_id:?}");
 
         let mut graph: Graph = sqlx::query_as(
@@ -738,7 +736,7 @@ impl IStatementIdx for Sqlite {
         Ok(graph)
     }
 
-    async fn get_associations_for_subject(&self, subject: &str) -> Result<Vec<String>> {
+    pub async fn get_associations_for_subject(&self, subject: &str) -> Result<Vec<String>> {
         log::trace!("Retrieving associations for subject={subject}.");
 
         let rows: Vec<AssociationRow> = sqlx::query_as(
@@ -760,7 +758,7 @@ impl IStatementIdx for Sqlite {
         Ok(associations)
     }
 
-    async fn get_subjects_for_association(&self, association: &str) -> Result<Vec<String>> {
+    pub async fn get_subjects_for_association(&self, association: &str) -> Result<Vec<String>> {
         log::trace!("Retrieving subjects for association={association}.");
 
         let rows: Vec<AssociationRow> = sqlx::query_as(
@@ -782,7 +780,7 @@ impl IStatementIdx for Sqlite {
         Ok(subjects)
     }
 
-    async fn get_graph_info(&self) -> Result<Vec<Graph>> {
+    pub async fn get_graph_info(&self) -> Result<Vec<Graph>> {
         log::trace!("Retrieving all graph info");
 
         let rows: Vec<Graph> = sqlx::query_as(
@@ -797,7 +795,7 @@ impl IStatementIdx for Sqlite {
         Ok(rows)
     }
 
-    async fn get_child_graph_info(&self, parent_id: &Uuid) -> Result<Vec<Graph>> {
+    pub async fn get_child_graph_info(&self, parent_id: &Uuid) -> Result<Vec<Graph>> {
         log::trace!("Retrieving child graph info for {parent_id:?}");
 
         let rows: Vec<Graph> = sqlx::query_as(
@@ -826,7 +824,7 @@ impl IStatementIdx for Sqlite {
         Ok(rows)
     }
 
-    async fn get_statement_by_id(&self, _id: &str) -> Result<Option<Statement>> {
+    pub async fn get_statement_by_id(&self, _id: &str) -> Result<Option<Statement>> {
         unimplemented!();
     }
 }

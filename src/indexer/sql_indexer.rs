@@ -1,55 +1,10 @@
 use std::collections::HashMap;
 
 use anyhow::Result;
-use async_trait::async_trait;
 use sqlx::{FromRow, Row};
-use uuid::Uuid;
 
-use super::{graph::Graph, row_types::StatementRow};
+use super::row_types::StatementRow;
 use integrity::lineage::models::statements::{Statement, StatementTrait};
-
-/// Trait for SQL-based statement indexing with graph support.
-///
-/// Provides methods for storing, retrieving, and querying statements
-/// organized into graphs with hierarchical relationships.
-#[async_trait]
-pub trait IStatementIdx {
-    /// Adds the statement to sql. If graph_id is provided, the link is created
-    async fn register_statement(
-        &self,
-        statement: &Statement,
-        graph_id: Option<&Uuid>,
-    ) -> Result<()>;
-
-    /// Links an existing statement to a graph
-    async fn associate_statement_to_graph(&self, statement_id: &str, graph_id: &Uuid)
-        -> Result<()>;
-
-    /// Returns the statements from sql that belong to the graph_id or any parent
-    async fn retrieve_graph(&self, graph_id: &Uuid) -> Result<Graph>;
-
-    /// Creates a graph record with an optional parent
-    async fn create_graph(
-        &self,
-        graph_id: &Uuid,
-        name: &str,
-        parent_id: Option<&Uuid>,
-    ) -> Result<()>;
-
-    /// Gets all statement IDs associated with the given subject
-    async fn get_associations_for_subject(&self, subject: &str) -> Result<Vec<String>>;
-    /// Gets all subject IDs for the given association
-    async fn get_subjects_for_association(&self, association: &str) -> Result<Vec<String>>;
-
-    /// Returns all the Graph information (UUIDs, Names, etc) from the database
-    async fn get_graph_info(&self) -> Result<Vec<Graph>>;
-
-    /// Returns all the Graph information for the child graphs
-    async fn get_child_graph_info(&self, parent_id: &Uuid) -> Result<Vec<Graph>>;
-
-    /// Retrieves a statement by its ID
-    async fn get_statement_by_id(&self, id: &str) -> Result<Option<Statement>>;
-}
 
 /// Generic function to parse database rows into statements
 pub fn rows_to_statements<R>(rows: Vec<R>) -> Result<HashMap<String, Statement>>
@@ -99,14 +54,14 @@ where
     Ok(statements)
 }
 
-/// Shared test functions for all implementations of `IStatementIdx`.
+/// Shared test functions for Sqlite.
 #[cfg(test)]
 pub mod shared_tests {
     use std::sync::Arc;
 
     use ssi::vc::Credential;
 
-    use super::*;
+    use super::super::sql_lite::Sqlite;
     use integrity::{
         lineage::models::{
             dsse::{Envelope, Signature},
@@ -116,15 +71,15 @@ pub mod shared_tests {
                 DidStatementEqtyVCompAmdSevV1, DidStatementEqtyVCompAzureV1,
                 DidStatementEqtyVCompDockerV1, DidStatementEqtyVCompIntelTdxV0,
                 DidStatementRegular, DsseStatement, EntityStatement, GovernanceStatement,
-                MetadataStatement, SigstoreBundleStatement, StatementTrait, StorageStatement,
-                VcStatement,
+                MetadataStatement, SigstoreBundleStatement, Statement, StatementTrait,
+                StorageStatement, VcStatement,
             },
         },
         sigstore_bundle::SigstoreBundle,
     };
 
     /// Test that graph records get created
-    pub async fn test_create_graph(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_create_graph(db: Arc<Sqlite>) {
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000001");
         db.create_graph(&graph_id, "test:1", None).await.unwrap();
 
@@ -136,7 +91,7 @@ pub mod shared_tests {
     }
 
     /// Test that graphs can be 'nested' under other graphs
-    pub async fn test_create_graph_with_parent(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_create_graph_with_parent(db: Arc<Sqlite>) {
         let parent_id = uuid::uuid!("00000000-0000-0000-0000-1000000000F0");
         let parent_name = "test:parent";
         db.create_graph(&parent_id, parent_name, None)
@@ -161,7 +116,7 @@ pub mod shared_tests {
     }
 
     /// Test computation statement registration
-    pub async fn test_register_computation_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_computation_statement(db: Arc<Sqlite>) {
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000010");
         db.create_graph(&graph_id, "comp_test", None).await.unwrap();
 
@@ -191,7 +146,7 @@ pub mod shared_tests {
     }
 
     /// Test data statement registration
-    pub async fn test_register_data_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_data_statement(db: Arc<Sqlite>) {
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000011");
         db.create_graph(&graph_id, "data_test", None).await.unwrap();
 
@@ -233,7 +188,7 @@ pub mod shared_tests {
     }
 
     /// Test metadata statement registration
-    pub async fn test_register_metadata_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_metadata_statement(db: Arc<Sqlite>) {
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000012");
         db.create_graph(&graph_id, "metadata_test", None)
             .await
@@ -281,7 +236,7 @@ pub mod shared_tests {
     }
 
     /// Test storage statement registration
-    pub async fn test_register_storage_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_storage_statement(db: Arc<Sqlite>) {
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000013");
         db.create_graph(&graph_id, "storage_test", None)
             .await
@@ -329,7 +284,7 @@ pub mod shared_tests {
     }
 
     /// Test association statement registration
-    pub async fn test_register_association_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_association_statement(db: Arc<Sqlite>) {
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000014");
         db.create_graph(&graph_id, "association_test", None)
             .await
@@ -376,7 +331,7 @@ pub mod shared_tests {
             .any(|s| s.get_id() == association_statement_id));
     }
 
-    pub async fn test_association_get_by_subject(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_association_get_by_subject(db: Arc<Sqlite>) {
         // Create an association record
         let did = String::from("did:key:association_statement");
         let subject = String::from("urn:cid:association_subject");
@@ -407,7 +362,7 @@ pub mod shared_tests {
         assert_eq!(associations[1], associate2);
     }
 
-    pub async fn test_association_get_by_association(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_association_get_by_association(db: Arc<Sqlite>) {
         // Create an association record
         let did = String::from("did:key:association_statement");
         let subject1 = String::from("urn:cid:association_subject1");
@@ -441,7 +396,7 @@ pub mod shared_tests {
     /// Test entity statement registration
     /// Note: Entity statements are not currently retrieved by retrieve_graph due to
     /// a missing field in the SQL COALESCE clause. This test just verifies registration succeeds.
-    pub async fn test_register_entity_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_entity_statement(db: Arc<Sqlite>) {
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000015");
         db.create_graph(&graph_id, "entity_test", None)
             .await
@@ -463,7 +418,7 @@ pub mod shared_tests {
     }
 
     /// Test sigstore statement registration (global statements don't need graph_id)
-    pub async fn test_register_sigstore_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_sigstore_statement(db: Arc<Sqlite>) {
         let did = String::from("did:key:sig_store");
         let subject = String::from("urn:cid:sigstore_subject");
         let bundle = SigstoreBundle::new(serde_json::Value::Null, serde_json::Value::Null);
@@ -479,7 +434,7 @@ pub mod shared_tests {
     }
 
     /// Test credential statement registration (global)
-    pub async fn test_register_credential_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_credential_statement(db: Arc<Sqlite>) {
         let did = String::from("did:key:credential");
         let doc_str = r#"{
             "@context": "https://www.w3.org/2018/credentials/v1",
@@ -499,7 +454,7 @@ pub mod shared_tests {
     }
 
     /// Test DSSE statement registration (global)
-    pub async fn test_register_dsse_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_dsse_statement(db: Arc<Sqlite>) {
         let did = String::from("did:key:dsse");
         let signature = Signature {
             keyid: String::from("sig_key"),
@@ -521,7 +476,7 @@ pub mod shared_tests {
     }
 
     /// Test regular DID statement registration (global)
-    pub async fn test_register_regular_did_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_regular_did_statement(db: Arc<Sqlite>) {
         let did = String::from("did:key:did");
         let registered_by = String::from("did:key:registered_by");
         let statement = DidStatementRegular::create(did.clone(), registered_by.clone(), None)
@@ -537,7 +492,7 @@ pub mod shared_tests {
     }
 
     /// Test AMD SEV DID statement registration (global)
-    pub async fn test_register_amd_sev_did_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_amd_sev_did_statement(db: Arc<Sqlite>) {
         let did = String::from("did:example:123");
         let registered_by = String::from("did:key:registered_by");
 
@@ -579,7 +534,7 @@ pub mod shared_tests {
     }
 
     /// Test Azure VComp DID statement registration (global)
-    pub async fn test_register_azure_vcomp_did_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_azure_vcomp_did_statement(db: Arc<Sqlite>) {
         let did = String::from("did:example:123");
         let registered_by = String::from("did:key:registered_by");
 
@@ -620,7 +575,7 @@ pub mod shared_tests {
     }
 
     /// Test Docker DID statement registration (global)
-    pub async fn test_register_docker_did_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_docker_did_statement(db: Arc<Sqlite>) {
         let did = String::from("did:example:123");
         let registered_by = String::from("did:key:registered_by");
 
@@ -646,7 +601,7 @@ pub mod shared_tests {
     }
 
     /// Test Intel TDX DID statement registration (global)
-    pub async fn test_register_intel_tdx_did_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_intel_tdx_did_statement(db: Arc<Sqlite>) {
         let did = String::from("did:example:123");
         let registered_by = String::from("did:key:registered_by");
 
@@ -685,7 +640,7 @@ pub mod shared_tests {
     }
 
     /// Test governance statement registration (global)
-    pub async fn test_register_governance_statement(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_register_governance_statement(db: Arc<Sqlite>) {
         let did = String::from("did:key:governance");
         let subject = String::from("urn:cid:gov_subject");
         let document = String::from("urn:uuid:document");
@@ -701,7 +656,7 @@ pub mod shared_tests {
     }
 
     /// Test statement retrieval with hierarchy
-    pub async fn test_statement_retrieval_with_hierarchy(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_statement_retrieval_with_hierarchy(db: Arc<Sqlite>) {
         let root_graph_id = uuid::uuid!("00000000-0000-0000-0000-500000000001");
         db.create_graph(&root_graph_id, "Root Graph", None)
             .await
@@ -789,7 +744,7 @@ pub mod shared_tests {
     }
 
     /// Test global statement retrieval
-    pub async fn test_global_statement_retrieval(db: Arc<dyn IStatementIdx + Send + Sync>) {
+    pub async fn test_global_statement_retrieval(db: Arc<Sqlite>) {
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-500000000011");
         db.create_graph(&graph_id, "Global Statements", None)
             .await
