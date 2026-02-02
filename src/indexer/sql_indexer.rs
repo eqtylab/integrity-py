@@ -5,11 +5,8 @@ use async_trait::async_trait;
 use sqlx::{FromRow, Row};
 use uuid::Uuid;
 
-use super::row_types::StatementRow;
-use integrity::lineage::models::{
-    graph::Graph,
-    statements::{Statement, StatementTrait},
-};
+use super::{graph::Graph, row_types::StatementRow};
+use integrity::lineage::models::statements::{Statement, StatementTrait};
 
 /// Trait for SQL-based statement indexing with graph support.
 ///

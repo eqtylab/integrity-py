@@ -1,3 +1,4 @@
+pub mod graph;
 /// Row type definitions for graph database operations
 pub mod row_types;
 /// SQL indexer trait and implementation for graph queries

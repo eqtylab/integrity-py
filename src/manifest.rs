@@ -5,16 +5,9 @@ use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
 use integrity::{
     blob_store::{self, BlobStore},
     cid::{get_multicodec, multicodec},
-    lineage::{
-        graph_indexer::sql_indexer::IStatementIdx,
-        models::{
-            graph::Graph,
-            manifest::{
-                manifest_v4::{generate_manifest_v4, ManifestV4},
-                merge_async, Manifest,
-            },
-            statements::Statement,
-        },
+    lineage::models::{
+        manifest::{generate_manifest, merge_async, Manifest},
+        statements::Statement,
     },
 };
 use pyo3::{
@@ -24,7 +17,6 @@ use pyo3::{
     wrap_pyfunction, PyResult, Python,
 };
 use serde_json::Value;
-use uuid::Uuid;
 
 use crate::{
     context::{self, ctx},
@@ -60,83 +52,36 @@ pub fn manifest(_py: Python, m: &PyModule) -> PyResult<()> {
 #[pyfunction]
 pub fn generate(
     py: Python,
-    graphs: &PyList,
+    statements: Vec<PyObject>,
     blobs_dir: PathBuf,
     include_context: Option<bool>,
 ) -> PyResult<String> {
-    let include_context = include_context.unwrap_or(false);
-
-    // Convert Python graphs list to Rust Graph structs
-    let mut rust_graphs: Vec<Graph> = Vec::new();
-    for graph_item in graphs {
-        let graph_dict = graph_item.downcast::<PyDict>().map_err(to_py_err)?;
-
-        // Extract graph metadata
-        let id_str: String = graph_dict
-            .get_item("id")
-            .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyKeyError, _>("Missing 'id' field"))?
-            .extract()?;
-        let id = Uuid::parse_str(&id_str).map_err(to_py_err)?;
-
-        let name: String = graph_dict
-            .get_item("name")
-            .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyKeyError, _>("Missing 'name' field"))?
-            .extract()?;
-
-        let parent: Option<String> = graph_dict.get_item("parent").and_then(|p| p.extract().ok());
-        let parent = parent
-            .map(|p| Uuid::parse_str(&p))
-            .transpose()
-            .map_err(to_py_err)?;
-
-        // Extract and convert statements
-        let statements_list = graph_dict
-            .get_item("statements")
-            .ok_or_else(|| {
-                PyErr::new::<pyo3::exceptions::PyKeyError, _>("Missing 'statements' field")
-            })?
-            .downcast::<PyList>()
-            .map_err(to_py_err)?;
-
-        let mut statements: Vec<Statement> = Vec::new();
-        for stmt_item in statements_list {
-            // Convert Python statement dict back to JSON, then to Statement
-            let stmt_json = python_to_json_value(py, &stmt_item.into())?;
-            let statement: Statement = serde_json::from_value(stmt_json).map_err(to_py_err)?;
-            statements.push(statement);
-        }
-
-        rust_graphs.push(Graph {
-            id,
-            name,
-            parent,
-            statements: Some(statements),
-        });
-    }
-
-    // Get all statements from all graphs for blob resolution
-    let all_statements: Vec<Statement> = rust_graphs
-        .iter()
-        .filter_map(|graph| graph.statements.as_ref())
-        .flatten()
-        .cloned()
+    // Convert PyObjects to Statements
+    let rust_statements: PyResult<Vec<Statement>> = statements
+        .into_iter()
+        .map(|py_obj| {
+            let json_value = python_to_json_value(py, &py_obj)?;
+            serde_json::from_value(json_value).map_err(to_py_err)
+        })
         .collect();
 
-    // Read blobs from directory
+    let rust_statements = rust_statements?;
+
     let blobs = context::get_runtime()
-        .block_on(resolve_blobs(&all_statements, blobs_dir))
+        .block_on(resolve_blobs(&rust_statements, blobs_dir))
         .map_err(to_py_err)?;
 
-    log::info!("Generating manifest v4 for {} graphs", rust_graphs.len());
+    log::info!("Generating manifest");
 
-    // Generate the manifest
     let manifest = context::get_runtime()
-        .block_on(generate_manifest_v4(include_context, rust_graphs, blobs))
+        .block_on(generate_manifest(
+            include_context.unwrap_or(true),
+            rust_statements,
+            blobs,
+        ))
         .map_err(to_py_err)?;
 
-    // Convert manifest to JSON string
     let manifest_json = serde_json::to_string(&manifest).map_err(to_py_err)?;
-
     Ok(manifest_json)
 }
 
@@ -206,35 +151,20 @@ fn python_to_json_value(py: Python, obj: &PyObject) -> PyResult<Value> {
 }
 
 async fn rust_import(manifest: String) -> Result<HashMap<String, Vec<u8>>> {
-    let manifest = serde_json::from_str::<ManifestV4>(&manifest)?;
-    log::trace!("Importing manifest V4");
-
-    for graph in manifest.graphs {
+    let manifest = serde_json::from_str::<Manifest>(&manifest)?;
+    log::trace!("Manifest str: \n{manifest:?}");
+    log::debug!("{} statements imported", manifest.statements.keys().len());
+    for statement in manifest.statements.values() {
         ctx()
-            .sql_lite2
-            .create_graph(&graph.id, &graph.name, graph.parent.as_ref())
-            .await?;
-
-        if let Some(statements) = graph.statements {
-            for statement in statements {
-                ctx()
-                    .register_statement_locally(statement.clone(), Some(&graph.id))
-                    .await?
-            }
-        }
+            .register_statement_locally(statement.clone(), None)
+            .await?
     }
-
-    log::debug!("Decoding {} blobs", manifest.blobs.len());
     // Decode base64 values in the blobs HashMap
     let decoded_blobs = manifest
         .blobs
         .into_iter()
         .map(|(key, base64_value)| {
-            log::debug!("Decoding blob key: {}", key);
-            log::trace!("Base64 value length: {} chars", base64_value.len());
             let decoded_bytes = BASE64.decode(&base64_value)?;
-            log::debug!("Decoded {} bytes for key: {key}", decoded_bytes.len());
-
             Ok((key, decoded_bytes))
         })
         .collect::<Result<HashMap<String, Vec<u8>>, anyhow::Error>>()?;
@@ -258,12 +188,7 @@ fn register(_py: Python, manifest: String, api_key: Option<String>) -> PyResult<
 
 async fn register_async(config: &Configuration, manifest: Manifest) -> Result<()> {
     for statement in manifest.statements.into_iter() {
-        if let Some(ref attributes) = manifest.attributes {
-            let a = attributes.get(&statement.0);
-            register_statement(config, statement.1, a).await?;
-        } else {
-            register_statement(config, statement.1, None).await?;
-        }
+        register_statement(config, statement.1).await?;
     }
 
     for blob in manifest.blobs.into_iter() {
@@ -272,15 +197,11 @@ async fn register_async(config: &Configuration, manifest: Manifest) -> Result<()
     Ok(())
 }
 
-async fn register_statement(
-    ig_service_config: &Configuration,
-    statement: Statement,
-    attributes: Option<&Value>,
-) -> Result<()> {
+async fn register_statement(ig_service_config: &Configuration, statement: Statement) -> Result<()> {
     log::debug!("Registering statement: {statement:?}");
 
     let statement_str = serde_json::to_value(&statement)?;
-    let body = CreateStatementRequestBody::new(attributes.cloned(), Some(statement_str));
+    let body = CreateStatementRequestBody::new(Some(statement_str));
 
     match create_statement(ig_service_config, body).await {
         Ok(result) => {

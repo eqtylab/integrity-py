@@ -5,13 +5,10 @@ use async_trait::async_trait;
 use sqlx::{sqlite::SqliteRow, SqlitePool};
 use uuid::Uuid;
 
-use integrity::lineage::{
-    graph_indexer::{row_types::AssociationRow, sql_indexer::IStatementIdx},
-    models::{
-        graph::Graph,
-        statements::{Statement, StatementTrait},
-    },
-};
+use super::graph::Graph;
+use crate::indexer::{row_types::AssociationRow, sql_indexer::IStatementIdx};
+
+use integrity::lineage::models::statements::{Statement, StatementTrait};
 
 /// SQLite implementation of the graph-based statement indexer.
 ///
@@ -637,7 +634,7 @@ impl IStatementIdx for Sqlite {
     async fn retrieve_graph(&self, graph_id: &Uuid) -> Result<Graph> {
         log::info!("Retieving statements for graph {graph_id:?}");
 
-        let mut graph: Graph = sqlx::query(
+        let mut graph: Graph = sqlx::query_as(
             r#"
             SELECT graph_id, name, parent_id
             FROM graphs g
@@ -646,8 +643,7 @@ impl IStatementIdx for Sqlite {
         )
         .bind(graph_id.to_string())
         .fetch_one(&self.pool)
-        .await?
-        .into();
+        .await?;
 
         // Create placeholders for the IN clause
         let compute_query_str = r#"

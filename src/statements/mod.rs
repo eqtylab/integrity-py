@@ -1,6 +1,5 @@
-use integrity::lineage::{
-    graph_indexer::sql_indexer::IStatementIdx as graphIdx, models::graph::Graph,
-};
+use crate::indexer::graph::Graph;
+use crate::indexer::sql_indexer::IStatementIdx;
 use pyo3::{
     pyfunction,
     types::{PyDict, PyList},
@@ -91,7 +90,7 @@ pub fn register_statement_to_graph(
     graph_id: String,
 ) -> PyResult<()> {
     let graph_id = Uuid::parse_str(&graph_id).map_err(to_py_err)?;
-    let sql_client = ctx().sql_lite2;
+    let sql_client = ctx().sql_lite;
     context::get_runtime()
         .block_on(sql_client.associate_statement_to_graph(&statement_id, &graph_id))
         .map_err(to_py_err)?;
@@ -109,7 +108,7 @@ pub fn register_statement_to_graph(
 #[pyfunction]
 #[pyo3(signature = (graph_ids), text_signature = "(graph_ids: list[str]) -> list[dict]")]
 pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<PyObject> {
-    let sql_client = ctx().sql_lite2;
+    let sql_client = ctx().sql_lite;
 
     log::info!("Retrieving graphs {graph_ids:?}");
 

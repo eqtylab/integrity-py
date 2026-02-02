@@ -5,15 +5,12 @@ use std::{
     sync::{Arc, OnceLock, RwLock},
 };
 
+use crate::indexer::{sql_indexer::IStatementIdx as IStatementIdx2, sql_lite::Sqlite};
 use crate::integrity_service::Configuration as IntegrityServiceConfig;
 use anyhow::{anyhow, Result};
 use integrity::{
     cid::iroh::{CidIgnoreConfig, HashingConfig},
-    lineage::{
-        graph_indexer::{sql_indexer::IStatementIdx as IStatementIdx2, sql_lite::Sqlite},
-        indexer::sql_lite::SqlLite,
-        models::statements::{Statement, StatementTrait},
-    },
+    lineage::models::statements::{Statement, StatementTrait},
     signer::SignerType,
 };
 use tokio::runtime::Runtime;
@@ -117,7 +114,7 @@ fn create_graph_from_context(
         None
     };
     get_runtime()
-        .block_on(ctx().sql_lite2.create_graph(&id, &name, parent_id.as_ref()))
+        .block_on(ctx().sql_lite.create_graph(&id, &name, parent_id.as_ref()))
         .map_err(to_py_err)?;
     Ok(())
 }
@@ -151,10 +148,8 @@ pub struct Context {
     pub hashing: HashingConfig,
     /// Ignore list for computing CIDs of directories. List of globs for matching.
     pub cid_ignore: CidIgnoreConfig,
-    /// Connection to sqlite database for storing statements
-    pub sql_lite: Arc<SqlLite>,
     /// New connection to sqlite database for storing statements
-    pub sql_lite2: Arc<Sqlite>,
+    pub sql_lite: Arc<Sqlite>,
     /// Active signer only if it has been set during the session
     pub active_signer: Option<SignerType>,
     /// Whether to generate model signing signatures when computing CIDs for directories
@@ -187,11 +182,6 @@ impl Context {
         if !db_path.exists() {
             File::create(&db_path).map_err(to_py_err)?;
         }
-        let db_url = format!("sqlite:{}", db_path.display());
-
-        let sql_lite = get_runtime()
-            .block_on(SqlLite::new(&db_url))
-            .map_err(to_py_err)?;
 
         let db_path = app_dir.join("graphs.db");
         let db_init_required = !db_path.exists();
@@ -215,8 +205,7 @@ impl Context {
 
         let ctx = Context {
             app_dir,
-            sql_lite: Arc::new(sql_lite),
-            sql_lite2: Arc::new(sql_lite2),
+            sql_lite: Arc::new(sql_lite2),
             hashing: Default::default(),
             cid_ignore: Default::default(),
             integrity_service: None,
@@ -324,7 +313,7 @@ impl Context {
         let id = statement.get_id();
         let s_type = statement.get_type_string()?;
         log::info!("registering {s_type} statement {id} to graph database");
-        self.sql_lite2
+        self.sql_lite
             .register_statement(&statement, graph_id)
             .await?;
         Ok(())
