@@ -6,10 +6,13 @@ use serde_json::Value;
 /// Request body for creating a statement via the Integrity Service API.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateStatementRequestBody {
+    /// Whether to auto-generate an ID for the statement.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub generate_id: Option<Option<bool>>,
+    /// Whether to issue a verifiable credential for the statement.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub issue_vc: Option<Option<bool>>,
+    /// The statement payload as JSON.
     #[serde(deserialize_with = "Option::deserialize")]
     pub statement: Option<Value>,
 }

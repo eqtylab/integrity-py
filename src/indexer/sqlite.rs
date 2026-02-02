@@ -7,8 +7,6 @@ use uuid::Uuid;
 use super::{rows_to_statements, AssociationRow, Graph};
 use integrity::lineage::models::statements::{Statement, StatementTrait};
 
-/// SQLite implementation of the graph-based statement indexer.
-///
 /// Provides persistent storage for statements organized in graphs
 /// with support for hierarchical relationships and queries.
 pub struct Sqlite {
@@ -168,12 +166,12 @@ impl Sqlite {
         Ok(())
     }
 
-    /// Creates a new SQLite indexer connected to the database at the given URL.
+    /// Creates a new SQLite indexer connected to the database at the given file path.
     ///
     /// # Arguments
-    /// * `database_url` - SQLite database connection string (e.g., "sqlite://path/to/db.sqlite")
-    pub async fn new(database_url: &str) -> Result<Self> {
-        let pool = SqlitePool::connect(database_url).await?;
+    /// * `database` - SQLite database connection string (e.g., "sqlite://path/to/db.sqlite")
+    pub async fn new(database: &str) -> Result<Self> {
+        let pool = SqlitePool::connect(database).await?;
 
         Ok(Self { pool })
     }
@@ -192,7 +190,7 @@ impl Sqlite {
         Ok(())
     }
 
-    /// Only used for Comp, Data, Metadata, Storage & Association
+    /// Used to register statements associtated with a specific graph_id (aka NON-Global)
     async fn register_graph_statement(
         &self,
         statement: &Statement,
@@ -578,6 +576,11 @@ impl Sqlite {
         Ok(())
     }
 
+    /// Registers a statement in the database, optionally associating it with a graph.
+    ///
+    /// Graph-specific statements (computation, data, metadata, etc.) are linked to the
+    /// provided graph_id. Global statements (credentials, DIDs, governance) are stored
+    /// without graph association.
     pub async fn register_statement(
         &self,
         statement: &Statement,
@@ -624,8 +627,12 @@ impl Sqlite {
         Ok(())
     }
 
+    /// Retrieves a graph and all its associated statements by graph ID.
+    ///
+    /// Returns the graph with its statements populated, including statements
+    /// from parent graphs in the hierarchy.
     pub async fn retrieve_graph(&self, graph_id: &Uuid) -> Result<Graph> {
-        log::info!("Retieving statements for graph {graph_id:?}");
+        log::info!("Retrieving statements for graph {graph_id:?}");
 
         let mut graph: Graph = sqlx::query_as(
             r#"
@@ -734,6 +741,7 @@ impl Sqlite {
         Ok(graph)
     }
 
+    /// Returns all association IDs linked to the given subject.
     pub async fn get_associations_for_subject(&self, subject: &str) -> Result<Vec<String>> {
         log::trace!("Retrieving associations for subject={subject}.");
 
@@ -756,6 +764,7 @@ impl Sqlite {
         Ok(associations)
     }
 
+    /// Returns all subject IDs linked to the given association.
     pub async fn get_subjects_for_association(&self, association: &str) -> Result<Vec<String>> {
         log::trace!("Retrieving subjects for association={association}.");
 
@@ -778,6 +787,7 @@ impl Sqlite {
         Ok(subjects)
     }
 
+    /// Returns metadata for all graphs in the database.
     pub async fn get_graph_info(&self) -> Result<Vec<Graph>> {
         log::trace!("Retrieving all graph info");
 
@@ -793,6 +803,7 @@ impl Sqlite {
         Ok(rows)
     }
 
+    /// Returns metadata for all descendant graphs of the given parent.
     pub async fn get_child_graph_info(&self, parent_id: &Uuid) -> Result<Vec<Graph>> {
         log::trace!("Retrieving child graph info for {parent_id:?}");
 

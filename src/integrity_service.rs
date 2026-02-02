@@ -6,7 +6,7 @@ pub mod statements;
 /// Configuration for connecting to the Integrity Service API.
 #[derive(Debug, Clone)]
 pub struct Configuration {
-    /// Base URL path for the API (e.g., "https://api.example.com").
+    /// Base URL path for the API (e.g., `https://api.example.com`).
     pub base_path: String,
     /// HTTP client for making requests.
     pub client: reqwest::Client,
