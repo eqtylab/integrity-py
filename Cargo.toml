@@ -32,4 +32,9 @@ uuid = { version = "1.4", features = ["v4", "js", "serde"] }
 
 
 [dev-dependencies]
-ssi = "0.7"
+ssi = { version = "0.7", features = ["w3c", "http-did", "example-http-issuer", "ed25519", "secp256r1"] }
+ssi-json-ld = "0.2"
+ssi-contexts = "=0.1.5" # v0.1.10 has regressions causing jsonld expansion issues on vcs
+
+
+tempfile = "3"

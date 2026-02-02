@@ -5,7 +5,6 @@ import sqlite3
 from pathlib import Path
 
 from eqty_sdk import SIGNER_ALGORITHMS, Config, Signer, init, set_active_signer
-from eqty_sdk.feature_flags import FeatureFlags
 
 test_dir = Path("tmp")
 CONFIG = None
@@ -25,7 +24,6 @@ def setup_sdk() -> Config:
         set_active_signer(signer)
         return CONFIG
 
-    FeatureFlags.clear_runtime()
     return CONFIG
 
 

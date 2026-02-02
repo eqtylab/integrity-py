@@ -6,7 +6,6 @@ from typing import Union
 from eqty_sdk._rust import manifest as eqty_core_manifest
 from eqty_sdk.config import Config
 from eqty_sdk.errors import UsageError
-from eqty_sdk.feature_flags import FEATURE_FLAGS, FeatureFlags
 from eqty_sdk.statements.common import Statements
 
 logger = logging.getLogger("eqty.sdk.manifest")
@@ -19,16 +18,10 @@ class Manifest:
     @classmethod
     def from_statements(cls, statements: Statements, include_context: bool = True) -> "Manifest":
         """Creates a Manifest for the provided statements."""
-        if FeatureFlags.is_enabled(FEATURE_FLAGS.GRAPH_IDS):
-            logger.info(f"Generating manifest from graph {len(statements.graphs)}")
-            manifest_str = eqty_core_manifest.generate_v4(
-                statements.graphs, Config().blob_dir(), include_context
-            )
-        else:
-            logger.info(f"Generating manifest from {len(statements.statements)} statements")
-            manifest_str = eqty_core_manifest.generate(
-                statements.statements, Config().blob_dir(), statements.attributes, include_context
-            )
+        logger.info(f"Generating manifest from graph {len(statements.graphs)}")
+        manifest_str = eqty_core_manifest.generate(
+            statements.graphs, Config().blob_dir(), include_context
+        )
 
         instance = cls(manifest_str)
         return instance
@@ -39,7 +32,7 @@ class Manifest:
             manifest_file.write(self.manifest_str)
 
     @classmethod
-    def import_manifest(cls, manifest: Union[str, Path], **kwargs) -> None:
+    def import_manifest(cls, manifest: Union[str, Path]) -> None:
         if isinstance(manifest, Path):
             with open(manifest, "r") as f:
                 manifest_str = f.read()
@@ -47,7 +40,7 @@ class Manifest:
             manifest_str = manifest
 
         logger.debug("Importing manifest")
-        blobs = eqty_core_manifest.import_manifest(manifest_str, kwargs)
+        blobs = eqty_core_manifest.import_manifest(manifest_str)
 
         # Save each blob to the blob directory
         blob_dir = Config().blob_dir()
