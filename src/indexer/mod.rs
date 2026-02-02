@@ -1,4 +1,5 @@
 mod sqlite;
+mod tests;
 
 use std::collections::HashMap;
 
