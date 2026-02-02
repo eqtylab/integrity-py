@@ -17,7 +17,8 @@ mod model_signing;
 pub mod storage;
 mod vc;
 
-use pyo3::{pymodule, types::PyModule, wrap_pyfunction};
+use pyo3::prelude::*;
+use pyo3::{pymodule, wrap_pyfunction};
 use uuid::Uuid;
 
 use crate::{
@@ -27,7 +28,7 @@ use crate::{
 
 /// `statements` submodule to create lineage statements
 #[pymodule]
-pub fn statements(_py: Python, m: &PyModule) -> PyResult<()> {
+pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(
         association::create_association_statement,
         m
@@ -86,7 +87,7 @@ pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<PyObject> 
         .into_iter()
         .map(|graph| {
             // Convert each graph to a Python dict
-            let py_dict = PyDict::new(py);
+            let py_dict = PyDict::new_bound(py);
 
             // Set graph metadata
             py_dict.set_item("id", graph.id.to_string())?;
@@ -104,13 +105,13 @@ pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<PyObject> 
                 })
                 .collect::<PyResult<Vec<_>>>()?;
 
-            py_dict.set_item("statements", PyList::new(py, py_statements))?;
+            py_dict.set_item("statements", PyList::new_bound(py, py_statements))?;
 
             Ok(py_dict.into())
         })
         .collect::<PyResult<Vec<_>>>()?;
 
-    Ok(PyList::new(py, py_graphs).into())
+    Ok(PyList::new_bound(py, py_graphs).into())
 }
 
 fn json_value_to_python(py: Python, value: &serde_json::Value) -> PyResult<PyObject> {
@@ -131,10 +132,10 @@ fn json_value_to_python(py: Python, value: &serde_json::Value) -> PyResult<PyObj
         Value::Array(arr) => {
             let py_list: PyResult<Vec<PyObject>> =
                 arr.iter().map(|v| json_value_to_python(py, v)).collect();
-            Ok(PyList::new(py, py_list?).to_object(py))
+            Ok(PyList::new_bound(py, py_list?).to_object(py))
         }
         Value::Object(obj) => {
-            let py_dict = PyDict::new(py);
+            let py_dict = PyDict::new_bound(py);
             for (k, v) in obj {
                 py_dict.set_item(k, json_value_to_python(py, v)?)?;
             }

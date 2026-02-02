@@ -5,11 +5,8 @@ use integrity::cid::{
     blake3::blake3_cid_raw_binary,
     iroh::{compute_dir_cid, compute_file_cid},
 };
-use pyo3::{
-    pyclass, pyfunction, pymethods, pymodule,
-    types::{PyBytes, PyModule},
-    wrap_pyfunction, PyResult, Python,
-};
+use pyo3::prelude::*;
+use pyo3::types::PyBytes;
 
 use crate::{
     context::{self, ctx},
@@ -98,7 +95,7 @@ impl CidResult {
 
     #[getter]
     fn blob<'py>(&self, py: Python<'py>) -> PyResult<&'py PyBytes> {
-        Ok(PyBytes::new(py, &self.blob))
+        Ok(PyBytes::new_bound(py, &self.blob).into_gil_ref())
     }
 }
 
@@ -116,9 +113,7 @@ impl std::str::FromStr for Canon {
 
 /// `cid` submodule.
 #[pymodule]
-pub fn cid(py: Python, m: &PyModule) -> PyResult<()> {
-    let _ = py;
-
+pub fn cid(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(compute_cid_for_directory, m)?)?;
     m.add_function(wrap_pyfunction!(compute_cid_for_file, m)?)?;
     m.add_function(wrap_pyfunction!(compute_cid_for_bytes, m)?)?;

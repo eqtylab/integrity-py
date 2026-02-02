@@ -10,12 +10,8 @@ use integrity::{
         statements::Statement,
     },
 };
-use pyo3::{
-    prelude::*,
-    pyfunction, pymodule,
-    types::{PyBytes, PyDict, PyList, PyModule},
-    wrap_pyfunction, PyResult, Python,
-};
+use pyo3::prelude::*;
+use pyo3::types::{PyBytes, PyDict, PyList};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -31,7 +27,7 @@ use crate::{
 
 /// `manifest` submodule.
 #[pymodule]
-pub fn manifest(_py: Python, m: &PyModule) -> PyResult<()> {
+pub fn manifest(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(generate, m)?)?;
     m.add_function(wrap_pyfunction!(import_manifest, m)?)?;
     m.add_function(wrap_pyfunction!(merge, m)?)?;
@@ -98,9 +94,10 @@ pub fn import_manifest<'py>(
         .block_on(rust_import(manifest, &graph_id))
         .map_err(to_py_err)?;
 
-    let py_blobs = blobs
+    // Convert Vec<u8> to &PyBytes
+    let py_blobs: HashMap<String, &'py PyBytes> = blobs
         .into_iter()
-        .map(|(k, v)| (k, PyBytes::new(py, &v)))
+        .map(|(k, v)| (k, PyBytes::new_bound(py, &v).into_gil_ref()))
         .collect();
 
     Ok(py_blobs)
@@ -133,13 +130,13 @@ fn python_to_json_value(py: Python, obj: &PyObject) -> PyResult<Value> {
         ))
     } else if let Ok(s) = obj.extract::<String>(py) {
         Ok(Value::String(s))
-    } else if let Ok(py_list) = obj.downcast::<PyList>(py) {
+    } else if let Ok(py_list) = obj.downcast_bound::<PyList>(py) {
         let mut vec = Vec::new();
         for item in py_list {
             vec.push(python_to_json_value(py, &item.into())?);
         }
         Ok(Value::Array(vec))
-    } else if let Ok(py_dict) = obj.downcast::<PyDict>(py) {
+    } else if let Ok(py_dict) = obj.downcast_bound::<PyDict>(py) {
         let mut map = serde_json::Map::new();
         for (key, value) in py_dict {
             let key_str = key.extract::<String>()?;

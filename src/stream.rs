@@ -8,12 +8,10 @@ use integrity::{
     signer::SignerType,
 };
 use once_cell::sync::Lazy;
-use pyo3::{
-    pyfunction, pymodule,
-    types::{PyBytes, PyModule},
-    wrap_pyfunction, PyAny, PyObject, PyResult, Python, ToPyObject,
-};
-use pyo3_asyncio::tokio::future_into_py;
+use pyo3::prelude::*;
+use pyo3::types::{PyBytes, PyModule};
+use pyo3::Bound;
+use pyo3_async_runtimes::tokio::future_into_py;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -30,9 +28,9 @@ pub struct StreamCIDs {
 
 impl ToPyObject for StreamCIDs {
     fn to_object(&self, py: Python) -> PyObject {
-        let dict = pyo3::types::PyDict::new(py);
+        let dict = pyo3::types::PyDict::new_bound(py);
         dict.set_item("compute_id", &self.compute_id).unwrap();
-        dict.set_item("stream", PyBytes::new(py, &self.stream))
+        dict.set_item("stream", PyBytes::new_bound(py, &self.stream))
             .unwrap();
         dict.into()
     }
@@ -40,7 +38,7 @@ impl ToPyObject for StreamCIDs {
 
 /// `stream` submodule.
 #[pymodule]
-pub fn stream(_py: Python, m: &PyModule) -> PyResult<()> {
+pub fn stream(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(create, m)?)?;
     m.add_function(wrap_pyfunction!(update, m)?)?;
     m.add_function(wrap_pyfunction!(finalize, m)?)?;
@@ -56,7 +54,7 @@ fn create(
     operated_by: Option<String>,
     executed_on: Option<String>,
     timestamp: Option<String>,
-) -> PyResult<&PyAny> {
+) -> PyResult<Bound<'_, PyAny>> {
     log::debug!("Creating new stream");
     let fut = async move {
         let uuid = create_stream_computation(input_cids, operated_by, executed_on, timestamp)
@@ -71,7 +69,7 @@ fn create(
 
 /// updates an existing computation stream with new data
 #[pyfunction]
-fn update(py: Python<'_>, id: String, chunk: Vec<u8>) -> PyResult<&PyAny> {
+fn update(py: Python<'_>, id: String, chunk: Vec<u8>) -> PyResult<Bound<'_, PyAny>> {
     let id = Uuid::parse_str(&id).map_err(to_py_err)?;
 
     log::debug!("Updating stream computation with ID: {id:?}");
@@ -95,7 +93,7 @@ fn finalize(
     id: String,
     static_output_cids: Option<Vec<String>>,
     graph_id: Option<String>,
-) -> PyResult<&PyAny> {
+) -> PyResult<Bound<'_, PyAny>> {
     let graph_id = ctx().resolve_graph_id(graph_id).map_err(to_py_err)?;
     let id = Uuid::parse_str(&id).map_err(to_py_err)?;
 

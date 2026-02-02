@@ -24,11 +24,12 @@ use core::fmt::Display;
 use std::collections::HashMap;
 
 use anyhow::Result;
+use pyo3::prelude::*;
 use pyo3::{
     exceptions::PyRuntimeError,
     pyfunction, pymodule,
     types::{PyDict, PyModule},
-    wrap_pyfunction, wrap_pymodule, PyErr, PyResult, Python,
+    wrap_pyfunction, wrap_pymodule, PyErr, PyResult,
 };
 use serde_json::{json, Value};
 
@@ -36,9 +37,7 @@ use serde_json::{json, Value};
 ///
 /// This module is accessible in the Python package as `eqty_sdk._rust`
 #[pymodule]
-fn _rust(py: Python, m: &PyModule) -> PyResult<()> {
-    let _ = py;
-
+fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(cid::cid))?;
     m.add_wrapped(wrap_pymodule!(context::context))?;
     m.add_wrapped(wrap_pymodule!(signer::signer))?;

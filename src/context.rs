@@ -23,15 +23,13 @@ pub fn get_runtime() -> &'static Runtime {
     RUNTIME.get_or_init(|| Runtime::new().expect("Failed to create tokio runtime"))
 }
 
-use pyo3::{pyfunction, pymodule, types::PyModule, wrap_pyfunction, PyResult, Python};
+use pyo3::prelude::*;
 
 use crate::to_py_err;
 
 /// `context` submodule.
 #[pymodule]
-pub fn context(py: Python, m: &PyModule) -> PyResult<()> {
-    let _ = py;
-
+pub fn context(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(init, m)?)?;
     m.add_function(wrap_pyfunction!(reset, m)?)?;
     m.add_function(wrap_pyfunction!(set_cid_ignore_rules, m)?)?;

@@ -6,20 +6,16 @@ use integrity::signer::{
     Ed25519Signer, KeyType, P256Signer, Secp256k1Signer, SignerType, VCompNotarySigner,
     YubiHsmSigner,
 };
-use pyo3::{
-    pyclass, pyfunction, pymethods, pymodule,
-    types::{PyBytes, PyModule},
-    wrap_pyfunction, Py, PyErr, PyObject, PyResult, Python, ToPyObject,
-};
+use pyo3::prelude::*;
+use pyo3::types::PyBytes;
+
 use serde::Serialize;
 
 use crate::{context::ctx, to_py_err};
 
 /// `signer` submodule.
 #[pymodule]
-pub fn signer(py: Python, m: &PyModule) -> PyResult<()> {
-    let _ = py;
-
+pub fn signer(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(create_new_signer, m)?)?;
     m.add_function(wrap_pyfunction!(create_signer_from_private_key, m)?)?;
     m.add_function(wrap_pyfunction!(create_vcomp_signer, m)?)?;
@@ -49,7 +45,7 @@ pub struct PySigner {
 
 impl ToPyObject for PySigner {
     fn to_object(&self, py: Python) -> PyObject {
-        let dict = pyo3::types::PyDict::new(py);
+        let dict = pyo3::types::PyDict::new_bound(py);
         dict.set_item("name", &self.name).unwrap();
         dict.set_item("did_key", &self.did_key).unwrap();
         dict.into()
@@ -317,7 +313,7 @@ fn get_signer_blobs(py: Python<'_>, name: String) -> PyResult<HashMap<String, &P
             if let Some(blobs) = vcomp_signer.did_blobs {
                 let blobs = blobs
                     .into_iter()
-                    .map(|(k, v)| (k, PyBytes::new(py, &v)))
+                    .map(|(k, v)| (k, PyBytes::new_bound(py, &v).into_gil_ref()))
                     .collect();
                 Ok(blobs)
             } else {
