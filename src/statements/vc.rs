@@ -16,7 +16,7 @@ pub fn create_vc_statement(
     graph_id: Option<uuid::Uuid>,
 ) -> PyResult<String> {
     with_ctx!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph_id)?;
+        let graph_id = ctx.resolve_graph_id(graph_id);
         let signer = ctx
             .active_signer
             .ok_or_else(|| anyhow!("No active signer available"))?;

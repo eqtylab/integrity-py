@@ -92,7 +92,7 @@ pub fn import_manifest<'py>(
     graph_id: Option<uuid::Uuid>,
 ) -> PyResult<HashMap<String, Bound<'py, PyBytes>>> {
     let blobs: HashMap<String, Vec<u8>> = with_ctx!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph_id)?;
+        let graph_id = ctx.resolve_graph_id(graph_id);
         rust_import(manifest, &graph_id).await
     })?;
 

@@ -24,7 +24,7 @@ pub fn create_model_signing_statement(
     graph_id: Option<uuid::Uuid>,
 ) -> PyResult<String> {
     with_ctx!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph_id)?;
+        let graph_id = ctx.resolve_graph_id(graph_id);
 
         let blob_store = Arc::new(blob_store::local_fs::LocalFs::new(blobs_dir));
 

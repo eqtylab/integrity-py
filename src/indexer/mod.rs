@@ -40,10 +40,10 @@ pub struct Graph {
 
 impl Default for Graph {
     fn default() -> Self {
-        let id = uuid::Uuid::new_v4();
+        let id = uuid::uuid!("00000000-0000-0000-0000-000000000000");
         Graph {
             id,
-            name: id.to_string(),
+            name: "Default".to_owned(),
             parent: None,
             statements: None,
         }

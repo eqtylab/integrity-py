@@ -179,9 +179,7 @@ impl Sqlite {
     /// Creates a record in the "graphs" table
     pub async fn create_graph(
         &self,
-        graph_id: &Uuid,
-        name: &str,
-        parent_id: Option<&Uuid>,
+        graph: &Graph,
     ) -> Result<()> {
         sqlx::query(
             r#"
@@ -190,9 +188,9 @@ impl Sqlite {
             VALUES (?1, ?2, ?3)
             "#,
         )
-        .bind(graph_id.to_string())
-        .bind(name)
-        .bind(parent_id.map(|id| id.to_string()))
+        .bind(graph.id.to_string())
+        .bind(graph.name.clone())
+        .bind(graph.parent.map(|id| id.to_string()))
         .execute(&self.pool)
         .await?;
 

@@ -13,7 +13,7 @@ pub fn create_governance_statement(
     graph_id: Option<uuid::Uuid>,
 ) -> PyResult<String> {
     with_ctx!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph_id)?;
+        let graph_id = ctx.resolve_graph_id(graph_id);
         let registered_by = ctx.clone().get_active_signer_did_key()?;
 
         let statement = Statement::GovernanceRegistration(

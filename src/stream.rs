@@ -85,7 +85,7 @@ fn finalize(
 
     let fut = async move {
         let ctx = ctx_async().await;
-        let graph_id = ctx.resolve_graph_id(graph_id)?;
+        let graph_id = ctx.resolve_graph_id(graph_id);
         let (compute_id, stream) = finalize_stream(id, static_output_cids, &graph_id).await?;
 
         Ok(StreamCIDs { compute_id, stream })

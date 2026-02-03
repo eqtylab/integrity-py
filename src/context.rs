@@ -3,7 +3,7 @@ use std::{fs, fs::File, path::PathBuf, sync::Arc};
 use crate::indexer::Graph;
 use crate::indexer::Sqlite;
 use crate::integrity_service::Configuration as IntegrityServiceConfig;
-use anyhow::{anyhow, Context as AnyhowContext, Result};
+use anyhow::{anyhow, Result};
 use integrity::{
     cid::iroh::{CidIgnoreConfig, HashingConfig},
     signer::SignerType,
@@ -48,7 +48,7 @@ pub fn context(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(set_integrity_service_url, m)?)?;
     m.add_function(wrap_pyfunction!(set_hashing_config, m)?)?;
     m.add_function(wrap_pyfunction!(set_generate_model_signing_signatures, m)?)?;
-    m.add_function(wrap_pyfunction!(create_graph_from_context, m)?)?;
+    m.add_function(wrap_pyfunction!(set_default_graph, m)?)?;
 
     Ok(())
 }
@@ -112,30 +112,15 @@ fn set_generate_model_signing_signatures(_py: Python, enable: bool) -> PyResult<
 }
 
 #[pyfunction]
-/// Creates a graph record in the DB that statements can be registered under
-fn create_graph_from_context(
-    py: Python<'_>,
-    id: String,
-    name: String,
-    parent_id: Option<String>,
-) -> PyResult<()> {
-    let id = Uuid::parse_str(&id).context("Invalid graph ID")?;
-    let parent_id = if let Some(parent_id) = parent_id {
-        let id = Uuid::parse_str(&parent_id).context("Invalid parent graph ID")?;
-        Some(id)
-    } else {
-        None
-    };
-    py.detach(|| {
-        get_runtime().block_on(async {
-            let context = ctx_async().await;
-            context
-                .sql_lite
-                .create_graph(&id, &name, parent_id.as_ref())
-                .await
-        })
-    })?;
-    Ok(())
+/// Sets the default graph context
+fn set_default_graph(py: Python, graph: Graph) -> PyResult<()> {
+    with_ctx!(py, |ctx| {
+        let _ = ctx.sql_lite.create_graph(&graph).await;
+    });
+
+    Ok(Context::update_context(|ctx| {
+        ctx.default_graph = graph
+    })?)
 }
 
 /// Gets a clone of the global application context (async version).
@@ -212,6 +197,8 @@ impl Context {
             sqlite.init().await?;
         }
 
+        let default_graph = Graph::default();
+        sqlite.create_graph(&default_graph).await?;
         let ctx = Context {
             app_dir,
             sql_lite: Arc::new(sqlite),
@@ -220,7 +207,7 @@ impl Context {
             integrity_service: None,
             active_signer: None,
             generate_model_signing_signatures: false,
-            default_graph: Graph::default(),
+            default_graph,
         };
 
         // Acquire write lock to set the context
@@ -334,17 +321,6 @@ impl Context {
         })
     }
 
-    /// Sets the default Graph information to be used for all statements if not explicitly set
-    ///
-    /// # Arguments
-    /// * `graph` - The graph stuct to set as default
-    ///
-    /// # Returns
-    /// * `Result<()>` - Sucess or error if context update fails
-    pub fn set_default_graph(&self, graph: Graph) -> Result<()> {
-        Context::update_context(|ctx| ctx.default_graph = graph)
-    }
-
     /// Resolves the Optional graph id, or the default graph id
     ///
     /// # Arguments
@@ -352,10 +328,10 @@ impl Context {
     ///
     /// # Returns
     /// * `Result<Uuid>` - The opional graph id converted to a UUID, or the default graph id
-    pub fn resolve_graph_id(&self, graph_id: Option<Uuid>) -> Result<Uuid> {
+    pub fn resolve_graph_id(&self, graph_id: Option<Uuid>) -> Uuid {
         match graph_id {
-            Some(id) => Ok(id),
-            None => Ok(self.default_graph.id),
+            Some(id) => id,
+            None => self.default_graph.id,
         }
     }
 }

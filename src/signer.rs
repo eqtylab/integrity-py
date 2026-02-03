@@ -236,7 +236,7 @@ fn set_active_signer(py: Python, name: String) -> PyResult<()> {
 #[pyfunction]
 fn get_active_signer_did_key(py: Python) -> PyResult<String> {
     use crate::with_ctx;
-    Ok(with_ctx!(py, |ctx| { ctx.get_active_signer_did_key() })?)
+    Ok(with_ctx!(py, |ctx| ctx.get_active_signer_did_key())?)
 }
 
 /// Get signer type string ('vcomp_notary', 'yubihsm2', etc) by name.
