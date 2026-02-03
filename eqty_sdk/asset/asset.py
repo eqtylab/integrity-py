@@ -94,6 +94,31 @@ def _should_skip_proof(**kwargs):
         return os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
 
 
+class TypedAsset:
+    """Base class for typed assets. Subclasses just need to set _asset_type class variable."""
+
+    _asset_type: AssetType
+
+    @classmethod
+    def from_path(
+        cls, path: Union[str, Path], store: Optional[bool] = None, **kwargs
+    ) -> "Asset":
+        return Asset._from_path(path, cls._asset_type, store=store, **kwargs)
+
+    @classmethod
+    def from_cid(cls, cid: Union[Cid, str], **kwargs) -> "Asset":
+        cid_str = cid.cid if isinstance(cid, Cid) else cid
+        return Asset._from_cid(cid_str, cls._asset_type, **kwargs)
+
+    @classmethod
+    def from_object(cls, obj: Any, store: Optional[bool] = None, **kwargs) -> "Asset":
+        return Asset._from_object(obj, cls._asset_type, store=store, **kwargs)
+
+    @classmethod
+    def with_context(cls, ctx: Context) -> Any:
+        return Asset._factory_with_context(ctx, cls._asset_type)
+
+
 class Asset:
     def __init__(
         self,
