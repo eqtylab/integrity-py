@@ -11,6 +11,7 @@ pub fn create_data_statement(
     timestamp: Option<String>,
     graph_id: Option<uuid::Uuid>,
 ) -> PyResult<String> {
+    log::warn!("CREATING DATA STATEMENT");
     let graph_id = ctx().resolve_graph_id(graph_id)?;
 
     let registered_by = ctx().get_active_signer_did_key()?;

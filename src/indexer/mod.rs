@@ -4,6 +4,7 @@ mod tests;
 use std::collections::HashMap;
 
 use anyhow::Result;
+use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::sqlite::SqliteRow;
@@ -22,7 +23,8 @@ pub use sqlite::Sqlite;
 ///
 /// Graphs group statements together with optional parent-child relationships,
 /// enabling versioning and organizational structure for lineage data.
-#[derive(Debug, Serialize, Deserialize)]
+#[pyclass]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Graph {
     /// Unique identifier for this graph
     pub id: Uuid,
@@ -34,6 +36,18 @@ pub struct Graph {
     /// Statements contained in this graph (populated on retrieval)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub statements: Option<Vec<Statement>>,
+}
+
+impl Default for Graph {
+    fn default() -> Self {
+        let id = uuid::Uuid::new_v4();
+        Graph {
+            id,
+            name: id.to_string(),
+            parent: None,
+            statements: None,
+        }
+    }
 }
 
 impl<'r> FromRow<'r, SqliteRow> for Graph {

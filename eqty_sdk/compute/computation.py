@@ -3,10 +3,12 @@ import os
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
-from eqty_sdk._rust import statements as eqty_core_statements
+from eqty_sdk._rust import (
+    Graph as Context,
+    statements as eqty_core_statements,
+)
 from eqty_sdk.asset import serialize_for_hashing
 from eqty_sdk.config.config import Config
-from eqty_sdk.context import Context
 from eqty_sdk.core import get_cid_for_bytes, get_cid_for_path
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
@@ -31,7 +33,7 @@ def __cid_path__(path: Union[str, Path], store: Optional[bool] = None) -> str:
 
 
 class Computation:
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         raise TypeError("Use Computation.new() to create instances of this class.")
 
     def __init_internal__(

@@ -1,3 +1,5 @@
+default_stages: [pre-push]
+
 repos:
   - repo: local
     hooks:
@@ -45,9 +47,3 @@ repos:
         entry: ruff format
         language: system
         types: [python]
-
-stages:
-  - id: pre-push
-    name: pre-push
-    description: Run pre-commit hooks on pre-push
-    verbose: true

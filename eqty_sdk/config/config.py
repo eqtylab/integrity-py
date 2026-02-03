@@ -7,9 +7,9 @@ from typing import Optional
 import toml
 
 from eqty_sdk._rust import (
+    Graph,
     context as eqty_core_context,
 )
-from eqty_sdk.context import Context
 
 from .cid_ignore import CidIgnore
 
@@ -68,17 +68,6 @@ class Config:
         """Returns whether model signing signatures are generated for directories."""
         return self._settings.generate_model_signing_signatures
 
-    @property
-    def root_context(self) -> Context:
-        """Returns the root context object."""
-        if not self._root_context:
-            # lazy create a default context
-            logger.info("Root context not set. Creating")
-            self.set_default_context(Context.new())
-
-        assert self._root_context
-        return self._root_context
-
     def __new__(cls):
         """Constructor."""
         if not cls._instance:
@@ -89,9 +78,6 @@ class Config:
         """Singleton wrapper. Returns the already initialized config, or creates a new singleton."""
         if hasattr(self, "_initialized") and self._initialized:
             return
-
-        # create a default context, that can be overwritten only once
-        self._root_context: Optional[Context] = None
 
         # Set all the property defaults when the singleton is created
         self._settings = Settings()
@@ -185,18 +171,14 @@ class Config:
         self.save()
         return self
 
-    def set_default_context(self, ctx: Context) -> "Config":
+    def set_default_context(self, ctx: Graph) -> "Config":
         """Sets the default context for grouping of statements.
 
         Args:
             ctx: The Context
 
         """
-        if self._root_context:
-            logger.error("The default context can only be set once.")
-            return self
-
-        self._root_context = ctx
+        eqty_core_context.set_default_graph(ctx)
         return self
 
     def __load_config_file__(self, custom_dir: Optional[str] = None) -> None:

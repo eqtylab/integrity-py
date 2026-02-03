@@ -1,3 +1,4 @@
+from eqty_sdk._rust import Graph as Context
 from eqty_sdk.asset import (
     Asset,
     AssetType,
@@ -21,9 +22,6 @@ from eqty_sdk.compute import (
 )
 from eqty_sdk.config import (
     Config,
-)
-from eqty_sdk.context import (
-    Context,
 )
 from eqty_sdk.core import (
     get_cid_for_bytes,

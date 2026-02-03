@@ -7,9 +7,11 @@ from typing import Any, Optional, Union, cast
 
 import dill as pickle
 
-from eqty_sdk._rust import statements as eqty_core_statements
+from eqty_sdk._rust import (
+    Graph as Context,
+    statements as eqty_core_statements,
+)
 from eqty_sdk.config import Config
-from eqty_sdk.context import Context
 from eqty_sdk.core import (
     get_cid_for_bytes,
     get_cid_for_path,
@@ -95,21 +97,20 @@ def _should_skip_proof(**kwargs):
 class Asset:
     def __init__(
         self,
-        ctx: Context,
         obj: Any,
         asset_type: Union[AssetType, str],
         cid: str,
         is_dir: bool,
+        custom_ctx: Optional[Context],
         **kwargs,
     ):
-        self._ctx = ctx
+        self._ctx = custom_ctx
 
         self._value: Any = obj
         self._skip_proof = _should_skip_proof(**kwargs)
 
         self._cid = cid
         self._is_dir = is_dir
-        self.statement_ids: list[str] = []
 
         if isinstance(asset_type, AssetType):
             kwargs.update({"assetType": asset_type.value})
@@ -121,9 +122,6 @@ class Asset:
         if not kwargs.get("skip_registration", False):
             try:
                 self._create_eqty_statements()
-                for id in self.statement_ids:
-                    logger.info(f"Registering data statement {id} to graph: {self._ctx.uuid}")
-                    eqty_core_statements.register_statement_to_graph(id, str(self._ctx.uuid))
 
             except RuntimeError as e:
                 logger.error(f"Error creating new asset: {e}")
@@ -131,13 +129,12 @@ class Asset:
 
     @staticmethod
     def _from_object(
-        ctx: Context,
         obj: Any,
         asset_type: Union[AssetType, str],
+        ctx: Optional[Context] = None,
         store: Optional[bool] = None,
         **kwargs,
     ) -> "Asset":
-        logger.debug(f"Asset Context: {ctx!r}")
         serialized_bytes = serialize_for_hashing(obj)
         cid = get_cid_for_bytes(serialized_bytes, store)
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
@@ -147,9 +144,9 @@ class Asset:
 
     @staticmethod
     def _from_path(
-        ctx: Context,
         path: Union[Path, str],
         asset_type: Union[AssetType, str],
+        ctx: Optional[Context] = None,
         store: Optional[bool] = None,
         **kwargs,
     ) -> "Asset":
@@ -158,14 +155,16 @@ class Asset:
         is_dir = resolved_path.is_dir()
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
-        asset = Asset(ctx, resolved_path, asset_type, cid, is_dir, **kwargs)
+        asset = Asset(resolved_path, asset_type, cid, is_dir, custom_ctx=ctx, **kwargs)
         return asset
 
     @staticmethod
-    def _from_cid(ctx: Context, cid: str, asset_type: Union[AssetType, str], **kwargs) -> "Asset":
+    def _from_cid(
+        cid: str, asset_type: Union[AssetType, str], ctx: Optional[Context], **kwargs
+    ) -> "Asset":
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
-        asset = Asset(ctx, cid, asset_type, cid, is_dir=False, **kwargs)
+        asset = Asset(cid, asset_type, cid, is_dir=False, custom_ctx=ctx, **kwargs)
         return asset
 
     @staticmethod
@@ -174,7 +173,7 @@ class Asset:
             def from_path(
                 self, path: Union[str, Path], store: Optional[bool] = None, **kwargs
             ) -> "Asset":
-                return Asset._from_path(ctx, path, asset_type, store, **kwargs)
+                return Asset._from_path(path, asset_type, ctx, store, **kwargs)
 
             def from_cid(self, cid: Union[Cid, str], **kwargs) -> "Asset":
                 if isinstance(cid, Cid):
@@ -210,18 +209,15 @@ class Asset:
     def add_declaration(self, declaration: Declaration) -> "Asset":
         document_cid = declaration.cid()
         ids = add_governance_statement(self.cid, document_cid, self._skip_proof)
-        self.statement_ids.extend(ids)
         return self
 
     def _create_eqty_statements(self) -> None:
         """Creates DataStatement, MetadataStatement, and VcStatement."""
-        statement_ids = add_data_statement([self.cid], self._skip_proof)
-        self.statement_ids.extend(statement_ids)
-        meta_ids = add_metadata_statement(self.cid, self._metadata.to_json_str(), self._skip_proof)
-        self.statement_ids.extend(meta_ids)
+        add_data_statement([self.cid], self._skip_proof)
+        add_metadata_statement(self.cid, self._metadata.to_json_str(), self._skip_proof)
 
         if Config().generate_model_signing_signatures and self._is_dir:
-            model_signing_statement_id = eqty_core_statements.create_model_signing_statement(
+            eqty_core_statements.create_model_signing_statement(
                 collection_cid=self.cid,
                 blobs_dir=Config().blob_dir(),
                 model_signing_name=self._metadata.name or "Unnamed Asset",
@@ -229,7 +225,6 @@ class Asset:
                 ignore_paths=[],  # TODO: populate this, ok for now, just makes recreation require more out-of-band info
                 timestamp=None,
             )
-            self.statement_ids.extend([model_signing_statement_id])
 
     def __repr__(self) -> str:
         return f"Asset({self._value!r})"
@@ -267,7 +262,6 @@ class Asset:
             "_metadata",
             "_asset_type",
             "_skip_proof",
-            "statement_ids",
         }:
             object.__setattr__(self, key, value)
         else:

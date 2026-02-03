@@ -3,11 +3,11 @@ import logging
 from typing import Optional
 
 from eqty_sdk._rust import (
+    Graph as Context,
     signer as eqty_core_signer,
     statements as eqty_core_statements,
 )
 from eqty_sdk.config import Config
-from eqty_sdk.context import Context
 from eqty_sdk.statements import add_did_statement, add_metadata_statement
 from eqty_sdk.types.signer import Signer
 

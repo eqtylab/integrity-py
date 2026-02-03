@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Any, Optional, Union, cast
 
+from eqty_sdk._rust import Graph as Context
 from eqty_sdk.config.config import Config
-from eqty_sdk.context import Context
 from eqty_sdk.types.cid import Cid
 
 from .asset import Asset, AssetType

@@ -5,6 +5,7 @@ use std::{
     sync::{Arc, OnceLock, RwLock},
 };
 
+use crate::indexer::Graph;
 use crate::indexer::Sqlite;
 use crate::integrity_service::Configuration as IntegrityServiceConfig;
 use anyhow::{anyhow, Context as AnyhowContext, Result};
@@ -41,8 +42,9 @@ pub fn context(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 /// Initializes the sdk context. Must be called before setting individual context values
 #[pyfunction]
-fn init(_py: Python, app_dir: PathBuf) -> PyResult<()> {
-    Context::init(app_dir)?;
+fn init(py: Python, app_dir: PathBuf) -> PyResult<()> {
+    // Release GIL to allow pyo3_log to forward log messages during blocking operations
+    py.allow_threads(|| Context::init(app_dir))?;
     Ok(())
 }
 
@@ -100,7 +102,7 @@ fn set_generate_model_signing_signatures(_py: Python, enable: bool) -> PyResult<
 #[pyfunction]
 /// Creates a graph record in the DB that statements can be registered under
 fn create_graph_from_context(
-    _py: Python,
+    py: Python,
     id: String,
     name: String,
     parent_id: Option<String>,
@@ -112,7 +114,10 @@ fn create_graph_from_context(
     } else {
         None
     };
-    get_runtime().block_on(ctx().sql_lite.create_graph(&id, &name, parent_id.as_ref()))?;
+    // Release GIL to allow pyo3_log to forward log messages during blocking operations
+    py.allow_threads(|| {
+        get_runtime().block_on(ctx().sql_lite.create_graph(&id, &name, parent_id.as_ref()))
+    })?;
     Ok(())
 }
 
@@ -151,6 +156,8 @@ pub struct Context {
     pub active_signer: Option<SignerType>,
     /// Whether to generate model signing signatures when computing CIDs for directories
     pub generate_model_signing_signatures: bool,
+
+    pub default_graph: Graph,
 }
 
 impl Context {
@@ -175,33 +182,27 @@ impl Context {
             fs::create_dir_all(&app_dir)?;
         }
 
-        let db_path = app_dir.join("statements.db");
-        if !db_path.exists() {
-            File::create(&db_path)?;
-        }
-
         let db_path = app_dir.join("graphs.db");
         let db_init_required = !db_path.exists();
         if !db_path.exists() {
             File::create(&db_path)?;
         }
-        let db_url = format!("sqlite:{}", db_path.display());
-        let sql_lite2 = get_runtime().block_on(Sqlite::new(&db_url))?;
+        let db_file = format!("sqlite:{}", db_path.display());
+        let sqlite = get_runtime().block_on(Sqlite::new(&db_file))?;
 
         if db_init_required {
-            get_runtime().block_on(sql_lite2.init())?;
+            get_runtime().block_on(sqlite.init())?;
         }
-
-        get_runtime().block_on(sql_lite2.init())?;
 
         let ctx = Context {
             app_dir,
-            sql_lite: Arc::new(sql_lite2),
+            sql_lite: Arc::new(sqlite),
             hashing: Default::default(),
             cid_ignore: Default::default(),
             integrity_service: None,
             active_signer: None,
             generate_model_signing_signatures: false,
+            default_graph: Graph::default(),
         };
 
         *ctx_lock = Some(ctx.clone());
@@ -288,6 +289,17 @@ impl Context {
         })
     }
 
+    /// Sets the default Graph information to be used for all statements if not explicitly set
+    ///
+    /// # Arguments
+    /// * `graph` - The graph stuct to set as default
+    ///
+    /// # Returns
+    /// * `Result<()>` - Sucess or error if context update fails
+    pub fn set_default_graph(&self, graph: Graph) -> Result<()> {
+        Context::update_context(|ctx| ctx.default_graph = graph)
+    }
+
     /// Resolves the Optional graph id, or the default graph id
     ///
     /// # Arguments
@@ -298,7 +310,7 @@ impl Context {
     pub fn resolve_graph_id(&self, graph_id: Option<Uuid>) -> Result<Uuid> {
         match graph_id {
             Some(id) => Ok(id),
-            None => todo!("Get default graph_id from py context"),
+            None => Ok(self.default_graph.id),
         }
     }
 }
