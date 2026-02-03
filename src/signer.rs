@@ -72,6 +72,7 @@ impl PySigner {
 /// * `name` - Optional name for the signer (uses DID key if not provided)
 /// * `key_type` - Type of cryptographic key to generate (SECP256K1, SECP256R1, ED25519)
 #[pyfunction]
+#[pyo3(signature = (key_type, name=None))]
 fn create_new_signer(py: Python, key_type: String, name: Option<&str>) -> PyResult<Py<PySigner>> {
     signer_exists(name)?;
 
@@ -102,10 +103,11 @@ fn create_new_signer(py: Python, key_type: String, name: Option<&str>) -> PyResu
 /// Creates a signer from an existing base64-encoded private key.
 ///
 /// # Arguments
-/// * `name` - Optional name for the signer (uses DID key if not provided)
 /// * `key` - Base64-encoded private key bytes
 /// * `key_type` - Type of cryptographic key (SECP256K1, SECP256R1, ED25519)
+/// * `name` - Optional name for the signer (uses DID key if not provided)
 #[pyfunction]
+#[pyo3(signature = (key, key_type, name=None))]
 fn create_signer_from_private_key(
     py: Python,
     key: String,

@@ -14,9 +14,9 @@ logger = logging.getLogger("eqty.sdk.context")
 
 
 class Context:
-    """New context implementation used when GRAPH_IDS feature is enabled."""
+    """Context used for grouping of statements into graphs."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         raise TypeError(
             "Use Context.new() or Context.from_parent() to create instances of this class."
         )

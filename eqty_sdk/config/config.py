@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Optional
 
 import toml
-from pydantic import UUID4
 
 from eqty_sdk._rust import (
     context as eqty_core_context,
@@ -75,12 +74,12 @@ class Config:
         if not self._root_context:
             # lazy create a default context
             logger.info("Root context not set. Creating")
-            self.with_context()
+            self.set_default_context(Context.new())
 
         assert self._root_context
         return self._root_context
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls):
         """Constructor."""
         if not cls._instance:
             cls._instance = super(Config, cls).__new__(cls)
@@ -186,40 +185,18 @@ class Config:
         self.save()
         return self
 
-    def with_context(self, name: Optional[str] = None, id: Optional[UUID4] = None) -> "Config":
-        """Creates a root context.
+    def set_default_context(self, ctx: Context) -> "Config":
+        """Sets the default context for grouping of statements.
 
         Args:
-            name: The pet name to apply to the context
-            id: Optional UUID to explicitly overlap with an existing context
+            ctx: The Context
 
         """
         if self._root_context:
-            logger.error("Context can only be set once.")
+            logger.error("The default context can only be set once.")
             return self
 
-        self._root_context = Context.new(name=name, id=id)
-        logger.debug(f"{self._root_context}")
-        return self
-
-    def from_context(
-        self, ctx: UUID4, name: Optional[str] = None, id: Optional[UUID4] = None
-    ) -> "Config":
-        """Creates a new root context as a child under the provided ctx.
-
-        Args:
-            ctx: The UUID of a parent context/project
-            name: Optional: The pet name to apply to the child context
-            id: Optional: The ID to apply to the child context
-
-        """
-        if self._root_context:
-            logger.error("Context can only be set once.")
-            return self
-
-        self._root_context = Context.from_parent(ctx, name, id)
-
-        logger.debug(f"Created root context ({self._root_context.uuid!r}) from parent ({ctx!r}) ")
+        self._root_context = ctx
         return self
 
     def __load_config_file__(self, custom_dir: Optional[str] = None) -> None:

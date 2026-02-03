@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 from typing import List, Optional
 
 from eqty_sdk._rust import statements as eqty_core_statements
@@ -15,7 +16,8 @@ def add_did_statement(
 ) -> List[str]:
     """Creates a new DID statement."""
     timestamp = os.getenv("EQTY_TIMESTAMP", None)
-    statement_id = eqty_core_statements.create_did_statement(did, timestamp)
+    id = uuid.uuid4()
+    statement_id = eqty_core_statements.create_did_statement(did, timestamp=timestamp, graph_id=id)
 
     statement_ids = [statement_id]
 

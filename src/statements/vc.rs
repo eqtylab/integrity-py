@@ -13,7 +13,7 @@ pub fn create_vc_statement(
     _py: Python,
     subject: String,
     timestamp: Option<String>,
-    graph_id: Option<String>,
+    graph_id: Option<uuid::Uuid>,
 ) -> PyResult<String> {
     let graph_id = ctx().resolve_graph_id(graph_id)?;
     let signer = ctx()

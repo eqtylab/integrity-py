@@ -14,7 +14,7 @@ pub fn create_metadata_statement(
     subject: String,
     metadata: String,
     timestamp: Option<String>,
-    graph_id: Option<String>,
+    graph_id: Option<uuid::Uuid>,
 ) -> PyResult<(String, String)> {
     let graph_id = ctx().resolve_graph_id(graph_id)?;
     let metadata_json: Value = serde_json::from_str(&metadata).context("Invalid metadata JSON")?;

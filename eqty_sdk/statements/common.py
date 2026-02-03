@@ -1,7 +1,7 @@
 import logging
 import os
 from typing import Any, Dict, List, Optional, cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic.types import UUID4
 
@@ -23,7 +23,9 @@ def add_vc_statement(
         logger.info("Skipping issuing of VC")
         return None
 
-    statement_id = eqty_core_statements.create_vc_statement(subject, timestamp)
+    statement_id = eqty_core_statements.create_vc_statement(
+        subject, timestamp=timestamp, graph_id=uuid4()
+    )
 
     return cast(str, statement_id)
 

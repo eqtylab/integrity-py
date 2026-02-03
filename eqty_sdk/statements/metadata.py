@@ -20,7 +20,7 @@ def add_metadata_statement(
     timestamp = os.getenv("EQTY_TIMESTAMP", None)
     logger.debug(f"Creating metadata statement. {metadata}")
     (statement_id, metadata_cid) = eqty_core_statements.create_metadata_statement(
-        subject_cid, metadata, timestamp
+        subject_cid, metadata, timestamp=timestamp
     )
 
     statement_ids = [statement_id]

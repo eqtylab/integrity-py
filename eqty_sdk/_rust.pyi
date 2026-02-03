@@ -1,14 +1,13 @@
 """Type stubs for the eqty_sdk._rust module."""
-
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from os import PathLike
 
 class Canon:
     """Canonicalization options."""
-
     RDFC1: Canon
     JSONJCS: Canon
+
 
 class CidResult:
     """Result of CID computation."""
@@ -21,6 +20,7 @@ class CidResult:
     def blob(self) -> bytes:
         """Get the binary blob data."""
         ...
+
 
 class DirCidResult:
     """Result of directory CID computation."""
@@ -38,6 +38,7 @@ class DirCidResult:
     def file_hashes(self) -> List[Tuple[str, str]]:
         """Get list of (filename, CID) tuples."""
         ...
+
 
 # Context module
 class context:
@@ -57,18 +58,12 @@ class context:
         ...
 
     @staticmethod
-    def set_hashing_config(
-        multithread: Optional[bool] = None, memory_map: Optional[bool] = None
-    ) -> None:
+    def set_hashing_config(multithread: Optional[bool] = None, memory_map: Optional[bool] = None) -> None:
         """Set Hashing Config."""
         ...
 
     @staticmethod
-    def set_cid_ignore_rules(
-        include_hidden_files: Optional[bool] = None,
-        gitignore: Optional[bool] = None,
-        include_symlinks: Optional[bool] = None,
-    ) -> None:
+    def set_cid_ignore_rules(include_hidden_files: Optional[bool] = None, gitignore: Optional[bool] = None, include_symlinks: Optional[bool] = None) -> None:
         """Set Cid Ignore Rules."""
         ...
 
@@ -82,17 +77,16 @@ class context:
         """Create Graph From Context."""
         ...
 
+
 # Manifest module
 class manifest:
     @staticmethod
-    def generate(
-        statements: List[Any], blobs_dir: PathLike[str], include_context: Optional[bool] = None
-    ) -> str:
-        """# Arguments * `py` - Python interpreter reference * `graphs` - Python list of graph dictionaries, each containing 'id', 'name', 'parent', and 'statements' * `blobs_dir` - Path to directory containing blob files referenced by statements * `include_context` - Whether to include context information in the manifest (default: false)  # Returns * `PyResult<String>` - JSON string representation of the manifest, or error on failure"""
+    def generate(statements: List[Any], blobs_dir: PathLike[str], include_context: Optional[bool] = None) -> str:
+        """ # Arguments * `py` - Python interpreter reference * `graphs` - Python list of graph dictionaries, each containing 'id', 'name', 'parent', and 'statements' * `blobs_dir` - Path to directory containing blob files referenced by statements * `include_context` - Whether to include context information in the manifest (default: false)  # Returns * `PyResult<String>` - JSON string representation of the manifest, or error on failure"""
         ...
 
     @staticmethod
-    def import_manifest(manifest: str) -> Any:
+    def import_manifest(manifest: str, graph_id: Optional[Any] = None) -> Any:
         """Imports a manifest and returns the decoded blobs that must be saved"""
         ...
 
@@ -105,6 +99,7 @@ class manifest:
     def register(manifest: str, api_key: Optional[str] = None) -> None:
         """Register the manfiest with integrity platform"""
         ...
+
 
 # Cid module
 class cid:
@@ -123,15 +118,11 @@ class cid:
         """Compute CID for provided bytes."""
         ...
 
+
 # Stream module
 class stream:
     @staticmethod
-    def create(
-        input_cids: List[str],
-        operated_by: Optional[str] = None,
-        executed_on: Optional[str] = None,
-        timestamp: Optional[str] = None,
-    ) -> Any:
+    def create(input_cids: List[str], operated_by: Optional[str] = None, executed_on: Optional[str] = None, timestamp: Optional[str] = None) -> Any:
         """creates a new computation stream"""
         ...
 
@@ -141,9 +132,10 @@ class stream:
         ...
 
     @staticmethod
-    def finalize(id: str, static_output_cids: Optional[List[str]] = None) -> Any:
+    def finalize(id: str, static_output_cids: Optional[List[str]] = None, graph_id: Optional[Any] = None) -> Any:
         """Finalizes the computation stream and creates the ComputationStatement and (optionally) the VC and VCStatement returns the CID of the computation statement"""
         ...
+
 
 # Signer module
 class signer:
@@ -154,12 +146,12 @@ class signer:
 
     @staticmethod
     def create_signer_from_private_key(key: str, key_type: str, name: Optional[Any] = None) -> Any:
-        """Creates a signer from an existing base64-encoded private key.  # Arguments * `name` - Optional name for the signer (uses DID key if not provided) * `key` - Base64-encoded private key bytes * `key_type` - Type of cryptographic key (SECP256K1, SECP256R1, ED25519)"""
+        """Creates a signer from an existing base64-encoded private key.  # Arguments * `key` - Base64-encoded private key bytes * `key_type` - Type of cryptographic key (SECP256K1, SECP256R1, ED25519) * `name` - Optional name for the signer (uses DID key if not provided)"""
         ...
 
     @staticmethod
     def create_vcomp_signer(url: str, pub_key: Optional[str] = None) -> Any:
-        """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `key_type` - Type of key (currently only SECP256R1 is supported) * `pub_key` - Optional public key for the signer"""
+        """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `key_type` - Type of key (currently only SECP256R1 is supported) * `pub_key` - Optional public key for the signer """
         ...
 
     @staticmethod
@@ -193,98 +185,65 @@ class signer:
         ...
 
     @staticmethod
-    def get_signer_blobs(name: str) -> Dict[str, bytes]:
+    def get_signer_blobs(name: str) -> Any:
         """Retrieves the blobs associated with a signer if any.  # Arguments * `name` - Name of the signer to retrieve blobs from"""
         ...
 
+
 # Statements module
 class statements:
-    @staticmethod
-    def register_statement_locally(statement: str) -> None:
-        """Register a statement locally in the database.  Args: statement: JSON string representation of the statement to register"""
-        ...
-
-    @staticmethod
-    def register_statement_to_graph(statement_id: str, graph_id: str) -> None:
-        """Register a statement to a specific graph.  Args: statement_id: The statement ID to register graph_id: The graph ID to register the statement to"""
-        ...
-
     @staticmethod
     def retrieve_graph(graph_ids: List[str]) -> Any:
         """Retrieve graphs for multiple graph IDs.  Args: graph_ids: List of graph ID strings to retrieve graphs for  Returns: List of graph objects with their statements"""
         ...
 
     @staticmethod
-    def create_metadata_statement(
-        subject: str, metadata: str, timestamp: Optional[str] = None
-    ) -> Any:
+    def create_metadata_statement(subject: str, metadata: str, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> Any:
         """Creates a metadata statement and returns the ID of the statement and the CID of the metadata Json"""
         ...
 
     @staticmethod
-    def create_data_statement(data: List[str], *, timestamp: Optional[str] = None) -> str:
+    def create_data_statement(data: List[str], *, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
         """Create Data Statement."""
         ...
 
     @staticmethod
-    def create_governance_statement(
-        subject: str, document: str, timestamp: Optional[str] = None
-    ) -> str:
+    def create_governance_statement(subject: str, document: str, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
         """Create Governance Statement."""
         ...
 
     @staticmethod
-    def create_computation_statement(
-        inputs: List[str],
-        outputs: List[str],
-        computation: Optional[str] = None,
-        operated_by: Optional[str] = None,
-        executed_on: Optional[str] = None,
-        timestamp: Optional[str] = None,
-    ) -> str:
+    def create_computation_statement(inputs: List[str], outputs: List[str], computation: Optional[str] = None, operated_by: Optional[str] = None, executed_on: Optional[str] = None, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
         """Create Computation Statement."""
         ...
 
     @staticmethod
-    def create_model_signing_statement(
-        collection_cid: str,
-        blobs_dir: PathLike[str],
-        model_signing_name: str,
-        allow_symlinks: bool,
-        ignore_paths: List[str],
-        timestamp: Optional[str] = None,
-    ) -> str:
+    def create_model_signing_statement(collection_cid: str, blobs_dir: PathLike[str], model_signing_name: str, allow_symlinks: bool, ignore_paths: List[str], timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
         """Create Model Signing Statement."""
         ...
 
     @staticmethod
-    def create_association_statement(
-        subject: str, association: str, timestamp: Optional[str] = None
-    ) -> str:
+    def create_association_statement(subject: str, association: str, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
         """Create Association Statement."""
         ...
 
     @staticmethod
-    def create_entity_statement(entity: List[str], timestamp: Optional[str] = None) -> str:
+    def create_entity_statement(entity: List[str], timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
         """Create Entity Statement."""
         ...
 
     @staticmethod
-    def create_did_statement(did: str, timestamp: Optional[str] = None) -> str:
+    def create_did_statement(did: str, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
         """Create Did Statement."""
         ...
 
     @staticmethod
-    def create_storage_statement(
-        data: str,
-        stored_on: str,
-        operated_by: Optional[str] = None,
-        timestamp: Optional[str] = None,
-    ) -> str:
+    def create_storage_statement(data: str, stored_on: str, operated_by: Optional[str] = None, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
         """Creates a storage statement."""
         ...
 
     @staticmethod
-    def create_vc_statement(subject: str, timestamp: Optional[str] = None) -> str:
+    def create_vc_statement(subject: str, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
         """Create Vc Statement."""
         ...
+

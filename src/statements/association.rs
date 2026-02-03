@@ -10,7 +10,7 @@ pub fn create_association_statement(
     subject: String,
     association: String,
     timestamp: Option<String>,
-    graph_id: Option<String>,
+    graph_id: Option<uuid::Uuid>,
 ) -> PyResult<String> {
     let graph_id = ctx().resolve_graph_id(graph_id)?;
     let registered_by = ctx().get_active_signer_did_key()?;

@@ -17,7 +17,7 @@ pub fn create_computation_statement(
     operated_by: Option<String>,
     executed_on: Option<String>,
     timestamp: Option<String>,
-    graph_id: Option<String>,
+    graph_id: Option<uuid::Uuid>,
 ) -> PyResult<String> {
     let graph_id = ctx().resolve_graph_id(graph_id)?;
     let signer = ctx()

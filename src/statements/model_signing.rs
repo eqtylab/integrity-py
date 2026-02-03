@@ -21,7 +21,7 @@ pub fn create_model_signing_statement(
     allow_symlinks: bool,
     ignore_paths: Vec<String>,
     timestamp: Option<String>,
-    graph_id: Option<String>,
+    graph_id: Option<uuid::Uuid>,
 ) -> PyResult<String> {
     let ctx = ctx();
     let graph_id = ctx.resolve_graph_id(graph_id)?;

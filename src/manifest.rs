@@ -85,7 +85,7 @@ pub fn generate(
 pub fn import_manifest<'py>(
     py: Python<'py>,
     manifest: String,
-    graph_id: Option<String>,
+    graph_id: Option<uuid::Uuid>,
 ) -> PyResult<HashMap<String, Bound<'py, PyBytes>>> {
     let graph_id = ctx().resolve_graph_id(graph_id)?;
     let blobs = context::get_runtime().block_on(rust_import(manifest, &graph_id))?;

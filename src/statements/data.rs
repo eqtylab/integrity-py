@@ -9,7 +9,7 @@ pub fn create_data_statement(
     _py: Python,
     data: Vec<String>,
     timestamp: Option<String>,
-    graph_id: Option<String>,
+    graph_id: Option<uuid::Uuid>,
 ) -> PyResult<String> {
     let graph_id = ctx().resolve_graph_id(graph_id)?;
 

@@ -77,7 +77,7 @@ fn finalize(
     py: Python<'_>,
     id: String,
     static_output_cids: Option<Vec<String>>,
-    graph_id: Option<String>,
+    graph_id: Option<uuid::Uuid>,
 ) -> PyResult<Bound<'_, PyAny>> {
     let graph_id = ctx().resolve_graph_id(graph_id)?;
     let id = Uuid::parse_str(&id).context("Invalid stream ID")?;

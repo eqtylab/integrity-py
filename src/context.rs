@@ -295,9 +295,9 @@ impl Context {
     ///
     /// # Returns
     /// * `Result<Uuid>` - The opional graph id converted to a UUID, or the default graph id
-    pub fn resolve_graph_id(&self, graph_id: Option<String>) -> Result<Uuid> {
+    pub fn resolve_graph_id(&self, graph_id: Option<Uuid>) -> Result<Uuid> {
         match graph_id {
-            Some(id) => Ok(Uuid::parse_str(&id)?),
+            Some(id) => Ok(id),
             None => todo!("Get default graph_id from py context"),
         }
     }
