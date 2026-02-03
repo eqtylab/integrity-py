@@ -13,7 +13,7 @@ use pyo3_async_runtimes::tokio::future_into_py;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::context::ctx;
+use crate::context::ctx_async;
 
 /// Result of finalizing a stream computation.
 ///
@@ -79,12 +79,13 @@ fn finalize(
     static_output_cids: Option<Vec<String>>,
     graph_id: Option<uuid::Uuid>,
 ) -> PyResult<Bound<'_, PyAny>> {
-    let graph_id = ctx().resolve_graph_id(graph_id)?;
     let id = Uuid::parse_str(&id).context("Invalid stream ID")?;
 
     log::debug!("Finalizing stream computation with ID: {id:?}");
 
     let fut = async move {
+        let ctx = ctx_async().await;
+        let graph_id = ctx.resolve_graph_id(graph_id)?;
         let (compute_id, stream) = finalize_stream(id, static_output_cids, &graph_id).await?;
 
         Ok(StreamCIDs { compute_id, stream })
@@ -225,7 +226,8 @@ async fn create_statement_from_stream(
         ..
     } = stream_computation.clone();
 
-    let signer = ctx()
+    let ctx = ctx_async().await;
+    let signer = ctx
         .active_signer
         .ok_or_else(|| anyhow!("No active signer available"))?;
 
@@ -267,8 +269,7 @@ async fn create_statement_from_stream(
         .await?,
     );
 
-    ctx()
-        .sql_lite
+    ctx.sql_lite
         .register_statement(&statement, graph_id)
         .await?;
 

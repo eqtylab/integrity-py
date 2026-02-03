@@ -13,16 +13,18 @@ use integrity::{
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList};
 use pyo3::Bound;
+use pyo3_async_runtimes::tokio::get_runtime;
 use serde_json::Value;
 use uuid::Uuid;
 
 use crate::{
-    context::{self, ctx},
+    context::ctx_async,
     integrity_service::{
         blobs::put_jcs,
         statements::{create_statement, CreateStatementRequestBody},
         Configuration,
     },
+    with_ctx,
 };
 
 /// `manifest` submodule.
@@ -66,18 +68,22 @@ pub fn generate(
 
     let rust_statements = rust_statements?;
 
-    let blobs = context::get_runtime().block_on(resolve_blobs(&rust_statements, blobs_dir))?;
+    py.detach(|| {
+        get_runtime().block_on(async {
+            let blobs = resolve_blobs(&rust_statements, blobs_dir).await?;
 
-    log::info!("Generating manifest");
+            log::info!("Generating manifest");
 
-    let manifest = context::get_runtime().block_on(generate_manifest(
-        include_context.unwrap_or(true),
-        rust_statements,
-        blobs,
-    ))?;
+            let manifest = generate_manifest(
+                include_context.unwrap_or(true),
+                rust_statements,
+                blobs,
+            ).await?;
 
-    let manifest_json = serde_json::to_string(&manifest).context("Failed to serialize manifest")?;
-    Ok(manifest_json)
+            let manifest_json = serde_json::to_string(&manifest).context("Failed to serialize manifest")?;
+            Ok(manifest_json)
+        })
+    })
 }
 
 /// Imports a manifest and returns the decoded blobs that must be saved
@@ -87,8 +93,10 @@ pub fn import_manifest<'py>(
     manifest: String,
     graph_id: Option<uuid::Uuid>,
 ) -> PyResult<HashMap<String, Bound<'py, PyBytes>>> {
-    let graph_id = ctx().resolve_graph_id(graph_id)?;
-    let blobs = context::get_runtime().block_on(rust_import(manifest, &graph_id))?;
+    let blobs: HashMap<String, Vec<u8>> = with_ctx!(py, |ctx| {
+        let graph_id = ctx.resolve_graph_id(graph_id)?;
+        rust_import(manifest, &graph_id).await
+    })?;
 
     // Convert Vec<u8> to PyBytes
     let py_blobs: HashMap<String, Bound<'py, PyBytes>> = blobs
@@ -101,16 +109,16 @@ pub fn import_manifest<'py>(
 
 /// Merges the manifests `a` and `b` and returns the merged manifest.
 #[pyfunction]
-pub fn merge(_py: Python, a: String, b: String) -> PyResult<String> {
-    fn rust_merge(a: String, b: String) -> Result<String> {
-        let a = serde_json::from_str(&a)?;
-        let b = serde_json::from_str(&b)?;
-        let manifest = context::get_runtime().block_on(merge_async(a, b))?;
-        let manifest_str = serde_json::to_string(&manifest)?;
-        Ok(manifest_str)
-    }
-
-    Ok(rust_merge(a, b)?)
+pub fn merge(py: Python, a: String, b: String) -> PyResult<String> {
+    py.detach(|| {
+        get_runtime().block_on(async {
+            let a = serde_json::from_str(&a).context("Failed to parse first manifest")?;
+            let b = serde_json::from_str(&b).context("Failed to parse second manifest")?;
+            let manifest = merge_async(a, b).await?;
+            let manifest_str = serde_json::to_string(&manifest).context("Failed to serialize merged manifest")?;
+            Ok(manifest_str)
+        })
+    })
 }
 
 fn python_to_json_value(py: Python, obj: &Py<PyAny>) -> PyResult<Value> {
@@ -150,9 +158,9 @@ async fn rust_import(manifest: String, graph_id: &Uuid) -> Result<HashMap<String
     let manifest = serde_json::from_str::<Manifest>(&manifest)?;
     log::trace!("Manifest str: \n{manifest:?}");
     log::debug!("{} statements imported", manifest.statements.keys().len());
+    let ctx = ctx_async().await;
     for statement in manifest.statements.values() {
-        ctx()
-            .sql_lite
+        ctx.sql_lite
             .register_statement(statement, graph_id)
             .await?
     }
@@ -171,13 +179,15 @@ async fn rust_import(manifest: String, graph_id: &Uuid) -> Result<HashMap<String
 
 /// Register the manfiest with integrity platform
 #[pyfunction]
-fn register(_py: Python, manifest: String, api_key: Option<String>) -> PyResult<()> {
-    let manifest =
-        serde_json::from_str::<Manifest>(&manifest).context("Failed to parse manifest")?;
-    let ig_service_config = ctx().get_integrity_service_config(api_key)?;
+fn register(py: Python, manifest: String, api_key: Option<String>) -> PyResult<()> {
+    with_ctx!(py, |ctx| {
+        let manifest =
+            serde_json::from_str::<Manifest>(&manifest).context("Failed to parse manifest")?;
+        let ig_service_config = ctx.get_integrity_service_config(api_key)?;
 
-    context::get_runtime().block_on(register_async(&ig_service_config, manifest))?;
-    Ok(())
+        register_async(&ig_service_config, manifest).await?;
+        Ok(())
+    })
 }
 
 async fn register_async(config: &Configuration, manifest: Manifest) -> Result<()> {

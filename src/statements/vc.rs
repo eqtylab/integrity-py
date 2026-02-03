@@ -4,32 +4,34 @@ use integrity::{
 };
 use pyo3::{pyfunction, PyResult, Python};
 
-use crate::context::{self, ctx};
+use crate::with_ctx;
 use anyhow::anyhow;
 
 #[pyfunction]
 #[pyo3(signature = (subject, *, timestamp=None, graph_id=None))]
 pub fn create_vc_statement(
-    _py: Python,
+    py: Python,
     subject: String,
     timestamp: Option<String>,
     graph_id: Option<uuid::Uuid>,
 ) -> PyResult<String> {
-    let graph_id = ctx().resolve_graph_id(graph_id)?;
-    let signer = ctx()
-        .active_signer
-        .ok_or_else(|| anyhow!("No active signer available"))?;
-    let registered_by = signer.get_did_doc().id;
+    with_ctx!(py, |ctx| {
+        let graph_id = ctx.resolve_graph_id(graph_id)?;
+        let signer = ctx
+            .active_signer
+            .ok_or_else(|| anyhow!("No active signer available"))?;
+        let registered_by = signer.get_did_doc().id.clone();
 
-    let vc = context::get_runtime().block_on(vc::issue_vc(&subject, signer))?;
+        let vc = vc::issue_vc(&subject, signer).await?;
 
-    let statement = Statement::CredentialRegistration(
-        context::get_runtime().block_on(VcStatement::create(vc, registered_by, timestamp))?,
-    );
+        let statement = Statement::CredentialRegistration(
+            VcStatement::create(vc, registered_by, timestamp).await?,
+        );
 
-    context::get_runtime().block_on(ctx().sql_lite.register_statement(&statement, &graph_id))?;
+        ctx.sql_lite.register_statement(&statement, &graph_id).await?;
 
-    Ok(statement.get_id())
+        Ok(statement.get_id())
+    })
 }
 
 #[cfg(test)]
@@ -39,10 +41,11 @@ mod tests {
         signer::{Ed25519Signer, SignerType},
         vc,
     };
+    use pyo3_async_runtimes::tokio::get_runtime;
     use ssi::vc::Credential;
     use tempfile::tempdir;
 
-    use crate::context::{get_runtime, Context};
+    use crate::context::{ctx_async, Context};
 
     /// Creates a minimal valid W3C VC for testing
     fn create_test_credential() -> Credential {
@@ -165,26 +168,31 @@ mod tests {
     #[test]
     fn test_context_without_signer_returns_none() {
         let temp_dir = tempdir().unwrap();
-        Context::reset().unwrap();
-        let ctx = Context::init(temp_dir.path().to_path_buf()).unwrap();
-
-        assert!(ctx.active_signer.is_none());
+        get_runtime().block_on(async {
+            Context::reset().await.unwrap();
+            let ctx = Context::init(temp_dir.path().to_path_buf()).await.unwrap();
+            assert!(ctx.active_signer.is_none());
+        });
     }
 
     #[test]
     fn test_context_with_signer() {
         let temp_dir = tempdir().unwrap();
-        Context::reset().unwrap();
-        let ctx = Context::init(temp_dir.path().to_path_buf()).unwrap();
+        get_runtime().block_on(async {
+            // Initialize context
+            Context::reset().await.unwrap();
+            let _ = Context::init(temp_dir.path().to_path_buf()).await.unwrap();
 
-        let signer = Ed25519Signer::create().unwrap();
-        let signer_type = SignerType::ED25519(signer);
-        let expected_did = signer_type.get_did_doc().id.clone();
+            // Create and set signer
+            let signer = Ed25519Signer::create().unwrap();
+            let signer_type = SignerType::ED25519(signer);
+            let expected_did = signer_type.get_did_doc().id.clone();
+            Context::set_active_signer_async(signer_type).await.unwrap();
 
-        ctx.set_active_signer(signer_type).unwrap();
-
-        let ctx = crate::context::ctx();
-        assert!(ctx.active_signer.is_some());
-        assert_eq!(ctx.active_signer.unwrap().get_did_doc().id, expected_did);
+            // Verify signer was set
+            let ctx = ctx_async().await;
+            assert!(ctx.active_signer.is_some());
+            assert_eq!(ctx.active_signer.unwrap().get_did_doc().id, expected_did);
+        });
     }
 }

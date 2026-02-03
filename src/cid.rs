@@ -9,7 +9,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 use pyo3::Bound;
 
-use crate::context::{self, ctx};
+use crate::with_ctx;
 
 /// Canonicalization algorithm for computing content identifiers.
 #[derive(Clone, Copy, Debug)]
@@ -125,27 +125,25 @@ pub fn cid(m: &Bound<'_, PyModule>) -> PyResult<()> {
 /// Compute CID for a directory at `path`.
 #[pyfunction]
 #[pyo3(signature = (path), text_signature = "(path: PathLike) -> DirCidResult")]
-fn compute_cid_for_directory(_py: Python, path: PathBuf) -> PyResult<DirCidResult> {
-    let ctx = ctx();
+fn compute_cid_for_directory(py: Python, path: PathBuf) -> PyResult<DirCidResult> {
+    with_ctx!(py, |ctx| {
+        let dir_cid_result = compute_dir_cid(
+            path.clone(),
+            ctx.hashing.clone(),
+            ctx.cid_ignore.clone(),
+        ).await?;
 
-    let dir_cid_result = context::get_runtime().block_on(compute_dir_cid(
-        path.clone(),
-        ctx.hashing.clone(),
-        ctx.cid_ignore.clone(),
-    ))?;
-
-    Ok(dir_cid_result.into())
+        Ok(dir_cid_result.into())
+    })
 }
 
 /// Compute CID for a file `path`.
 #[pyfunction]
 #[pyo3(signature = (path), text_signature = "(path: PathLike) -> CidResult")]
-fn compute_cid_for_file(_py: Python, path: PathBuf) -> PyResult<CidResult> {
-    let context = ctx();
-
-    Ok(context::get_runtime()
-        .block_on(compute_file_cid(path.clone(), context.hashing))?
-        .into())
+fn compute_cid_for_file(py: Python, path: PathBuf) -> PyResult<CidResult> {
+    with_ctx!(py, |ctx| {
+        Ok(compute_file_cid(path.clone(), ctx.hashing).await?.into())
+    })
 }
 
 /// Compute CID for provided bytes.

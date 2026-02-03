@@ -4,13 +4,13 @@ use integrity::{
 };
 use pyo3::{pyfunction, PyResult, Python};
 
-use crate::context::{self, ctx};
+use crate::with_ctx;
 use anyhow::anyhow;
 
 #[pyfunction]
 #[pyo3(signature = (inputs, outputs, *, computation=None, operated_by=None, executed_on=None, timestamp=None, graph_id=None))]
 pub fn create_computation_statement(
-    _py: Python,
+    py: Python,
     inputs: Vec<String>,
     outputs: Vec<String>,
     computation: Option<String>,
@@ -19,47 +19,51 @@ pub fn create_computation_statement(
     timestamp: Option<String>,
     graph_id: Option<uuid::Uuid>,
 ) -> PyResult<String> {
-    let graph_id = ctx().resolve_graph_id(graph_id)?;
-    let signer = ctx()
-        .active_signer
-        .ok_or_else(|| anyhow!("No active signer available"))?;
-    // If VComp notary is being used, we fetch `operatedBy` and `executedOn`` from the signer
-    let (operated_by, executed_on) = match &signer {
-        SignerType::VCompNotarySigner(signer) => {
-            let operated_by = if operated_by.is_some() {
-                operated_by
-            } else {
-                signer.operated_by.clone()
-            };
-            let executed_on = if executed_on.is_some() {
-                executed_on
-            } else {
-                signer.executed_on.clone()
-            };
+    with_ctx!(py, |ctx| {
+        let graph_id = ctx.resolve_graph_id(graph_id)?;
+        let signer = ctx
+            .active_signer
+            .ok_or_else(|| anyhow!("No active signer available"))?;
 
-            (operated_by, executed_on)
-        }
-        _ => (operated_by, executed_on),
-    };
+        // If VComp notary is being used, we fetch `operatedBy` and `executedOn`` from the signer
+        let (operated_by, executed_on) = match &signer {
+            SignerType::VCompNotarySigner(signer) => {
+                let operated_by = if operated_by.is_some() {
+                    operated_by
+                } else {
+                    signer.operated_by.clone()
+                };
+                let executed_on = if executed_on.is_some() {
+                    executed_on
+                } else {
+                    signer.executed_on.clone()
+                };
 
-    let registered_by = signer.get_did_doc().id;
-    let operated_by = match operated_by {
-        Some(operated_by) => operated_by,
-        None => registered_by.clone(),
-    };
-    let statement = Statement::ComputationRegistration(context::get_runtime().block_on(
-        ComputationStatement::create(
-            computation,
-            inputs,
-            outputs,
-            operated_by,
-            executed_on,
-            registered_by,
-            timestamp,
-        ),
-    )?);
+                (operated_by, executed_on)
+            }
+            _ => (operated_by, executed_on),
+        };
 
-    context::get_runtime().block_on(ctx().sql_lite.register_statement(&statement, &graph_id))?;
+        let registered_by = signer.get_did_doc().id;
+        let operated_by = match operated_by {
+            Some(operated_by) => operated_by,
+            None => registered_by.clone(),
+        };
 
-    Ok(statement.get_id())
+        let statement = Statement::ComputationRegistration(
+            ComputationStatement::create(
+                computation,
+                inputs,
+                outputs,
+                operated_by,
+                executed_on,
+                registered_by,
+                timestamp,
+            ).await?,
+        );
+
+        ctx.sql_lite.register_statement(&statement, &graph_id).await?;
+
+        Ok(statement.get_id())
+    })
 }

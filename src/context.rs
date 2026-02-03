@@ -2,7 +2,7 @@ use std::{
     fs,
     fs::File,
     path::PathBuf,
-    sync::{Arc, OnceLock},
+    sync::Arc,
 };
 
 use crate::indexer::Graph;
@@ -14,19 +14,35 @@ use integrity::{
     signer::SignerType,
 };
 use once_cell::sync::Lazy;
-use tokio::runtime::Runtime;
+use pyo3_async_runtimes::tokio::get_runtime;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
 static CTX: Lazy<RwLock<Option<Context>>> = Lazy::new(|| RwLock::new(None));
-static RUNTIME: OnceLock<Runtime> = OnceLock::new();
-
-/// Get or create the global async runtime (for legacy sync code)
-pub fn get_runtime() -> &'static Runtime {
-    RUNTIME.get_or_init(|| Runtime::new().expect("Failed to create tokio runtime"))
-}
 
 use pyo3::prelude::*;
+
+/// Macro to reduce boilerplate for async context operations in pyfunctions.
+///
+/// Usage:
+/// ```rust
+/// with_ctx!(py, |ctx| {
+///     let graph_id = ctx.resolve_graph_id(graph_id)?;
+///     // ... async operations ...
+///     Ok(result)
+/// })
+/// ```
+#[macro_export]
+macro_rules! with_ctx {
+    ($py:expr, |$ctx:ident| $body:expr) => {
+        $py.detach(|| {
+            pyo3_async_runtimes::tokio::get_runtime().block_on(async {
+                let $ctx = $crate::context::ctx_async().await;
+                $body
+            })
+        })
+    };
+}
 
 /// `context` submodule.
 #[pymodule]
@@ -146,19 +162,6 @@ pub async fn ctx_async() -> Context {
         .clone()
 }
 
-/// Gets a clone of the global application context (blocking version).
-///
-/// # Returns
-/// * `Context` - Clone of the initialized global context
-///
-/// # Panics
-/// Panics if the global context has not been initialized via `Context::init()`.
-pub fn ctx() -> Context {
-    CTX.blocking_read()
-        .as_ref()
-        .expect("Context not initialized")
-        .clone()
-}
 
 /// Global application context containing configuration and state.
 ///
@@ -264,6 +267,27 @@ impl Context {
         }
     }
 
+    /// Updates the global context using a closure that modifies it in place (async version).
+    ///
+    /// # Arguments
+    /// * `updater` - Closure that receives a mutable reference to the context
+    ///
+    /// # Returns
+    /// * `Result<()>` - Success or error if context is not initialized or lock fails
+    pub async fn update_context_async<F>(updater: F) -> Result<()>
+    where
+        F: FnOnce(&mut Context),
+    {
+        let mut ctx_lock = CTX.write().await;
+
+        if let Some(ctx) = ctx_lock.as_mut() {
+            updater(ctx);
+            Ok(())
+        } else {
+            Err(anyhow!("Global context is not initialized"))
+        }
+    }
+
     /// Retrieves the DID key of the currently active signer.
     ///
     /// # Returns
@@ -286,6 +310,17 @@ impl Context {
         Context::update_context(|ctx| ctx.active_signer = Some(signer))
     }
 
+    /// Sets the active signer for the current context (async version).
+    ///
+    /// # Arguments
+    /// * `signer` - The signer to set as active
+    ///
+    /// # Returns
+    /// * `Result<()>` - Success or error if context update fails
+    pub async fn set_active_signer_async(signer: SignerType) -> Result<()> {
+        Context::update_context_async(|ctx| ctx.active_signer = Some(signer)).await
+    }
+
     /// Creates configuration for the Integrity Service API client.
     ///
     /// # Arguments
@@ -297,15 +332,13 @@ impl Context {
         &self,
         api_key: Option<String>,
     ) -> Result<IntegrityServiceConfig> {
-        if self.integrity_service.is_none() {
-            anyhow::bail!("Integrity service URL not set");
-        }
+        let base_path = self
+            .integrity_service
+            .clone()
+            .ok_or_else(|| anyhow!("Integrity service URL not set"))?;
 
         Ok(IntegrityServiceConfig {
-            base_path: ctx()
-                .integrity_service
-                .expect("Integrity Service URL is not configured")
-                .clone(),
+            base_path,
             bearer_access_token: api_key,
             ..Default::default()
         })

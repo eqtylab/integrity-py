@@ -10,10 +10,11 @@ use integrity::signer::{
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 use pyo3::Bound;
+use pyo3_async_runtimes::tokio::get_runtime;
 
 use serde::Serialize;
 
-use crate::context::ctx;
+use crate::context::{ctx_async, Context};
 
 /// `signer` submodule.
 #[pymodule]
@@ -215,23 +216,29 @@ fn create_yubihsm2_signer(
 /// * `name` - Name of the signer to make active
 #[pyfunction]
 #[pyo3(signature = (name), text_signature = "(name: str) -> None")]
-fn set_active_signer(_py: Python, name: String) -> PyResult<()> {
-    log::debug!("Setting '{name}' as the active");
-    let signer_file = get_signer_folder().join(name);
-    if !signer_file.exists() {
-        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            "No Signer named '{name}' found",
-        ));
-    }
+fn set_active_signer(py: Python, name: String) -> PyResult<()> {
+    Ok(py.detach(|| {
+        get_runtime().block_on(async {
+            log::debug!("Setting '{name}' as the active");
+            let ctx = ctx_async().await;
+            let signer_file = ctx.app_dir.join(SIGNER_DIR).join(&name);
+            if !signer_file.exists() {
+                return Err(anyhow::anyhow!("No Signer named '{name}' found"));
+            }
 
-    let signer = utils_load_signer(signer_file)?;
-    Ok(ctx().set_active_signer(signer)?)
+            let signer = utils_load_signer(signer_file)?;
+            Context::set_active_signer_async(signer).await
+        })
+    })?)
 }
 
 /// Get the active signers Did Key
 #[pyfunction]
-fn get_active_signer_did_key(_py: Python) -> PyResult<String> {
-    Ok(ctx().get_active_signer_did_key()?)
+fn get_active_signer_did_key(py: Python) -> PyResult<String> {
+    use crate::with_ctx;
+    Ok(with_ctx!(py, |ctx| {
+        ctx.get_active_signer_did_key()
+    })?)
 }
 
 /// Get signer type string ('vcomp_notary', 'yubihsm2', etc) by name.
@@ -316,13 +323,16 @@ fn get_signer_blobs(py: Python<'_>, name: String) -> PyResult<HashMap<String, Bo
     }
 }
 
+/// Subdirectory name for storing signer key files.
+static SIGNER_DIR: &str = "signers";
+
 /// Checks if a signer already exists with the provided name
 fn signer_exists(name: Option<&str>) -> PyResult<()> {
     if name.is_none() {
         return Ok(());
     }
 
-    let signer_folder = get_signer_folder();
+    let signer_folder = get_signer_folder_sync();
     let name = name.unwrap();
     log::debug!("Adding Signer. Args= {name}");
 
@@ -338,7 +348,7 @@ fn signer_exists(name: Option<&str>) -> PyResult<()> {
 fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<PySigner> {
     let did_key = signer.get_did_doc().id;
     let name = name.unwrap_or(&did_key);
-    let signer_dir = get_signer_folder();
+    let signer_dir = get_signer_folder_sync();
     fs::create_dir_all(signer_dir.clone())?;
     utils_save_signer(signer, signer_dir, name)?;
     Ok(PySigner {
@@ -347,13 +357,16 @@ fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<PySigner> {
     })
 }
 
-/// Subdirectory name for storing signer key files.
-static SIGNER_DIR: &str = "signers";
+/// Returns the path to the signer storage folder (blocking version for sync contexts).
+fn get_signer_folder_sync() -> PathBuf {
+    get_runtime()
+        .block_on(async { ctx_async().await.app_dir.join(SIGNER_DIR) })
+}
 
 /// Returns the path to the signer storage folder.
 ///
 /// # Returns
 /// * `PathBuf` - Path to the directory where signer key files are stored
 pub fn get_signer_folder() -> PathBuf {
-    ctx().app_dir.join(SIGNER_DIR)
+    get_signer_folder_sync()
 }

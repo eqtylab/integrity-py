@@ -1,4 +1,5 @@
 use crate::indexer::Graph;
+use crate::with_ctx;
 use pyo3::types::{PyDict, PyList};
 use pyo3::{prelude::*, IntoPyObjectExt};
 
@@ -16,8 +17,6 @@ mod vc;
 
 use anyhow::Context as AnyhowContext;
 use uuid::Uuid;
-
-use crate::context::{self, ctx};
 
 /// `statements` submodule to create lineage statements
 #[pymodule]
@@ -61,17 +60,20 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
 #[pyfunction]
 #[pyo3(signature = (graph_ids), text_signature = "(graph_ids: list[str]) -> list[dict]")]
 pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<Py<PyList>> {
-    let sql_client = ctx().sql_lite;
+    let graphs: Vec<Graph> = with_ctx!(py, |ctx| {
+        let sql_client = ctx.sql_lite;
 
-    log::info!("Retrieving graphs {graph_ids:?}");
+        log::info!("Retrieving graphs {graph_ids:?}");
 
-    let mut graphs: Vec<Graph> = Vec::new();
-    for graph_id in graph_ids.clone() {
-        let graph_uuid = Uuid::parse_str(&graph_id).context("Invalid graph ID")?;
-        let graph = context::get_runtime().block_on(sql_client.retrieve_graph(&graph_uuid))?;
+        let mut graphs: Vec<Graph> = Vec::new();
+        for graph_id in graph_ids.clone() {
+            let graph_uuid = Uuid::parse_str(&graph_id).context("Invalid graph ID")?;
+            let graph = sql_client.retrieve_graph(&graph_uuid).await?;
 
-        graphs.push(graph);
-    }
+            graphs.push(graph);
+        }
+        Ok::<_, anyhow::Error>(graphs)
+    })?;
 
     // Convert graphs to Python objects
     let py_graphs: Vec<Py<PyAny>> = graphs
