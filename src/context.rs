@@ -2,7 +2,7 @@ use std::{
     fs,
     fs::File,
     path::PathBuf,
-    sync::{Arc, OnceLock, RwLock},
+    sync::{Arc, OnceLock},
 };
 
 use crate::indexer::Graph;
@@ -13,13 +13,15 @@ use integrity::{
     cid::iroh::{CidIgnoreConfig, HashingConfig},
     signer::SignerType,
 };
+use once_cell::sync::Lazy;
 use tokio::runtime::Runtime;
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
-static CTX: RwLock<Option<Context>> = RwLock::new(None);
+static CTX: Lazy<RwLock<Option<Context>>> = Lazy::new(|| RwLock::new(None));
 static RUNTIME: OnceLock<Runtime> = OnceLock::new();
 
-/// Get or create the global async runtime
+/// Get or create the global async runtime (for legacy sync code)
 pub fn get_runtime() -> &'static Runtime {
     RUNTIME.get_or_init(|| Runtime::new().expect("Failed to create tokio runtime"))
 }
@@ -42,16 +44,19 @@ pub fn context(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 /// Initializes the sdk context. Must be called before setting individual context values
 #[pyfunction]
-fn init(py: Python, app_dir: PathBuf) -> PyResult<()> {
-    // Release GIL to allow pyo3_log to forward log messages during blocking operations
-    py.allow_threads(|| Context::init(app_dir))?;
+fn init(py: Python<'_>, app_dir: PathBuf) -> PyResult<()> {
+    py.detach(|| {
+        get_runtime().block_on(Context::init(app_dir))
+    })?;
     Ok(())
 }
 
 /// Resets the global context, allowing it to be reinitialized with a new app directory
 #[pyfunction]
-fn reset(_py: Python) -> PyResult<()> {
-    Context::reset()?;
+fn reset(py: Python<'_>) -> PyResult<()> {
+    py.detach(|| {
+        get_runtime().block_on(Context::reset())
+    })?;
     Ok(())
 }
 
@@ -102,7 +107,7 @@ fn set_generate_model_signing_signatures(_py: Python, enable: bool) -> PyResult<
 #[pyfunction]
 /// Creates a graph record in the DB that statements can be registered under
 fn create_graph_from_context(
-    py: Python,
+    py: Python<'_>,
     id: String,
     name: String,
     parent_id: Option<String>,
@@ -114,14 +119,34 @@ fn create_graph_from_context(
     } else {
         None
     };
-    // Release GIL to allow pyo3_log to forward log messages during blocking operations
-    py.allow_threads(|| {
-        get_runtime().block_on(ctx().sql_lite.create_graph(&id, &name, parent_id.as_ref()))
+    py.detach(|| {
+        get_runtime().block_on(async {
+            let context = ctx_async().await;
+            context
+                .sql_lite
+                .create_graph(&id, &name, parent_id.as_ref())
+                .await
+        })
     })?;
     Ok(())
 }
 
-/// Gets a clone of the global application context.
+/// Gets a clone of the global application context (async version).
+///
+/// # Returns
+/// * `Context` - Clone of the initialized global context
+///
+/// # Panics
+/// Panics if the global context has not been initialized via `Context::init()`.
+pub async fn ctx_async() -> Context {
+    CTX.read()
+        .await
+        .as_ref()
+        .expect("Context not initialized")
+        .clone()
+}
+
+/// Gets a clone of the global application context (blocking version).
 ///
 /// # Returns
 /// * `Context` - Clone of the initialized global context
@@ -129,8 +154,7 @@ fn create_graph_from_context(
 /// # Panics
 /// Panics if the global context has not been initialized via `Context::init()`.
 pub fn ctx() -> Context {
-    CTX.read()
-        .expect("Failed to acquire read lock")
+    CTX.blocking_read()
         .as_ref()
         .expect("Context not initialized")
         .clone()
@@ -168,16 +192,17 @@ impl Context {
     ///
     /// # Returns
     /// * `Result<Context>` - Initialized context, or error if initialization fails
-    pub fn init(app_dir: PathBuf) -> Result<Context> {
-        let mut ctx_lock = CTX
-            .write()
-            .map_err(|_| anyhow!("Failed to acquire write lock"))?;
-
-        if ctx_lock.is_some() {
-            log::warn!("Context already initialized. App directory was not set");
-            return Ok(ctx_lock.clone().unwrap());
+    pub async fn init(app_dir: PathBuf) -> Result<Context> {
+        // Check if already initialized
+        {
+            let ctx_lock = CTX.read().await;
+            if ctx_lock.is_some() {
+                log::warn!("Context already initialized. App directory was not set");
+                return Ok(ctx_lock.clone().unwrap());
+            }
         }
 
+        // Perform filesystem and async DB operations without holding the lock
         if !app_dir.exists() {
             fs::create_dir_all(&app_dir)?;
         }
@@ -188,10 +213,10 @@ impl Context {
             File::create(&db_path)?;
         }
         let db_file = format!("sqlite:{}", db_path.display());
-        let sqlite = get_runtime().block_on(Sqlite::new(&db_file))?;
+        let sqlite = Sqlite::new(&db_file).await?;
 
         if db_init_required {
-            get_runtime().block_on(sqlite.init())?;
+            sqlite.init().await?;
         }
 
         let ctx = Context {
@@ -205,21 +230,20 @@ impl Context {
             default_graph: Graph::default(),
         };
 
+        // Acquire write lock to set the context
+        let mut ctx_lock = CTX.write().await;
         *ctx_lock = Some(ctx.clone());
         Ok(ctx)
     }
 
     /// Resets the global context, allowing it to be reinitialized
-    pub fn reset() -> Result<()> {
-        let mut ctx_lock = CTX
-            .write()
-            .map_err(|_| anyhow!("Failed to acquire write lock"))?;
-
+    pub async fn reset() -> Result<()> {
+        let mut ctx_lock = CTX.write().await;
         *ctx_lock = None;
         Ok(())
     }
 
-    /// Updates the global context using a closure that modifies it in place.
+    /// Updates the global context using a closure that modifies it in place (blocking version).
     ///
     /// # Arguments
     /// * `updater` - Closure that receives a mutable reference to the context
@@ -230,9 +254,7 @@ impl Context {
     where
         F: FnOnce(&mut Context),
     {
-        let mut ctx_lock = CTX
-            .write()
-            .map_err(|_| anyhow!("Failed to acquire write lock"))?;
+        let mut ctx_lock = CTX.blocking_write();
 
         if let Some(ctx) = ctx_lock.as_mut() {
             updater(ctx);
