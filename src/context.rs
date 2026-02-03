@@ -1,9 +1,4 @@
-use std::{
-    fs,
-    fs::File,
-    path::PathBuf,
-    sync::Arc,
-};
+use std::{fs, fs::File, path::PathBuf, sync::Arc};
 
 use crate::indexer::Graph;
 use crate::indexer::Sqlite;
@@ -61,18 +56,14 @@ pub fn context(m: &Bound<'_, PyModule>) -> PyResult<()> {
 /// Initializes the sdk context. Must be called before setting individual context values
 #[pyfunction]
 fn init(py: Python<'_>, app_dir: PathBuf) -> PyResult<()> {
-    py.detach(|| {
-        get_runtime().block_on(Context::init(app_dir))
-    })?;
+    py.detach(|| get_runtime().block_on(Context::init(app_dir)))?;
     Ok(())
 }
 
 /// Resets the global context, allowing it to be reinitialized with a new app directory
 #[pyfunction]
 fn reset(py: Python<'_>) -> PyResult<()> {
-    py.detach(|| {
-        get_runtime().block_on(Context::reset())
-    })?;
+    py.detach(|| get_runtime().block_on(Context::reset()))?;
     Ok(())
 }
 
@@ -161,7 +152,6 @@ pub async fn ctx_async() -> Context {
         .expect("Context not initialized")
         .clone()
 }
-
 
 /// Global application context containing configuration and state.
 ///

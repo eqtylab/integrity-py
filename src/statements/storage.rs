@@ -19,10 +19,13 @@ pub fn create_storage_statement(
         let registered_by = ctx.clone().get_active_signer_did_key()?;
 
         let statement = Statement::StorageRegistration(
-            StorageStatement::create(data, stored_on, operated_by, registered_by, timestamp).await?,
+            StorageStatement::create(data, stored_on, operated_by, registered_by, timestamp)
+                .await?,
         );
 
-        ctx.sql_lite.register_statement(&statement, &graph_id).await?;
+        ctx.sql_lite
+            .register_statement(&statement, &graph_id)
+            .await?;
 
         Ok(statement.get_id())
     })

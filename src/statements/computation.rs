@@ -59,10 +59,13 @@ pub fn create_computation_statement(
                 executed_on,
                 registered_by,
                 timestamp,
-            ).await?,
+            )
+            .await?,
         );
 
-        ctx.sql_lite.register_statement(&statement, &graph_id).await?;
+        ctx.sql_lite
+            .register_statement(&statement, &graph_id)
+            .await?;
 
         Ok(statement.get_id())
     })

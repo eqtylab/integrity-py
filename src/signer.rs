@@ -236,9 +236,7 @@ fn set_active_signer(py: Python, name: String) -> PyResult<()> {
 #[pyfunction]
 fn get_active_signer_did_key(py: Python) -> PyResult<String> {
     use crate::with_ctx;
-    Ok(with_ctx!(py, |ctx| {
-        ctx.get_active_signer_did_key()
-    })?)
+    Ok(with_ctx!(py, |ctx| { ctx.get_active_signer_did_key() })?)
 }
 
 /// Get signer type string ('vcomp_notary', 'yubihsm2', etc) by name.
@@ -359,8 +357,7 @@ fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<PySigner> {
 
 /// Returns the path to the signer storage folder (blocking version for sync contexts).
 fn get_signer_folder_sync() -> PathBuf {
-    get_runtime()
-        .block_on(async { ctx_async().await.app_dir.join(SIGNER_DIR) })
+    get_runtime().block_on(async { ctx_async().await.app_dir.join(SIGNER_DIR) })
 }
 
 /// Returns the path to the signer storage folder.

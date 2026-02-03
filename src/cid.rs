@@ -127,11 +127,8 @@ pub fn cid(m: &Bound<'_, PyModule>) -> PyResult<()> {
 #[pyo3(signature = (path), text_signature = "(path: PathLike) -> DirCidResult")]
 fn compute_cid_for_directory(py: Python, path: PathBuf) -> PyResult<DirCidResult> {
     with_ctx!(py, |ctx| {
-        let dir_cid_result = compute_dir_cid(
-            path.clone(),
-            ctx.hashing.clone(),
-            ctx.cid_ignore.clone(),
-        ).await?;
+        let dir_cid_result =
+            compute_dir_cid(path.clone(), ctx.hashing.clone(), ctx.cid_ignore.clone()).await?;
 
         Ok(dir_cid_result.into())
     })

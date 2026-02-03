@@ -19,7 +19,9 @@ pub fn create_entity_statement(
             EntityStatement::create(entity, registered_by, timestamp).await?,
         );
 
-        ctx.sql_lite.register_statement(&statement, &graph_id).await?;
+        ctx.sql_lite
+            .register_statement(&statement, &graph_id)
+            .await?;
 
         Ok(statement.get_id())
     })

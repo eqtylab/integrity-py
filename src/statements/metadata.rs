@@ -18,7 +18,8 @@ pub fn create_metadata_statement(
 ) -> PyResult<(String, String)> {
     with_ctx!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph_id)?;
-        let metadata_json: Value = serde_json::from_str(&metadata).context("Invalid metadata JSON")?;
+        let metadata_json: Value =
+            serde_json::from_str(&metadata).context("Invalid metadata JSON")?;
 
         let signer = ctx
             .active_signer
@@ -29,12 +30,15 @@ pub fn create_metadata_statement(
             metadata_json,
             signer.get_did_doc().id,
             timestamp.clone(),
-        ).await?;
+        )
+        .await?;
 
         let metadata = metadata_statement.metadata.clone();
         let statement = Statement::MetadataRegistration(metadata_statement);
 
-        ctx.sql_lite.register_statement(&statement, &graph_id).await?;
+        ctx.sql_lite
+            .register_statement(&statement, &graph_id)
+            .await?;
 
         Ok((statement.get_id(), metadata))
     })

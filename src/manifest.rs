@@ -74,13 +74,11 @@ pub fn generate(
 
             log::info!("Generating manifest");
 
-            let manifest = generate_manifest(
-                include_context.unwrap_or(true),
-                rust_statements,
-                blobs,
-            ).await?;
+            let manifest =
+                generate_manifest(include_context.unwrap_or(true), rust_statements, blobs).await?;
 
-            let manifest_json = serde_json::to_string(&manifest).context("Failed to serialize manifest")?;
+            let manifest_json =
+                serde_json::to_string(&manifest).context("Failed to serialize manifest")?;
             Ok(manifest_json)
         })
     })
@@ -115,7 +113,8 @@ pub fn merge(py: Python, a: String, b: String) -> PyResult<String> {
             let a = serde_json::from_str(&a).context("Failed to parse first manifest")?;
             let b = serde_json::from_str(&b).context("Failed to parse second manifest")?;
             let manifest = merge_async(a, b).await?;
-            let manifest_str = serde_json::to_string(&manifest).context("Failed to serialize merged manifest")?;
+            let manifest_str =
+                serde_json::to_string(&manifest).context("Failed to serialize merged manifest")?;
             Ok(manifest_str)
         })
     })
@@ -160,9 +159,7 @@ async fn rust_import(manifest: String, graph_id: &Uuid) -> Result<HashMap<String
     log::debug!("{} statements imported", manifest.statements.keys().len());
     let ctx = ctx_async().await;
     for statement in manifest.statements.values() {
-        ctx.sql_lite
-            .register_statement(statement, graph_id)
-            .await?
+        ctx.sql_lite.register_statement(statement, graph_id).await?
     }
     // Decode base64 values in the blobs HashMap
     let decoded_blobs = manifest

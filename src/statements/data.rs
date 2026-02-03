@@ -19,7 +19,9 @@ pub fn create_data_statement(
             DataStatement::create(data, registered_by, timestamp).await?,
         );
 
-        ctx.sql_lite.register_statement(&statement, &graph_id).await?;
+        ctx.sql_lite
+            .register_statement(&statement, &graph_id)
+            .await?;
 
         Ok(statement.get_id())
     })
