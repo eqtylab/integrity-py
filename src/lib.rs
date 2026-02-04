@@ -5,8 +5,8 @@
 
 /// Content identifier (CID) computation and utilities.
 pub mod cid;
-/// Global application context and configuration management.
-pub mod context;
+/// Global application configuration management.
+pub mod config;
 /// Indexes integrity information in sql database.
 pub mod indexer;
 /// API functions for connecting to the integrity service.
@@ -34,7 +34,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let _ = pyo3_log::try_init();
 
     m.add_wrapped(wrap_pymodule!(cid::cid))?;
-    m.add_wrapped(wrap_pymodule!(context::context))?;
+    m.add_wrapped(wrap_pymodule!(config::config))?;
     m.add_wrapped(wrap_pymodule!(signer::signer))?;
     m.add_wrapped(wrap_pymodule!(manifest::manifest))?;
     m.add_wrapped(wrap_pymodule!(statements::statements))?;

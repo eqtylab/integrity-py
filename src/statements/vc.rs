@@ -47,7 +47,7 @@ mod tests {
     use ssi::vc::Credential;
     use tempfile::tempdir;
 
-    use crate::context::{ctx_async, Context};
+    use crate::config::{ctx_async, Config};
 
     /// Creates a minimal valid W3C VC for testing
     fn create_test_credential() -> Credential {
@@ -171,8 +171,8 @@ mod tests {
     fn test_context_without_signer_returns_none() {
         let temp_dir = tempdir().unwrap();
         get_runtime().block_on(async {
-            Context::reset().await.unwrap();
-            let ctx = Context::init(temp_dir.path().to_path_buf()).await.unwrap();
+            Config::reset().await.unwrap();
+            let ctx = Config::init(temp_dir.path().to_path_buf()).await.unwrap();
             assert!(ctx.active_signer.is_none());
         });
     }
@@ -181,15 +181,14 @@ mod tests {
     fn test_context_with_signer() {
         let temp_dir = tempdir().unwrap();
         get_runtime().block_on(async {
-            // Initialize context
-            Context::reset().await.unwrap();
-            let _ = Context::init(temp_dir.path().to_path_buf()).await.unwrap();
+            Config::reset().await.unwrap();
+            let _ = Config::init(temp_dir.path().to_path_buf()).await.unwrap();
 
             // Create and set signer
             let signer = Ed25519Signer::create().unwrap();
             let signer_type = SignerType::ED25519(signer);
             let expected_did = signer_type.get_did_doc().id.clone();
-            Context::set_active_signer_async(signer_type).await.unwrap();
+            Config::set_active_signer_async(signer_type).await.unwrap();
 
             // Verify signer was set
             let ctx = ctx_async().await;

@@ -14,7 +14,7 @@ use pyo3_async_runtimes::tokio::get_runtime;
 
 use serde::Serialize;
 
-use crate::context::{ctx_async, Context};
+use crate::config::{ctx_async, Config};
 
 /// `signer` submodule.
 #[pymodule]
@@ -227,7 +227,7 @@ fn set_active_signer(py: Python, name: String) -> PyResult<()> {
             }
 
             let signer = utils_load_signer(signer_file)?;
-            Context::set_active_signer_async(signer).await
+            Config::set_active_signer_async(signer).await
         })
     })?)
 }

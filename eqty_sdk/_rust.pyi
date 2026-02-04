@@ -39,16 +39,16 @@ class DirCidResult:
         """Get list of (filename, CID) tuples."""
         ...
 
-# Context module
-class context:
+# Config module
+class config
     @staticmethod
     def init(app_dir: PathLike[str]) -> None:
-        """Initializes the sdk context. Must be called before setting individual context values"""
+        """Initializes the sdk config. Must be called before setting individual config values"""
         ...
 
     @staticmethod
     def reset() -> None:
-        """Resets the global context, allowing it to be reinitialized with a new app directory"""
+        """Resets the global config, allowing it to be reinitialized with a new app directory"""
         ...
 
     @staticmethod

@@ -1,6 +1,6 @@
 import logging
 
-from eqty_sdk._rust import context, signer, statements
+from eqty_sdk._rust import config, signer, statements
 
 logger = logging.getLogger()
 
@@ -21,12 +21,12 @@ def enable_logging(enable: bool):
 def core_init(temp_dir: str):
     logger.info("Resetting core-py context")
     try:
-        context.reset()
+        config.reset()
     except Exception as e:
         logger.info("Context reset failed (expected if not initialized): %s", e)
 
     logger.info("Initializing core-py context")
-    context.init(temp_dir)
+    config.init(temp_dir)
     logger.info("Creating signer from private key")
     try:
         signer.create_signer_from_private_key(

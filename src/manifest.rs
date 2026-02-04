@@ -18,7 +18,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::{
-    context::ctx_async,
+    config::ctx_async,
     integrity_service::{
         blobs::put_jcs,
         statements::{create_statement, CreateStatementRequestBody},

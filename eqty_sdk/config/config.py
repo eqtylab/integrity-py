@@ -8,7 +8,7 @@ import toml
 
 from eqty_sdk._rust import (
     Graph,
-    context as eqty_core_context,
+    config as eqty_core_config,
 )
 
 from .cid_ignore import CidIgnore
@@ -112,15 +112,15 @@ class Config:
             self._settings = Settings(**settings_toml)
 
         if self._settings.url:
-            eqty_core_context.set_integrity_service_url(self._settings.url)
+            eqty_core_config.set_integrity_service_url(self._settings.url)
 
         cid_rules = self._settings.cid_ignore
-        eqty_core_context.set_cid_ignore_rules(
+        eqty_core_config.set_cid_ignore_rules(
             cid_rules.include_hidden_files,
             cid_rules.gitignore,
             cid_rules.include_symlinks,
         )
-        eqty_core_context.set_generate_model_signing_signatures(
+        eqty_core_config.set_generate_model_signing_signatures(
             self._settings.generate_model_signing_signatures
         )
 
@@ -143,7 +143,7 @@ class Config:
         )
         self.save()
 
-        eqty_core_context.set_cid_ignore_rules(include_hidden_files, gitignore, include_symlinks)
+        eqty_core_config.set_cid_ignore_rules(include_hidden_files, gitignore, include_symlinks)
         return self
 
     def set_store_all_blobs(self, store: bool) -> "Config":
@@ -160,14 +160,14 @@ class Config:
     ) -> "Config":
         """Sets the URL used to connect to the integrity service."""
         self._settings.url = url
-        eqty_core_context.set_integrity_service_url(self._settings.url)
+        eqty_core_config.set_integrity_service_url(self._settings.url)
         self.save()
         return self
 
     def set_generate_model_signing_signatures(self, issue: bool) -> "Config":
         """Sets whether to generate model signing signatures for directories."""
         self._settings.generate_model_signing_signatures = issue
-        eqty_core_context.set_generate_model_signing_signatures(issue)
+        eqty_core_config.set_generate_model_signing_signatures(issue)
         self.save()
         return self
 
@@ -178,7 +178,7 @@ class Config:
             ctx: The Context
 
         """
-        eqty_core_context.set_default_graph(ctx)
+        eqty_core_config.set_default_graph(ctx)
         return self
 
     def __load_config_file__(self, custom_dir: Optional[str] = None) -> None:
@@ -189,7 +189,7 @@ class Config:
 
         os.makedirs(os.path.dirname(self._config_path), exist_ok=True)
         logger.info(f"Initializing context at {self._config_dir}")
-        eqty_core_context.init(self._config_dir)
+        eqty_core_config.init(self._config_dir)
 
         if os.path.exists(self._config_path):
             self.load()

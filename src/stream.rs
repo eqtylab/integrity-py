@@ -13,7 +13,7 @@ use pyo3_async_runtimes::tokio::future_into_py;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::context::ctx_async;
+use crate::config::ctx_async;
 
 /// Result of finalizing a stream computation.
 ///

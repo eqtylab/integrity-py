@@ -13,11 +13,11 @@ use pyo3_async_runtimes::tokio::get_runtime;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-static CTX: Lazy<RwLock<Option<Context>>> = Lazy::new(|| RwLock::new(None));
+static CTX: Lazy<RwLock<Option<Config>>> = Lazy::new(|| RwLock::new(None));
 
 use pyo3::prelude::*;
 
-/// Macro to reduce boilerplate for async context operations in pyfunctions.
+/// Macro to reduce boilerplate for async config operations in pyfunctions.
 ///
 /// Usage:
 /// ```rust
@@ -32,16 +32,16 @@ macro_rules! with_ctx {
     ($py:expr, |$ctx:ident| $body:expr) => {
         $py.detach(|| {
             pyo3_async_runtimes::tokio::get_runtime().block_on(async {
-                let $ctx = $crate::context::ctx_async().await;
+                let $ctx = $crate::config::ctx_async().await;
                 $body
             })
         })
     };
 }
 
-/// `context` submodule.
+/// `config` submodule.
 #[pymodule]
-pub fn context(m: &Bound<'_, PyModule>) -> PyResult<()> {
+pub fn config(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(init, m)?)?;
     m.add_function(wrap_pyfunction!(reset, m)?)?;
     m.add_function(wrap_pyfunction!(set_cid_ignore_rules, m)?)?;
@@ -53,23 +53,23 @@ pub fn context(m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
-/// Initializes the sdk context. Must be called before setting individual context values
+/// Initializes the sdk config. Must be called before setting individual config values
 #[pyfunction]
 fn init(py: Python<'_>, app_dir: PathBuf) -> PyResult<()> {
-    py.detach(|| get_runtime().block_on(Context::init(app_dir)))?;
+    py.detach(|| get_runtime().block_on(Config::init(app_dir)))?;
     Ok(())
 }
 
-/// Resets the global context, allowing it to be reinitialized with a new app directory
+/// Resets the global config, allowing it to be reinitialized with a new app directory
 #[pyfunction]
 fn reset(py: Python<'_>) -> PyResult<()> {
-    py.detach(|| get_runtime().block_on(Context::reset()))?;
+    py.detach(|| get_runtime().block_on(Config::reset()))?;
     Ok(())
 }
 
 #[pyfunction]
 fn set_integrity_service_url(_py: Python, url: String) -> PyResult<()> {
-    Ok(Context::update_context(|ctx| {
+    Ok(Config::update_config(|ctx| {
         ctx.integrity_service = Some(url)
     })?)
 }
@@ -84,7 +84,7 @@ fn set_hashing_config(
         multithread: multithread.unwrap_or(false),
         memory_map: memory_map.unwrap_or(false),
     };
-    Ok(Context::update_context(|ctx| ctx.hashing = hash_config)?)
+    Ok(Config::update_config(|ctx| ctx.hashing = hash_config)?)
 }
 
 #[pyfunction]
@@ -101,12 +101,12 @@ fn set_cid_ignore_rules(
         include_symlinks: include_symlinks.unwrap_or_default(),
     };
 
-    Ok(Context::update_context(|ctx| ctx.cid_ignore = cid_ignore)?)
+    Ok(Config::update_config(|ctx| ctx.cid_ignore = cid_ignore)?)
 }
 
 #[pyfunction]
 fn set_generate_model_signing_signatures(_py: Python, enable: bool) -> PyResult<()> {
-    Ok(Context::update_context(|ctx| {
+    Ok(Config::update_config(|ctx| {
         ctx.generate_model_signing_signatures = enable
     })?)
 }
@@ -119,30 +119,30 @@ fn set_default_graph(py: Python, graph: Graph) -> PyResult<()> {
         let _ = ctx.sql_lite.create_graph(&graph).await;
     });
 
-    Ok(Context::update_context(|ctx| ctx.default_graph = graph)?)
+    Ok(Config::update_config(|ctx| ctx.default_graph = graph)?)
 }
 
-/// Gets a clone of the global application context (async version).
+/// Gets a clone of the global application config (async version).
 ///
 /// # Returns
-/// * `Context` - Clone of the initialized global context
+/// * `Config` - Clone of the initialized global config
 ///
 /// # Panics
-/// Panics if the global context has not been initialized via `Context::init()`.
-pub async fn ctx_async() -> Context {
+/// Panics if the global config has not been initialized via `Config::init()`.
+pub async fn ctx_async() -> Config {
     CTX.read()
         .await
         .as_ref()
-        .expect("Context not initialized")
+        .expect("Config not initialized")
         .clone()
 }
 
-/// Global application context containing configuration and state.
+/// Global application config containing configuration and state.
 ///
-/// The context stores application-wide settings including storage directories,
+/// The config stores application-wide settings including storage directories,
 /// service URLs, hashing preferences, and file filtering rules.
 #[derive(Clone)]
-pub struct Context {
+pub struct Config {
     /// URL for the integrity service
     pub integrity_service: Option<String>,
     /// Directory to store statements, keys, etc
@@ -161,20 +161,20 @@ pub struct Context {
     pub default_graph: Graph,
 }
 
-impl Context {
-    /// Initializes the global application context.
+impl Config {
+    /// Initializes the global application config.
     ///
     /// # Arguments
     /// * `app_dir` - Base directory for storing application data
     ///
     /// # Returns
-    /// * `Result<Context>` - Initialized context, or error if initialization fails
-    pub async fn init(app_dir: PathBuf) -> Result<Context> {
+    /// * `Result<Config>` - Initialized config, or error if initialization fails
+    pub async fn init(app_dir: PathBuf) -> Result<Config> {
         // Check if already initialized
         {
             let ctx_lock = CTX.read().await;
             if ctx_lock.is_some() {
-                log::warn!("Context already initialized. App directory was not set");
+                log::warn!("Config already initialized. App directory was not set");
                 return Ok(ctx_lock.clone().unwrap());
             }
         }
@@ -198,7 +198,7 @@ impl Context {
 
         let default_graph = Graph::default();
         sqlite.create_graph(&default_graph).await?;
-        let ctx = Context {
+        let ctx = Config {
             app_dir,
             sql_lite: Arc::new(sqlite),
             hashing: Default::default(),
@@ -209,29 +209,29 @@ impl Context {
             default_graph,
         };
 
-        // Acquire write lock to set the context
+        // Acquire write lock to set the config
         let mut ctx_lock = CTX.write().await;
         *ctx_lock = Some(ctx.clone());
         Ok(ctx)
     }
 
-    /// Resets the global context, allowing it to be reinitialized
+    /// Resets the global config, allowing it to be reinitialized
     pub async fn reset() -> Result<()> {
         let mut ctx_lock = CTX.write().await;
         *ctx_lock = None;
         Ok(())
     }
 
-    /// Updates the global context using a closure that modifies it in place (blocking version).
+    /// Updates the global config using a closure that modifies it in place (blocking version).
     ///
     /// # Arguments
-    /// * `updater` - Closure that receives a mutable reference to the context
+    /// * `updater` - Closure that receives a mutable reference to the config
     ///
     /// # Returns
-    /// * `Result<()>` - Success or error if context is not initialized or lock fails
-    pub fn update_context<F>(updater: F) -> Result<()>
+    /// * `Result<()>` - Success or error if config is not initialized or lock fails
+    pub fn update_config<F>(updater: F) -> Result<()>
     where
-        F: FnOnce(&mut Context),
+        F: FnOnce(&mut Config),
     {
         let mut ctx_lock = CTX.blocking_write();
 
@@ -239,20 +239,20 @@ impl Context {
             updater(ctx);
             Ok(())
         } else {
-            Err(anyhow!("Global context is not initialized"))
+            Err(anyhow!("Global config is not initialized"))
         }
     }
 
-    /// Updates the global context using a closure that modifies it in place (async version).
+    /// Updates the global config using a closure that modifies it in place (async version).
     ///
     /// # Arguments
-    /// * `updater` - Closure that receives a mutable reference to the context
+    /// * `updater` - Closure that receives a mutable reference to the config
     ///
     /// # Returns
-    /// * `Result<()>` - Success or error if context is not initialized or lock fails
-    pub async fn update_context_async<F>(updater: F) -> Result<()>
+    /// * `Result<()>` - Success or error if config is not initialized or lock fails
+    pub async fn update_config_async<F>(updater: F) -> Result<()>
     where
-        F: FnOnce(&mut Context),
+        F: FnOnce(&mut Config),
     {
         let mut ctx_lock = CTX.write().await;
 
@@ -260,7 +260,7 @@ impl Context {
             updater(ctx);
             Ok(())
         } else {
-            Err(anyhow!("Global context is not initialized"))
+            Err(anyhow!("Global config is not initialized"))
         }
     }
 
@@ -275,26 +275,26 @@ impl Context {
         Ok(signer.get_did_doc().id)
     }
 
-    /// Sets the active signer for the current context.
+    /// Sets the active signer for the current config.
     ///
     /// # Arguments
     /// * `signer` - The signer to set as active
     ///
     /// # Returns
-    /// * `Result<()>` - Success or error if context update fails
+    /// * `Result<()>` - Success or error if config update fails
     pub fn set_active_signer(&self, signer: SignerType) -> Result<()> {
-        Context::update_context(|ctx| ctx.active_signer = Some(signer))
+        Config::update_config(|ctx| ctx.active_signer = Some(signer))
     }
 
-    /// Sets the active signer for the current context (async version).
+    /// Sets the active signer for the current config (async version).
     ///
     /// # Arguments
     /// * `signer` - The signer to set as active
     ///
     /// # Returns
-    /// * `Result<()>` - Success or error if context update fails
+    /// * `Result<()>` - Success or error if config update fails
     pub async fn set_active_signer_async(signer: SignerType) -> Result<()> {
-        Context::update_context_async(|ctx| ctx.active_signer = Some(signer)).await
+        Config::update_config_async(|ctx| ctx.active_signer = Some(signer)).await
     }
 
     /// Creates configuration for the Integrity Service API client.
