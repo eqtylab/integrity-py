@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod sql_tests {
+    use crate::indexer::Graph;
+
     use super::super::Sqlite;
     use integrity::lineage::models::statements::{
         AssociationStatement, ComputationStatement, DataStatement, MetadataStatement, Statement,
@@ -15,12 +17,13 @@ mod sql_tests {
     #[tokio::test]
     async fn test_create_graph() {
         let db = setup_db().await;
-        let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000001");
-        db.create_graph(&graph_id, "test:1", None).await.unwrap();
+        let id = uuid::uuid!("00000000-0000-0000-0000-000000000001");
+        let graph = Graph::new(id, "test:1".to_string());
+        db.create_graph(&graph).await.unwrap();
 
         // Verify by retrieving the graph
-        let graph = db.retrieve_graph(&graph_id).await.unwrap();
-        assert_eq!(graph.id, graph_id);
+        let graph = db.retrieve_graph(&id).await.unwrap();
+        assert_eq!(graph.id, id);
         assert_eq!(graph.name, "test:1");
         assert!(graph.parent.is_none());
     }
@@ -29,10 +32,9 @@ mod sql_tests {
     async fn test_create_graph_with_parent() {
         let db = setup_db().await;
         let parent_id = uuid::uuid!("00000000-0000-0000-0000-1000000000F0");
-        let parent_name = "test:parent";
-        db.create_graph(&parent_id, parent_name, None)
-            .await
-            .unwrap();
+        let parent_name = "test:parent".to_string();
+        let graph = Graph::new(parent_id, parent_name.clone());
+        db.create_graph(&graph).await.unwrap();
 
         let parent_graph = db.retrieve_graph(&parent_id).await.unwrap();
         assert_eq!(parent_graph.id, parent_id);
@@ -40,10 +42,9 @@ mod sql_tests {
         assert!(parent_graph.parent.is_none());
 
         let child_id = uuid::uuid!("00000000-0000-0000-0000-1000000000F1");
-        let child_name = "test:parent:child";
-        db.create_graph(&child_id, child_name, Some(&parent_id))
-            .await
-            .unwrap();
+        let child_name = "test:parent:child".to_string();
+        let child_graph = Graph::from_parent(child_id, child_name.clone(), parent_graph);
+        db.create_graph(&child_graph).await.unwrap();
 
         let child_graph = db.retrieve_graph(&child_id).await.unwrap();
         assert_eq!(child_graph.id, child_id);
@@ -55,7 +56,8 @@ mod sql_tests {
     async fn test_register_computation_statement() {
         let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000010");
-        db.create_graph(&graph_id, "comp_test", None).await.unwrap();
+        let graph = Graph::new(graph_id, "comp_test".to_string());
+        db.create_graph(&graph).await.unwrap();
 
         let did = String::from("did:key:comp_statement");
         let statement = ComputationStatement::create(
@@ -86,7 +88,8 @@ mod sql_tests {
     async fn test_register_data_statement() {
         let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000011");
-        db.create_graph(&graph_id, "data_test", None).await.unwrap();
+        let graph = Graph::new(graph_id, "data_test".to_string());
+        db.create_graph(&graph).await.unwrap();
 
         let did = String::from("did:key:data_statement");
         let data_cid = String::from("urn:cid:input1");
@@ -129,9 +132,8 @@ mod sql_tests {
     async fn test_register_metadata_statement() {
         let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000012");
-        db.create_graph(&graph_id, "metadata_test", None)
-            .await
-            .unwrap();
+        let graph = Graph::new(graph_id, "metadata_test".to_string());
+        db.create_graph(&graph).await.unwrap();
 
         let did = String::from("did:key:metadata_statement");
         let subject = String::from("urn:cid:metadata1");
@@ -178,9 +180,8 @@ mod sql_tests {
     async fn test_register_storage_statement() {
         let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000013");
-        db.create_graph(&graph_id, "storage_test", None)
-            .await
-            .unwrap();
+        let graph = Graph::new(graph_id, "storage_test".to_string());
+        db.create_graph(&graph).await.unwrap();
 
         let did = String::from("did:key:storage_statement");
         let subject = String::from("urn:cid:storage");
@@ -227,9 +228,8 @@ mod sql_tests {
     async fn test_register_association_statement() {
         let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000014");
-        db.create_graph(&graph_id, "association_test", None)
-            .await
-            .unwrap();
+        let graph = Graph::new(graph_id, "association_test".to_string());
+        db.create_graph(&graph).await.unwrap();
 
         let did = String::from("did:key:association_statement");
         let subject = String::from("urn:cid:association_subjectx");
@@ -345,19 +345,16 @@ mod sql_tests {
     async fn test_statement_retrieval_with_hierarchy() {
         let db = setup_db().await;
         let root_graph_id = uuid::uuid!("00000000-0000-0000-0000-500000000001");
-        db.create_graph(&root_graph_id, "Root Graph", None)
-            .await
-            .unwrap();
+        let graph = Graph::new(root_graph_id, "Root Graph".to_string());
+        db.create_graph(&graph).await.unwrap();
 
         let child_graph_id = uuid::uuid!("00000000-0000-0000-0000-500000000002");
-        db.create_graph(&child_graph_id, "Child Graph", Some(&root_graph_id))
-            .await
-            .unwrap();
+        let graph = Graph::new(child_graph_id, "Child Graph".to_string());
+        db.create_graph(&graph).await.unwrap();
 
         let child_graph_id_2 = uuid::uuid!("00000000-0000-0000-0000-500000000003");
-        db.create_graph(&child_graph_id_2, "Child Graph 2", Some(&child_graph_id))
-            .await
-            .unwrap();
+        let graph = Graph::new(child_graph_id_2, "Child Graph 2".to_string());
+        db.create_graph(&graph).await.unwrap();
 
         let input_data = vec![
             "urn:cid:comp_data_input_1".to_owned(),
