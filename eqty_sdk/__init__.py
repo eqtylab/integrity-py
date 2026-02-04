@@ -1,3 +1,5 @@
+from eqty_sdk import config
+from eqty_sdk._rust import init
 from eqty_sdk._rust import Graph as Context
 from eqty_sdk.asset import (
     Asset,
@@ -20,13 +22,9 @@ from eqty_sdk.compute import (
     Compute,
     compute,
 )
-from eqty_sdk.config import (
-    Config,
-)
 from eqty_sdk.core import (
     get_cid_for_bytes,
     get_cid_for_path,
-    init,
 )
 from eqty_sdk.errors import (
     AuthenticationError,
@@ -50,9 +48,9 @@ from eqty_sdk.types import (
 
 __all__ = [
     # Core
+    "init",
     "get_cid_for_bytes",
     "get_cid_for_path",
-    "init",
     # Assets
     "Asset",
     "AssetType",
@@ -73,7 +71,7 @@ __all__ = [
     "Compute",
     "Computation",
     # Config
-    "Config",
+    "config",
     # Context
     "Context",
     # Errors

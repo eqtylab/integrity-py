@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 from typing import Union
 
+from eqty_sdk import config
 from eqty_sdk._rust import manifest as eqty_core_manifest
-from eqty_sdk.config import Config
 from eqty_sdk.errors import UsageError
 from eqty_sdk.statements.common import Statements
 
@@ -20,7 +20,7 @@ class Manifest:
         """Creates a Manifest for the provided statements."""
         logger.info(f"Generating manifest from graph {len(statements.graphs)}")
         manifest_str = eqty_core_manifest.generate(
-            statements.graphs, Config().blob_dir(), include_context
+            statements.graphs, config.blob_dir(), include_context
         )
 
         instance = cls(manifest_str)
@@ -43,7 +43,7 @@ class Manifest:
         blobs = eqty_core_manifest.import_manifest(manifest_str)
 
         # Save each blob to the blob directory
-        blob_dir = Config().blob_dir()
+        blob_dir = config.blob_dir()
         blob_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
 
         for blob_key, blob_content in blobs.items():

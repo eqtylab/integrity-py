@@ -4,27 +4,25 @@ import shutil
 import sqlite3
 from pathlib import Path
 
-from eqty_sdk import SIGNER_ALGORITHMS, Config, Signer, init, set_active_signer
+from eqty_sdk import SIGNER_ALGORITHMS, Signer, config, set_active_signer
 
 test_dir = Path("tmp")
-CONFIG = None
+CONFIG_INITIALIZED = False
 logger = logging.getLogger("unit_tests_root")
 
 
-def setup_sdk() -> Config:
+def setup_sdk() -> None:
     """Initializes the SDK and sets a known signer."""
     _configure_debug_logging()
-    global CONFIG
-    if not CONFIG:
-        CONFIG = init(custom_dir=test_dir)
+    global CONFIG_INITIALIZED
+    if not CONFIG_INITIALIZED:
+        config.init(test_dir)
         signer = Signer.from_private_key(
             algorithm=SIGNER_ALGORITHMS.ED25519,
             private_key="eHb22WNFvUXihogn8fubQjW7hHEqwY3fEKt745V4xXg=",
         )
         set_active_signer(signer)
-        return CONFIG
-
-    return CONFIG
+        CONFIG_INITIALIZED = True
 
 
 def get_config_dir() -> Path:

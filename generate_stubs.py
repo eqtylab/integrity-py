@@ -47,6 +47,7 @@ class RustTypeMapper:
         "HashMap<String, &PyBytes>": "Dict[str, bytes]",
         "&PyAny": "Any",
         "PyObject": "Any",
+        "PyResult<Graph>": "Graph",
     }
 
     @classmethod
@@ -459,6 +460,14 @@ class StubGenerator:
                     ("did_key", "str", "Get the DID key."),
                 ],
                 "doc": "Python wrapper for Rust signer.",
+            },
+            "Graph": {
+                "properties": [
+                    ("id", "str", "UUID of the graph."),
+                    ("name", "str", "pet name of the graph"),
+                    ("parent", "str", "UUID of the parent graph."),
+                ],
+                "doc": "Grouping statements by graph",
             },
         }
 

@@ -1,61 +1,34 @@
 from pathlib import Path
+from typing import Optional
 
-from eqty_sdk._rust import config as _rust_config
+from eqty_sdk._rust import Config, init as _init
 
-from .cid_ignore import CidIgnore
+# Re-export Config class
+__all__ = ["Config", "init", "blob_dir", "root_context"]
 
-# Re-export Rust config functions
-init = _rust_config.init
-reset = _rust_config.reset
+# Store the config instance after init
+_config: Optional[Config] = None
 
-# Setters
-set_integrity_service_url = _rust_config.set_integrity_service_url
-set_hashing_config = _rust_config.set_hashing_config
-set_cid_ignore_rules = _rust_config.set_cid_ignore_rules
-set_generate_model_signing_signatures = _rust_config.set_generate_model_signing_signatures
-set_default_graph = _rust_config.set_default_graph
-set_store_all_blobs = _rust_config.set_store_all_blobs
 
-# Getters
-get_integrity_service_url = _rust_config.get_integrity_service_url
-get_store_all_blobs = _rust_config.get_store_all_blobs
-get_cid_ignore_rules = _rust_config.get_cid_ignore_rules
-get_generate_model_signing_signatures = _rust_config.get_generate_model_signing_signatures
-get_app_dir = _rust_config.get_app_dir
-get_blob_dir = _rust_config.get_blob_dir
+def init(app_dir: Optional[Path] = None) -> Config:
+    """Initialize the SDK and return the Config instance."""
+    global _config
+    _config = _init(app_dir)
+    return _config
+
+
+def get_config() -> Config:
+    """Get the current config instance, raising if not initialized."""
+    if _config is None:
+        raise RuntimeError("Config not initialized. Call init() first.")
+    return _config
 
 
 def blob_dir() -> Path:
     """Returns the blob directory as a Path object."""
-    return Path(get_blob_dir())
+    return Path(get_config().get_blob_dir())
 
 
-def cid_ignore() -> CidIgnore:
-    """Returns the current CID ignore settings."""
-    hidden, gitignore, symlinks = get_cid_ignore_rules()
-    return CidIgnore(
-        include_hidden_files=hidden,
-        gitignore=gitignore,
-        include_symlinks=symlinks,
-    )
-
-
-__all__ = [
-    "CidIgnore",
-    "init",
-    "reset",
-    "set_integrity_service_url",
-    "set_hashing_config",
-    "set_cid_ignore_rules",
-    "set_generate_model_signing_signatures",
-    "set_default_graph",
-    "set_store_all_blobs",
-    "get_integrity_service_url",
-    "get_store_all_blobs",
-    "get_cid_ignore_rules",
-    "get_generate_model_signing_signatures",
-    "get_app_dir",
-    "get_blob_dir",
-    "blob_dir",
-    "cid_ignore",
-]
+def root_context():
+    """Returns the default graph (root context)."""
+    return get_config().get_default_graph()

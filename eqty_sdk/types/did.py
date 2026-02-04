@@ -2,12 +2,12 @@ import json
 import logging
 from typing import Optional
 
+from eqty_sdk import config
 from eqty_sdk._rust import (
     Graph as Context,
     signer as eqty_core_signer,
     statements as eqty_core_statements,
 )
-from eqty_sdk.config import Config
 from eqty_sdk.statements import add_did_statement, add_metadata_statement
 from eqty_sdk.types.signer import Signer
 
@@ -39,7 +39,7 @@ class Did:
                 self.statement_ids.append(stmt.get("@id"))
 
             # save blobs locally
-            blob_dir = Config().blob_dir()
+            blob_dir = config.blob_dir()
             blob_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
 
             for cid, data in blobs.items():

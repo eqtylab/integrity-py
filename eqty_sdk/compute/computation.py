@@ -3,12 +3,12 @@ import os
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
+from eqty_sdk import config
 from eqty_sdk._rust import (
     Graph as Context,
     statements as eqty_core_statements,
 )
 from eqty_sdk.asset import serialize_for_hashing
-from eqty_sdk.config.config import Config
 from eqty_sdk.core import get_cid_for_bytes, get_cid_for_path
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
@@ -57,7 +57,7 @@ class Computation:
 
         metadata = Metadata(**kwargs)
         instance = object.__new__(cls)
-        instance.__init_internal__(Config().root_context, metadata, skip_proof)
+        instance.__init_internal__(config.root_context(), metadata, skip_proof)
         return instance
 
     @staticmethod

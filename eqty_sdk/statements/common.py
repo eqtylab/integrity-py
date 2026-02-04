@@ -5,11 +5,11 @@ from uuid import UUID
 
 from pydantic.types import UUID4
 
+from eqty_sdk import config
 from eqty_sdk._rust import (
     Graph as Context,
     statements as eqty_core_statements,
 )
-from eqty_sdk.config.config import Config
 
 logger = logging.getLogger("eqty.sdk.statements")
 
@@ -47,7 +47,7 @@ class Statements:
         instance = cls()
         graph_ids = []
         if not graph_id:
-            graph_ids = [str(Config().root_context.uuid)]
+            graph_ids = [str(config.root_context().id)]
         elif isinstance(graph_id, UUID):
             graph_ids = [str(graph_id)]
         elif isinstance(graph_id, list):

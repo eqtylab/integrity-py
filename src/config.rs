@@ -15,6 +15,7 @@ use integrity::{
     signer::SignerType,
 };
 use once_cell::sync::Lazy;
+use pyo3::prelude::*;
 use pyo3_async_runtimes::tokio::get_runtime;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
@@ -27,6 +28,18 @@ struct PersistentSettings {
     store_all_blobs: bool,
     cid_ignore: CidIgnoreSettings,
     generate_model_signing_signatures: bool,
+}
+
+impl From<Config> for PersistentSettings {
+    fn from(config: Config) -> Self {
+        Self {
+            url: config.integrity_service.clone(),
+            store_all_blobs: config.store_all_blobs,
+            cid_ignore: config.cid_ignore.clone().into(),
+            generate_model_signing_signatures: config.generate_model_signing_signatures
+        }
+    }
+
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -58,8 +71,6 @@ impl From<CidIgnoreSettings> for CidIgnoreConfig {
 
 static CTX: Lazy<RwLock<Option<Config>>> = Lazy::new(|| RwLock::new(None));
 
-use pyo3::prelude::*;
-
 /// Macro to reduce boilerplate for async config operations in pyfunctions.
 ///
 /// Usage:
@@ -82,189 +93,6 @@ macro_rules! with_ctx {
     };
 }
 
-/// `config` submodule.
-#[pymodule]
-pub fn config(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(init, m)?)?;
-    m.add_function(wrap_pyfunction!(reset, m)?)?;
-    // Setters
-    m.add_function(wrap_pyfunction!(set_cid_ignore_rules, m)?)?;
-    m.add_function(wrap_pyfunction!(set_integrity_service_url, m)?)?;
-    m.add_function(wrap_pyfunction!(set_hashing_config, m)?)?;
-    m.add_function(wrap_pyfunction!(set_generate_model_signing_signatures, m)?)?;
-    m.add_function(wrap_pyfunction!(set_default_graph, m)?)?;
-    m.add_function(wrap_pyfunction!(set_store_all_blobs, m)?)?;
-    // Getters
-    m.add_function(wrap_pyfunction!(get_integrity_service_url, m)?)?;
-    m.add_function(wrap_pyfunction!(get_store_all_blobs, m)?)?;
-    m.add_function(wrap_pyfunction!(get_cid_ignore_rules, m)?)?;
-    m.add_function(wrap_pyfunction!(get_generate_model_signing_signatures, m)?)?;
-    m.add_function(wrap_pyfunction!(get_app_dir, m)?)?;
-    m.add_function(wrap_pyfunction!(get_blob_dir, m)?)?;
-    m.add_function(wrap_pyfunction!(get_default_graph, m)?)?;
-
-    Ok(())
-}
-
-/// Initializes the sdk config. Must be called before setting individual config values
-#[pyfunction]
-fn init(py: Python<'_>, app_dir: PathBuf) -> PyResult<()> {
-    py.detach(|| get_runtime().block_on(Config::init(app_dir)))?;
-    Ok(())
-}
-
-/// Resets the global config, allowing it to be reinitialized with a new app directory
-#[pyfunction]
-fn reset(py: Python<'_>) -> PyResult<()> {
-    py.detach(|| get_runtime().block_on(Config::reset()))?;
-    Ok(())
-}
-
-#[pyfunction]
-fn set_integrity_service_url(_py: Python, url: String) -> PyResult<()> {
-    Config::update_config(|ctx| {
-        ctx.integrity_service = Some(url);
-    })?;
-    Config::save_config()?;
-    Ok(())
-}
-
-#[pyfunction]
-fn set_hashing_config(
-    _py: Python,
-    multithread: Option<bool>,
-    memory_map: Option<bool>,
-) -> PyResult<()> {
-    let hash_config = HashingConfig {
-        multithread: multithread.unwrap_or(false),
-        memory_map: memory_map.unwrap_or(false),
-    };
-    Ok(Config::update_config(|ctx| ctx.hashing = hash_config)?)
-}
-
-#[pyfunction]
-fn set_cid_ignore_rules(
-    _py: Python,
-    include_hidden_files: Option<bool>,
-    gitignore: Option<bool>,
-    include_symlinks: Option<bool>,
-) -> PyResult<()> {
-    let cid_ignore = CidIgnoreConfig {
-        include_hidden_files: include_hidden_files
-            .unwrap_or(CidIgnoreConfig::default().include_hidden_files),
-        gitignore: gitignore.unwrap_or(CidIgnoreConfig::default().gitignore),
-        include_symlinks: include_symlinks.unwrap_or_default(),
-    };
-
-    Config::update_config(|ctx| ctx.cid_ignore = cid_ignore)?;
-    Config::save_config()?;
-    Ok(())
-}
-
-#[pyfunction]
-fn set_generate_model_signing_signatures(_py: Python, enable: bool) -> PyResult<()> {
-    Config::update_config(|ctx| {
-        ctx.generate_model_signing_signatures = enable;
-    })?;
-    Config::save_config()?;
-    Ok(())
-}
-
-#[pyfunction]
-fn set_store_all_blobs(_py: Python, value: bool) -> PyResult<()> {
-    Config::update_config(|ctx| {
-        ctx.store_all_blobs = value;
-    })?;
-    Config::save_config()?;
-    Ok(())
-}
-
-#[pyfunction]
-/// Sets the default graph context
-fn set_default_graph(py: Python, graph: Graph) -> PyResult<()> {
-    with_ctx!(py, |ctx| {
-        log::info!("Setting default graph: {graph:?}");
-        let _ = ctx.sql_lite.create_graph(&graph).await;
-    });
-
-    Ok(Config::update_config(|ctx| ctx.default_graph = graph)?)
-}
-
-// Getter functions exposed to Python
-
-#[pyfunction]
-fn get_integrity_service_url(_py: Python) -> PyResult<Option<String>> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    Ok(ctx.integrity_service.clone())
-}
-
-#[pyfunction]
-fn get_store_all_blobs(_py: Python) -> PyResult<bool> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    Ok(ctx.store_all_blobs)
-}
-
-#[pyfunction]
-fn get_cid_ignore_rules(_py: Python) -> PyResult<(bool, bool, bool)> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    Ok((
-        ctx.cid_ignore.include_hidden_files,
-        ctx.cid_ignore.gitignore,
-        ctx.cid_ignore.include_symlinks,
-    ))
-}
-
-#[pyfunction]
-fn get_generate_model_signing_signatures(_py: Python) -> PyResult<bool> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    Ok(ctx.generate_model_signing_signatures)
-}
-
-#[pyfunction]
-fn get_app_dir(_py: Python) -> PyResult<PathBuf> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    Ok(ctx.app_dir.clone())
-}
-
-#[pyfunction]
-fn get_blob_dir(_py: Python) -> PyResult<PathBuf> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    let blob_dir = ctx.app_dir.join("blobs");
-    if !blob_dir.exists() {
-        fs::create_dir_all(&blob_dir).map_err(|e| {
-            pyo3::exceptions::PyIOError::new_err(format!("Failed to create blob directory: {}", e))
-        })?;
-    }
-    Ok(blob_dir)
-}
-
-#[pyfunction]
-fn get_default_graph(_py: Python) -> PyResult<Graph> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    Ok(ctx.default_graph.clone())
-}
-
 /// Gets a clone of the global application config (async version).
 ///
 /// # Returns
@@ -285,6 +113,7 @@ pub async fn ctx_async() -> Config {
 /// The config stores application-wide settings including storage directories,
 /// service URLs, hashing preferences, and file filtering rules.
 #[derive(Clone)]
+#[pyclass]
 pub struct Config {
     /// URL for the integrity service
     pub integrity_service: Option<String>,
@@ -306,6 +135,161 @@ pub struct Config {
     pub default_graph: Graph,
 }
 
+#[pymethods]
+// Python exported impl functions
+impl Config {
+    /// Resets the global config, allowing it to be reinitialized with a new app directory
+    #[staticmethod]
+    fn reset(py: Python<'_>) -> PyResult<()> {
+        py.detach(|| get_runtime().block_on(Self::reset_internal()))?;
+        Ok(())
+    }
+
+    // Setters
+
+    #[pyo3(signature = (url))]
+    fn set_integrity_service_url(&self, url: String) -> PyResult<()> {
+        Self::update_config(|ctx| {
+            ctx.integrity_service = Some(url);
+        })?;
+        Self::save_config()?;
+        Ok(())
+    }
+
+    #[pyo3(signature = (multithread=None, memory_map=None))]
+    fn set_hashing_config(
+        &self,
+        multithread: Option<bool>,
+        memory_map: Option<bool>,
+    ) -> PyResult<()> {
+        let hash_config = HashingConfig {
+            multithread: multithread.unwrap_or(false),
+            memory_map: memory_map.unwrap_or(false),
+        };
+        Ok(Self::update_config(|ctx| ctx.hashing = hash_config)?)
+    }
+
+    #[pyo3(signature = (include_hidden_files=None, gitignore=None, include_symlinks=None))]
+    fn set_cid_ignore_rules(
+        &self,
+        include_hidden_files: Option<bool>,
+        gitignore: Option<bool>,
+        include_symlinks: Option<bool>,
+    ) -> PyResult<()> {
+        let cid_ignore = CidIgnoreConfig {
+            include_hidden_files: include_hidden_files
+                .unwrap_or(CidIgnoreConfig::default().include_hidden_files),
+            gitignore: gitignore.unwrap_or(CidIgnoreConfig::default().gitignore),
+            include_symlinks: include_symlinks.unwrap_or_default(),
+        };
+
+        Self::update_config(|ctx| ctx.cid_ignore = cid_ignore)?;
+        Self::save_config()?;
+        Ok(())
+    }
+
+    #[pyo3(signature = (enable))]
+    fn set_generate_model_signing_signatures(&self, enable: bool) -> PyResult<()> {
+        Self::update_config(|ctx| {
+            ctx.generate_model_signing_signatures = enable;
+        })?;
+        Self::save_config()?;
+        Ok(())
+    }
+
+    #[pyo3(signature = (value))]
+    fn set_store_all_blobs(&self, value: bool) -> PyResult<()> {
+        Self::update_config(|ctx| {
+            ctx.store_all_blobs = value;
+        })?;
+        Self::save_config()?;
+        Ok(())
+    }
+
+    /// Sets the default graph context
+    #[pyo3(signature = (graph))]
+    fn set_default_graph(&self, py: Python, graph: Graph) -> PyResult<()> {
+        with_ctx!(py, |ctx| {
+            log::info!("Setting default graph: {graph:?}");
+            let _ = ctx.sql_lite.create_graph(&graph).await;
+        });
+
+        Ok(Self::update_config(|ctx| ctx.default_graph = graph)?)
+    }
+
+    // Getters
+
+    fn get_integrity_service_url(&self) -> PyResult<Option<String>> {
+        let ctx_lock = CTX.blocking_read();
+        let ctx = ctx_lock
+            .as_ref()
+            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
+        Ok(ctx.integrity_service.clone())
+    }
+
+    fn get_store_all_blobs(&self) -> PyResult<bool> {
+        let ctx_lock = CTX.blocking_read();
+        let ctx = ctx_lock
+            .as_ref()
+            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
+        Ok(ctx.store_all_blobs)
+    }
+
+    fn get_cid_ignore_rules(&self) -> PyResult<(bool, bool, bool)> {
+        let ctx_lock = CTX.blocking_read();
+        let ctx = ctx_lock
+            .as_ref()
+            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
+        Ok((
+            ctx.cid_ignore.include_hidden_files,
+            ctx.cid_ignore.gitignore,
+            ctx.cid_ignore.include_symlinks,
+        ))
+    }
+
+    fn get_generate_model_signing_signatures(&self) -> PyResult<bool> {
+        let ctx_lock = CTX.blocking_read();
+        let ctx = ctx_lock
+            .as_ref()
+            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
+        Ok(ctx.generate_model_signing_signatures)
+    }
+
+    fn get_app_dir(&self) -> PyResult<PathBuf> {
+        let ctx_lock = CTX.blocking_read();
+        let ctx = ctx_lock
+            .as_ref()
+            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
+        Ok(ctx.app_dir.clone())
+    }
+
+    fn get_blob_dir(&self) -> PyResult<PathBuf> {
+        let ctx_lock = CTX.blocking_read();
+        let ctx = ctx_lock
+            .as_ref()
+            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
+        let blob_dir = ctx.app_dir.join("blobs");
+        if !blob_dir.exists() {
+            fs::create_dir_all(&blob_dir).map_err(|e| {
+                pyo3::exceptions::PyIOError::new_err(format!(
+                    "Failed to create blob directory: {}",
+                    e
+                ))
+            })?;
+        }
+        Ok(blob_dir)
+    }
+
+    fn get_default_graph(&self) -> PyResult<Graph> {
+        let ctx_lock = CTX.blocking_read();
+        let ctx = ctx_lock
+            .as_ref()
+            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
+        Ok(ctx.default_graph.clone())
+    }
+}
+
+// Rust only impl functions
 impl Config {
     /// Initializes the global application config.
     ///
@@ -368,27 +352,31 @@ impl Config {
             default_graph,
         };
 
+        if persisted.is_none() {
+            let config_path = ctx.app_dir.join("config.toml");
+            let toml_string = toml::to_string_pretty::<PersistentSettings>(&ctx.clone().into())?;
+
+            let mut file = File::create(&config_path)?;
+            file.write_all(toml_string.as_bytes())?;
+
+            log::debug!("Config saved to {:?}", config_path);
+        }
+
         // Acquire write lock to set the config
         let mut ctx_lock = CTX.write().await;
         *ctx_lock = Some(ctx.clone());
         Ok(ctx)
     }
 
-    /// Resets the global config, allowing it to be reinitialized
-    pub async fn reset() -> Result<()> {
+    /// Resets the global config, allowing it to be reinitialized (internal async version)
+    async fn reset_internal() -> Result<()> {
         let mut ctx_lock = CTX.write().await;
         *ctx_lock = None;
         Ok(())
     }
 
-    /// Updates the global config using a closure that modifies it in place (blocking version).
-    ///
-    /// # Arguments
-    /// * `updater` - Closure that receives a mutable reference to the config
-    ///
-    /// # Returns
-    /// * `Result<()>` - Success or error if config is not initialized or lock fails
-    pub fn update_config<F>(updater: F) -> Result<()>
+    /// Helper fn to update the config using a closure that modifies it in place (blocking version).
+    fn update_config<F>(updater: F) -> Result<()>
     where
         F: FnOnce(&mut Config),
     {
@@ -402,14 +390,8 @@ impl Config {
         }
     }
 
-    /// Updates the global config using a closure that modifies it in place (async version).
-    ///
-    /// # Arguments
-    /// * `updater` - Closure that receives a mutable reference to the config
-    ///
-    /// # Returns
-    /// * `Result<()>` - Success or error if config is not initialized or lock fails
-    pub async fn update_config_async<F>(updater: F) -> Result<()>
+    /// Helper fn to update the config using a closure that modifies it in place (async version).
+    async fn update_config_async<F>(updater: F) -> Result<()>
     where
         F: FnOnce(&mut Config),
     {
@@ -434,16 +416,6 @@ impl Config {
         Ok(signer.get_did_doc().id)
     }
 
-    /// Sets the active signer for the current config.
-    ///
-    /// # Arguments
-    /// * `signer` - The signer to set as active
-    ///
-    /// # Returns
-    /// * `Result<()>` - Success or error if config update fails
-    pub fn set_active_signer(&self, signer: SignerType) -> Result<()> {
-        Config::update_config(|ctx| ctx.active_signer = Some(signer))
-    }
 
     /// Sets the active signer for the current config (async version).
     ///
@@ -530,7 +502,7 @@ impl Config {
     }
 
     /// Saves current config settings to config.toml
-    pub fn save_config() -> Result<()> {
+    fn save_config() -> Result<()> {
         let ctx_lock = CTX.blocking_read();
         let ctx = ctx_lock
             .as_ref()

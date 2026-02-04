@@ -7,11 +7,11 @@ from typing import Any, Optional, Union, cast
 
 import dill as pickle
 
+from eqty_sdk import config
 from eqty_sdk._rust import (
     Graph as Context,
     statements as eqty_core_statements,
 )
-from eqty_sdk.config import Config
 from eqty_sdk.core import (
     get_cid_for_bytes,
     get_cid_for_path,
@@ -239,12 +239,13 @@ class Asset:
         add_data_statement([self.cid], self._skip_proof)
         add_metadata_statement(self.cid, self._metadata.to_json_str(), self._skip_proof)
 
-        if Config().generate_model_signing_signatures and self._is_dir:
+        if config.get_config().get_generate_model_signing_signatures() and self._is_dir:
+            _, _, include_symlinks = config.get_config().get_cid_ignore_rules()
             eqty_core_statements.create_model_signing_statement(
                 collection_cid=self.cid,
-                blobs_dir=Config().blob_dir(),
+                blobs_dir=config.blob_dir(),
                 model_signing_name=self._metadata.name or "Unnamed Asset",
-                allow_symlinks=Config().cid_ignore.include_symlinks,
+                allow_symlinks=include_symlinks,
                 ignore_paths=[],  # TODO: populate this, ok for now, just makes recreation require more out-of-band info
                 timestamp=None,
             )

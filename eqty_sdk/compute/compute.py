@@ -4,12 +4,12 @@ import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, cast
 
+from eqty_sdk import config
 from eqty_sdk._rust import (
     Graph as Context,
     stream as eqty_core_stream,
 )
 from eqty_sdk.asset import Asset, AssetType, Code, Custom, Dataset, Model
-from eqty_sdk.config.config import Config
 from eqty_sdk.core import get_cid_for_bytes
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
@@ -62,7 +62,7 @@ class Compute:
     ) -> None:
         logger.debug("Initalizing Compute")
 
-        self._ctx = ctx if ctx is not None else Config().root_context
+        self._ctx = ctx if ctx is not None else config.root_context()
 
         if metadata is None:
             metadata = {}

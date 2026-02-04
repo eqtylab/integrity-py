@@ -1,66 +1,36 @@
 import logging
 import unittest
-from uuid import UUID, uuid4
 
-from eqty_sdk import init
-from eqty_sdk.config.config import Config
-from eqty_sdk.context import Context
+from eqty_sdk import config
+from eqty_sdk._rust import Graph
 from tests import setup_sdk
 
 
-# @unittest.skip("testing")
 class TestInitContext(unittest.TestCase):
-    """Checks that the Initializtion of the sdk handles parent context."""
+    """Checks that the Initialization of the sdk handles context properly."""
 
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
-    config = None
 
     @classmethod
-    def setUpTest(cls):
-        cls.config = setup_sdk()
-
-    def setUp(self):
-        """Reset config singleton before each test."""
-        # Reset the config singleton to allow fresh initialization
-        Config._instance = None
-        # Re-setup SDK for fresh test
-        self.config = setup_sdk()
-
-    def tearDown(self):
-        Config._instance = self.config
+    def setUpClass(cls):
+        setup_sdk()
 
     def test_init_context(self):
         """Test that init creates a default root context."""
-        config = init()
+        ctx = config.root_context()
 
-        self.assertIsNotNone(config.root_context)
-        self.assertIsInstance(config.root_context, Context)
-        self.assertIsNotNone(config.root_context.uuid)
-        self.assertEqual(str(config.root_context.uuid), config.root_context.name)
+        self.assertIsNotNone(ctx)
+        self.assertIsInstance(ctx, Graph)
+        self.assertIsNotNone(ctx.id)
 
-    def test_init_with_context(self):
-        """Test that with_context can set the root context."""
-        name = "Unit Test"
-        ctx = UUID("12345678123456781234567812345678")
-        self.logger.info(f"Parent Context: {ctx!r}")
-        config = init().from_context(ctx, name)
+    def test_set_default_graph(self):
+        """Test that set_default_graph updates the root context."""
+        new_graph = Graph.new()
+        config.set_default_graph(new_graph)
 
-        self.assertIsNotNone(config.root_context)
-        self.assertIsInstance(config.root_context, Context)
-        self.assertEqual(config.root_context.parent_ctx, ctx)
-        self.assertEqual(config.root_context.name, name)
-        self.assertIsNotNone(config.root_context.uuid)
-
-    def test_id_reuse(self):
-        """Test that init with_context can be set with an explicit UUID."""
-        name = "Unit Test"
-        ctx = uuid4()
-
-        config = init().with_context(name, ctx)
-
-        self.assertEqual(config.root_context.uuid, ctx)
-        self.assertEqual(config.root_context.name, name)
+        ctx = config.root_context()
+        self.assertEqual(ctx.id, new_graph.id)
 
 
 if __name__ == "__main__":

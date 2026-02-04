@@ -1,7 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Optional, Union, cast
+from typing import Optional, cast
 
 from eqty_sdk._rust import cid as eqty_core_cid
 
@@ -16,7 +16,7 @@ def __get_store_flag__(store: Optional[bool]) -> bool:
     if store is False or store is True:
         return store
     else:
-        return config.get_store_all_blobs()
+        return config.get_config().get_store_all_blobs()
 
 
 def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> str:
@@ -70,14 +70,3 @@ def get_cid_for_path(path: Path, store: Optional[bool] = None) -> str:
         msg = f"The provided path {path} was not found"
         logger.error(msg)
         raise RuntimeError(msg)
-
-
-def init(custom_dir: Optional[Union[str, Path]] = None) -> None:
-    """Initialize the SDK configuration."""
-    if isinstance(custom_dir, Path):
-        config_dir = custom_dir
-    elif isinstance(custom_dir, str):
-        config_dir = Path(custom_dir)
-    else:
-        config_dir = Path.cwd() / ".eqty_sdk"
-    config.init(config_dir)

@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Any, Optional, Union, cast
 
+from eqty_sdk import config
 from eqty_sdk._rust import Graph as Context
-from eqty_sdk.config.config import Config
 from eqty_sdk.types.cid import Cid
 
 from .asset import Asset, AssetType
@@ -21,7 +21,7 @@ class Custom(Asset):
         custom_type = _resolve_type(asset_type)
 
         return cast(
-            "Custom", Asset._from_path(Config().root_context, path, custom_type, store, **kwargs)
+            "Custom", Asset._from_path(config.root_context(), path, custom_type, store, **kwargs)
         )
 
     @staticmethod
@@ -34,11 +34,11 @@ class Custom(Asset):
 
         if isinstance(cid, Cid):
             return cast(
-                "Custom", Asset._from_cid(Config().root_context, cid.cid, custom_type, **kwargs)
+                "Custom", Asset._from_cid(config.root_context(), cid.cid, custom_type, **kwargs)
             )
         else:
             return cast(
-                "Custom", Asset._from_cid(Config().root_context, cid, custom_type, **kwargs)
+                "Custom", Asset._from_cid(config.root_context(), cid, custom_type, **kwargs)
             )
 
     @staticmethod
@@ -51,7 +51,7 @@ class Custom(Asset):
         custom_type = _resolve_type(asset_type)
 
         return cast(
-            "Custom", Asset._from_object(Config().root_context, obj, custom_type, store, **kwargs)
+            "Custom", Asset._from_object(config.root_context(), obj, custom_type, store, **kwargs)
         )
 
     @staticmethod

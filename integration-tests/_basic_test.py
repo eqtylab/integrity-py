@@ -15,11 +15,11 @@ def test_imports():
 
         print("✓ eqty_sdk imported successfully")
 
-        from eqty_sdk import get_cid_for_bytes, get_cid_for_path, init  # noqa: F401
+        from eqty_sdk import config, get_cid_for_bytes, get_cid_for_path  # noqa: F401
 
         print("✓ Core functions imported successfully")
 
-        from eqty_sdk import Asset, Config, Dataset  # noqa: F401
+        from eqty_sdk import Asset, Dataset, config  # noqa: F401
 
         print("✓ Main classes imported successfully")
 
@@ -41,11 +41,10 @@ def test_basic_functionality():
     try:
         from eqty_sdk import (
             SIGNER_ALGORITHMS,
-            Config,
             Dataset,
             Signer,
+            config,
             get_cid_for_bytes,
-            init,
             set_active_signer,
         )
 
@@ -58,13 +57,13 @@ def test_basic_functionality():
         if not isinstance(cid, str) or not cid:
             raise ValueError("CID should be a non-empty string")
 
-        # Test basic config initialization
-        config = Config()  # noqa: F841
-        print("✓ Config() instantiation works")
-
         # Test init function (should not crash)
-        init_result = init()  # noqa: F841
-        print("✓ init() function works")
+        config.init()
+        print("✓ config.init() function works")
+
+        # Test config functions
+        store_all = config.get_store_all_blobs()
+        print(f"✓ config.get_store_all_blobs() works: {store_all}")
 
         # Set up a test signer for Dataset operations (required for creating assets)
         try:

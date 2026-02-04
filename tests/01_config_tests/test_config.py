@@ -5,7 +5,7 @@ from pathlib import Path
 
 import toml
 
-from eqty_sdk import Config
+from eqty_sdk import config
 from tests import get_config_dir, setup_sdk
 
 config_path = Path(get_config_dir(), "config.toml")
@@ -25,10 +25,9 @@ class TestConfig(unittest.TestCase):
         # Check that the directory exists
 
     def test_02_url(self):
-        config = Config()
-
+        cfg = config.get_config()
         url = "http://www.example.com"
-        config.set_integrity_service_url(url)
+        cfg.set_integrity_service_url(url)
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -36,11 +35,11 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(data["url"], url, "Failed to save url to settings file")
 
     def test_03_store_all_blobs(self):
-        config = Config()
-        self.assertFalse(config.store_all_blobs)
+        cfg = config.get_config()
+        self.assertFalse(cfg.get_store_all_blobs())
 
-        config.set_store_all_blobs(True)
-        self.assertTrue(config.store_all_blobs)
+        cfg.set_store_all_blobs(True)
+        self.assertTrue(cfg.get_store_all_blobs())
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -49,8 +48,8 @@ class TestConfig(unittest.TestCase):
             data["store_all_blobs"], True, "Failed to save store_all_blobs to settings file"
         )
 
-        config.set_store_all_blobs(False)
-        self.assertFalse(config.store_all_blobs)
+        cfg.set_store_all_blobs(False)
+        self.assertFalse(cfg.get_store_all_blobs())
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -60,16 +59,18 @@ class TestConfig(unittest.TestCase):
         )
 
     def test_04_cid_ignore(self):
-        config = Config()
-        self.assertFalse(config.cid_ignore.include_hidden_files)
-        self.assertFalse(config.cid_ignore.gitignore)
-        self.assertFalse(config.cid_ignore.include_symlinks)
+        cfg = config.get_config()
+        hidden, gitignore, symlinks = cfg.get_cid_ignore_rules()
+        self.assertFalse(hidden)
+        self.assertFalse(gitignore)
+        self.assertFalse(symlinks)
 
-        config.set_cid_ignore(True, False, False)
+        cfg.set_cid_ignore_rules(True, False, False)
 
-        self.assertTrue(config.cid_ignore.include_hidden_files)
-        self.assertFalse(config.cid_ignore.gitignore)
-        self.assertFalse(config.cid_ignore.include_symlinks)
+        hidden, gitignore, symlinks = cfg.get_cid_ignore_rules()
+        self.assertTrue(hidden)
+        self.assertFalse(gitignore)
+        self.assertFalse(symlinks)
 
         with open(config_path, "r") as f:
             data = toml.load(f)
