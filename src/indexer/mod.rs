@@ -38,6 +38,28 @@ pub struct Graph {
     pub statements: Option<Vec<Statement>>,
 }
 
+#[pymethods]
+impl Graph {
+    #[new]
+    pub fn new(id: Uuid, name: String) -> Self {
+        Graph {
+            id,
+            name,
+            parent: None,
+            statements: None,
+        }
+    }
+
+    #[staticmethod]
+    pub fn from_parent(id: Uuid, name: String, graph: Graph) -> Self {
+        Graph {
+            id,
+            name,
+            parent: Some(graph.id),
+            statements: None,
+        }
+    }
+}
 impl Default for Graph {
     fn default() -> Self {
         let id = uuid::uuid!("00000000-0000-0000-0000-000000000000");

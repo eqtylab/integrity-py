@@ -115,12 +115,11 @@ fn set_generate_model_signing_signatures(_py: Python, enable: bool) -> PyResult<
 /// Sets the default graph context
 fn set_default_graph(py: Python, graph: Graph) -> PyResult<()> {
     with_ctx!(py, |ctx| {
+        log::info!("Setting default graph: {graph:?}");
         let _ = ctx.sql_lite.create_graph(&graph).await;
     });
 
-    Ok(Context::update_context(|ctx| {
-        ctx.default_graph = graph
-    })?)
+    Ok(Context::update_context(|ctx| ctx.default_graph = graph)?)
 }
 
 /// Gets a clone of the global application context (async version).
@@ -331,7 +330,10 @@ impl Context {
     pub fn resolve_graph_id(&self, graph_id: Option<Uuid>) -> Uuid {
         match graph_id {
             Some(id) => id,
-            None => self.default_graph.id,
+            None => {
+                log::trace!("GraphID was not provided. Using default graph {:}", self.default_graph.id);
+                self.default_graph.id
+            }
         }
     }
 }

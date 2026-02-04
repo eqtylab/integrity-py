@@ -177,15 +177,13 @@ impl Sqlite {
     }
 
     /// Creates a record in the "graphs" table
-    pub async fn create_graph(
-        &self,
-        graph: &Graph,
-    ) -> Result<()> {
+    pub async fn create_graph(&self, graph: &Graph) -> Result<()> {
         sqlx::query(
             r#"
             INSERT INTO graphs
             (graph_id, name, parent_id)
             VALUES (?1, ?2, ?3)
+            ON CONFLICT (graph_id) DO NOTHING
             "#,
         )
         .bind(graph.id.to_string())
