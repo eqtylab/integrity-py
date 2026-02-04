@@ -8,15 +8,12 @@ logger = logging.getLogger()
 def enable_logging(enable: bool):
     import os
 
-    import eqty_sdk._rust as core
-
     if enable:
         logging.basicConfig(level=logging.DEBUG)
         os.environ["RUST_LOG"] = "eqty_sdk=debug"
     else:
         logging.basicConfig(level=logging.CRITICAL + 1)
 
-    core.enable_rust_logging(enable)
     logger.info("Logging Enabled")
     return logger
 

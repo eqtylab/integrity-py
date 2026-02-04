@@ -361,11 +361,6 @@ class StubGenerator:
             if module_name in ["lib", "_rust"]:
                 top_level_funcs.extend(functions)
 
-        for func in top_level_funcs:
-            if func["name"] == "enable_rust_logging":  # Known top-level function
-                lines.extend(self._generate_function_stub(func, is_module_function=False))
-                lines.append("")
-
         # Generate class definitions for known classes
         lines.extend(self._generate_class_definitions(classes))
 
