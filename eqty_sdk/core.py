@@ -5,7 +5,7 @@ from typing import Optional, Union, cast
 
 from eqty_sdk._rust import cid as eqty_core_cid
 
-from .config import Config
+from . import config
 
 logger = logging.getLogger("eqty.sdk")
 
@@ -16,7 +16,7 @@ def __get_store_flag__(store: Optional[bool]) -> bool:
     if store is False or store is True:
         return store
     else:
-        return Config()._settings.store_all_blobs
+        return config.get_store_all_blobs()
 
 
 def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> str:
@@ -28,7 +28,7 @@ def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> str:
     )
 
     if store_flag:
-        file = Path(Config().blob_dir(), cid)
+        file = config.blob_dir() / cid
         with open(file, "wb") as f:
             f.write(data)
 
@@ -43,7 +43,7 @@ def get_cid_for_path(path: Path, store: Optional[bool] = None) -> str:
         file_cid_results = eqty_core_cid.compute_cid_for_file(path)
         cid = file_cid_results.cid
         if store_flag:
-            storage_dir = Path(Config().blob_dir(), cid)
+            storage_dir = config.blob_dir() / cid
             shutil.copy2(path, storage_dir)
 
         return cast(str, cid)
@@ -52,16 +52,16 @@ def get_cid_for_path(path: Path, store: Optional[bool] = None) -> str:
         cid = dir_cid_results.collection.cid
         # Always store iroh collections
         logger.info(f"Saving iroh collection {dir_cid_results.collection.cid}")
-        collection_file = Path(Config().blob_dir(), dir_cid_results.collection.cid)
+        collection_file = config.blob_dir() / dir_cid_results.collection.cid
         collection_file.write_bytes(dir_cid_results.collection.blob)
-        meta_file = Path(Config().blob_dir(), dir_cid_results.meta.cid)
+        meta_file = config.blob_dir() / dir_cid_results.meta.cid
         meta_file.write_bytes(dir_cid_results.meta.blob)
 
         if store_flag:
             logger.info("Saving iroh collection blobs")
             for blob in dir_cid_results.file_hashes:
                 src = path.joinpath(blob[0])
-                dst = Path(Config().blob_dir(), blob[1])
+                dst = config.blob_dir() / blob[1]
                 logger.debug(f"copying iroh blob from {src} to {dst}")
                 shutil.copy(src, dst)
 
@@ -72,13 +72,12 @@ def get_cid_for_path(path: Path, store: Optional[bool] = None) -> str:
         raise RuntimeError(msg)
 
 
-def init(custom_dir: Optional[Union[str, Path]] = None) -> Config:
-    config = Config()
+def init(custom_dir: Optional[Union[str, Path]] = None) -> None:
+    """Initialize the SDK configuration."""
     if isinstance(custom_dir, Path):
-        str_dir = str(custom_dir)
+        config_dir = custom_dir
     elif isinstance(custom_dir, str):
-        str_dir = custom_dir
+        config_dir = Path(custom_dir)
     else:
-        str_dir = None
-    config.init(str_dir)
-    return config
+        config_dir = Path.cwd() / ".eqty_sdk"
+    config.init(config_dir)

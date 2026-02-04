@@ -40,7 +40,7 @@ class DirCidResult:
         ...
 
 # Config module
-class config
+class config:
     @staticmethod
     def init(app_dir: PathLike[str]) -> None:
         """Initializes the sdk config. Must be called before setting individual config values"""
@@ -51,6 +51,7 @@ class config
         """Resets the global config, allowing it to be reinitialized with a new app directory"""
         ...
 
+    # Setters
     @staticmethod
     def set_integrity_service_url(url: str) -> None:
         """Set Integrity Service Url."""
@@ -80,6 +81,42 @@ class config
     @staticmethod
     def set_default_graph(graph: Any) -> None:
         """Set Default Graph."""
+        ...
+
+    @staticmethod
+    def set_store_all_blobs(value: bool) -> None:
+        """Set whether to store all blobs when computing CIDs."""
+        ...
+
+    # Getters
+    @staticmethod
+    def get_integrity_service_url() -> Optional[str]:
+        """Get the Integrity Service URL."""
+        ...
+
+    @staticmethod
+    def get_store_all_blobs() -> bool:
+        """Get whether all blobs should be stored."""
+        ...
+
+    @staticmethod
+    def get_cid_ignore_rules() -> Tuple[bool, bool, bool]:
+        """Get CID ignore rules as (include_hidden, gitignore, include_symlinks)."""
+        ...
+
+    @staticmethod
+    def get_generate_model_signing_signatures() -> bool:
+        """Get whether model signing signatures are generated."""
+        ...
+
+    @staticmethod
+    def get_app_dir() -> str:
+        """Get the application directory path."""
+        ...
+
+    @staticmethod
+    def get_blob_dir() -> str:
+        """Get the blob directory path, creating it if needed."""
         ...
 
 # Manifest module
