@@ -231,7 +231,7 @@ class Asset:
 
     def add_declaration(self, declaration: Declaration) -> "Asset":
         document_cid = declaration.cid()
-        ids = add_governance_statement(self.cid, document_cid, self._skip_proof)
+        add_governance_statement(self.cid, document_cid, self._skip_proof)
         return self
 
     def _create_eqty_statements(self) -> None:

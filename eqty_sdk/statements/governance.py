@@ -1,8 +1,11 @@
 import logging
 import os
-from typing import List, Optional
+from typing import Optional
 
-from eqty_sdk._rust import statements as eqty_core_statements
+from eqty_sdk._rust import (
+    Graph as Context,
+    statements as eqty_core_statements,
+)
 
 from .common import add_vc_statement
 
@@ -13,15 +16,12 @@ def add_governance_statement(
     subject: str,
     document: str,
     skip_proof: Optional[bool] = None,
-) -> List[str]:
-    """Creates a new data statement."""
+    ctx: Optional[Context] = None,
+) -> None:
+    """Creates a new governance statement."""
     timestamp = os.getenv("EQTY_TIMESTAMP", None)
-    statement_id = eqty_core_statements.create_governance_statement(subject, document, timestamp)
+    statement_id = eqty_core_statements.create_governance_statement(
+        subject, document, timestamp, graph_id=ctx.id if ctx else None
+    )
 
-    statement_ids = [statement_id]
-
-    vc_id = add_vc_statement(statement_id, timestamp, skip_proof)
-    if vc_id:
-        statement_ids.append(vc_id)
-
-    return statement_ids
+    add_vc_statement(statement_id, timestamp, skip_proof)

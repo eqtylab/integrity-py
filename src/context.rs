@@ -331,7 +331,10 @@ impl Context {
         match graph_id {
             Some(id) => id,
             None => {
-                log::trace!("GraphID was not provided. Using default graph {:}", self.default_graph.id);
+                log::trace!(
+                    "GraphID was not provided. Using default graph {:}",
+                    self.default_graph.id
+                );
                 self.default_graph.id
             }
         }
