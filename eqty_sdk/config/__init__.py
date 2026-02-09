@@ -1,8 +1,10 @@
 from pathlib import Path
 from typing import Optional
 
-from eqty_sdk._rust import init as _init
-from eqty_sdk._rust import config as _config_module
+from eqty_sdk._rust import (
+    config as _config_module,
+    init as _init,
+)
 
 # Re-export functions from Rust config module
 __all__ = [

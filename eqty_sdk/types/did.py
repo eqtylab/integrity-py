@@ -56,11 +56,11 @@ class Did:
 
     @staticmethod
     def from_signer(signer: Signer, **kwargs) -> "Did":
-        return Did(Context.new(), signer.did_key, signer, **kwargs)
+        return Did(config.root_context(), signer.did_key, signer, **kwargs)
 
     @staticmethod
     def from_did_string(did: str, **kwargs) -> "Did":
-        return Did(Context.new(), did, None, **kwargs)
+        return Did(config.root_context(), did, None, **kwargs)
 
     @staticmethod
     def with_context(ctx: Context):

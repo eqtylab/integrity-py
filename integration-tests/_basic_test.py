@@ -19,7 +19,7 @@ def test_imports():
 
         print("✓ Core functions imported successfully")
 
-        from eqty_sdk import Asset, Dataset, config  # noqa: F401
+        from eqty_sdk import Asset, Dataset  # noqa: F401
 
         print("✓ Main classes imported successfully")
 

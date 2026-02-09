@@ -110,8 +110,11 @@ class PyFunctionParser:
         try:
             content = file_path.read_text()
 
+            # Always extract pyclass definitions from all files
+            self._extract_classes(content)
+
             # Find module name from pymodule attribute
-            module_match = re.search(r"#\[pymodule\]\s*pub fn (\w+)", content)
+            module_match = re.search(r"#\[pymodule\]\s*(?:pub\s+)?fn (\w+)", content)
             if module_match:
                 module_name = module_match.group(1)
                 if module_name not in self.modules:
@@ -120,6 +123,8 @@ class PyFunctionParser:
                 # Use parent directory name for statements submodules
                 if "statements" in str(file_path):
                     module_name = "statements"
+                elif "config" in str(file_path):
+                    module_name = "config"
                 else:
                     return
 
@@ -130,9 +135,6 @@ class PyFunctionParser:
                 if module_name not in self.modules:
                     self.modules[module_name] = []
                 self.modules[module_name].extend(functions)
-
-            # Extract pyclass definitions
-            self._extract_classes(content)
 
         except Exception as e:
             print(f"Warning: Could not parse {file_path}: {e}")
@@ -323,7 +325,10 @@ class PyFunctionParser:
 
     def _extract_classes(self, content: str):
         """Extract pyclass definitions."""
-        class_pattern = r"#\[pyclass\]\s*(?:pub\s+)?(?:struct|enum)\s+(\w+)"
+        # Handle #[pyclass] potentially followed by other attributes like #[derive(...)]
+        class_pattern = (
+            r"#\[pyclass[^\]]*\](?:\s*#\[[^\]]+\])*\s*(?:pub\s+)?(?:struct|enum)\s+(\w+)"
+        )
         matches = re.findall(class_pattern, content)
         for class_name in matches:
             self.classes.add(class_name)
@@ -463,11 +468,20 @@ class StubGenerator:
             },
             "Graph": {
                 "properties": [
-                    ("id", "str", "UUID of the graph."),
-                    ("name", "str", "pet name of the graph"),
-                    ("parent", "str", "UUID of the parent graph."),
+                    ("id", "Any", "UUID of the graph."),
+                    ("name", "str", "Name of the graph."),
+                    ("parent", "Optional[Any]", "UUID of the parent graph."),
                 ],
-                "doc": "Grouping statements by graph",
+                "methods": [
+                    ("__init__", [("id", "Any"), ("name", "str")], "None"),
+                    (
+                        "from_parent",
+                        [("id", "Any"), ("name", "str"), ("graph", "Graph")],
+                        "Graph",
+                        True,
+                    ),
+                ],
+                "doc": "Graph for organizing statements.",
             },
         }
 
@@ -481,6 +495,7 @@ class StubGenerator:
                 if "attributes" in definition:
                     for attr in definition["attributes"]:
                         lines.append(f"    {attr}: {class_name}")
+                    lines.append("")
 
                 # Add properties
                 if "properties" in definition:
@@ -491,8 +506,25 @@ class StubGenerator:
                         lines.append("        ...")
                         lines.append("")
 
-                if "attributes" in definition and "properties" not in definition:
-                    lines.append("")
+                # Add methods
+                if "methods" in definition:
+                    for method_def in definition["methods"]:
+                        method_name = method_def[0]
+                        params = method_def[1]
+                        return_type = method_def[2]
+                        is_static = len(method_def) > 3 and method_def[3]
+
+                        if is_static:
+                            lines.append("    @staticmethod")
+                            param_str = ", ".join(f"{p[0]}: {p[1]}" for p in params)
+                        else:
+                            param_str = "self"
+                            if params:
+                                param_str += ", " + ", ".join(f"{p[0]}: {p[1]}" for p in params)
+
+                        lines.append(f"    def {method_name}({param_str}) -> {return_type}:")
+                        lines.append("        ...")
+                        lines.append("")
 
                 lines.append("")
 

@@ -171,7 +171,7 @@ mod tests {
     fn test_context_without_signer_returns_none() {
         let temp_dir = tempdir().unwrap();
         get_runtime().block_on(async {
-            Config::reset().await.unwrap();
+            Config::reset_internal().await.unwrap();
             let ctx = Config::init(temp_dir.path().to_path_buf()).await.unwrap();
             assert!(ctx.active_signer.is_none());
         });
@@ -181,7 +181,7 @@ mod tests {
     fn test_context_with_signer() {
         let temp_dir = tempdir().unwrap();
         get_runtime().block_on(async {
-            Config::reset().await.unwrap();
+            Config::reset_internal().await.unwrap();
             let _ = Config::init(temp_dir.path().to_path_buf()).await.unwrap();
 
             // Create and set signer

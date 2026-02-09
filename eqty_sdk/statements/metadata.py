@@ -5,7 +5,6 @@ from typing import List, Optional
 
 from eqty_sdk import config
 from eqty_sdk._rust import (
-    Graph as Context,
     statements as eqty_core_statements,
 )
 

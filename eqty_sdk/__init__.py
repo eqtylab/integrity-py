@@ -1,6 +1,8 @@
 from eqty_sdk import config
-from eqty_sdk._rust import init
-from eqty_sdk._rust import Graph as Context
+from eqty_sdk._rust import (
+    Graph as Context,
+    init,
+)
 from eqty_sdk.asset import (
     Asset,
     AssetType,

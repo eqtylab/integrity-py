@@ -197,7 +197,7 @@ class Computation:
         self._associated_statement_ids.extend(ids)
 
         for id in self._associated_statement_ids:
-            logger.info(f"Registering data statement {id} to graph: {self._ctx.uuid}")
-            eqty_core_statements.register_statement_to_graph(id, str(self._ctx.uuid))
+            logger.info(f"Registering data statement {id} to graph: {self._ctx.id}")
+            eqty_core_statements.register_statement_to_graph(id, str(self._ctx.id))
 
         return self

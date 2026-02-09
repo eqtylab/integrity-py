@@ -36,10 +36,9 @@ impl From<Config> for PersistentSettings {
             url: config.integrity_service.clone(),
             store_all_blobs: config.store_all_blobs,
             cid_ignore: config.cid_ignore.clone().into(),
-            generate_model_signing_signatures: config.generate_model_signing_signatures
+            generate_model_signing_signatures: config.generate_model_signing_signatures,
         }
     }
-
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -371,7 +370,7 @@ impl Config {
     }
 
     /// Resets the global config, allowing it to be reinitialized (internal async version)
-    async fn reset_internal() -> Result<()> {
+    pub(crate) async fn reset_internal() -> Result<()> {
         let mut ctx_lock = CTX.write().await;
         *ctx_lock = None;
         Ok(())
@@ -417,7 +416,6 @@ impl Config {
             .ok_or_else(|| anyhow!("No active signer available"))?;
         Ok(signer.get_did_doc().id)
     }
-
 
     /// Sets the active signer for the current config (async version).
     ///

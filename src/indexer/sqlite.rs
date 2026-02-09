@@ -390,6 +390,24 @@ impl Sqlite {
         Ok(subjects)
     }
 
+    /// Returns a single graph by ID.
+    pub async fn retrieve_graph(&self, graph_id: &Uuid) -> Result<Graph> {
+        log::trace!("Retrieving graph {graph_id:?}");
+
+        let graph: Graph = sqlx::query_as(
+            r#"
+            SELECT graph_id, name, parent_id
+            FROM graphs
+            WHERE graph_id = ?1
+            "#,
+        )
+        .bind(graph_id.to_string())
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(graph)
+    }
+
     /// Returns metadata for all graphs in the database.
     pub async fn get_graph_info(&self) -> Result<Vec<Graph>> {
         log::trace!("Retrieving all graph info");

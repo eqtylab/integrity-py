@@ -7,7 +7,6 @@ from pydantic.types import UUID4
 
 from eqty_sdk import config
 from eqty_sdk._rust import (
-    Graph as Context,
     statements as eqty_core_statements,
 )
 

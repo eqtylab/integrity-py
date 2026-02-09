@@ -1,4 +1,4 @@
-from .asset import Asset, AssetType, TypedAsset, serialize_for_hashing
+from .asset import Asset, AssetType, serialize_for_hashing
 from .attribution import Attribution
 from .benchmark import Benchmark, BenchmarkResult
 from .certificate import Certificate
