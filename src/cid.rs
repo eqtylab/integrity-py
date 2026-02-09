@@ -75,6 +75,32 @@ pub struct CidResult {
     pub blob: Bytes,
 }
 
+/// A simple wrapper around a content identifier (CID) string.
+///
+/// Provides a typed wrapper for CID strings with property access and string conversion.
+#[derive(Clone, Debug)]
+#[pyclass]
+pub struct Cid {
+    #[pyo3(get)]
+    cid: String,
+}
+
+#[pymethods]
+impl Cid {
+    #[new]
+    fn new(cid: String) -> Self {
+        Cid { cid }
+    }
+
+    fn __str__(&self) -> String {
+        self.cid.clone()
+    }
+
+    fn __repr__(&self) -> String {
+        format!("Cid(\"{}\")", self.cid)
+    }
+}
+
 impl From<integrity::cid::iroh::CidResult> for CidResult {
     fn from(value: integrity::cid::iroh::CidResult) -> Self {
         CidResult {
@@ -118,6 +144,7 @@ pub fn cid(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Canon>()?;
     m.add_class::<DirCidResult>()?;
     m.add_class::<CidResult>()?;
+    m.add_class::<Cid>()?;
 
     Ok(())
 }

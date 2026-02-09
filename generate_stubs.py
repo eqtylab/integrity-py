@@ -337,6 +337,13 @@ class PyFunctionParser:
 class StubGenerator:
     """Generates Python stub file from parsed Rust functions."""
 
+    # Maps module names to the classes that should be accessible as attributes
+    MODULE_CLASSES = {
+        "cid": ["Cid", "CidResult", "DirCidResult", "Canon"],
+        "signer": ["PySigner"],
+        "config": ["Graph"],
+    }
+
     def __init__(self):
         self.imports = {
             "pathlib": ["Path"],
@@ -378,8 +385,15 @@ class StubGenerator:
             lines.append(f"# {module_name.title()} module")
             lines.append(f"class {module_name}:")
 
+            # Add class references for classes that belong to this module
+            if module_name in self.MODULE_CLASSES:
+                for class_name in self.MODULE_CLASSES[module_name]:
+                    lines.append(f"    {class_name}: type[{class_name}]")
+                lines.append("")
+
             if not functions:
-                lines.append("    ...")
+                if module_name not in self.MODULE_CLASSES:
+                    lines.append("    ...")
             else:
                 for func in functions:
                     lines.extend(self._generate_function_stub(func, indent="    "))
@@ -458,6 +472,17 @@ class StubGenerator:
                     ("file_hashes", "List[Tuple[str, str]]", "Get list of (filename, CID) tuples."),
                 ],
                 "doc": "Result of directory CID computation.",
+            },
+            "Cid": {
+                "properties": [
+                    ("cid", "str", "Get the CID string."),
+                ],
+                "methods": [
+                    ("__init__", [("cid", "str")], "None"),
+                    ("__str__", [], "str"),
+                    ("__repr__", [], "str"),
+                ],
+                "doc": "A simple wrapper around a content identifier (CID) string.",
             },
             "PySigner": {
                 "properties": [

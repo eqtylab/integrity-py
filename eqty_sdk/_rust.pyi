@@ -14,6 +14,17 @@ class Canon:
     RDFC1: Canon
     JSONJCS: Canon
 
+class Cid:
+    """A simple wrapper around a content identifier (CID) string."""
+    @property
+    def cid(self) -> str:
+        """Get the CID string."""
+        ...
+
+    def __init__(self, cid: str) -> None: ...
+    def __str__(self) -> str: ...
+    def __repr__(self) -> str: ...
+
 class CidResult:
     """Result of CID computation."""
     @property
@@ -78,6 +89,8 @@ class PySigner:
 
 # Config module
 class config:
+    Graph: type[Graph]
+
     @staticmethod
     def get_integrity_service_url() -> Optional[str]:
         """Get Integrity Service Url."""
@@ -180,6 +193,11 @@ class manifest:
 
 # Cid module
 class cid:
+    Cid: type[Cid]
+    CidResult: type[CidResult]
+    DirCidResult: type[DirCidResult]
+    Canon: type[Canon]
+
     @staticmethod
     def compute_cid_for_directory(path: PathLike[str]) -> Any:
         """Compute CID for a directory at `path`."""
@@ -221,6 +239,8 @@ class stream:
 
 # Signer module
 class signer:
+    PySigner: type[PySigner]
+
     @staticmethod
     def create_new_signer(key_type: str, name: Optional[Any] = None) -> Any:
         """Creates a new local signer with a randomly generated key.  # Arguments * `name` - Optional name for the signer (uses DID key if not provided) * `key_type` - Type of cryptographic key to generate (SECP256K1, SECP256R1, ED25519)"""

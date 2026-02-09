@@ -1,11 +1,11 @@
-class Cid:
-    @property
-    def cid(self) -> str:
-        """Get the cid string."""
-        return self._cid
+# Re-export Cid from Rust module for backwards compatibility
+from typing import TYPE_CHECKING
 
-    def __init__(self, cid: str):
-        self._cid: str = cid
+from eqty_sdk._rust import cid as _cid_module
 
-    def __str__(self) -> str:
-        return self._cid
+if TYPE_CHECKING:
+    from eqty_sdk._rust import Cid as Cid
+else:
+    Cid = _cid_module.Cid
+
+__all__ = ["Cid"]

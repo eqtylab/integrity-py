@@ -4,7 +4,6 @@ from .did import Did
 from .entity import Entity
 from .manifest import Manifest
 from .signer import SIGNER_ALGORITHMS, Signer, set_active_signer
-from .storage_record import StorageRecord
 
 __all__ = [
     "Cid",
@@ -14,6 +13,5 @@ __all__ = [
     "set_active_signer",
     "SIGNER_ALGORITHMS",
     "Entity",
-    "StorageRecord",
     "Manifest",
 ]
