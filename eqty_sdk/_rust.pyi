@@ -54,6 +54,21 @@ class DirCidResult:
         """Get list of (filename, CID) tuples."""
         ...
 
+class Entity:
+    """Represents an unhashed entity with a UUID identifier."""
+    @property
+    def uuid(self) -> str:
+        """Get the UUID string."""
+        ...
+
+    def __init__(self, uuid: str) -> None: ...
+    @staticmethod
+    def generate() -> Entity: ...
+    @staticmethod
+    def from_uuid(uuid: str) -> Entity: ...
+    def __str__(self) -> str: ...
+    def __repr__(self) -> str: ...
+
 class Graph:
     """Graph for organizing statements."""
     @property
@@ -189,6 +204,31 @@ class manifest:
     @staticmethod
     def register(manifest: str, api_key: Optional[str] = None) -> None:
         """Register the manfiest with integrity platform"""
+        ...
+
+# Entity module
+class entity:
+    Entity: type[Entity]
+
+    @staticmethod
+    def create_entity(
+        metadata_json: str,
+        skip_proof: Optional[bool] = None,
+        timestamp: Optional[str] = None,
+        graph_id: Optional[Any] = None,
+    ) -> Any:
+        """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+        ...
+
+    @staticmethod
+    def create_entity_from_uuid(
+        uuid: str,
+        metadata_json: str,
+        skip_proof: Optional[bool] = None,
+        timestamp: Optional[str] = None,
+        graph_id: Optional[Any] = None,
+    ) -> Any:
+        """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
 # Cid module

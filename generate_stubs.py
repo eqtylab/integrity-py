@@ -340,6 +340,7 @@ class StubGenerator:
     # Maps module names to the classes that should be accessible as attributes
     MODULE_CLASSES = {
         "cid": ["Cid", "CidResult", "DirCidResult", "Canon"],
+        "entity": ["Entity"],
         "signer": ["PySigner"],
         "config": ["Graph"],
     }
@@ -483,6 +484,19 @@ class StubGenerator:
                     ("__repr__", [], "str"),
                 ],
                 "doc": "A simple wrapper around a content identifier (CID) string.",
+            },
+            "Entity": {
+                "properties": [
+                    ("uuid", "str", "Get the UUID string."),
+                ],
+                "methods": [
+                    ("__init__", [("uuid", "str")], "None"),
+                    ("generate", [], "Entity", True),
+                    ("from_uuid", [("uuid", "str")], "Entity", True),
+                    ("__str__", [], "str"),
+                    ("__repr__", [], "str"),
+                ],
+                "doc": "Represents an unhashed entity with a UUID identifier.",
             },
             "PySigner": {
                 "properties": [

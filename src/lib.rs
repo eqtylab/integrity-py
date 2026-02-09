@@ -8,10 +8,35 @@ use pyo3_async_runtimes::tokio::get_runtime;
 use std::env;
 use std::path::PathBuf;
 
+/// Resolves skip_proof from provided option or EQTY_SKIP_PROOF environment variable.
+///
+/// Returns true if:
+/// - `skip_proof` is Some(true), or
+/// - `skip_proof` is None and EQTY_SKIP_PROOF env var is "true" (case-insensitive)
+pub fn resolve_skip_proof(skip_proof: Option<bool>) -> bool {
+    skip_proof.unwrap_or_else(|| {
+        env::var("EQTY_SKIP_PROOF")
+            .map(|v| v.to_lowercase() == "true")
+            .unwrap_or(false)
+    })
+}
+
+/// Resolves timestamp from provided option or EQTY_TIMESTAMP environment variable.
+///
+/// Returns:
+/// - The provided timestamp if Some
+/// - The EQTY_TIMESTAMP env var value if set
+/// - None otherwise
+pub fn resolve_timestamp(timestamp: Option<String>) -> Option<String> {
+    timestamp.or_else(|| env::var("EQTY_TIMESTAMP").ok())
+}
+
 /// Content identifier (CID) computation and utilities.
 pub mod cid;
 /// Global application configuration management.
 pub mod config;
+/// Entity type for unhashed objects with UUID identifiers.
+pub mod entity;
 /// Indexes integrity information in sql database.
 pub mod indexer;
 /// API functions for connecting to the integrity service.
@@ -39,6 +64,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     let _ = pyo3_log::try_init();
 
     m.add_wrapped(wrap_pymodule!(cid::cid))?;
+    m.add_wrapped(wrap_pymodule!(entity::entity))?;
     m.add_wrapped(wrap_pymodule!(signer::signer))?;
     m.add_wrapped(wrap_pymodule!(manifest::manifest))?;
     m.add_wrapped(wrap_pymodule!(statements::statements))?;
