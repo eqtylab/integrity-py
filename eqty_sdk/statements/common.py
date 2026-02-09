@@ -1,7 +1,7 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional
-from uuid import UUID
+from typing import Any, Dict, List, Optional, cast
+from uuid import UUID, uuid4
 
 from pydantic.types import UUID4
 
@@ -18,16 +18,19 @@ def add_vc_statement(
     subject: str,
     timestamp: Optional[str],
     skip_proof: Optional[bool],
-    ctx: Optional[Context] = None,
-) -> None:
-    """Creates a VC statement for the prvided subject ONLY if skip_proof is false."""
+) -> Optional[str]:
+    """Creates a VC statement for the prvided subject ONLY if skip_proof is false.
+    If a VC Statement is created, the statement id is returned.
+    """
     if skip_proof or (skip_proof is None and os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"):
         logger.info("Skipping issuing of VC")
         return None
 
-    eqty_core_statements.create_vc_statement(
-        subject, timestamp=timestamp, graph_id=ctx.id if ctx else None
+    statement_id = eqty_core_statements.create_vc_statement(
+        subject, timestamp=timestamp, graph_id=uuid4()
     )
+
+    return cast(str, statement_id)
 
 
 class Statements:

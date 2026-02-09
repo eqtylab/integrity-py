@@ -1,7 +1,6 @@
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union
 
-from eqty_sdk import config
 from eqty_sdk._rust import Graph as Context
 from eqty_sdk.types.cid import Cid
 
@@ -9,7 +8,7 @@ from .asset import Asset, AssetType
 
 
 class Custom(Asset):
-    """Represents a Custom asset."""
+    """Represents a Custom asset with user-specified asset type."""
 
     @staticmethod
     def from_path(
@@ -17,29 +16,19 @@ class Custom(Asset):
         asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM,
         store: Optional[bool] = None,
         **kwargs,
-    ) -> "Custom":
+    ) -> "Asset":
         custom_type = _resolve_type(asset_type)
-
-        return cast(
-            "Custom", Asset._from_path(config.root_context(), path, custom_type, store, **kwargs)
-        )
+        return Asset._from_path(path, custom_type, store=store, **kwargs)
 
     @staticmethod
     def from_cid(
         cid: Union[Cid, str],
         asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM,
         **kwargs,
-    ) -> "Custom":
+    ) -> "Asset":
         custom_type = _resolve_type(asset_type)
-
-        if isinstance(cid, Cid):
-            return cast(
-                "Custom", Asset._from_cid(config.root_context(), cid.cid, custom_type, **kwargs)
-            )
-        else:
-            return cast(
-                "Custom", Asset._from_cid(config.root_context(), cid, custom_type, **kwargs)
-            )
+        cid_str = cid.cid if isinstance(cid, Cid) else cid
+        return Asset._from_cid(cid_str, custom_type, ctx=None, **kwargs)
 
     @staticmethod
     def from_object(
@@ -47,19 +36,17 @@ class Custom(Asset):
         asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM,
         store: Optional[bool] = None,
         **kwargs,
-    ) -> "Custom":
+    ) -> "Asset":
         custom_type = _resolve_type(asset_type)
-
-        return cast(
-            "Custom", Asset._from_object(config.root_context(), obj, custom_type, store, **kwargs)
-        )
+        return Asset._from_object(obj, custom_type, store=store, **kwargs)
 
     @staticmethod
-    def with_context(ctx: Context):
-        return Asset._factory_with_context(ctx, AssetType.CUSTOM)
+    def with_context(ctx: Context, asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM):
+        custom_type = _resolve_type(asset_type)
+        return Asset._factory_with_context(ctx, custom_type)
 
 
-def _resolve_type(asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM):
+def _resolve_type(asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM) -> str:
     if isinstance(asset_type, AssetType):
         return asset_type.value
     elif isinstance(asset_type, str):

@@ -134,6 +134,7 @@ class Asset:
 
         self._cid = cid
         self._is_dir = is_dir
+        self.statement_ids: list[str] = []
 
         if isinstance(asset_type, AssetType):
             kwargs.update({"assetType": asset_type.value})
@@ -199,13 +200,11 @@ class Asset:
                 return Asset._from_path(path, asset_type, ctx, store, **kwargs)
 
             def from_cid(self, cid: Union[Cid, str], **kwargs) -> "Asset":
-                if isinstance(cid, Cid):
-                    return Asset._from_cid(ctx, cid.cid, asset_type, **kwargs)
-                else:
-                    return Asset._from_cid(ctx, cid, asset_type, **kwargs)
+                cid_str = cid.cid if isinstance(cid, Cid) else cid
+                return Asset._from_cid(cid_str, asset_type, ctx, **kwargs)
 
             def from_object(self, obj: Any, store: Optional[bool] = None, **kwargs) -> "Asset":
-                return Asset._from_object(ctx, obj, asset_type, store, **kwargs)
+                return Asset._from_object(obj, asset_type, ctx, store, **kwargs)
 
         return _Factory()
 
@@ -231,13 +230,14 @@ class Asset:
 
     def add_declaration(self, declaration: Declaration) -> "Asset":
         document_cid = declaration.cid()
-        add_governance_statement(self.cid, document_cid, self._skip_proof)
+        ids = add_governance_statement(self.cid, document_cid, self._skip_proof)
+        self.statement_ids.extend(ids)
         return self
 
     def _create_eqty_statements(self) -> None:
         """Creates DataStatement, MetadataStatement, and VcStatement."""
-        add_data_statement([self.cid], self._skip_proof)
-        add_metadata_statement(self.cid, self._metadata.to_json_str(), self._skip_proof)
+        self.statement_ids.extend(add_data_statement([self.cid], self._skip_proof))
+        self.statement_ids.extend(add_metadata_statement(self.cid, self._metadata.to_json_str(), self._skip_proof))
 
         if config.get_generate_model_signing_signatures() and self._is_dir:
             _, _, include_symlinks = config.get_cid_ignore_rules()
@@ -286,6 +286,7 @@ class Asset:
             "_metadata",
             "_asset_type",
             "_skip_proof",
+            "statement_ids",
         }:
             object.__setattr__(self, key, value)
         else:

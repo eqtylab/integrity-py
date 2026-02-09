@@ -1,11 +1,8 @@
 import logging
 import os
-from typing import Optional
+from typing import List, Optional
 
-from eqty_sdk._rust import (
-    Graph as Context,
-    statements as eqty_core_statements,
-)
+from eqty_sdk._rust import statements as eqty_core_statements
 
 from .common import add_vc_statement
 
@@ -16,8 +13,7 @@ def add_association_statement(
     subject: str,
     association: str,
     skip_proof: Optional[bool] = None,
-    ctx: Optional[Context] = None,
-) -> None:
+) -> List[str]:
     """Creates a new association statement.
 
     Args:
@@ -25,10 +21,19 @@ def add_association_statement(
         association: The association identifier (CID, URN, or DID)
         skip_proof: Whether to skip proof generation (optional)
 
+    Returns:
+        List[str]: The list of IDs of the created statements.
+
     """
     timestamp = os.getenv("EQTY_TIMESTAMP", None)
     statement_id = eqty_core_statements.create_association_statement(
-        subject, association, timestamp, graph_id=ctx.id if ctx else None
+        subject, association, timestamp
     )
 
-    add_vc_statement(statement_id, timestamp, skip_proof)
+    statement_ids = [statement_id]
+
+    vc_id = add_vc_statement(statement_id, timestamp, skip_proof)
+    if vc_id:
+        statement_ids.append(vc_id)
+
+    return statement_ids

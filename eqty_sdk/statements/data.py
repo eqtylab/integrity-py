@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional
+from typing import List, Optional
 
 from eqty_sdk._rust import (
     Graph as Context,
@@ -13,10 +13,10 @@ logger = logging.getLogger("eqty.sdk.statements")
 
 
 def add_data_statement(
-    data: list[str],
+    data: List[str],
     skip_proof: Optional[bool] = None,
     ctx: Optional[Context] = None,
-) -> None:
+) -> List[str]:
     """Creates a new data statement."""
     timestamp = os.getenv("EQTY_TIMESTAMP", None)
 
@@ -24,4 +24,10 @@ def add_data_statement(
         data, timestamp=timestamp, graph_id=ctx.id if ctx else None
     )
 
-    add_vc_statement(statement_id, timestamp, skip_proof)
+    statement_ids = [statement_id]
+
+    vc_id = add_vc_statement(statement_id, timestamp, skip_proof)
+    if vc_id:
+        statement_ids.append(vc_id)
+
+    return statement_ids

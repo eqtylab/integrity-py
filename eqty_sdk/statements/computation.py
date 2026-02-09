@@ -2,10 +2,7 @@ import logging
 import os
 from typing import List, Optional
 
-from eqty_sdk._rust import (
-    Graph as Context,
-    statements as eqty_core_statements,
-)
+from eqty_sdk._rust import statements as eqty_core_statements
 
 from .common import add_vc_statement
 
@@ -17,8 +14,7 @@ def add_computation_statement(
     outputs: List[str],
     computation: Optional[str],
     skip_proof: Optional[bool],
-    ctx: Optional[Context] = None,
-) -> None:
+) -> List[str]:
     """Add a computation registration statement to the integrity graph.
 
     Args:
@@ -27,16 +23,20 @@ def add_computation_statement(
         computation (str): Computation CID.
         skip_proof (bool): Whether skip the proof.
 
+    Returns:
+        List[str]: The list of IDs of the created statements.
+
     """
     timestamp = os.getenv("EQTY_TIMESTAMP", None)
     logger.info(f"creating computation statement. inputs: '{inputs}', outputs: '{outputs}'")
     statement_id = eqty_core_statements.create_computation_statement(
-        inputs=inputs,
-        outputs=outputs,
-        computation=computation,
-        timestamp=timestamp,
-        graph_id=ctx.id if ctx else None,
+        inputs=inputs, outputs=outputs, computation=computation, timestamp=timestamp
     )
     logger.info(f"computation statement '{statement_id}' created")
+    statement_ids = [statement_id]
 
-    add_vc_statement(statement_id, timestamp, skip_proof)
+    vc_id = add_vc_statement(statement_id, timestamp, skip_proof)
+    if vc_id:
+        statement_ids.append(vc_id)
+
+    return statement_ids
