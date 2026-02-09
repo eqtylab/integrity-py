@@ -9,44 +9,34 @@ def init(custom_dir=None):
 from typing import Any, Dict, List, Optional, Tuple, Union
 from os import PathLike
 
-
 class Canon:
     RDFC1: Canon
     JSONJCS: Canon
 
-
 class Cid:
     @property
     def cid(self) -> str: ...
-
     def __init__(self, cid: str) -> None: ...
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
 
-
 class CidResult:
     @property
     def cid(self) -> str: ...
-
     @property
     def blob(self) -> bytes: ...
-
 
 class DirCidResult:
     @property
     def collection(self) -> CidResult: ...
-
     @property
     def meta(self) -> CidResult: ...
-
     @property
     def file_hashes(self) -> List[Tuple[str, str]]: ...
-
 
 class Entity:
     @property
     def uuid(self) -> str: ...
-
     def __init__(self, uuid: str) -> None: ...
     @staticmethod
     def generate() -> Entity: ...
@@ -55,26 +45,20 @@ class Entity:
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
 
-
 class Graph:
     @property
     def id(self) -> Any: ...
-
     @property
     def name(self) -> str: ...
-
     @property
     def parent(self) -> Optional[Any]: ...
-
     def __init__(self, id: Any, name: str) -> None: ...
     @staticmethod
     def from_parent(id: Any, name: str, graph: Graph) -> Graph: ...
 
-
 class Manifest:
     @property
     def manifest_str(self) -> str: ...
-
     def __init__(self, manifest: str) -> None: ...
     @classmethod
     def from_statements(cls, statements: Any, include_context: bool = True) -> Manifest: ...
@@ -85,14 +69,11 @@ class Manifest:
     def merge(a: str, b: str) -> str: ...
     def register(self) -> None: ...
 
-
 class PySigner:
     @property
     def name(self) -> str: ...
-
     @property
     def did_key(self) -> str: ...
-
 
 class cid:
     Cid: type[Cid]
@@ -106,7 +87,6 @@ class cid:
     def compute_cid_for_file(path: PathLike[str]) -> Any: ...
     @staticmethod
     def compute_cid_for_bytes(bytes: Any) -> str: ...
-
 
 class entity:
     Entity: type[Entity]
@@ -126,7 +106,6 @@ class entity:
         graph_id: Optional[Any] = None,
     ) -> Any: ...
 
-
 class manifest:
     Manifest: type[Manifest]
     @staticmethod
@@ -138,14 +117,12 @@ class manifest:
     @staticmethod
     def register(manifest: str, api_key: Optional[str] = None) -> None: ...
 
-
 class signer:
     PySigner: type[PySigner]
     @staticmethod
     def create_new_signer(key_type: str, name: Optional[Any] = None) -> Any: ...
     @staticmethod
     def get_supported_signers() -> List[str]: ...
-
 
 class config:
     Graph: type[Graph]
@@ -180,8 +157,6 @@ class config:
     @staticmethod
     def reset() -> None: ...
 
-
 class statements:
     @staticmethod
     def retrieve_graph(graph_ids: List[Any]) -> Any: ...
-
