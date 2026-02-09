@@ -9,7 +9,7 @@ use pyo3::types::PyList;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::{resolve_skip_proof, resolve_timestamp, with_ctx};
+use crate::{config::maybe_create_vc_statement, resolve_timestamp, with_ctx};
 
 /// Represents an unhashed entity with a UUID identifier.
 ///
@@ -127,7 +127,6 @@ fn create_entity_statements(
     graph_id: Option<Uuid>,
 ) -> PyResult<Py<PyList>> {
     let mut statement_ids: Vec<String> = Vec::new();
-    let skip_proof = resolve_skip_proof(skip_proof);
     let timestamp = resolve_timestamp(timestamp);
 
     with_ctx!(py, |ctx| {
@@ -148,23 +147,19 @@ fn create_entity_statements(
             .await?;
         statement_ids.push(entity_statement_id.clone());
 
-        maybe_create_vc_statement()
-        // if !skip_proof {
-        //     if let Some(signer) = ctx.active_signer.clone() {
-        //         let vc = vc::issue_vc(&entity_statement_id, signer).await?;
-        //         let vc_statement = Statement::CredentialRegistration(
-        //             VcStatement::create(vc, registered_by.clone(), timestamp.clone()).await?,
-        //         );
-        //         let vc_id = vc_statement.get_id();
-        //         ctx.sql_lite
-        //             .register_statement(&vc_statement, &graph_id)
-        //             .await?;
-        //         statement_ids.push(vc_id);
-        //     }
-        // }
+        if let Some(vc_id) = maybe_create_vc_statement(
+            &entity_statement_id,
+            graph_id,
+            skip_proof,
+            timestamp.clone(),
+        )
+        .await?
+        {
+            statement_ids.push(vc_id);
+        }
 
         let metadata_value: Value = serde_json::from_str(&metadata_json)
-            .map_err(|e| anyhow!("Invalid metadata JSON: {}", e))?;
+            .map_err(|e| anyhow!("Invalid metadata JSON: {e}"))?;
 
         let signer = ctx
             .active_signer

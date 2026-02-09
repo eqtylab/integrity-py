@@ -9,6 +9,7 @@ use std::{
 use crate::indexer::Graph;
 use crate::indexer::Sqlite;
 use crate::integrity_service::Configuration as IntegrityServiceConfig;
+use crate::resolve_skip_proof;
 use anyhow::{anyhow, Result};
 use integrity::{
     cid::iroh::{CidIgnoreConfig, HashingConfig},
@@ -119,10 +120,7 @@ fn ensure_blob_dir(app_dir: &Path) -> PyResult<PathBuf> {
     let blob_dir = app_dir.join("blobs");
     if !blob_dir.exists() {
         fs::create_dir_all(&blob_dir).map_err(|e| {
-            pyo3::exceptions::PyIOError::new_err(format!(
-                "Failed to create blob directory: {}",
-                e
-            ))
+            pyo3::exceptions::PyIOError::new_err(format!("Failed to create blob directory: {}", e))
         })?;
     }
     Ok(blob_dir)
@@ -178,10 +176,9 @@ fn set_store_all_blobs_inner(value: bool) -> Result<()> {
 }
 
 fn set_default_graph_inner(py: Python<'_>, graph: Graph) -> Result<()> {
-    let _ = with_ctx!(py, |ctx| {
+    with_ctx!(py, |ctx| {
         log::info!("Setting default graph: {graph:?}");
         let _ = ctx.sql_lite.create_graph(&graph).await;
-        Ok(())
     });
     Config::update_config(|ctx| ctx.default_graph = graph)?;
     Ok(())
@@ -557,19 +554,21 @@ impl Config {
 /// * `Result<Option<String>>` - The VC statement ID if created, None if skipped
 pub async fn maybe_create_vc_statement(
     statement_id: &str,
-    skip_proof: bool,
-    timestamp: Option<String>,
     graph_id: Uuid,
+    skip_proof: Option<bool>,
+    timestamp: Option<String>,
 ) -> Result<Option<String>> {
     use integrity::lineage::models::statements::{Statement, StatementTrait, VcStatement};
     use integrity::vc;
 
-    if skip_proof {
+    if resolve_skip_proof(skip_proof) {
         return Ok(None);
     }
 
     let ctx_lock = CTX.blocking_read();
-    let cfg = ctx_lock.as_ref().ok_or_else(|| anyhow!("Config not initialized"))?;
+    let cfg = ctx_lock
+        .as_ref()
+        .ok_or_else(|| anyhow!("Config not initialized"))?;
 
     let Some(signer) = cfg.active_signer.clone() else {
         return Ok(None);
