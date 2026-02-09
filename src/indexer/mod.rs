@@ -27,10 +27,13 @@ pub use sqlite::Sqlite;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Graph {
     /// Unique identifier for this graph
+    #[pyo3(get)]
     pub id: Uuid,
     /// Human-readable name for this graph
+    #[pyo3(get)]
     pub name: String,
     /// Optional parent graph ID for hierarchical organization
+    #[pyo3(get)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent: Option<Uuid>,
     /// Statements contained in this graph (populated on retrieval)

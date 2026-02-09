@@ -58,8 +58,8 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
 /// Returns:
 ///     List of graph objects with their statements
 #[pyfunction]
-#[pyo3(signature = (graph_ids), text_signature = "(graph_ids: list[str]) -> list[dict]")]
-pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<Py<PyList>> {
+#[pyo3(signature = (graph_ids), text_signature = "(graph_ids: list[UUID]) -> list[dict]")]
+pub fn retrieve_graph(py: Python, graph_ids: Vec<Uuid>) -> PyResult<Py<PyList>> {
     let graphs: Vec<Graph> = with_ctx!(py, |ctx| {
         let sql_client = ctx.sql_lite;
 
@@ -67,8 +67,7 @@ pub fn retrieve_graph(py: Python, graph_ids: Vec<String>) -> PyResult<Py<PyList>
 
         let mut graphs: Vec<Graph> = Vec::new();
         for graph_id in graph_ids.clone() {
-            let graph_uuid = Uuid::parse_str(&graph_id).context("Invalid graph ID")?;
-            let graph = sql_client.retrieve_graph(&graph_uuid).await?;
+            let graph = sql_client.retrieve_graph(&graph_id).await?;
 
             graphs.push(graph);
         }

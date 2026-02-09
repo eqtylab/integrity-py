@@ -228,7 +228,7 @@ class signer:
 # Statements module
 class statements:
     @staticmethod
-    def retrieve_graph(graph_ids: List[str]) -> Any:
+    def retrieve_graph(graph_ids: List[Any]) -> Any:
         """Retrieve graphs for multiple graph IDs.  Args: graph_ids: List of graph ID strings to retrieve graphs for  Returns: List of graph objects with their statements"""
         ...
 

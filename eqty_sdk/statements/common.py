@@ -50,12 +50,13 @@ class Statements:
         instance = cls()
         graph_ids = []
         if not graph_id:
-            graph_ids = [str(config.root_context().id)]
+            id = config.get_default_graph().id
+            graph_ids = [id]
         elif isinstance(graph_id, UUID):
-            graph_ids = [str(graph_id)]
+            graph_ids = [graph_id]
         elif isinstance(graph_id, list):
             for id in graph_id:
-                graph_ids.append(str(id))
+                graph_ids.append(id)
 
         logger.info(f"Getting statements for graph_id {graph_ids}")
 
