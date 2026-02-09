@@ -1,7 +1,7 @@
-use crate::indexer::Graph;
 use crate::with_ctx;
 use pyo3::types::{PyDict, PyList};
 use pyo3::{prelude::*, IntoPyObjectExt};
+use integrity::lineage::models::statements::Statement;
 
 mod association;
 mod computation;
@@ -50,61 +50,40 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
-/// Retrieve graphs for multiple graph IDs.
+/// Retrieve statements for multiple graph IDs.
 ///
 /// Args:
-///     graph_ids: List of graph ID strings to retrieve graphs for
+///     graph_ids: List of graph UUIDs to retrieve graphs for
 ///
 /// Returns:
-///     List of graph objects with their statements
+///     List of statements
 #[pyfunction]
-#[pyo3(signature = (graph_ids), text_signature = "(graph_ids: list[UUID]) -> list[dict]")]
+#[pyo3(signature = (graph_ids), text_signature = "(graph_ids: list[UUID]) -> list[Statements]")]
 pub fn retrieve_graph(py: Python, graph_ids: Vec<Uuid>) -> PyResult<Py<PyList>> {
-    let graphs: Vec<Graph> = with_ctx!(py, |ctx| {
+    let statements: Vec<Statement> = with_ctx!(py, |ctx| {
         let sql_client = ctx.sql_lite;
 
         log::info!("Retrieving graphs {graph_ids:?}");
 
-        let mut graphs: Vec<Graph> = Vec::new();
+        let mut statements: Vec<Statement> = Vec::new();
         for graph_id in graph_ids.clone() {
-            let graph = sql_client.retrieve_graph(&graph_id).await?;
-
-            graphs.push(graph);
+            let graph_statements = sql_client.retrieve_statements(&graph_id).await?;
+            statements.extend(graph_statements);
         }
-        Ok::<_, anyhow::Error>(graphs)
+        Ok::<_, anyhow::Error>(statements)
     })?;
 
-    // Convert graphs to Python objects
-    let py_graphs: Vec<Py<PyAny>> = graphs
+    // Convert statements to Python objects
+    let py_statements: Vec<Py<PyAny>> = statements
         .into_iter()
-        .map(|graph| {
-            // Convert each graph to a Python dict
-            let py_dict = PyDict::new(py);
-
-            // Set graph metadata
-            py_dict.set_item("id", graph.id.to_string())?;
-            py_dict.set_item("name", graph.name)?;
-            py_dict.set_item("parent", graph.parent.map(|p| p.to_string()))?;
-
-            // Convert statements to Python objects
-            let py_statements: Vec<Py<PyAny>> = graph
-                .statements
-                .unwrap_or_default()
-                .into_iter()
-                .map(|stmt| {
-                    let value =
-                        serde_json::to_value(&stmt).context("Failed to serialize statement")?;
-                    json_value_to_python(py, &value)
-                })
-                .collect::<PyResult<Vec<_>>>()?;
-
-            py_dict.set_item("statements", PyList::new(py, py_statements)?)?;
-
-            Ok(py_dict.into())
+        .map(|stmt| {
+            let value =
+                serde_json::to_value(&stmt).context("Failed to serialize statement")?;
+            json_value_to_python(py, &value)
         })
         .collect::<PyResult<Vec<_>>>()?;
 
-    Ok(PyList::new(py, py_graphs)?.unbind())
+    Ok(PyList::new(py, py_statements)?.unbind())
 }
 
 fn json_value_to_python(py: Python, value: &serde_json::Value) -> PyResult<Py<PyAny>> {

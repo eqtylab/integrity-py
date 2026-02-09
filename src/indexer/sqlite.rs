@@ -242,23 +242,12 @@ impl Sqlite {
         Ok(())
     }
 
-    /// Retrieves a graph and all its associated statements by graph ID.
+    /// Retrieves the statements associated to the graph ID.
     ///
     /// Returns the graph with its statements populated, including statements
     /// from parent graphs in the hierarchy.
-    pub async fn retrieve_graph(&self, graph_id: &Uuid) -> Result<Graph> {
+    pub async fn retrieve_statements(&self, graph_id: &Uuid) -> Result<Vec<Statement>> {
         log::info!("Retrieving statements for graph {graph_id:?}");
-
-        let mut graph: Graph = sqlx::query_as(
-            r#"
-            SELECT graph_id, name, parent_id
-            FROM graphs g
-            WHERE g.graph_id = ?1
-        "#,
-        )
-        .bind(graph_id.to_string())
-        .fetch_one(&self.pool)
-        .await?;
 
         // Create placeholders for the IN clause
         let compute_query_str = r#"
@@ -283,7 +272,7 @@ impl Sqlite {
 
         if compute_rows.is_empty() {
             log::info!("No computation statements found for graph(s) {graph_id:?}");
-            return Ok(graph);
+            return Ok(vec![]);
         }
 
         let mut subjects: Vec<String> = Vec::new();
@@ -352,8 +341,7 @@ impl Sqlite {
 
         self.get_global_statements(&mut statements).await?;
 
-        graph.statements = Some(statements.into_values().collect());
-        Ok(graph)
+        Ok(statements.into_values().collect())
     }
 
     /// Returns all association IDs linked to the given subject.
@@ -758,7 +746,7 @@ impl Sqlite {
         let placeholders = vec!["?"; credential_subjects.len()].join(", ");
         let global_query = format!(
             r#"
-            SELECT statement
+            SELECT statement, NULL as metadata, NULL as vc, NULL as did
             FROM credential_statements
             WHERE credential_subject IN ({})
         "#,
