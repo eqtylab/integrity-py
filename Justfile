@@ -16,8 +16,9 @@ build:
   maturin build
 
 # Install the local build of the wheel into the venv
-install-package: generate-stubs
+install-package:
   maturin develop
+  just generate-stubs
 
 # Run linters without auto-fixing (Rust clippy + Python ruff)
 lint-check:
@@ -59,9 +60,10 @@ test-py:
 test-rs:
   cargo test
 
-# Generate type stubs from Rust code
+# Generate type stubs from the compiled Rust extension (module must be installed)
 generate-stubs:
-  poetry run python generate_stubs.py
+  poetry run pyo3-stubgen eqty_sdk._rust .
+  poetry run python scripts/merge_pyi.py
 
 # Update README.md with auto-generated content (Justfile commands, etc.)
 readme-update:

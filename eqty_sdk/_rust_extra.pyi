@@ -1,8 +1,3 @@
-# flake8: noqa: PYI021
-def init(custom_dir=None):
-    """Initializes the sdk config. Must be called before setting individual config values"""
-
-# -- extra stubs --
 # Extra stubs layered on top of pyo3-stubgen output.
 # This file is appended by scripts/merge_pyi.py.
 

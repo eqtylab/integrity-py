@@ -28,6 +28,7 @@ coverage = "^7.4.4"
 pydoc-markdown = "^4.8.2"
 base58 = "^2.1.1"
 model-signing = "1.1.1"
+pyo3-stubgen = "^0.3.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.2"
@@ -114,4 +115,3 @@ force-wrap-aliases = true
 quote-style = "double"
 indent-style = "space"
 docstring-code-format = true
-
