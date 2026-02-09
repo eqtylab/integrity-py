@@ -107,6 +107,86 @@ pub async fn ctx_async() -> Config {
         .clone()
 }
 
+fn ctx_blocking() -> PyResult<Config> {
+    let ctx_lock = CTX.blocking_read();
+    let ctx = ctx_lock
+        .as_ref()
+        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
+    Ok(ctx.clone())
+}
+
+fn ensure_blob_dir(app_dir: &Path) -> PyResult<PathBuf> {
+    let blob_dir = app_dir.join("blobs");
+    if !blob_dir.exists() {
+        fs::create_dir_all(&blob_dir).map_err(|e| {
+            pyo3::exceptions::PyIOError::new_err(format!(
+                "Failed to create blob directory: {}",
+                e
+            ))
+        })?;
+    }
+    Ok(blob_dir)
+}
+
+fn set_integrity_service_url_inner(url: String) -> Result<()> {
+    Config::update_config(|ctx| {
+        ctx.integrity_service = Some(url);
+    })?;
+    Config::save_config()?;
+    Ok(())
+}
+
+fn set_hashing_config_inner(multithread: Option<bool>, memory_map: Option<bool>) -> Result<()> {
+    let hash_config = HashingConfig {
+        multithread: multithread.unwrap_or(false),
+        memory_map: memory_map.unwrap_or(false),
+    };
+    Config::update_config(|ctx| ctx.hashing = hash_config)?;
+    Ok(())
+}
+
+fn set_cid_ignore_rules_inner(
+    include_hidden_files: Option<bool>,
+    gitignore: Option<bool>,
+    include_symlinks: Option<bool>,
+) -> Result<()> {
+    let cid_ignore = CidIgnoreConfig {
+        include_hidden_files: include_hidden_files
+            .unwrap_or(CidIgnoreConfig::default().include_hidden_files),
+        gitignore: gitignore.unwrap_or(CidIgnoreConfig::default().gitignore),
+        include_symlinks: include_symlinks.unwrap_or_default(),
+    };
+    Config::update_config(|ctx| ctx.cid_ignore = cid_ignore)?;
+    Config::save_config()?;
+    Ok(())
+}
+
+fn set_generate_model_signing_signatures_inner(enable: bool) -> Result<()> {
+    Config::update_config(|ctx| {
+        ctx.generate_model_signing_signatures = enable;
+    })?;
+    Config::save_config()?;
+    Ok(())
+}
+
+fn set_store_all_blobs_inner(value: bool) -> Result<()> {
+    Config::update_config(|ctx| {
+        ctx.store_all_blobs = value;
+    })?;
+    Config::save_config()?;
+    Ok(())
+}
+
+fn set_default_graph_inner(py: Python<'_>, graph: Graph) -> Result<()> {
+    let _ = with_ctx!(py, |ctx| {
+        log::info!("Setting default graph: {graph:?}");
+        let _ = ctx.sql_lite.create_graph(&graph).await;
+        Ok(())
+    });
+    Config::update_config(|ctx| ctx.default_graph = graph)?;
+    Ok(())
+}
+
 /// Global application config containing configuration and state.
 ///
 /// The config stores application-wide settings including storage directories,
@@ -148,10 +228,7 @@ impl Config {
 
     #[pyo3(signature = (url))]
     fn set_integrity_service_url(&self, url: String) -> PyResult<Self> {
-        Self::update_config(|ctx| {
-            ctx.integrity_service = Some(url);
-        })?;
-        Self::save_config()?;
+        set_integrity_service_url_inner(url)?;
         Ok(self.clone())
     }
 
@@ -161,11 +238,7 @@ impl Config {
         multithread: Option<bool>,
         memory_map: Option<bool>,
     ) -> PyResult<Self> {
-        let hash_config = HashingConfig {
-            multithread: multithread.unwrap_or(false),
-            memory_map: memory_map.unwrap_or(false),
-        };
-        Self::update_config(|ctx| ctx.hashing = hash_config)?;
+        set_hashing_config_inner(multithread, memory_map)?;
         Ok(self.clone())
     }
 
@@ -176,71 +249,41 @@ impl Config {
         gitignore: Option<bool>,
         include_symlinks: Option<bool>,
     ) -> PyResult<Self> {
-        let cid_ignore = CidIgnoreConfig {
-            include_hidden_files: include_hidden_files
-                .unwrap_or(CidIgnoreConfig::default().include_hidden_files),
-            gitignore: gitignore.unwrap_or(CidIgnoreConfig::default().gitignore),
-            include_symlinks: include_symlinks.unwrap_or_default(),
-        };
-
-        Self::update_config(|ctx| ctx.cid_ignore = cid_ignore)?;
-        Self::save_config()?;
+        set_cid_ignore_rules_inner(include_hidden_files, gitignore, include_symlinks)?;
         Ok(self.clone())
     }
 
     #[pyo3(signature = (enable))]
     fn set_generate_model_signing_signatures(&self, enable: bool) -> PyResult<Self> {
-        Self::update_config(|ctx| {
-            ctx.generate_model_signing_signatures = enable;
-        })?;
-        Self::save_config()?;
+        set_generate_model_signing_signatures_inner(enable)?;
         Ok(self.clone())
     }
 
     #[pyo3(signature = (value))]
     fn set_store_all_blobs(&self, value: bool) -> PyResult<Self> {
-        Self::update_config(|ctx| {
-            ctx.store_all_blobs = value;
-        })?;
-        Self::save_config()?;
+        set_store_all_blobs_inner(value)?;
         Ok(self.clone())
     }
 
     /// Sets the default graph context
     #[pyo3(signature = (graph))]
     fn set_default_graph(&self, py: Python, graph: Graph) -> PyResult<Self> {
-        with_ctx!(py, |ctx| {
-            log::info!("Setting default graph: {graph:?}");
-            let _ = ctx.sql_lite.create_graph(&graph).await;
-        });
-
-        Self::update_config(|ctx| ctx.default_graph = graph)?;
+        set_default_graph_inner(py, graph)?;
         Ok(self.clone())
     }
 
     // Getters
 
     fn get_integrity_service_url(&self) -> PyResult<Option<String>> {
-        let ctx_lock = CTX.blocking_read();
-        let ctx = ctx_lock
-            .as_ref()
-            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-        Ok(ctx.integrity_service.clone())
+        Ok(ctx_blocking()?.integrity_service.clone())
     }
 
     fn get_store_all_blobs(&self) -> PyResult<bool> {
-        let ctx_lock = CTX.blocking_read();
-        let ctx = ctx_lock
-            .as_ref()
-            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-        Ok(ctx.store_all_blobs)
+        Ok(ctx_blocking()?.store_all_blobs)
     }
 
     fn get_cid_ignore_rules(&self) -> PyResult<(bool, bool, bool)> {
-        let ctx_lock = CTX.blocking_read();
-        let ctx = ctx_lock
-            .as_ref()
-            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
+        let ctx = ctx_blocking()?;
         Ok((
             ctx.cid_ignore.include_hidden_files,
             ctx.cid_ignore.gitignore,
@@ -249,44 +292,20 @@ impl Config {
     }
 
     fn get_generate_model_signing_signatures(&self) -> PyResult<bool> {
-        let ctx_lock = CTX.blocking_read();
-        let ctx = ctx_lock
-            .as_ref()
-            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-        Ok(ctx.generate_model_signing_signatures)
+        Ok(ctx_blocking()?.generate_model_signing_signatures)
     }
 
     fn get_app_dir(&self) -> PyResult<PathBuf> {
-        let ctx_lock = CTX.blocking_read();
-        let ctx = ctx_lock
-            .as_ref()
-            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-        Ok(ctx.app_dir.clone())
+        Ok(ctx_blocking()?.app_dir.clone())
     }
 
     fn get_blob_dir(&self) -> PyResult<PathBuf> {
-        let ctx_lock = CTX.blocking_read();
-        let ctx = ctx_lock
-            .as_ref()
-            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-        let blob_dir = ctx.app_dir.join("blobs");
-        if !blob_dir.exists() {
-            fs::create_dir_all(&blob_dir).map_err(|e| {
-                pyo3::exceptions::PyIOError::new_err(format!(
-                    "Failed to create blob directory: {}",
-                    e
-                ))
-            })?;
-        }
-        Ok(blob_dir)
+        let ctx = ctx_blocking()?;
+        ensure_blob_dir(&ctx.app_dir)
     }
 
     fn get_default_graph(&self) -> PyResult<Graph> {
-        let ctx_lock = CTX.blocking_read();
-        let ctx = ctx_lock
-            .as_ref()
-            .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-        Ok(ctx.default_graph.clone())
+        Ok(ctx_blocking()?.default_graph.clone())
     }
 }
 
@@ -573,28 +592,17 @@ pub async fn maybe_create_vc_statement(
 
 #[pyfunction]
 pub fn get_integrity_service_url() -> PyResult<Option<String>> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    Ok(ctx.integrity_service.clone())
+    Ok(ctx_blocking()?.integrity_service.clone())
 }
 
 #[pyfunction]
 pub fn get_store_all_blobs() -> PyResult<bool> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    Ok(ctx.store_all_blobs)
+    Ok(ctx_blocking()?.store_all_blobs)
 }
 
 #[pyfunction]
 pub fn get_cid_ignore_rules() -> PyResult<(bool, bool, bool)> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
+    let ctx = ctx_blocking()?;
     Ok((
         ctx.cid_ignore.include_hidden_files,
         ctx.cid_ignore.gitignore,
@@ -604,65 +612,35 @@ pub fn get_cid_ignore_rules() -> PyResult<(bool, bool, bool)> {
 
 #[pyfunction]
 pub fn get_generate_model_signing_signatures() -> PyResult<bool> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    Ok(ctx.generate_model_signing_signatures)
+    Ok(ctx_blocking()?.generate_model_signing_signatures)
 }
 
 #[pyfunction]
 pub fn get_app_dir() -> PyResult<PathBuf> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    Ok(ctx.app_dir.clone())
+    Ok(ctx_blocking()?.app_dir.clone())
 }
 
 #[pyfunction]
 pub fn get_blob_dir() -> PyResult<PathBuf> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    let blob_dir = ctx.app_dir.join("blobs");
-    if !blob_dir.exists() {
-        fs::create_dir_all(&blob_dir).map_err(|e| {
-            pyo3::exceptions::PyIOError::new_err(format!("Failed to create blob directory: {}", e))
-        })?;
-    }
-    Ok(blob_dir)
+    let ctx = ctx_blocking()?;
+    ensure_blob_dir(&ctx.app_dir)
 }
 
 #[pyfunction]
 pub fn get_default_graph() -> PyResult<Graph> {
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
-        .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
-    Ok(ctx.default_graph.clone())
+    Ok(ctx_blocking()?.default_graph.clone())
 }
 
 #[pyfunction]
 #[pyo3(signature = (url))]
 pub fn set_integrity_service_url(url: String) -> PyResult<()> {
-    Config::update_config(|ctx| {
-        ctx.integrity_service = Some(url);
-    })?;
-    Config::save_config()?;
-    Ok(())
+    set_integrity_service_url_inner(url).map_err(Into::into)
 }
 
 #[pyfunction]
 #[pyo3(signature = (multithread=None, memory_map=None))]
 pub fn set_hashing_config(multithread: Option<bool>, memory_map: Option<bool>) -> PyResult<()> {
-    let hash_config = HashingConfig {
-        multithread: multithread.unwrap_or(false),
-        memory_map: memory_map.unwrap_or(false),
-    };
-    Config::update_config(|ctx| ctx.hashing = hash_config)?;
-    Ok(())
+    set_hashing_config_inner(multithread, memory_map).map_err(Into::into)
 }
 
 #[pyfunction]
@@ -672,46 +650,26 @@ pub fn set_cid_ignore_rules(
     gitignore: Option<bool>,
     include_symlinks: Option<bool>,
 ) -> PyResult<()> {
-    let cid_ignore = CidIgnoreConfig {
-        include_hidden_files: include_hidden_files
-            .unwrap_or(CidIgnoreConfig::default().include_hidden_files),
-        gitignore: gitignore.unwrap_or(CidIgnoreConfig::default().gitignore),
-        include_symlinks: include_symlinks.unwrap_or_default(),
-    };
-    Config::update_config(|ctx| ctx.cid_ignore = cid_ignore)?;
-    Config::save_config()?;
-    Ok(())
+    set_cid_ignore_rules_inner(include_hidden_files, gitignore, include_symlinks)
+        .map_err(Into::into)
 }
 
 #[pyfunction]
 #[pyo3(signature = (enable))]
 pub fn set_generate_model_signing_signatures(enable: bool) -> PyResult<()> {
-    Config::update_config(|ctx| {
-        ctx.generate_model_signing_signatures = enable;
-    })?;
-    Config::save_config()?;
-    Ok(())
+    set_generate_model_signing_signatures_inner(enable).map_err(Into::into)
 }
 
 #[pyfunction]
 #[pyo3(signature = (value))]
 pub fn set_store_all_blobs(value: bool) -> PyResult<()> {
-    Config::update_config(|ctx| {
-        ctx.store_all_blobs = value;
-    })?;
-    Config::save_config()?;
-    Ok(())
+    set_store_all_blobs_inner(value).map_err(Into::into)
 }
 
 #[pyfunction]
 #[pyo3(signature = (graph))]
 pub fn set_default_graph(py: Python, graph: Graph) -> PyResult<()> {
-    with_ctx!(py, |ctx| {
-        log::info!("Setting default graph: {graph:?}");
-        let _ = ctx.sql_lite.create_graph(&graph).await;
-    });
-    Config::update_config(|ctx| ctx.default_graph = graph)?;
-    Ok(())
+    set_default_graph_inner(py, graph).map_err(Into::into)
 }
 
 #[pyfunction]
