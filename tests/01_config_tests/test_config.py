@@ -25,9 +25,8 @@ class TestConfig(unittest.TestCase):
         # Check that the directory exists
 
     def test_02_url(self):
-        cfg = config.get_config()
         url = "http://www.example.com"
-        cfg.set_integrity_service_url(url)
+        config.set_integrity_service_url(url)
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -35,11 +34,10 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(data["url"], url, "Failed to save url to settings file")
 
     def test_03_store_all_blobs(self):
-        cfg = config.get_config()
-        self.assertFalse(cfg.get_store_all_blobs())
+        self.assertFalse(config.get_store_all_blobs())
 
-        cfg.set_store_all_blobs(True)
-        self.assertTrue(cfg.get_store_all_blobs())
+        config.set_store_all_blobs(True)
+        self.assertTrue(config.get_store_all_blobs())
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -48,8 +46,8 @@ class TestConfig(unittest.TestCase):
             data["store_all_blobs"], True, "Failed to save store_all_blobs to settings file"
         )
 
-        cfg.set_store_all_blobs(False)
-        self.assertFalse(cfg.get_store_all_blobs())
+        config.set_store_all_blobs(False)
+        self.assertFalse(config.get_store_all_blobs())
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -59,15 +57,14 @@ class TestConfig(unittest.TestCase):
         )
 
     def test_04_cid_ignore(self):
-        cfg = config.get_config()
-        hidden, gitignore, symlinks = cfg.get_cid_ignore_rules()
+        hidden, gitignore, symlinks = config.get_cid_ignore_rules()
         self.assertFalse(hidden)
         self.assertFalse(gitignore)
         self.assertFalse(symlinks)
 
-        cfg.set_cid_ignore_rules(True, False, False)
+        config.set_cid_ignore_rules(True, False, False)
 
-        hidden, gitignore, symlinks = cfg.get_cid_ignore_rules()
+        hidden, gitignore, symlinks = config.get_cid_ignore_rules()
         self.assertTrue(hidden)
         self.assertFalse(gitignore)
         self.assertFalse(symlinks)

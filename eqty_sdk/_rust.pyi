@@ -40,6 +40,79 @@ class DirCidResult:
         ...
 
 
+# Config module
+class config:
+    @staticmethod
+    def get_integrity_service_url() -> Optional[str]:
+        """Get Integrity Service Url."""
+        ...
+
+    @staticmethod
+    def get_store_all_blobs() -> bool:
+        """Get Store All Blobs."""
+        ...
+
+    @staticmethod
+    def get_cid_ignore_rules() -> Any:
+        """Get Cid Ignore Rules."""
+        ...
+
+    @staticmethod
+    def get_generate_model_signing_signatures() -> bool:
+        """Get Generate Model Signing Signatures."""
+        ...
+
+    @staticmethod
+    def get_app_dir() -> PathLike[str]:
+        """Get App Dir."""
+        ...
+
+    @staticmethod
+    def get_blob_dir() -> PathLike[str]:
+        """Get Blob Dir."""
+        ...
+
+    @staticmethod
+    def get_default_graph() -> Any:
+        """Get Default Graph."""
+        ...
+
+    @staticmethod
+    def set_integrity_service_url(url: str) -> None:
+        """Set Integrity Service Url."""
+        ...
+
+    @staticmethod
+    def set_hashing_config(multithread: Optional[bool] = None, memory_map: Optional[bool] = None) -> None:
+        """Set Hashing Config."""
+        ...
+
+    @staticmethod
+    def set_cid_ignore_rules(include_hidden_files: Optional[bool] = None, gitignore: Optional[bool] = None, include_symlinks: Optional[bool] = None) -> None:
+        """Set Cid Ignore Rules."""
+        ...
+
+    @staticmethod
+    def set_generate_model_signing_signatures(enable: bool) -> None:
+        """Set Generate Model Signing Signatures."""
+        ...
+
+    @staticmethod
+    def set_store_all_blobs(value: bool) -> None:
+        """Set Store All Blobs."""
+        ...
+
+    @staticmethod
+    def set_default_graph(graph: Any) -> None:
+        """Set Default Graph."""
+        ...
+
+    @staticmethod
+    def reset() -> None:
+        """Reset."""
+        ...
+
+
 # Manifest module
 class manifest:
     @staticmethod

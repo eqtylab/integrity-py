@@ -16,7 +16,7 @@ def __get_store_flag__(store: Optional[bool]) -> bool:
     if store is False or store is True:
         return store
     else:
-        return config.get_config().get_store_all_blobs()
+        return config.get_store_all_blobs()
 
 
 def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> str:

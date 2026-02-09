@@ -43,6 +43,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(manifest::manifest))?;
     m.add_wrapped(wrap_pymodule!(statements::statements))?;
     m.add_wrapped(wrap_pymodule!(stream::stream))?;
+    m.add_wrapped(wrap_pymodule!(config::config))?;
 
     m.add_class::<Graph>()?;
     m.add_class::<Config>()?;
@@ -53,10 +54,10 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 /// Initializes the sdk config. Must be called before setting individual config values
 #[pyfunction]
-#[pyo3(signature = (app_dir=None))]
-fn init(py: Python<'_>, app_dir: Option<PathBuf>) -> PyResult<Config> {
+#[pyo3(signature = (custom_dir=None))]
+fn init(py: Python<'_>, custom_dir: Option<PathBuf>) -> PyResult<Config> {
     // `None` → use the Python caller’s CWD (the same as the process CWD)
-    let app_dir = app_dir.unwrap_or_else(|| {
+    let app_dir = custom_dir.unwrap_or_else(|| {
         // `current_dir` panics only if the process has no CWD
         let dir = env::current_dir().expect("Could not determine current working directory");
         dir.join(".eqty_sdk")

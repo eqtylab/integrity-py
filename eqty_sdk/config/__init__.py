@@ -1,34 +1,56 @@
 from pathlib import Path
 from typing import Optional
 
-from eqty_sdk._rust import Config, init as _init
+from eqty_sdk._rust import init as _init
+from eqty_sdk._rust import config as _config_module
 
-# Re-export Config class
-__all__ = ["Config", "init", "blob_dir", "root_context"]
+# Re-export functions from Rust config module
+__all__ = [
+    "init",
+    "blob_dir",
+    "root_context",
+    "get_store_all_blobs",
+    "set_store_all_blobs",
+    "get_cid_ignore_rules",
+    "set_cid_ignore_rules",
+    "get_integrity_service_url",
+    "set_integrity_service_url",
+    "get_generate_model_signing_signatures",
+    "set_generate_model_signing_signatures",
+    "get_app_dir",
+    "get_blob_dir",
+    "get_default_graph",
+    "set_default_graph",
+    "reset",
+]
 
-# Store the config instance after init
-_config: Optional[Config] = None
 
-
-def init(app_dir: Optional[Path] = None) -> Config:
-    """Initialize the SDK and return the Config instance."""
-    global _config
-    _config = _init(app_dir)
-    return _config
-
-
-def get_config() -> Config:
-    """Get the current config instance, raising if not initialized."""
-    if _config is None:
-        raise RuntimeError("Config not initialized. Call init() first.")
-    return _config
+def init(app_dir: Optional[Path] = None) -> None:
+    """Initialize the SDK."""
+    _init(app_dir)
 
 
 def blob_dir() -> Path:
     """Returns the blob directory as a Path object."""
-    return Path(get_config().get_blob_dir())
+    return Path(_config_module.get_blob_dir())
 
 
 def root_context():
     """Returns the default graph (root context)."""
-    return get_config().get_default_graph()
+    return _config_module.get_default_graph()
+
+
+# Re-export all config functions
+get_store_all_blobs = _config_module.get_store_all_blobs
+set_store_all_blobs = _config_module.set_store_all_blobs
+get_cid_ignore_rules = _config_module.get_cid_ignore_rules
+set_cid_ignore_rules = _config_module.set_cid_ignore_rules
+get_integrity_service_url = _config_module.get_integrity_service_url
+set_integrity_service_url = _config_module.set_integrity_service_url
+get_generate_model_signing_signatures = _config_module.get_generate_model_signing_signatures
+set_generate_model_signing_signatures = _config_module.set_generate_model_signing_signatures
+get_app_dir = _config_module.get_app_dir
+get_blob_dir = _config_module.get_blob_dir
+get_default_graph = _config_module.get_default_graph
+set_default_graph = _config_module.set_default_graph
+reset = _config_module.reset

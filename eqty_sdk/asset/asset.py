@@ -162,7 +162,7 @@ class Asset:
         cid = get_cid_for_bytes(serialized_bytes, store)
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
-        asset = Asset(ctx, obj, asset_type, cid, is_dir=False, **kwargs)
+        asset = Asset(obj, asset_type, cid, is_dir=False, custom_ctx=ctx, **kwargs)
         return asset
 
     @staticmethod
@@ -239,8 +239,8 @@ class Asset:
         add_data_statement([self.cid], self._skip_proof)
         add_metadata_statement(self.cid, self._metadata.to_json_str(), self._skip_proof)
 
-        if config.get_config().get_generate_model_signing_signatures() and self._is_dir:
-            _, _, include_symlinks = config.get_config().get_cid_ignore_rules()
+        if config.get_generate_model_signing_signatures() and self._is_dir:
+            _, _, include_symlinks = config.get_cid_ignore_rules()
             eqty_core_statements.create_model_signing_statement(
                 collection_cid=self.cid,
                 blobs_dir=config.blob_dir(),
