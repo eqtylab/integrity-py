@@ -42,10 +42,10 @@ from eqty_sdk.types import (
     Declaration,
     Did,
     Entity,
-    Manifest,
     Signer,
     set_active_signer,
 )
+from eqty_sdk._rust.manifest import Manifest
 
 __all__ = [
     # Core

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, env, path::PathBuf, sync::Arc};
 
 use anyhow::{anyhow, Context as AnyhowContext, Result};
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
@@ -11,7 +11,7 @@ use integrity::{
     },
 };
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyList};
+use pyo3::types::{PyDict, PyList, PyType};
 use pyo3::Bound;
 use pyo3_async_runtimes::tokio::get_runtime;
 use serde_json::Value;
@@ -30,12 +30,108 @@ use crate::{
 /// `manifest` submodule.
 #[pymodule]
 pub fn manifest(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<ManifestWrapper>()?;
     m.add_function(wrap_pyfunction!(generate, m)?)?;
-    m.add_function(wrap_pyfunction!(import_manifest, m)?)?;
     m.add_function(wrap_pyfunction!(merge, m)?)?;
     m.add_function(wrap_pyfunction!(register, m)?)?;
 
     Ok(())
+}
+
+#[pyclass(name = "Manifest")]
+pub struct ManifestWrapper {
+    #[pyo3(get)]
+    manifest_str: String,
+}
+
+#[pymethods]
+impl ManifestWrapper {
+    #[new]
+    fn new(manifest: String) -> Self {
+        Self {
+            manifest_str: manifest,
+        }
+    }
+
+    #[classmethod]
+    #[pyo3(signature = (statements, include_context=true))]
+    fn from_statements(
+        _cls: &Bound<'_, PyType>,
+        py: Python,
+        statements: Py<PyAny>,
+        include_context: bool,
+    ) -> PyResult<Self> {
+        let graphs_any = statements.getattr(py, "graphs")?;
+        let graphs: Vec<Py<PyAny>> = graphs_any.extract(py)?;
+        let blobs_dir = crate::config::get_blob_dir()?;
+        let manifest_str = generate(py, graphs, blobs_dir, Some(include_context))?;
+        Ok(Self { manifest_str })
+    }
+
+    fn export(&self, file: PathBuf) -> PyResult<()> {
+        std::fs::write(&file, &self.manifest_str).map_err(|e| {
+            pyo3::exceptions::PyIOError::new_err(format!("Failed to write manifest: {e}"))
+        })
+    }
+
+    #[classmethod]
+    #[pyo3(signature = (manifest))]
+    fn import_manifest(_cls: &Bound<'_, PyType>, py: Python, manifest: Py<PyAny>) -> PyResult<()> {
+        let manifest_str = if let Ok(s) = manifest.extract::<String>(py) {
+            s
+        } else if let Ok(path) = manifest.extract::<PathBuf>(py) {
+            std::fs::read_to_string(&path).map_err(|e| {
+                pyo3::exceptions::PyIOError::new_err(format!(
+                    "Failed to read manifest file {}: {e}",
+                    path.display()
+                ))
+            })?
+        } else {
+            return Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                "Manifest must be a string or Path",
+            ));
+        };
+
+        let blobs: HashMap<String, Vec<u8>> = with_ctx!(py, |ctx| {
+            let graph_id = ctx.resolve_graph_id(None);
+            rust_import(manifest_str, &graph_id).await
+        })?;
+
+        let blob_dir = crate::config::get_blob_dir()?;
+        for (blob_key, blob_content) in blobs {
+            let blob_file_path = blob_dir.join(blob_key);
+            std::fs::write(&blob_file_path, blob_content).map_err(|e| {
+                pyo3::exceptions::PyIOError::new_err(format!(
+                    "Failed to write blob {}: {e}",
+                    blob_file_path.display()
+                ))
+            })?;
+        }
+
+        Ok(())
+    }
+
+    #[staticmethod]
+    fn merge(py: Python, a: String, b: String) -> PyResult<String> {
+        merge(py, a, b)
+    }
+
+    fn register(&self, py: Python) -> PyResult<()> {
+        let api_key = env::var("EQTY_API_KEY")
+            .map_err(|_| usage_error(py, "The env var 'EQTY_API_KEY' must be set"))?;
+        register(py, self.manifest_str.clone(), Some(api_key))
+    }
+}
+
+fn usage_error(py: Python, msg: &str) -> PyErr {
+    let usage_error = (|| -> PyResult<PyErr> {
+        let module = py.import("eqty_sdk.errors")?;
+        let exc = module.getattr("UsageError")?;
+        let instance = exc.call1((msg,))?;
+        Ok(PyErr::from_value(instance))
+    })();
+
+    usage_error.unwrap_or_else(|_| pyo3::exceptions::PyRuntimeError::new_err(msg.to_string()))
 }
 
 /// Generates an integrity graph manifest JSON string from multiple graphs.
@@ -82,27 +178,6 @@ pub fn generate(
             Ok(manifest_json)
         })
     })
-}
-
-/// Imports a manifest and returns the decoded blobs that must be saved
-#[pyfunction]
-pub fn import_manifest<'py>(
-    py: Python<'py>,
-    manifest: String,
-    graph_id: Option<uuid::Uuid>,
-) -> PyResult<HashMap<String, Bound<'py, PyBytes>>> {
-    let blobs: HashMap<String, Vec<u8>> = with_ctx!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph_id);
-        rust_import(manifest, &graph_id).await
-    })?;
-
-    // Convert Vec<u8> to PyBytes
-    let py_blobs: HashMap<String, Bound<'py, PyBytes>> = blobs
-        .into_iter()
-        .map(|(k, v)| (k, PyBytes::new(py, &v)))
-        .collect();
-
-    Ok(py_blobs)
 }
 
 /// Merges the manifests `a` and `b` and returns the merged manifest.

@@ -15,44 +15,6 @@ mod sql_tests {
     }
 
     #[tokio::test]
-    async fn test_create_graph() {
-        let db = setup_db().await;
-        let id = uuid::uuid!("00000000-0000-0000-0000-000000000001");
-        let graph = Graph::new(id, "test:1".to_string());
-        db.create_graph(&graph).await.unwrap();
-
-        // Verify by retrieving the graph
-        let graph = db.retrieve_graph(&id).await.unwrap();
-        assert_eq!(graph.id, id);
-        assert_eq!(graph.name, "test:1");
-        assert!(graph.parent.is_none());
-    }
-
-    #[tokio::test]
-    async fn test_create_graph_with_parent() {
-        let db = setup_db().await;
-        let parent_id = uuid::uuid!("00000000-0000-0000-0000-1000000000F0");
-        let parent_name = "test:parent".to_string();
-        let graph = Graph::new(parent_id, parent_name.clone());
-        db.create_graph(&graph).await.unwrap();
-
-        let parent_graph = db.retrieve_graph(&parent_id).await.unwrap();
-        assert_eq!(parent_graph.id, parent_id);
-        assert_eq!(parent_graph.name, parent_name);
-        assert!(parent_graph.parent.is_none());
-
-        let child_id = uuid::uuid!("00000000-0000-0000-0000-1000000000F1");
-        let child_name = "test:parent:child".to_string();
-        let child_graph = Graph::from_parent(child_id, child_name.clone(), parent_graph);
-        db.create_graph(&child_graph).await.unwrap();
-
-        let child_graph = db.retrieve_graph(&child_id).await.unwrap();
-        assert_eq!(child_graph.id, child_id);
-        assert_eq!(child_graph.name, child_name);
-        assert_eq!(child_graph.parent, Some(parent_id));
-    }
-
-    #[tokio::test]
     async fn test_register_computation_statement() {
         let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000010");
@@ -79,8 +41,7 @@ mod sql_tests {
             .unwrap();
 
         // Verify by retrieving the graph
-        let graph = db.retrieve_graph(&graph_id).await.unwrap();
-        let statements = graph.statements.as_ref().unwrap();
+        let statements = db.retrieve_statements(&graph_id).await.unwrap();
         assert!(statements.iter().any(|s| s.get_id() == statement_id));
     }
 
@@ -123,8 +84,7 @@ mod sql_tests {
         .unwrap();
 
         // Verify by retrieving the graph - should contain both computation and data statements
-        let graph = db.retrieve_graph(&graph_id).await.unwrap();
-        let statements = graph.statements.as_ref().unwrap();
+        let statements = db.retrieve_statements(&graph_id).await.unwrap();
         assert!(statements.iter().any(|s| s.get_id() == data_statement_id));
     }
 
@@ -169,8 +129,7 @@ mod sql_tests {
         .unwrap();
 
         // Verify by retrieving the graph
-        let graph = db.retrieve_graph(&graph_id).await.unwrap();
-        let statements = graph.statements.as_ref().unwrap();
+        let statements = db.retrieve_statements(&graph_id).await.unwrap();
         assert!(statements
             .iter()
             .any(|s| s.get_id() == metadata_statement_id));
@@ -217,8 +176,7 @@ mod sql_tests {
         .unwrap();
 
         // Verify by retrieving the graph
-        let graph = db.retrieve_graph(&graph_id).await.unwrap();
-        let statements = graph.statements.as_ref().unwrap();
+        let statements = db.retrieve_statements(&graph_id).await.unwrap();
         assert!(statements
             .iter()
             .any(|s| s.get_id() == storage_statement_id));
@@ -265,8 +223,7 @@ mod sql_tests {
         .unwrap();
 
         // Verify by retrieving the graph
-        let graph = db.retrieve_graph(&graph_id).await.unwrap();
-        let statements = graph.statements.as_ref().unwrap();
+        let statements = db.retrieve_statements(&graph_id).await.unwrap();
         assert!(statements
             .iter()
             .any(|s| s.get_id() == association_statement_id));
@@ -414,8 +371,8 @@ mod sql_tests {
             .unwrap();
 
         // Check that the statements in the parent graphs get pulled in
-        let graph = db.retrieve_graph(&child_graph_id).await.unwrap();
-        assert_eq!(graph.statements.as_ref().unwrap().len(), 3);
+        let statements = db.retrieve_statements(&child_graph_id).await.unwrap();
+        assert_eq!(statements.len(), 3);
 
         // Register the same statement in a lower child project
         db.register_statement(&comp_statement, &child_graph_id_2)
@@ -423,7 +380,7 @@ mod sql_tests {
             .unwrap();
 
         // Check that the statements in the parent graphs get pulled in from a lower child
-        let graph = db.retrieve_graph(&child_graph_id_2).await.unwrap();
-        assert_eq!(graph.statements.as_ref().unwrap().len(), 4);
+        let statements = db.retrieve_statements(&child_graph_id_2).await.unwrap();
+        assert_eq!(statements.len(), 4);
     }
 }

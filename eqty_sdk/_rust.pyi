@@ -192,11 +192,6 @@ class manifest:
         ...
 
     @staticmethod
-    def import_manifest(manifest: str, graph_id: Optional[Any] = None) -> Any:
-        """Imports a manifest and returns the decoded blobs that must be saved"""
-        ...
-
-    @staticmethod
     def merge(a: str, b: str) -> str:
         """Merges the manifests `a` and `b` and returns the merged manifest."""
         ...
