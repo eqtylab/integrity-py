@@ -1,7 +1,11 @@
-use crate::with_ctx;
 use integrity::lineage::models::statements::Statement;
-use pyo3::types::{PyDict, PyList};
-use pyo3::{prelude::*, IntoPyObjectExt};
+use pyo3::{
+    prelude::*,
+    types::{PyDict, PyList},
+    IntoPyObjectExt,
+};
+
+use crate::with_ctx;
 
 mod association;
 mod computation;
@@ -29,6 +33,7 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
         computation::create_computation_statement,
         m
     )?)?;
+    m.add_function(wrap_pyfunction!(data::add_data_statement, m)?)?;
     m.add_function(wrap_pyfunction!(data::create_data_statement, m)?)?;
     m.add_function(wrap_pyfunction!(did::create_did_statement, m)?)?;
     m.add_function(wrap_pyfunction!(entity::create_entity_statement, m)?)?;
