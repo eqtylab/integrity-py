@@ -11,6 +11,10 @@ install: _poetry-config
   @echo "Installing dependencies"
   poetry install
 
+# Set up git hooks for prek
+init:
+  prek install --hook-type pre-push
+
 # Build the Rust/Python wheel using maturin
 build:
   maturin build
