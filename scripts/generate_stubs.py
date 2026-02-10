@@ -48,6 +48,10 @@ class RustTypeMapper:
         "&PyAny": "Any",
         "PyObject": "Any",
         "PyResult<Graph>": "Graph",
+        "Uuid": "Any",
+        "uuid::Uuid": "Any",
+        "Option<Uuid>": "Optional[Any]",
+        "Option<uuid::Uuid>": "Optional[Any]",
     }
 
     @classmethod
@@ -218,7 +222,6 @@ class PyFunctionParser:
         """Extract the complete function definition including parameters."""
         lines = content[start_pos:].split("\n")
         func_lines = []
-        brace_count = 0
         in_params = False
 
         for line in lines:
@@ -428,7 +431,6 @@ class StubGenerator:
         # Handle special signature cases
         if func["name"] == "create_data_statement":
             # Fix the keyword-only arguments
-            param_parts = []
             required_params = []
             keyword_params = []
 
@@ -592,6 +594,13 @@ def main():
     # Generate stub file
     generator = StubGenerator()
     generator.generate_stub_file(modules, parser.classes, output_file)
+
+    # Append extra stubs if present
+    extra_stubs = script_dir / "eqty_sdk" / "_rust_extra.pyi"
+    if extra_stubs.exists():
+        output_file.write_text(
+            output_file.read_text().rstrip() + "\n\n# -- extra stubs --\n" + extra_stubs.read_text()
+        )
 
     print(f"Successfully generated {len(sum(modules.values(), []))} function stubs")
     return 0
