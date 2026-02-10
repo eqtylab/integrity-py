@@ -6,19 +6,19 @@ use integrity::{
     blob_store::{self, BlobStore},
     cid::{get_multicodec, multicodec},
     lineage::models::{
-        manifest::{generate_manifest, merge_async, Manifest},
+        manifest::{generate_manifest, merge_async, Manifest as IntegrityManifest},
         statements::Statement,
     },
 };
-use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PyType};
-use pyo3::Bound;
+use pyo3::{
+    prelude::*,
+    types::{PyDict, PyList, PyType},
+    Bound,
+};
 use pyo3_async_runtimes::tokio::get_runtime;
 use serde_json::Value;
-use uuid::Uuid;
 
 use crate::{
-    config::ctx_async,
     integrity_service::{
         blobs::put_jcs,
         statements::{create_statement, CreateStatementRequestBody},
@@ -30,7 +30,7 @@ use crate::{
 /// `manifest` submodule.
 #[pymodule]
 pub fn manifest(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<ManifestWrapper>()?;
+    m.add_class::<Manifest>()?;
     m.add_function(wrap_pyfunction!(generate, m)?)?;
     m.add_function(wrap_pyfunction!(merge, m)?)?;
     m.add_function(wrap_pyfunction!(register, m)?)?;
@@ -39,13 +39,13 @@ pub fn manifest(m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 
 #[pyclass(name = "Manifest")]
-pub struct ManifestWrapper {
+pub struct Manifest {
     #[pyo3(get)]
     manifest_str: String,
 }
 
 #[pymethods]
-impl ManifestWrapper {
+impl Manifest {
     #[new]
     fn new(manifest: String) -> Self {
         Self {
@@ -94,7 +94,24 @@ impl ManifestWrapper {
 
         let blobs: HashMap<String, Vec<u8>> = with_ctx!(py, |ctx| {
             let graph_id = ctx.resolve_graph_id(None);
-            rust_import(manifest_str, &graph_id).await
+            let manifest = serde_json::from_str::<IntegrityManifest>(&manifest_str)?;
+            log::trace!("Manifest str: \n{manifest:?}");
+            log::debug!("{} statements imported", manifest.statements.keys().len());
+            for statement in manifest.statements.values() {
+                ctx.sql_lite
+                    .register_statement(statement, &graph_id)
+                    .await?
+            }
+            // Decode base64 values in the blobs HashMap
+            let decoded_blobs = manifest
+                .blobs
+                .into_iter()
+                .map(|(key, base64_value)| {
+                    let decoded_bytes = BASE64.decode(&base64_value)?;
+                    Ok((key, decoded_bytes))
+                })
+                .collect::<Result<HashMap<String, Vec<u8>>, anyhow::Error>>()?;
+            Ok::<_, anyhow::Error>(decoded_blobs)
         })?;
 
         let blob_dir = crate::config::get_blob_dir()?;
@@ -228,33 +245,12 @@ fn python_to_json_value(py: Python, obj: &Py<PyAny>) -> PyResult<Value> {
     }
 }
 
-async fn rust_import(manifest: String, graph_id: &Uuid) -> Result<HashMap<String, Vec<u8>>> {
-    let manifest = serde_json::from_str::<Manifest>(&manifest)?;
-    log::trace!("Manifest str: \n{manifest:?}");
-    log::debug!("{} statements imported", manifest.statements.keys().len());
-    let ctx = ctx_async().await;
-    for statement in manifest.statements.values() {
-        ctx.sql_lite.register_statement(statement, graph_id).await?
-    }
-    // Decode base64 values in the blobs HashMap
-    let decoded_blobs = manifest
-        .blobs
-        .into_iter()
-        .map(|(key, base64_value)| {
-            let decoded_bytes = BASE64.decode(&base64_value)?;
-            Ok((key, decoded_bytes))
-        })
-        .collect::<Result<HashMap<String, Vec<u8>>, anyhow::Error>>()?;
-
-    Ok(decoded_blobs)
-}
-
 /// Register the manfiest with integrity platform
 #[pyfunction]
 fn register(py: Python, manifest: String, api_key: Option<String>) -> PyResult<()> {
     with_ctx!(py, |ctx| {
-        let manifest =
-            serde_json::from_str::<Manifest>(&manifest).context("Failed to parse manifest")?;
+        let manifest = serde_json::from_str::<IntegrityManifest>(&manifest)
+            .context("Failed to parse manifest")?;
         let ig_service_config = ctx.get_integrity_service_config(api_key)?;
 
         register_async(&ig_service_config, manifest).await?;
@@ -262,7 +258,7 @@ fn register(py: Python, manifest: String, api_key: Option<String>) -> PyResult<(
     })
 }
 
-async fn register_async(config: &Configuration, manifest: Manifest) -> Result<()> {
+async fn register_async(config: &Configuration, manifest: IntegrityManifest) -> Result<()> {
     for statement in manifest.statements.into_iter() {
         register_statement(config, statement.1).await?;
     }
