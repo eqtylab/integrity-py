@@ -27,20 +27,20 @@ use uuid::Uuid;
 pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(association::add_association_statement, m)?)?;
     m.add_function(wrap_pyfunction!(
-        computation::create_computation_statement,
+        computation::add_computation_statement,
         m
     )?)?;
     m.add_function(wrap_pyfunction!(data::add_data_statement, m)?)?;
-    m.add_function(wrap_pyfunction!(did::create_did_statement, m)?)?;
-    m.add_function(wrap_pyfunction!(entity::create_entity_statement, m)?)?;
+    m.add_function(wrap_pyfunction!(did::add_did_statement, m)?)?;
+    m.add_function(wrap_pyfunction!(entity::add_entity_statement, m)?)?;
     m.add_function(wrap_pyfunction!(
         governance::create_governance_statement,
         m
     )?)?;
-    m.add_function(wrap_pyfunction!(metadata::create_metadata_statement, m)?)?;
+    m.add_function(wrap_pyfunction!(metadata::add_metadata_statement, m)?)?;
     m.add_function(wrap_pyfunction!(vc::create_vc_statement, m)?)?;
 
-    m.add_function(wrap_pyfunction!(storage::create_storage_statement, m)?)?;
+    m.add_function(wrap_pyfunction!(storage::add_storage_statement, m)?)?;
     m.add_function(wrap_pyfunction!(retrieve_graph, m)?)?;
     m.add_function(wrap_pyfunction!(register_statement, m)?)?;
     m.add_function(wrap_pyfunction!(register_statement_to_graph, m)?)?;

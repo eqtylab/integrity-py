@@ -171,3 +171,26 @@ class config:
 class statements:
     @staticmethod
     def retrieve_graph(graph_ids: List[Any]) -> Any: ...
+    @staticmethod
+    def add_did_statement(
+        did: str, skip_proof: Optional[bool] = None, graph_id: Optional[str] = None
+    ) -> Any: ...
+    @staticmethod
+    def add_entity_statement(
+        entity: str, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None
+    ) -> Any: ...
+    @staticmethod
+    def add_storage_statement(
+        data: str,
+        stored_on: str,
+        operated_by: Optional[str] = None,
+        skip_proof: Optional[bool] = None,
+        graph_id: Optional[Any] = None,
+    ) -> Any: ...
+    @staticmethod
+    def add_metadata_statement(
+        subject: str,
+        metadata: str,
+        skip_proof: Optional[bool] = None,
+        graph_id: Optional[Any] = None,
+    ) -> Any: ...

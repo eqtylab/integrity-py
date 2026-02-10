@@ -2,26 +2,28 @@ use anyhow::{anyhow, Context as AnyhowContext};
 use integrity::lineage::models::statements::{MetadataStatement, Statement, StatementTrait};
 use pyo3::{pyfunction, PyResult, Python};
 use serde_json::Value;
+use uuid::Uuid;
 
-use crate::with_ctx;
+use crate::{config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx};
 
-/// Creates a metadata statement and returns the ID of the statement and the CID of the metadata
-/// Json
 #[pyfunction]
-#[pyo3(signature = (subject, metadata, *, timestamp=None, graph_id=None))]
-pub fn create_metadata_statement(
+#[pyo3(signature = (subject, metadata, *, skip_proof=None, graph_id=None))]
+pub fn add_metadata_statement(
     py: Python,
     subject: String,
     metadata: String,
-    timestamp: Option<String>,
-    graph_id: Option<uuid::Uuid>,
-) -> PyResult<(String, String)> {
+    skip_proof: Option<bool>,
+    graph_id: Option<Uuid>,
+) -> PyResult<Vec<String>> {
+    let timestamp = resolve_timestamp(None);
+    let skip_proof = resolve_skip_proof(skip_proof);
+
     with_ctx!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph_id);
         let metadata_json: Value =
             serde_json::from_str(&metadata).context("Invalid metadata JSON")?;
 
-        let signer = ctx
+        let signer = ctx.clone()
             .active_signer
             .ok_or_else(|| anyhow!("No active signer available"))?;
 
@@ -40,6 +42,19 @@ pub fn create_metadata_statement(
             .register_statement(&statement, &graph_id)
             .await?;
 
-        Ok((statement.get_id(), metadata))
+        let id = statement.get_id();
+        let mut statement_ids = vec![id.clone()];
+
+        let blob_dir = ctx.app_dir.join("blobs");
+        let metadata_cid = metadata.trim_start_matches("urn:cid:");
+        let metadata_file = blob_dir.join(metadata_cid);
+        tokio::fs::write(metadata_file, metadata).await?;
+
+        if !skip_proof {
+            let vc_id = create_vc_for_statement(&ctx, &id, graph_id, timestamp).await?;
+            statement_ids.push(vc_id);
+        }
+
+        Ok(statement_ids)
     })
 }

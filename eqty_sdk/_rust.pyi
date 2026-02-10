@@ -344,8 +344,11 @@ class statements:
         ...
 
     @staticmethod
-    def create_metadata_statement(
-        subject: str, metadata: str, timestamp: Optional[str] = None, graph_id: Optional[Any] = None
+    def add_metadata_statement(
+        subject: str,
+        metadata: str,
+        skip_proof: Optional[bool] = None,
+        graph_id: Optional[Any] = None,
     ) -> Any:
         """Creates a metadata statement and returns the ID of the statement and the CID of the metadata Json"""
         ...
@@ -401,27 +404,27 @@ class statements:
         ...
 
     @staticmethod
-    def create_entity_statement(
-        entity: List[str], timestamp: Optional[str] = None, graph_id: Optional[Any] = None
-    ) -> str:
-        """Create Entity Statement."""
+    def add_entity_statement(
+        entity: str, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None
+    ) -> Any:
+        """Add Entity Statement."""
         ...
 
     @staticmethod
-    def create_did_statement(
-        did: str, timestamp: Optional[str] = None, graph_id: Optional[Any] = None
-    ) -> str:
-        """Create Did Statement."""
+    def add_did_statement(
+        did: str, skip_proof: Optional[bool] = None, graph_id: Optional[str] = None
+    ) -> Any:
+        """Add Did Statement."""
         ...
 
     @staticmethod
-    def create_storage_statement(
+    def add_storage_statement(
         data: str,
         stored_on: str,
         operated_by: Optional[str] = None,
-        timestamp: Optional[str] = None,
+        skip_proof: Optional[bool] = None,
         graph_id: Optional[Any] = None,
-    ) -> str:
+    ) -> Any:
         """Creates a storage statement."""
         ...
 

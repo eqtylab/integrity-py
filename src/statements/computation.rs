@@ -4,24 +4,28 @@ use integrity::{
     signer::SignerType,
 };
 use pyo3::{pyfunction, PyResult, Python};
+use uuid::Uuid;
 
-use crate::with_ctx;
+use crate::{resolve_skip_proof, resolve_timestamp, with_ctx, config::create_vc_for_statement};
 
 #[pyfunction]
-#[pyo3(signature = (inputs, outputs, *, computation=None, operated_by=None, executed_on=None, timestamp=None, graph_id=None))]
-pub fn create_computation_statement(
+#[pyo3(signature = (inputs, outputs, computation=None, *, operated_by=None, executed_on=None, skip_proof=None, graph_id=None))]
+pub fn add_computation_statement(
     py: Python,
     inputs: Vec<String>,
     outputs: Vec<String>,
     computation: Option<String>,
     operated_by: Option<String>,
     executed_on: Option<String>,
-    timestamp: Option<String>,
-    graph_id: Option<uuid::Uuid>,
-) -> PyResult<String> {
+    skip_proof: Option<bool>,
+    graph_id: Option<Uuid>,
+) -> PyResult<Vec<String>> {
+    let timestamp = resolve_timestamp(None);
+    let skip_proof = resolve_skip_proof(skip_proof);
+
     with_ctx!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph_id);
-        let signer = ctx
+        let signer = ctx.clone()
             .active_signer
             .ok_or_else(|| anyhow!("No active signer available"))?;
 
@@ -58,7 +62,7 @@ pub fn create_computation_statement(
                 operated_by,
                 executed_on,
                 registered_by,
-                timestamp,
+                timestamp.clone(),
             )
             .await?,
         );
@@ -67,6 +71,14 @@ pub fn create_computation_statement(
             .register_statement(&statement, &graph_id)
             .await?;
 
-        Ok(statement.get_id())
+        let id = statement.get_id();
+        let mut statement_ids = vec![id.clone()];
+
+        if !skip_proof {
+            let vc_id = create_vc_for_statement(&ctx, &id, graph_id, timestamp).await?;
+            statement_ids.push(vc_id);
+        };
+
+        Ok(statement_ids)
     })
 }
