@@ -1,11 +1,17 @@
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
-from eqty_sdk._rust import cid as _cid
-from eqty_sdk._rust import entity as _entity
-from eqty_sdk._rust import manifest as _manifest
-from eqty_sdk._rust import signer as _signer
+from eqty_sdk._rust import (
+    cid as _cid,
+    entity as _entity,
+    manifest as _manifest,
+    signer as _signer,
+)
+
+from .declaration import Declaration
+from .did import Did
 
 if TYPE_CHECKING:
+
     @runtime_checkable
     class Cid(Protocol):
         cid: str
@@ -33,9 +39,6 @@ else:
     SIGNER_ALGORITHMS = _signer.SIGNER_ALGORITHMS
 
 set_active_signer = _signer.set_active_signer
-
-from .declaration import Declaration
-from .did import Did
 
 __all__ = [
     "Cid",

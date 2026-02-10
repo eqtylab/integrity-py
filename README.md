@@ -94,9 +94,6 @@ just dev
    ```
    This compiles the Rust extension and generates type stubs for IDE support.
 
-   Note: `pyo3-stubgen` only generates function stubs; class and module stubs are layered in
-   `eqty_sdk/_rust_extra.pyi` and merged by `scripts/merge_pyi.py`.
-
 ### Available Commands
 
 The project uses [Just](https://github.com/casey/just) for common development tasks.
@@ -110,7 +107,7 @@ Available recipes:
     fix             # Auto-fix Rust clippy warnings
     fmt             # Auto-format code (Rust + Python)
     fmt-check       # Check code formatting without changes (Rust + Python)
-    generate-stubs  # Generate type stubs from the compiled Rust extension
+    generate-stubs  # Generate type stubs from Rust code
     install         # Install all Python dependencies via poetry
     install-package # Install the local build of the wheel into the venv
     lint            # Run linters and auto-fix issues (Rust clippy + Python ruff)

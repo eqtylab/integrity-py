@@ -1,4 +1,5 @@
 from eqty_sdk._rust import statements as eqty_core_statements
+
 from .common import Statements
 from .computation import add_computation_statement
 from .did import add_did_statement

@@ -1,42 +1,66 @@
-# flake8: noqa: PYI021
-def init(custom_dir=None):
-    """Initializes the sdk config. Must be called before setting individual config values"""
+"""Type stubs for the eqty_sdk._rust module."""
 
-# -- extra stubs --
-# Extra stubs layered on top of pyo3-stubgen output.
-# This file is appended by scripts/merge_pyi.py.
-
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from os import PathLike
 
+def init(custom_dir: Optional[PathLike[str]] = None) -> Any:
+    """Initializes the sdk config. Must be called before setting individual config values"""
+    ...
+
 class Canon:
+    """Canonicalization options."""
+
     RDFC1: Canon
     JSONJCS: Canon
 
 class Cid:
+    """A simple wrapper around a content identifier (CID) string."""
     @property
-    def cid(self) -> str: ...
+    def cid(self) -> str:
+        """Get the CID string."""
+        ...
+
     def __init__(self, cid: str) -> None: ...
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
 
 class CidResult:
+    """Result of CID computation."""
     @property
-    def cid(self) -> str: ...
+    def cid(self) -> str:
+        """Get the CID string."""
+        ...
+
     @property
-    def blob(self) -> bytes: ...
+    def blob(self) -> bytes:
+        """Get the binary blob data."""
+        ...
 
 class DirCidResult:
+    """Result of directory CID computation."""
     @property
-    def collection(self) -> CidResult: ...
+    def collection(self) -> CidResult:
+        """Get the collection CID result."""
+        ...
+
     @property
-    def meta(self) -> CidResult: ...
+    def meta(self) -> CidResult:
+        """Get the metadata CID result."""
+        ...
+
     @property
-    def file_hashes(self) -> List[Tuple[str, str]]: ...
+    def file_hashes(self) -> List[Tuple[str, str]]:
+        """Get list of (filename, CID) tuples."""
+        ...
 
 class Entity:
+    """Represents an unhashed entity with a UUID identifier."""
     @property
-    def uuid(self) -> str: ...
+    def uuid(self) -> str:
+        """Get the UUID string."""
+        ...
+
     def __init__(self, uuid: str) -> None: ...
     @staticmethod
     def generate() -> Entity: ...
@@ -46,57 +70,151 @@ class Entity:
     def __repr__(self) -> str: ...
 
 class Graph:
+    """Graph for organizing statements."""
     @property
-    def id(self) -> Any: ...
+    def id(self) -> Any:
+        """UUID of the graph."""
+        ...
+
     @property
-    def name(self) -> str: ...
+    def name(self) -> str:
+        """Name of the graph."""
+        ...
+
     @property
-    def parent(self) -> Optional[Any]: ...
+    def parent(self) -> Optional[Any]:
+        """UUID of the parent graph."""
+        ...
+
     def __init__(self, id: Any, name: str) -> None: ...
     @staticmethod
     def from_parent(id: Any, name: str, graph: Graph) -> Graph: ...
 
-class Manifest:
-    @property
-    def manifest_str(self) -> str: ...
-    def __init__(self, manifest: str) -> None: ...
-    @classmethod
-    def from_statements(cls, statements: Any, include_context: bool = True) -> Manifest: ...
-    def export(self, file: PathLike[str]) -> None: ...
-    @classmethod
-    def import_manifest(cls, manifest: Union[str, PathLike[str]]) -> None: ...
-    @staticmethod
-    def merge(a: str, b: str) -> str: ...
-    def register(self) -> None: ...
-
 class PySigner:
+    """Python wrapper for Rust signer."""
     @property
-    def name(self) -> str: ...
+    def name(self) -> str:
+        """Get the signer name."""
+        ...
+
     @property
-    def did_key(self) -> str: ...
+    def did_key(self) -> str:
+        """Get the DID key."""
+        ...
 
-class cid:
-    Cid: type[Cid]
-    CidResult: type[CidResult]
-    DirCidResult: type[DirCidResult]
-    Canon: type[Canon]
+# Config module
+class config:
+    Graph: type[Graph]
 
     @staticmethod
-    def compute_cid_for_directory(path: PathLike[str]) -> Any: ...
-    @staticmethod
-    def compute_cid_for_file(path: PathLike[str]) -> Any: ...
-    @staticmethod
-    def compute_cid_for_bytes(bytes: Any) -> str: ...
+    def get_integrity_service_url() -> Optional[str]:
+        """Get Integrity Service Url."""
+        ...
 
+    @staticmethod
+    def get_store_all_blobs() -> bool:
+        """Get Store All Blobs."""
+        ...
+
+    @staticmethod
+    def get_cid_ignore_rules() -> Any:
+        """Get Cid Ignore Rules."""
+        ...
+
+    @staticmethod
+    def get_generate_model_signing_signatures() -> bool:
+        """Get Generate Model Signing Signatures."""
+        ...
+
+    @staticmethod
+    def get_app_dir() -> PathLike[str]:
+        """Get App Dir."""
+        ...
+
+    @staticmethod
+    def get_blob_dir() -> PathLike[str]:
+        """Get Blob Dir."""
+        ...
+
+    @staticmethod
+    def get_default_graph() -> Any:
+        """Get Default Graph."""
+        ...
+
+    @staticmethod
+    def set_integrity_service_url(url: str) -> None:
+        """Set Integrity Service Url."""
+        ...
+
+    @staticmethod
+    def set_hashing_config(
+        multithread: Optional[bool] = None, memory_map: Optional[bool] = None
+    ) -> None:
+        """Set Hashing Config."""
+        ...
+
+    @staticmethod
+    def set_cid_ignore_rules(
+        include_hidden_files: Optional[bool] = None,
+        gitignore: Optional[bool] = None,
+        include_symlinks: Optional[bool] = None,
+    ) -> None:
+        """Set Cid Ignore Rules."""
+        ...
+
+    @staticmethod
+    def set_generate_model_signing_signatures(enable: bool) -> None:
+        """Set Generate Model Signing Signatures."""
+        ...
+
+    @staticmethod
+    def set_store_all_blobs(value: bool) -> None:
+        """Set Store All Blobs."""
+        ...
+
+    @staticmethod
+    def set_default_graph(graph: Any) -> None:
+        """Set Default Graph."""
+        ...
+
+    @staticmethod
+    def reset() -> None:
+        """Reset."""
+        ...
+
+# Manifest module
+class manifest:
+    @staticmethod
+    def generate(
+        statements: List[Any], blobs_dir: PathLike[str], include_context: Optional[bool] = None
+    ) -> str:
+        """# Arguments * `py` - Python interpreter reference * `graphs` - Python list of graph dictionaries, each containing 'id', 'name', 'parent', and 'statements' * `blobs_dir` - Path to directory containing blob files referenced by statements * `include_context` - Whether to include context information in the manifest (default: false)  # Returns * `PyResult<String>` - JSON string representation of the manifest, or error on failure"""
+        ...
+
+    @staticmethod
+    def merge(a: str, b: str) -> str:
+        """Merges the manifests `a` and `b` and returns the merged manifest."""
+        ...
+
+    @staticmethod
+    def register(manifest: str, api_key: Optional[str] = None) -> None:
+        """Register the manfiest with integrity platform"""
+        ...
+
+# Entity module
 class entity:
     Entity: type[Entity]
+
     @staticmethod
     def create_entity(
         metadata_json: str,
         skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
         graph_id: Optional[Any] = None,
-    ) -> Any: ...
+    ) -> Any:
+        """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+        ...
+
     @staticmethod
     def create_entity_from_uuid(
         uuid: str,
@@ -104,59 +222,212 @@ class entity:
         skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
         graph_id: Optional[Any] = None,
-    ) -> Any: ...
+    ) -> Any:
+        """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+        ...
 
-class manifest:
-    Manifest: type[Manifest]
-    @staticmethod
-    def generate(
-        statements: List[Any], blobs_dir: PathLike[str], include_context: Optional[bool] = None
-    ) -> str: ...
-    @staticmethod
-    def merge(a: str, b: str) -> str: ...
-    @staticmethod
-    def register(manifest: str, api_key: Optional[str] = None) -> None: ...
+# Cid module
+class cid:
+    Cid: type[Cid]
+    CidResult: type[CidResult]
+    DirCidResult: type[DirCidResult]
+    Canon: type[Canon]
 
+    @staticmethod
+    def compute_cid_for_directory(path: PathLike[str]) -> Any:
+        """Compute CID for a directory at `path`."""
+        ...
+
+    @staticmethod
+    def compute_cid_for_file(path: PathLike[str]) -> Any:
+        """Compute CID for a file `path`."""
+        ...
+
+    @staticmethod
+    def compute_cid_for_bytes(bytes: Any) -> str:
+        """Compute CID for provided bytes."""
+        ...
+
+# Stream module
+class stream:
+    @staticmethod
+    def create(
+        input_cids: List[str],
+        operated_by: Optional[str] = None,
+        executed_on: Optional[str] = None,
+        timestamp: Optional[str] = None,
+    ) -> Any:
+        """creates a new computation stream"""
+        ...
+
+    @staticmethod
+    def update(id: str, chunk: bytes) -> Any:
+        """updates an existing computation stream with new data"""
+        ...
+
+    @staticmethod
+    def finalize(
+        id: str, static_output_cids: Optional[List[str]] = None, graph_id: Optional[Any] = None
+    ) -> Any:
+        """Finalizes the computation stream and creates the ComputationStatement and (optionally) the VC and VCStatement returns the CID of the computation statement"""
+        ...
+
+# Signer module
 class signer:
     PySigner: type[PySigner]
-    @staticmethod
-    def create_new_signer(key_type: str, name: Optional[Any] = None) -> Any: ...
-    @staticmethod
-    def get_supported_signers() -> List[str]: ...
 
-class config:
-    Graph: type[Graph]
     @staticmethod
-    def get_integrity_service_url() -> Optional[str]: ...
-    @staticmethod
-    def get_store_all_blobs() -> bool: ...
-    @staticmethod
-    def get_cid_ignore_rules() -> Any: ...
-    @staticmethod
-    def get_generate_model_signing_signatures() -> bool: ...
-    @staticmethod
-    def get_app_dir() -> Any: ...
-    @staticmethod
-    def get_blob_dir() -> Any: ...
-    @staticmethod
-    def get_default_graph() -> Graph: ...
-    @staticmethod
-    def set_integrity_service_url(url: str) -> None: ...
-    @staticmethod
-    def set_store_all_blobs(value: bool) -> None: ...
-    @staticmethod
-    def set_cid_ignore_rules(
-        include_hidden_files: Optional[bool] = None,
-        gitignore: Optional[bool] = None,
-        include_symlinks: Optional[bool] = None,
-    ) -> None: ...
-    @staticmethod
-    def set_generate_model_signing_signatures(enable: bool) -> None: ...
-    @staticmethod
-    def set_default_graph(graph: Any) -> None: ...
-    @staticmethod
-    def reset() -> None: ...
+    def create_new_signer(key_type: str, name: Optional[Any] = None) -> Any:
+        """Creates a new local signer with a randomly generated key.  # Arguments * `name` - Optional name for the signer (uses DID key if not provided) * `key_type` - Type of cryptographic key to generate (SECP256K1, SECP256R1, ED25519)"""
+        ...
 
+    @staticmethod
+    def create_signer_from_private_key(key: str, key_type: str, name: Optional[Any] = None) -> Any:
+        """Creates a signer from an existing base64-encoded private key.  # Arguments * `key` - Base64-encoded private key bytes * `key_type` - Type of cryptographic key (SECP256K1, SECP256R1, ED25519) * `name` - Optional name for the signer (uses DID key if not provided)"""
+        ...
+
+    @staticmethod
+    def create_vcomp_signer(url: str, pub_key: Optional[str] = None) -> Any:
+        """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `key_type` - Type of key (currently only SECP256R1 is supported) * `pub_key` - Optional public key for the signer"""
+        ...
+
+    @staticmethod
+    def create_auth_service_signer(url: str, api_key: str) -> Any:
+        """Creates an Auth Service-based signer for remote signing operations.  # Arguments * `name` - Name to assign to the signer * `url` -  Auth Service API endpoint URL * `api_key` - API key for authentication with the Auth Service"""
+        ...
+
+    @staticmethod
+    def create_yubihsm2_signer(auth_key_id: int, signing_key_id: int, password: str) -> Any:
+        """Creates and configures a YubiHSM2 hardware security module signer.  # Arguments * `name` - Name to assign to the signer * `auth_key_id` - Authentication key ID for YubiHSM2 * `signing_key_id` - Signing key ID for YubiHSM2 * `password` - Password for YubiHSM2 authentication"""
+        ...
+
+    @staticmethod
+    def set_active_signer(signer: Any) -> None:
+        """Sets the active signer by name or signer instance.  # Arguments * `signer` - Signer name string or Signer instance"""
+        ...
+
+    @staticmethod
+    def get_active_signer_did_key() -> str:
+        """Get the active signers Did Key"""
+        ...
+
+    @staticmethod
+    def get_signer_type(name: str) -> str:
+        """Get signer type string ('vcomp_notary', 'yubihsm2', etc) by name.  # Arguments * `name` - Name of the signer to retrieve"""
+        ...
+
+    @staticmethod
+    def get_signer_statements(name: str) -> List[str]:
+        """Retrieves the statements associated with a signer if any.  # Arguments * `name` - Name of the signer to retrieve statements from"""
+        ...
+
+    @staticmethod
+    def get_signer_blobs(name: str) -> Any:
+        """Retrieves the blobs associated with a signer if any.  # Arguments * `name` - Name of the signer to retrieve blobs from"""
+        ...
+
+# Statements module
 class statements:
     @staticmethod
-    def retrieve_graph(graph_ids: List[Any]) -> Any: ...
+    def retrieve_graph(graph_ids: List[Any]) -> Any:
+        """Retrieve statements for multiple graph IDs.  Args: graph_ids: List of graph UUIDs to retrieve graphs for  Returns: List of statements"""
+        ...
+
+    @staticmethod
+    def register_statement(statement_json: str) -> None:
+        """Register a statement from JSON string to the default graph."""
+        ...
+
+    @staticmethod
+    def register_statement_to_graph(statement_id: str, graph_id: str) -> None:
+        """Associate an existing statement with a graph."""
+        ...
+
+    @staticmethod
+    def create_metadata_statement(
+        subject: str, metadata: str, timestamp: Optional[str] = None, graph_id: Optional[Any] = None
+    ) -> Any:
+        """Creates a metadata statement and returns the ID of the statement and the CID of the metadata Json"""
+        ...
+
+    @staticmethod
+    def add_data_statement(
+        data: List[str], skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None
+    ) -> List[str]:
+        """Add Data Statement."""
+        ...
+
+    @staticmethod
+    def create_governance_statement(
+        subject: str, document: str, timestamp: Optional[str] = None, graph_id: Optional[Any] = None
+    ) -> str:
+        """Create Governance Statement."""
+        ...
+
+    @staticmethod
+    def create_computation_statement(
+        inputs: List[str],
+        outputs: List[str],
+        computation: Optional[str] = None,
+        operated_by: Optional[str] = None,
+        executed_on: Optional[str] = None,
+        timestamp: Optional[str] = None,
+        graph_id: Optional[Any] = None,
+    ) -> str:
+        """Create Computation Statement."""
+        ...
+
+    @staticmethod
+    def create_model_signing_statement(
+        collection_cid: str,
+        blobs_dir: PathLike[str],
+        model_signing_name: str,
+        allow_symlinks: bool,
+        ignore_paths: List[str],
+        timestamp: Optional[str] = None,
+        graph_id: Optional[Any] = None,
+    ) -> str:
+        """Create Model Signing Statement."""
+        ...
+
+    @staticmethod
+    def add_association_statement(
+        subject: str,
+        association: str,
+        skip_proof: Optional[bool] = None,
+        graph_id: Optional[Any] = None,
+    ) -> List[str]:
+        """Add Association Statement."""
+        ...
+
+    @staticmethod
+    def create_entity_statement(
+        entity: List[str], timestamp: Optional[str] = None, graph_id: Optional[Any] = None
+    ) -> str:
+        """Create Entity Statement."""
+        ...
+
+    @staticmethod
+    def create_did_statement(
+        did: str, timestamp: Optional[str] = None, graph_id: Optional[Any] = None
+    ) -> str:
+        """Create Did Statement."""
+        ...
+
+    @staticmethod
+    def create_storage_statement(
+        data: str,
+        stored_on: str,
+        operated_by: Optional[str] = None,
+        timestamp: Optional[str] = None,
+        graph_id: Optional[Any] = None,
+    ) -> str:
+        """Creates a storage statement."""
+        ...
+
+    @staticmethod
+    def create_vc_statement(
+        subject: str, timestamp: Optional[str] = None, graph_id: Optional[Any] = None
+    ) -> str:
+        """Create Vc Statement."""
+        ...
