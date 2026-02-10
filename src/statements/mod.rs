@@ -26,17 +26,11 @@ use uuid::Uuid;
 #[pymodule]
 pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(association::add_association_statement, m)?)?;
-    m.add_function(wrap_pyfunction!(
-        computation::add_computation_statement,
-        m
-    )?)?;
+    m.add_function(wrap_pyfunction!(computation::add_computation_statement, m)?)?;
     m.add_function(wrap_pyfunction!(data::add_data_statement, m)?)?;
     m.add_function(wrap_pyfunction!(did::add_did_statement, m)?)?;
     m.add_function(wrap_pyfunction!(entity::add_entity_statement, m)?)?;
-    m.add_function(wrap_pyfunction!(
-        governance::create_governance_statement,
-        m
-    )?)?;
+    m.add_function(wrap_pyfunction!(governance::add_governance_statement, m)?)?;
     m.add_function(wrap_pyfunction!(metadata::add_metadata_statement, m)?)?;
     m.add_function(wrap_pyfunction!(vc::create_vc_statement, m)?)?;
 

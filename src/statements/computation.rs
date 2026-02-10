@@ -6,7 +6,7 @@ use integrity::{
 use pyo3::{pyfunction, PyResult, Python};
 use uuid::Uuid;
 
-use crate::{resolve_skip_proof, resolve_timestamp, with_ctx, config::create_vc_for_statement};
+use crate::{config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx};
 
 #[pyfunction]
 #[pyo3(signature = (inputs, outputs, computation=None, *, operated_by=None, executed_on=None, skip_proof=None, graph_id=None))]
@@ -25,7 +25,8 @@ pub fn add_computation_statement(
 
     with_ctx!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph_id);
-        let signer = ctx.clone()
+        let signer = ctx
+            .clone()
             .active_signer
             .ok_or_else(|| anyhow!("No active signer available"))?;
 

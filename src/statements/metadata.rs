@@ -23,7 +23,8 @@ pub fn add_metadata_statement(
         let metadata_json: Value =
             serde_json::from_str(&metadata).context("Invalid metadata JSON")?;
 
-        let signer = ctx.clone()
+        let signer = ctx
+            .clone()
             .active_signer
             .ok_or_else(|| anyhow!("No active signer available"))?;
 
