@@ -13,7 +13,7 @@ from eqty_sdk.core import get_cid_for_bytes, get_cid_for_path
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement
-from eqty_sdk.types.cid import Cid
+from eqty_sdk.types import Cid
 
 logger = logging.getLogger("eqty.sdk.computation")
 

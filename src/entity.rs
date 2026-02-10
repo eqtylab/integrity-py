@@ -8,7 +8,7 @@ use pyo3::{prelude::*, types::PyList};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::{config::maybe_create_vc_statement, resolve_timestamp, with_ctx};
+use crate::{config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx};
 
 /// Represents an unhashed entity with a UUID identifier.
 ///
@@ -127,6 +127,7 @@ fn create_entity_statements(
 ) -> PyResult<Py<PyList>> {
     let mut statement_ids: Vec<String> = Vec::new();
     let timestamp = resolve_timestamp(timestamp);
+    let skip_proof = resolve_skip_proof(skip_proof);
 
     with_ctx!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph_id);
@@ -146,16 +147,12 @@ fn create_entity_statements(
             .await?;
         statement_ids.push(entity_statement_id.clone());
 
-        if let Some(vc_id) = maybe_create_vc_statement(
-            &entity_statement_id,
-            graph_id,
-            skip_proof,
-            timestamp.clone(),
-        )
-        .await?
-        {
+        if !skip_proof {
+            let vc_id =
+                create_vc_for_statement(&ctx, &entity_statement_id, graph_id, timestamp.clone())
+                    .await?;
             statement_ids.push(vc_id);
-        }
+        };
 
         let metadata_value: Value = serde_json::from_str(&metadata_json)
             .map_err(|e| anyhow!("Invalid metadata JSON: {e}"))?;

@@ -22,7 +22,7 @@ from eqty_sdk.statements import (
     add_governance_statement,
     add_metadata_statement,
 )
-from eqty_sdk.types.cid import Cid
+from eqty_sdk.types import Cid
 from eqty_sdk.types.declaration import Declaration
 
 logger = logging.getLogger("eqty.sdk.Asset")

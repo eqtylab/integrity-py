@@ -9,7 +9,7 @@ from eqty_sdk._rust import (
     statements as eqty_core_statements,
 )
 from eqty_sdk.statements import add_did_statement, add_metadata_statement
-from eqty_sdk.types.signer import Signer
+from eqty_sdk.types import Signer
 
 logger = logging.getLogger("eqty.sdk.Did")
 

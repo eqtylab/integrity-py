@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 from eqty_sdk._rust import Graph as Context
-from eqty_sdk.types.cid import Cid
+from eqty_sdk.types import Cid
 
 from .asset import Asset, AssetType
 

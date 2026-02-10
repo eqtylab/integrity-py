@@ -21,7 +21,6 @@ use uuid::Uuid;
 use crate::{
     indexer::{Graph, Sqlite},
     integrity_service::Configuration as IntegrityServiceConfig,
-    resolve_skip_proof,
 };
 
 /// Serializable settings for TOML persistence
@@ -122,7 +121,7 @@ fn ensure_blob_dir(app_dir: &Path) -> PyResult<PathBuf> {
     let blob_dir = app_dir.join("blobs");
     if !blob_dir.exists() {
         fs::create_dir_all(&blob_dir).map_err(|e| {
-            pyo3::exceptions::PyIOError::new_err(format!("Failed to create blob directory: {}", e))
+            pyo3::exceptions::PyIOError::new_err(format!("Failed to create blob directory: {e}"))
         })?;
     }
     Ok(blob_dir)
@@ -544,39 +543,22 @@ impl Config {
     }
 }
 
-/// Creates a VC statement for the given subject if skip_proof is false and a signer is available.
-///
-/// # Arguments
-/// * `statement_id` - The ID of the statement to create a VC for
-/// * `skip_proof` - If true, skip creating a VC statement
-/// * `timestamp` - Optional timestamp for the VC statement
-/// * `graph_id` - Graph ID to register the statement to
-///
-/// # Returns
-/// * `Result<Option<String>>` - The VC statement ID if created, None if skipped
-pub async fn maybe_create_vc_statement(
+/// Creates a VC statement for the given statement id and registers it to sqlite
+pub async fn create_vc_for_statement(
+    config: &Config,
     statement_id: &str,
     graph_id: Uuid,
-    skip_proof: Option<bool>,
     timestamp: Option<String>,
-) -> Result<Option<String>> {
+) -> Result<String> {
     use integrity::{
         lineage::models::statements::{Statement, StatementTrait, VcStatement},
         vc,
     };
 
-    if resolve_skip_proof(skip_proof) {
-        return Ok(None);
-    }
-
-    let ctx_lock = CTX.blocking_read();
-    let cfg = ctx_lock
-        .as_ref()
-        .ok_or_else(|| anyhow!("Config not initialized"))?;
-
-    let Some(signer) = cfg.active_signer.clone() else {
-        return Ok(None);
-    };
+    let signer = config
+        .active_signer
+        .clone()
+        .ok_or_else(|| anyhow!("An active signer is not set"))?;
 
     let registered_by = signer.get_did_doc().id.clone();
     let vc = vc::issue_vc(statement_id, signer).await?;
@@ -584,11 +566,12 @@ pub async fn maybe_create_vc_statement(
         Statement::CredentialRegistration(VcStatement::create(vc, registered_by, timestamp).await?);
     let vc_id = vc_statement.get_id();
 
-    cfg.sql_lite
+    config
+        .sql_lite
         .register_statement(&vc_statement, &graph_id)
         .await?;
 
-    Ok(Some(vc_id))
+    Ok(vc_id)
 }
 
 // Standalone pyfunctions that access CTX directly

@@ -16,7 +16,6 @@
 
       let
         pkgs = import inputs.nixpkgs { inherit system; };
-        # naersk-lib = pkgs.callPackage inputs.naersk { };
 
         pkgs-rust = import inputs.nixpkgs-rust {
           inherit system;
@@ -27,10 +26,8 @@
           extensions = [ "rust-src" ];
         };
 
-        # rust toolchain for services
         rust = (pkgs-rust.rust-bin.fromRustupToolchainFile ./rust-toolchain).override rust-config;
 
-        # rustfmt from rust-nightly used for advanced options in rustfmt
         rustfmt-nightly = pkgs-rust.rust-bin.nightly.latest.rustfmt;
 
       in

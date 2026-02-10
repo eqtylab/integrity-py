@@ -25,16 +25,12 @@ use uuid::Uuid;
 /// `statements` submodule to create lineage statements
 #[pymodule]
 pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(
-        association::create_association_statement,
-        m
-    )?)?;
+    m.add_function(wrap_pyfunction!(association::add_association_statement, m)?)?;
     m.add_function(wrap_pyfunction!(
         computation::create_computation_statement,
         m
     )?)?;
     m.add_function(wrap_pyfunction!(data::add_data_statement, m)?)?;
-    m.add_function(wrap_pyfunction!(data::create_data_statement, m)?)?;
     m.add_function(wrap_pyfunction!(did::create_did_statement, m)?)?;
     m.add_function(wrap_pyfunction!(entity::create_entity_statement, m)?)?;
     m.add_function(wrap_pyfunction!(
