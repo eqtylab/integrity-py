@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod sql_tests {
-    use crate::indexer::Graph;
-
-    use super::super::Sqlite;
     use integrity::lineage::models::statements::{
         AssociationStatement, ComputationStatement, DataStatement, MetadataStatement, Statement,
         StatementTrait, StorageStatement,
     };
+
+    use super::super::Sqlite;
+    use crate::indexer::Graph;
 
     async fn setup_db() -> Sqlite {
         let db = Sqlite::new("sqlite::memory:").await.unwrap();

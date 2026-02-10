@@ -4,16 +4,13 @@ mod tests;
 use std::collections::HashMap;
 
 use anyhow::Result;
+use integrity::lineage::models::statements::{Statement, StatementTrait};
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sqlx::sqlite::SqliteRow;
-use sqlx::{FromRow, Row};
-use uuid::Uuid;
-
-use integrity::lineage::models::statements::{Statement, StatementTrait};
-
 pub use sqlite::Sqlite;
+use sqlx::{sqlite::SqliteRow, FromRow, Row};
+use uuid::Uuid;
 
 // ============================================================================
 // Graph

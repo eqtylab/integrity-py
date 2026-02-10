@@ -6,10 +6,6 @@ use std::{
     sync::Arc,
 };
 
-use crate::indexer::Graph;
-use crate::indexer::Sqlite;
-use crate::integrity_service::Configuration as IntegrityServiceConfig;
-use crate::resolve_skip_proof;
 use anyhow::{anyhow, Result};
 use integrity::{
     cid::iroh::{CidIgnoreConfig, HashingConfig},
@@ -21,6 +17,12 @@ use pyo3_async_runtimes::tokio::get_runtime;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use uuid::Uuid;
+
+use crate::{
+    indexer::{Graph, Sqlite},
+    integrity_service::Configuration as IntegrityServiceConfig,
+    resolve_skip_proof,
+};
 
 /// Serializable settings for TOML persistence
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -558,8 +560,10 @@ pub async fn maybe_create_vc_statement(
     skip_proof: Option<bool>,
     timestamp: Option<String>,
 ) -> Result<Option<String>> {
-    use integrity::lineage::models::statements::{Statement, StatementTrait, VcStatement};
-    use integrity::vc;
+    use integrity::{
+        lineage::models::statements::{Statement, StatementTrait, VcStatement},
+        vc,
+    };
 
     if resolve_skip_proof(skip_proof) {
         return Ok(None);

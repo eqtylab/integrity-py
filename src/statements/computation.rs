@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use integrity::{
     lineage::models::statements::{ComputationStatement, Statement, StatementTrait},
     signer::SignerType,
@@ -5,7 +6,6 @@ use integrity::{
 use pyo3::{pyfunction, PyResult, Python};
 
 use crate::with_ctx;
-use anyhow::anyhow;
 
 #[pyfunction]
 #[pyo3(signature = (inputs, outputs, *, computation=None, operated_by=None, executed_on=None, timestamp=None, graph_id=None))]

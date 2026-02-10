@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
+use integrity::lineage::models::statements::{Statement, StatementTrait};
 use sqlx::{sqlite::SqliteRow, SqlitePool};
 use uuid::Uuid;
 
 use super::{rows_to_statements, AssociationRow, Graph};
-use integrity::lineage::models::statements::{Statement, StatementTrait};
 
 /// Provides persistent storage for statements organized in graphs
 /// with support for hierarchical relationships and queries.

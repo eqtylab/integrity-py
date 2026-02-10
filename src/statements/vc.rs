@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use integrity::{
     lineage::models::statements::{Statement, StatementTrait, VcStatement},
     vc,
@@ -5,7 +6,6 @@ use integrity::{
 use pyo3::{pyfunction, PyResult, Python};
 
 use crate::with_ctx;
-use anyhow::anyhow;
 
 #[pyfunction]
 #[pyo3(signature = (subject, *, timestamp=None, graph_id=None))]

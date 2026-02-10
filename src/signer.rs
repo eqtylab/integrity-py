@@ -7,11 +7,12 @@ use integrity::signer::{
     Ed25519Signer, KeyType, P256Signer, Secp256k1Signer, SignerType, VCompNotarySigner,
     YubiHsmSigner,
 };
-use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyBytes, PyDict};
-use pyo3::Bound;
+use pyo3::{
+    prelude::*,
+    types::{PyAny, PyBytes, PyDict},
+    Bound,
+};
 use pyo3_async_runtimes::tokio::get_runtime;
-
 use serde::Serialize;
 
 use crate::config::{ctx_async, Config};

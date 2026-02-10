@@ -4,8 +4,7 @@ use anyhow::anyhow;
 use integrity::lineage::models::statements::{
     EntityStatement, MetadataStatement, Statement, StatementTrait,
 };
-use pyo3::prelude::*;
-use pyo3::types::PyList;
+use pyo3::{prelude::*, types::PyList};
 use serde_json::Value;
 use uuid::Uuid;
 

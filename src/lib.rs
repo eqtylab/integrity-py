@@ -3,10 +3,10 @@
 //! This crate provides Python bindings via PyO3 for cryptographic signing,
 //! content-addressed storage, and lineage statement management functionality.
 
+use std::{env, path::PathBuf};
+
 use config::Config;
 use pyo3_async_runtimes::tokio::get_runtime;
-use std::env;
-use std::path::PathBuf;
 
 /// Resolves skip_proof from provided option or EQTY_SKIP_PROOF environment variable.
 ///
@@ -50,8 +50,7 @@ pub mod statements;
 /// Streaming computation support for real-time data processing.
 pub mod stream;
 
-use pyo3::prelude::*;
-use pyo3::wrap_pymodule;
+use pyo3::{prelude::*, wrap_pymodule};
 
 use crate::indexer::Graph;
 

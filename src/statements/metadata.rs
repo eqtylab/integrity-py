@@ -1,9 +1,9 @@
+use anyhow::{anyhow, Context as AnyhowContext};
 use integrity::lineage::models::statements::{MetadataStatement, Statement, StatementTrait};
 use pyo3::{pyfunction, PyResult, Python};
 use serde_json::Value;
 
 use crate::with_ctx;
-use anyhow::{anyhow, Context as AnyhowContext};
 
 /// Creates a metadata statement and returns the ID of the statement and the CID of the metadata
 /// Json

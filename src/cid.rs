@@ -5,9 +5,7 @@ use integrity::cid::{
     blake3::blake3_cid_raw_binary,
     iroh::{compute_dir_cid, compute_file_cid},
 };
-use pyo3::prelude::*;
-use pyo3::types::PyBytes;
-use pyo3::Bound;
+use pyo3::{prelude::*, types::PyBytes, Bound};
 
 use crate::with_ctx;
 

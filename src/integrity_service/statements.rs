@@ -1,7 +1,8 @@
-use super::Configuration;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+
+use super::Configuration;
 
 /// Request body for creating a statement via the Integrity Service API.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]

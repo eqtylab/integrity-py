@@ -1,8 +1,8 @@
-use super::Configuration;
 use anyhow::{anyhow, Result};
-use serde;
-use serde::{Deserialize, Serialize};
+use serde::{self, Deserialize, Serialize};
 use serde_json::{self, Value};
+
+use super::Configuration;
 
 /// Response from the blob store PUT APIs containing the computed CID.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
