@@ -40,7 +40,7 @@ class RustTypeMapper:
         "PyResult<Vec<String>>": "List[str]",
         "PyResult<DirCidResult>": "DirCidResult",
         "PyResult<CidResult>": "CidResult",
-        "PyResult<Py<PySigner>>": "PySigner",
+        "PyResult<Py<Signer>>": "Signer",
         "PyResult<(PyObject, PyObject)>": "Tuple[List[Any], Any]",
         "PyResult<HashMap<String, &PyBytes>>": "Dict[str, bytes]",
         "HashMap<String, bool>": "Dict[str, bool]",
@@ -347,7 +347,7 @@ class StubGenerator:
     MODULE_CLASSES = {
         "cid": ["Cid", "CidResult", "DirCidResult", "Canon"],
         "entity": ["Entity"],
-        "signer": ["PySigner"],
+        "signer": ["Signer"],
         "config": ["Graph"],
         "_rust": ["Config"],
     }
@@ -504,7 +504,7 @@ class StubGenerator:
                 ],
                 "doc": "Represents an unhashed entity with a UUID identifier.",
             },
-            "PySigner": {
+            "Signer": {
                 "properties": [
                     ("name", "str", "Get the signer name."),
                     ("did_key", "str", "Get the DID key."),
@@ -559,10 +559,10 @@ class StubGenerator:
                 "methods": [
                     (
                         "__init__",
-                        [("ctx", "Graph"), ("did", "str"), ("signer", "Optional[PySigner]")],
+                        [("ctx", "Graph"), ("did", "str"), ("signer", "Optional[Signer]")],
                         "None",
                     ),
-                    ("from_signer", [("signer", "PySigner")], "Did", True),
+                    ("from_signer", [("signer", "Signer")], "Did", True),
                     ("from_did_string", [("did", "str")], "Did", True),
                     ("with_context", [("ctx", "Graph")], "DidFactory", True),
                 ],
@@ -570,7 +570,7 @@ class StubGenerator:
             },
             "DidFactory": {
                 "methods": [
-                    ("from_signer", [("signer", "PySigner")], "Did"),
+                    ("from_signer", [("signer", "Signer")], "Did"),
                     ("from_did_string", [("did", "str")], "Did"),
                 ],
                 "doc": "Factory for creating DID objects with a fixed context.",
