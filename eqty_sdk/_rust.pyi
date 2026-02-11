@@ -1,4 +1,5 @@
 """Type stubs for the eqty_sdk._rust module."""
+import eqty_sdk
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from os import PathLike
@@ -7,7 +8,7 @@ def init(custom_dir: Optional[PathLike[str]] = None) -> Config:
     """Initializes the sdk config. Must be called before setting individual config values"""
     ...
 
-def get_cid_for_bytes(data: Any, store: Optional[bool] = None) -> str:
+def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> str:
     """Calculates and returns the CID for the provided bytes."""
     ...
 
@@ -17,6 +18,10 @@ def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> str:
 
 def maybe_create_model_signing_statement(collection_cid: str, model_signing_name: str, is_dir: bool) -> None:
     """Creates a model signing statement if enabled in config and the asset is a directory."""
+    ...
+
+def serialize_for_hashing(obj: Any) -> bytes:
+    """Serializes a Python object to bytes for hashing.  Handles str, int, float, list, dict, objects with serialize_for_hashing method, ML models with state_dict, and falls back to pickle for other types."""
     ...
 
 class Asset:
@@ -409,17 +414,17 @@ class cid:
     Cid: type[Cid]
 
     @staticmethod
-    def compute_cid_for_directory(path: PathLike[str]) -> DirCidResult:
+    def compute_cid_for_directory(path: PathLike[str]) -> eqty_sdk._rust.DirCidResult:
         """Compute CID for a directory at `path`."""
         ...
 
     @staticmethod
-    def compute_cid_for_file(path: PathLike[str]) -> CidResult:
+    def compute_cid_for_file(path: PathLike[str]) -> eqty_sdk._rust.CidResult:
         """Compute CID for a file `path`."""
         ...
 
     @staticmethod
-    def compute_cid_for_bytes(bytes: Any) -> str:
+    def compute_cid_for_bytes(bytes: bytes) -> str:
         """Compute CID for provided bytes."""
         ...
 
@@ -429,12 +434,12 @@ class entity:
     Entity: type[Entity]
 
     @staticmethod
-    def create_entity(metadata_json: str, skip_proof: Optional[bool] = None, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> Tuple[Entity, Any]:
+    def create_entity(metadata_json: str, skip_proof: Optional[bool] = None, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> Tuple[eqty_sdk._rust.Entity, Any]:
         """ # Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
     @staticmethod
-    def create_entity_from_uuid(uuid: str, metadata_json: str, skip_proof: Optional[bool] = None, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> Tuple[Entity, Any]:
+    def create_entity_from_uuid(uuid: str, metadata_json: str, skip_proof: Optional[bool] = None, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> Tuple[eqty_sdk._rust.Entity, Any]:
         """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
@@ -465,27 +470,27 @@ class signer:
     SIGNER_ALGORITHMS: type[SIGNER_ALGORITHMS]
 
     @staticmethod
-    def create_new_signer(key_type: str, name: Optional[str] = None) -> Signer:
+    def create_new_signer(key_type: str, name: Optional[str] = None) -> eqty_sdk._rust.Signer:
         """Creates a new local signer with a randomly generated key.  # Arguments * `name` - Optional name for the signer (uses DID key if not provided) * `key_type` - Type of cryptographic key to generate (SECP256K1, SECP256R1, ED25519)"""
         ...
 
     @staticmethod
-    def create_signer_from_private_key(key: str, key_type: str, name: Optional[str] = None) -> Signer:
+    def create_signer_from_private_key(key: str, key_type: str, name: Optional[str] = None) -> eqty_sdk._rust.Signer:
         """Creates a signer from an existing base64-encoded private key.  # Arguments * `key` - Base64-encoded private key bytes * `key_type` - Type of cryptographic key (SECP256K1, SECP256R1, ED25519) * `name` - Optional name for the signer (uses DID key if not provided)"""
         ...
 
     @staticmethod
-    def create_vcomp_signer(url: str, pub_key: Optional[str] = None) -> Signer:
+    def create_vcomp_signer(url: str, pub_key: Optional[str] = None) -> eqty_sdk._rust.Signer:
         """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `key_type` - Type of key (currently only SECP256R1 is supported) * `pub_key` - Optional public key for the signer """
         ...
 
     @staticmethod
-    def create_yubihsm2_signer(auth_key_id: int, signing_key_id: int, password: str) -> Signer:
+    def create_yubihsm2_signer(auth_key_id: int, signing_key_id: int, password: str) -> eqty_sdk._rust.Signer:
         """Creates and configures a YubiHSM2 hardware security module signer.  # Arguments * `name` - Name to assign to the signer * `auth_key_id` - Authentication key ID for YubiHSM2 * `signing_key_id` - Signing key ID for YubiHSM2 * `password` - Password for YubiHSM2 authentication"""
         ...
 
     @staticmethod
-    def create_auth_service_signer(url: str, api_key: str) -> Signer:
+    def create_auth_service_signer(url: str, api_key: str) -> eqty_sdk._rust.Signer:
         """Creates an Auth Service-based signer for remote signing operations.  # Arguments * `name` - Name to assign to the signer * `url` -  Auth Service API endpoint URL * `api_key` - API key for authentication with the Auth Service"""
         ...
 
@@ -507,6 +512,10 @@ class statements:
 
     @staticmethod
     def add_data_statement(data: List[str], *, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None) -> List[str]:
+        ...
+
+    @staticmethod
+    def add_did_statement(did: str, *, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None) -> List[str]:
         ...
 
     @staticmethod
@@ -552,7 +561,7 @@ class stream:
         ...
 
     @staticmethod
-    def update(id: str, chunk: List[int]) -> Any:
+    def update(id: str, chunk: bytes) -> Any:
         """updates an existing computation stream with new data"""
         ...
 

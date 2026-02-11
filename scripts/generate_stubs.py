@@ -46,6 +46,12 @@ class RustTypeMapper:
         rust_type = rust_type.replace("mut ", "").strip()
         rust_type = cls._strip_reference(rust_type)
 
+        if rust_type == "Vec<u8>":
+            return "bytes"
+
+        if rust_type == "[u8]":
+            return "bytes"
+
         if rust_type in cls.TYPE_MAP:
             return cls.TYPE_MAP[rust_type]
 
@@ -162,6 +168,8 @@ class RustStubParser:
             content = rust_file.read_text()
             self._extract_pymethods(content)
             self._extract_pyfunctions(content)
+        for rust_file in rust_files:
+            content = rust_file.read_text()
             self._extract_pymodules(content)
 
         return self
@@ -507,12 +515,16 @@ class RustStubParser:
 class StubGenerator:
     """Generates Python stub file from parsed Rust functions."""
 
+    def __init__(self, class_names: Optional[List[str]] = None):
+        self.class_names = set(class_names or [])
+
     def generate_stub_file(
         self, modules: Dict[str, dict], classes: Dict[str, dict], output_path: Path
     ):
         lines = []
 
         lines.append('"""Type stubs for the eqty_sdk._rust module."""')
+        lines.append("import eqty_sdk")
         lines.append("from pathlib import Path")
         lines.append("from typing import Any, Dict, List, Optional, Tuple, Union")
         lines.append("from os import PathLike")
@@ -541,7 +553,7 @@ class StubGenerator:
 
             if module_info["functions"]:
                 for func in module_info["functions"]:
-                    lines.extend(self._generate_function_stub(func, indent="    "))
+                    lines.extend(self._generate_function_stub(func, indent="    ", qualify_types=True))
                     lines.append("")
             elif not module_info["classes"]:
                 lines.append("    ...")
@@ -552,16 +564,23 @@ class StubGenerator:
         print(f"Generated stub file: {output_path}")
 
     def _generate_function_stub(
-        self, func: dict, is_module_function: bool = True, indent: str = ""
+        self,
+        func: dict,
+        is_module_function: bool = True,
+        indent: str = "",
+        qualify_types: bool = False,
     ) -> List[str]:
         lines = []
 
         if is_module_function:
             lines.append(f"{indent}@staticmethod")
 
-        param_str = self._build_param_str(func)
+        param_str = self._build_param_str(func, qualify_types=qualify_types)
+        return_type = func["return_type"]
+        if qualify_types:
+            return_type = self._qualify_type(return_type)
 
-        lines.append(f"{indent}def {func['name']}({param_str}) -> {func['return_type']}:")
+        lines.append(f"{indent}def {func['name']}({param_str}) -> {return_type}:")
         doc = func.get("doc") or ""
         if doc:
             lines.append(f'{indent}    """{doc}"""')
@@ -569,14 +588,17 @@ class StubGenerator:
 
         return lines
 
-    def _build_param_str(self, func: dict) -> str:
+    def _build_param_str(self, func: dict, qualify_types: bool = False) -> str:
         if func.get("signature"):
-            params = self._parse_signature_params(func["signature"], func["params"])
+            params = self._parse_signature_params(
+                func["signature"], func["params"], qualify_types=qualify_types
+            )
             return ", ".join(params)
-        return ", ".join(self._format_param(p) for p in func["params"])
+        return ", ".join(self._format_param(p, qualify_types=qualify_types) for p in func["params"])
 
-    @staticmethod
-    def _parse_signature_params(signature: str, rust_params: List[dict]) -> List[str]:
+    def _parse_signature_params(
+        self, signature: str, rust_params: List[dict], qualify_types: bool = False
+    ) -> List[str]:
         params = []
         type_map = {p["name"]: p for p in rust_params}
         for raw in signature.split(","):
@@ -605,6 +627,8 @@ class StubGenerator:
             else:
                 param_type = "Any"
 
+            if qualify_types:
+                param_type = self._qualify_type(param_type)
             param_str = f"{name}: {param_type}"
             if optional:
                 param_str += " = None"
@@ -612,12 +636,22 @@ class StubGenerator:
 
         return params
 
-    @staticmethod
-    def _format_param(param: dict) -> str:
-        param_str = f"{param['name']}: {param['type']}"
+    def _format_param(self, param: dict, qualify_types: bool = False) -> str:
+        param_type = param["type"]
+        if qualify_types:
+            param_type = self._qualify_type(param_type)
+        param_str = f"{param['name']}: {param_type}"
         if param["optional"] and not param_str.endswith(" = None"):
             param_str += " = None"
         return param_str
+
+    def _qualify_type(self, type_str: str) -> str:
+        qualified = type_str
+        for class_name in sorted(self.class_names, key=len, reverse=True):
+            pattern = rf"(?<![\w.]){re.escape(class_name)}(?![\w])"
+            replacement = f"eqty_sdk._rust.{class_name}"
+            qualified = re.sub(pattern, replacement, qualified)
+        return qualified
 
     def _generate_class_definitions(self, classes: Dict[str, dict]) -> List[str]:
         lines = []
@@ -700,7 +734,7 @@ def main():
         print("Warning: No PyO3 modules found in Rust source files")
         return 1
 
-    generator = StubGenerator()
+    generator = StubGenerator([info["name"] for info in parser.classes.values()])
     generator.generate_stub_file(parser.modules, parser.classes, output_file)
 
     extra_stubs = script_dir / "eqty_sdk" / "_rust_extra.pyi"
