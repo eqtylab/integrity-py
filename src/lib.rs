@@ -6,7 +6,10 @@
 use std::{env, path::PathBuf};
 
 use config::Config;
+use integrity::cid::{blake3::blake3_cid_raw_binary, iroh::{compute_dir_cid, compute_file_cid}};
 use pyo3_async_runtimes::tokio::get_runtime;
+use pyo3::exceptions::PyRuntimeError;
+use tokio::fs;
 
 /// Resolves skip_proof from provided option or EQTY_SKIP_PROOF environment variable.
 ///
@@ -35,6 +38,8 @@ pub fn resolve_timestamp(timestamp: Option<String>) -> Option<String> {
 pub mod cid;
 /// Global application configuration management.
 pub mod config;
+/// DID type for registering DID statements and metadata.
+pub mod did;
 /// Entity type for unhashed objects with UUID identifiers.
 pub mod entity;
 /// Indexes integrity information in sql database.
@@ -68,12 +73,15 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(manifest::manifest))?;
     m.add_wrapped(wrap_pymodule!(statements::statements))?;
     m.add_wrapped(wrap_pymodule!(stream::stream))?;
-    m.add_wrapped(wrap_pymodule!(config::config))?;
 
     m.add_class::<Graph>()?;
     m.add_class::<Config>()?;
+    m.add_class::<did::Did>()?;
+    m.add_class::<did::DidFactory>()?;
 
     m.add_function(wrap_pyfunction!(init, m)?)?;
+    m.add_function(wrap_pyfunction!(get_cid_for_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(get_cid_for_path, m)?)?;
     Ok(())
 }
 
@@ -91,4 +99,74 @@ fn init(py: Python<'_>, custom_dir: Option<PathBuf>) -> PyResult<Config> {
     let cfg = py.detach(|| get_runtime().block_on(Config::init(app_dir)))?;
     log::debug!("initialized at {:?}", cfg.app_dir);
     Ok(cfg)
+}
+
+/// Calculates and returns the CID for the provided bytes.
+#[pyfunction]
+#[pyo3(signature = (data, store=None))]
+fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResult<String> {
+    with_ctx!(py, |ctx| {
+        let cid = blake3_cid_raw_binary(data)?;
+        let store_flag = store.unwrap_or(ctx.store_all_blobs);
+
+        if store_flag {
+            let blob_dir = ctx.app_dir.join("blobs");
+            fs::create_dir_all(&blob_dir).await?;
+            let file_path = blob_dir.join(&cid);
+            fs::write(&file_path, data).await?;
+        }
+
+        Ok(cid)
+    })
+}
+
+/// Resolves the provided path and reads the file or directory to calculate the CID.
+#[pyfunction]
+#[pyo3(signature = (path, store=None))]
+fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyResult<String> {
+    with_ctx!(py, |ctx| {
+        let store_flag = store.unwrap_or(ctx.store_all_blobs);
+        let blob_dir = ctx.app_dir.join("blobs");
+        fs::create_dir_all(&blob_dir).await?;
+
+        if path.is_file() {
+            let file_cid_result = compute_file_cid(path.clone(), ctx.hashing.clone()).await?;
+            let cid = file_cid_result.cid.clone();
+
+            if store_flag {
+                let storage_path = blob_dir.join(&cid);
+                fs::copy(&path, &storage_path).await?;
+            }
+
+            Ok(cid)
+        } else if path.is_dir() {
+            let dir_cid_result =
+                compute_dir_cid(path.clone(), ctx.hashing.clone(), ctx.cid_ignore.clone()).await?;
+            let cid = dir_cid_result.collection.cid.clone();
+
+            // Always store iroh collections
+            fs::write(
+                blob_dir.join(&dir_cid_result.collection.cid),
+                dir_cid_result.collection.blob,
+            )
+            .await?;
+            fs::write(
+                blob_dir.join(&dir_cid_result.meta.cid),
+                dir_cid_result.meta.blob,
+            )
+            .await?;
+
+            if store_flag {
+                for (file_name, file_cid) in dir_cid_result.file_hashes {
+                    let src = path.join(file_name);
+                    let dst = blob_dir.join(file_cid);
+                    fs::copy(src, dst).await?;
+                }
+            }
+
+            Ok(cid)
+        } else {
+            Err(PyRuntimeError::new_err("The provided path {path:?} was not found"))
+        }
+    })
 }

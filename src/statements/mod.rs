@@ -10,10 +10,10 @@ use crate::with_ctx;
 mod association;
 mod computation;
 mod data;
-mod did;
+pub(crate) mod did;
 mod entity;
 mod governance;
-mod metadata;
+pub(crate) mod metadata;
 mod model_signing;
 /// Storage statement creation for referencing external data stores.
 pub mod storage;

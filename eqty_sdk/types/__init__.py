@@ -1,14 +1,14 @@
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from eqty_sdk._rust import (
     cid as _cid,
     entity as _entity,
     manifest as _manifest,
+    Did as _Did,
     signer as _signer,
 )
 
 from .declaration import Declaration
-from .did import Did
 
 if TYPE_CHECKING:
 
@@ -29,6 +29,19 @@ if TYPE_CHECKING:
         name: str
         did_key: str
 
+    class Did(Protocol):
+        ctx: Any
+        statement_ids: list[str]
+
+        @staticmethod
+        def from_signer(signer: Signer, **kwargs: Any) -> "Did": ...
+
+        @staticmethod
+        def from_did_string(did: str, **kwargs: Any) -> "Did": ...
+
+        @staticmethod
+        def with_context(ctx: Any) -> Any: ...
+
     class SIGNER_ALGORITHMS(Protocol):
         pass
 else:
@@ -36,6 +49,7 @@ else:
     Entity = _entity.Entity
     Manifest = _manifest.Manifest
     Signer = _signer.Signer
+    Did = _Did
     SIGNER_ALGORITHMS = _signer.SIGNER_ALGORITHMS
 
 set_active_signer = _signer.set_active_signer

@@ -48,6 +48,9 @@ class RustTypeMapper:
         "&PyAny": "Any",
         "PyObject": "Any",
         "PyResult<Graph>": "Graph",
+        "PyResult<Config>": "Config",
+        "PyResult<Did>": "Did",
+        "PyResult<DidFactory>": "DidFactory",
         "Uuid": "Any",
         "uuid::Uuid": "Any",
         "Option<Uuid>": "Optional[Any]",
@@ -346,6 +349,7 @@ class StubGenerator:
         "entity": ["Entity"],
         "signer": ["PySigner"],
         "config": ["Graph"],
+        "_rust": ["Config"],
     }
 
     def __init__(self):
@@ -507,6 +511,25 @@ class StubGenerator:
                 ],
                 "doc": "Python wrapper for Rust signer.",
             },
+            "Config": {
+                "methods": [
+                    ("set_integrity_service_url", [("url", "str")], "Config"),
+                    ("set_hashing_config", [("multithread", "Optional[bool]"), ("memory_map", "Optional[bool]")], "Config"),
+                    (
+                        "set_cid_ignore_rules",
+                        [
+                            ("include_hidden_files", "Optional[bool]"),
+                            ("gitignore", "Optional[bool]"),
+                            ("include_symlinks", "Optional[bool]"),
+                        ],
+                        "Config",
+                    ),
+                    ("set_generate_model_signing_signatures", [("enable", "bool")], "Config"),
+                    ("set_store_all_blobs", [("value", "bool")], "Config"),
+                    ("set_default_graph", [("graph", "Graph")], "Config"),
+                ],
+                "doc": "Global configuration handle.",
+            },
             "Graph": {
                 "properties": [
                     ("id", "Any", "UUID of the graph."),
@@ -523,6 +546,26 @@ class StubGenerator:
                     ),
                 ],
                 "doc": "Graph for organizing statements.",
+            },
+            "Did": {
+                "properties": [
+                    ("ctx", "Graph", "Graph context for the DID."),
+                    ("statement_ids", "List[str]", "Statement IDs created for this DID."),
+                ],
+                "methods": [
+                    ("__init__", [("ctx", "Graph"), ("did", "str"), ("signer", "Optional[PySigner]")], "None"),
+                    ("from_signer", [("signer", "PySigner")], "Did", True),
+                    ("from_did_string", [("did", "str")], "Did", True),
+                    ("with_context", [("ctx", "Graph")], "DidFactory", True),
+                ],
+                "doc": "DID registration helper.",
+            },
+            "DidFactory": {
+                "methods": [
+                    ("from_signer", [("signer", "PySigner")], "Did"),
+                    ("from_did_string", [("did", "str")], "Did"),
+                ],
+                "doc": "Factory for creating DID objects with a fixed context.",
             },
         }
 

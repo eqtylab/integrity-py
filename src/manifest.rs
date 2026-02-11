@@ -63,7 +63,11 @@ impl Manifest {
     ) -> PyResult<Self> {
         let graphs_any = statements.getattr(py, "graphs")?;
         let graphs: Vec<Py<PyAny>> = graphs_any.extract(py)?;
-        let blobs_dir = crate::config::get_blob_dir()?;
+        let blobs_dir = with_ctx!(py, |ctx| {
+            let blob_dir = ctx.app_dir.join("blobs");
+            tokio::fs::create_dir_all(&blob_dir).await?;
+            Ok::<_, anyhow::Error>(blob_dir)
+        })?;
         let manifest_str = generate(py, graphs, blobs_dir, Some(include_context))?;
         Ok(Self { manifest_str })
     }
@@ -114,7 +118,11 @@ impl Manifest {
             Ok::<_, anyhow::Error>(decoded_blobs)
         })?;
 
-        let blob_dir = crate::config::get_blob_dir()?;
+        let blob_dir = with_ctx!(py, |ctx| {
+            let blob_dir = ctx.app_dir.join("blobs");
+            tokio::fs::create_dir_all(&blob_dir).await?;
+            Ok::<_, anyhow::Error>(blob_dir)
+        })?;
         for (blob_key, blob_content) in blobs {
             let blob_file_path = blob_dir.join(blob_key);
             std::fs::write(&blob_file_path, blob_content).map_err(|e| {
@@ -135,20 +143,13 @@ impl Manifest {
 
     fn register(&self, py: Python) -> PyResult<()> {
         let api_key = env::var("EQTY_API_KEY")
-            .map_err(|_| usage_error(py, "The env var 'EQTY_API_KEY' must be set"))?;
+            .map_err(|_| {
+                pyo3::exceptions::PyRuntimeError::new_err(
+                    "The env var 'EQTY_API_KEY' must be set",
+                )
+            })?;
         register(py, self.manifest_str.clone(), Some(api_key))
     }
-}
-
-fn usage_error(py: Python, msg: &str) -> PyErr {
-    let usage_error = (|| -> PyResult<PyErr> {
-        let module = py.import("eqty_sdk.errors")?;
-        let exc = module.getattr("UsageError")?;
-        let instance = exc.call1((msg,))?;
-        Ok(PyErr::from_value(instance))
-    })();
-
-    usage_error.unwrap_or_else(|_| pyo3::exceptions::PyRuntimeError::new_err(msg.to_string()))
 }
 
 /// Generates an integrity graph manifest JSON string from multiple graphs.

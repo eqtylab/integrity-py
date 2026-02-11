@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::fs;
 
 use anyhow::Context as AnyhowContext;
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
@@ -9,29 +9,25 @@ use integrity::signer::{
 };
 use pyo3::{
     prelude::*,
-    types::{PyAny, PyBytes, PyDict},
+    types::PyAny,
+    exceptions::{PyRuntimeError, PyValueError, PyTypeError},
     Bound,
 };
 use pyo3_async_runtimes::tokio::get_runtime;
 use serde::Serialize;
 
-use crate::config::{ctx_async, Config};
+use crate::config::{ctx_async, ctx_blocking, Config};
 
 /// `signer` submodule.
 #[pymodule]
 pub fn signer(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<PySigner>()?;
-    add_signer_algorithms(m)?;
+    m.add_class::<Signer>()?;
     m.add_function(wrap_pyfunction!(create_new_signer, m)?)?;
     m.add_function(wrap_pyfunction!(create_signer_from_private_key, m)?)?;
     m.add_function(wrap_pyfunction!(create_vcomp_signer, m)?)?;
     m.add_function(wrap_pyfunction!(create_yubihsm2_signer, m)?)?;
     m.add_function(wrap_pyfunction!(create_auth_service_signer, m)?)?;
     m.add_function(wrap_pyfunction!(set_active_signer, m)?)?;
-    m.add_function(wrap_pyfunction!(get_active_signer_did_key, m)?)?;
-    m.add_function(wrap_pyfunction!(get_signer_type, m)?)?;
-    m.add_function(wrap_pyfunction!(get_signer_statements, m)?)?;
-    m.add_function(wrap_pyfunction!(get_signer_blobs, m)?)?;
 
     Ok(())
 }
@@ -42,7 +38,7 @@ pub fn signer(m: &Bound<'_, PyModule>) -> PyResult<()> {
 #[pyclass(name = "Signer")]
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PySigner {
+pub struct Signer {
     /// Human-readable name for the signer.
     pub name: String,
     /// Decentralized Identifier (DID) key for the signer.
@@ -50,7 +46,7 @@ pub struct PySigner {
 }
 
 #[pymethods]
-impl PySigner {
+impl Signer {
     #[new]
     fn py_new(name: String, did_key: String) -> Self {
         Self { name, did_key }
@@ -76,24 +72,23 @@ impl PySigner {
 
     #[staticmethod]
     #[pyo3(name = "new", signature = (algorithm=None))]
-    fn new_signer(py: Python, algorithm: Option<&Bound<'_, PyAny>>) -> PyResult<Py<PySigner>> {
+    fn new_signer(py: Python, algorithm: Option<&Bound<'_, PyAny>>) -> PyResult<Py<Signer>> {
         let key_type = signer_algorithm_from_py(algorithm)?;
         create_new_signer_internal(py, key_type, None)
     }
 
     #[staticmethod]
     #[pyo3(signature = (url=None))]
-    fn vcomp_notary(py: Python, url: Option<String>) -> PyResult<Py<PySigner>> {
+    fn vcomp_notary(py: Python, url: Option<String>) -> PyResult<Py<Signer>> {
         let url = url.unwrap_or_else(|| "http://docker.eqtylab.internal:8066".to_string());
         create_vcomp_signer(py, url, None)
     }
 
     #[staticmethod]
     #[pyo3(signature = (url))]
-    fn auth_service(py: Python, url: String) -> PyResult<Py<PySigner>> {
+    fn auth_service(py: Python, url: String) -> PyResult<Py<Signer>> {
         let api_key = std::env::var("EQTY_API_KEY").map_err(|_| {
-            usage_error(
-                py,
+            PyRuntimeError::new_err(
                 "The env var 'EQTY_API_KEY' must be set to use Signer.auth_service()",
             )
         })?;
@@ -107,7 +102,7 @@ impl PySigner {
         auth_key_id: u16,
         signing_key_id: u16,
         password: String,
-    ) -> PyResult<Py<PySigner>> {
+    ) -> PyResult<Py<Signer>> {
         create_yubihsm2_signer(py, auth_key_id, signing_key_id, password)
     }
 
@@ -117,7 +112,7 @@ impl PySigner {
         py: Python,
         algorithm: &Bound<'_, PyAny>,
         private_key: String,
-    ) -> PyResult<Py<PySigner>> {
+    ) -> PyResult<Py<Signer>> {
         let key_type = signer_algorithm_from_py(Some(algorithm))?;
         create_signer_from_private_key_internal(py, key_type, private_key, None)
     }
@@ -130,7 +125,7 @@ impl PySigner {
 /// * `key_type` - Type of cryptographic key to generate (SECP256K1, SECP256R1, ED25519)
 #[pyfunction]
 #[pyo3(signature = (key_type, name=None))]
-fn create_new_signer(py: Python, key_type: String, name: Option<&str>) -> PyResult<Py<PySigner>> {
+fn create_new_signer(py: Python, key_type: String, name: Option<&str>) -> PyResult<Py<Signer>> {
     signer_exists(name)?;
 
     let key_type: KeyType = key_type.parse().context("Invalid key type")?;
@@ -141,7 +136,7 @@ fn create_new_signer_internal(
     py: Python,
     key_type: KeyType,
     name: Option<&str>,
-) -> PyResult<Py<PySigner>> {
+) -> PyResult<Py<Signer>> {
     let signer = match key_type {
         KeyType::SECP256K1 => {
             log::trace!("Generating a new secp256k1 signer");
@@ -177,7 +172,7 @@ fn create_signer_from_private_key(
     key: String,
     key_type: String,
     name: Option<&str>,
-) -> PyResult<Py<PySigner>> {
+) -> PyResult<Py<Signer>> {
     signer_exists(name)?;
 
     let key_type: KeyType = key_type.parse().context("Invalid key type")?;
@@ -189,7 +184,7 @@ fn create_signer_from_private_key_internal(
     key_type: KeyType,
     key: String,
     name: Option<&str>,
-) -> PyResult<Py<PySigner>> {
+) -> PyResult<Py<Signer>> {
     log::info!("Creating a signer of type '{key_type}'");
 
     let secret_key = BASE64
@@ -226,7 +221,7 @@ fn create_signer_from_private_key_internal(
 /// * `pub_key` - Optional public key for the signer
 ///
 #[pyfunction]
-fn create_vcomp_signer(py: Python, url: String, pub_key: Option<String>) -> PyResult<Py<PySigner>> {
+fn create_vcomp_signer(py: Python, url: String, pub_key: Option<String>) -> PyResult<Py<Signer>> {
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
@@ -245,7 +240,7 @@ fn create_vcomp_signer(py: Python, url: String, pub_key: Option<String>) -> PyRe
 /// * `url` -  Auth Service API endpoint URL
 /// * `api_key` - API key for authentication with the Auth Service
 #[pyfunction]
-fn create_auth_service_signer(py: Python, url: String, api_key: String) -> PyResult<Py<PySigner>> {
+fn create_auth_service_signer(py: Python, url: String, api_key: String) -> PyResult<Py<Signer>> {
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
@@ -271,7 +266,7 @@ fn create_yubihsm2_signer(
     auth_key_id: u16,
     signing_key_id: u16,
     password: String,
-) -> PyResult<Py<PySigner>> {
+) -> PyResult<Py<Signer>> {
     log::trace!("Importing a YubiHSM2 ed25519 signer");
 
     let yubi_signer = YubiHsmSigner::create(auth_key_id, signing_key_id, password)?;
@@ -293,7 +288,7 @@ fn set_active_signer(py: Python, signer: &Bound<'_, PyAny>) -> PyResult<()> {
     } else if let Ok(name_attr) = signer.getattr("name") {
         name_attr.extract::<String>()?
     } else {
-        return Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+        return Err(PyErr::new::<PyTypeError, _>(
             "signer must be a signer name string or a Signer instance",
         ));
     };
@@ -312,95 +307,6 @@ fn set_active_signer(py: Python, signer: &Bound<'_, PyAny>) -> PyResult<()> {
     })?)
 }
 
-/// Get the active signers Did Key
-#[pyfunction]
-fn get_active_signer_did_key(py: Python) -> PyResult<String> {
-    use crate::with_ctx;
-    Ok(with_ctx!(py, |ctx| ctx.get_active_signer_did_key())?)
-}
-
-/// Get signer type string ('vcomp_notary', 'yubihsm2', etc) by name.
-///
-/// # Arguments
-/// * `name` - Name of the signer to retrieve
-#[pyfunction]
-fn get_signer_type(_py: Python, name: String) -> PyResult<String> {
-    let signer_file = get_signer_folder().join(name);
-    if !signer_file.exists() {
-        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            "No Signer named '{name}' found",
-        ));
-    }
-
-    let signer = utils_load_signer(signer_file)?;
-    let signer_type = format!("{signer}");
-
-    Ok(signer_type)
-}
-
-/// Retrieves the statements associated with a signer if any.
-///
-/// # Arguments
-/// * `name` - Name of the signer to retrieve statements from
-#[pyfunction]
-fn get_signer_statements(_py: Python, name: String) -> PyResult<Vec<String>> {
-    let signer_file = get_signer_folder().join(name);
-    if !signer_file.exists() {
-        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            "No Signer named '{name}' found",
-        ));
-    }
-
-    let signer = utils_load_signer(signer_file)?;
-
-    match signer {
-        SignerType::VCompNotarySigner(vcomp_signer) => {
-            if let Some(statements) = vcomp_signer.did_statements {
-                let statements = statements
-                    .values()
-                    .cloned()
-                    .map(|v| serde_json::to_string(&v).context("Failed to serialize statement"))
-                    .collect::<Result<Vec<_>, _>>()?;
-                Ok(statements)
-            } else {
-                Ok(vec![])
-            }
-        }
-        _ => Ok(vec![]),
-    }
-}
-
-/// Retrieves the blobs associated with a signer if any.
-///
-/// # Arguments
-/// * `name` - Name of the signer to retrieve blobs from
-#[pyfunction]
-fn get_signer_blobs(py: Python<'_>, name: String) -> PyResult<HashMap<String, Bound<'_, PyBytes>>> {
-    let signer_file = get_signer_folder().join(name);
-    if !signer_file.exists() {
-        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            "No Signer named '{name}' found",
-        ));
-    }
-
-    let signer = utils_load_signer(signer_file)?;
-
-    match signer {
-        SignerType::VCompNotarySigner(vcomp_signer) => {
-            if let Some(blobs) = vcomp_signer.did_blobs {
-                let blobs = blobs
-                    .into_iter()
-                    .map(|(k, v)| (k, PyBytes::new(py, &v)))
-                    .collect();
-                Ok(blobs)
-            } else {
-                Ok(HashMap::new())
-            }
-        }
-        _ => Ok(HashMap::new()),
-    }
-}
-
 /// Subdirectory name for storing signer key files.
 static SIGNER_DIR: &str = "signers";
 
@@ -410,42 +316,29 @@ fn signer_exists(name: Option<&str>) -> PyResult<()> {
         return Ok(());
     }
 
-    let signer_folder = get_signer_folder_sync();
+    let signer_dir = ctx_blocking()?.app_dir.join(SIGNER_DIR);
     let name = name.unwrap();
     log::debug!("Adding Signer. Args= {name}");
 
-    if fs::exists(signer_folder.join(name)).expect("Error checking if signer exists") {
+    if fs::exists(signer_dir.join(name)).expect("Error checking if signer exists") {
         let msg = format!("A signer named {name:?} already exists");
         log::warn!("{msg}");
-        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(msg));
+        return Err(PyErr::new::<PyValueError, _>(msg));
     }
 
     Ok(())
 }
 
-fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<PySigner> {
+fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<Signer> {
     let did_key = signer.get_did_doc().id;
     let name = name.unwrap_or(&did_key);
-    let signer_dir = get_signer_folder_sync();
+    let signer_dir = ctx_blocking()?.app_dir.join(SIGNER_DIR);
     fs::create_dir_all(signer_dir.clone())?;
     utils_save_signer(signer, signer_dir, name)?;
-    Ok(PySigner {
+    Ok(Signer {
         name: name.to_owned(),
         did_key,
     })
-}
-
-/// Returns the path to the signer storage folder (blocking version for sync contexts).
-fn get_signer_folder_sync() -> PathBuf {
-    get_runtime().block_on(async { ctx_async().await.app_dir.join(SIGNER_DIR) })
-}
-
-/// Returns the path to the signer storage folder.
-///
-/// # Returns
-/// * `PathBuf` - Path to the directory where signer key files are stored
-pub fn get_signer_folder() -> PathBuf {
-    get_signer_folder_sync()
 }
 
 fn signer_algorithm_from_py(obj: Option<&Bound<'_, PyAny>>) -> PyResult<KeyType> {
@@ -455,7 +348,7 @@ fn signer_algorithm_from_py(obj: Option<&Bound<'_, PyAny>>) -> PyResult<KeyType>
         } else if let Ok(value) = obj.getattr("value") {
             value.extract::<String>()?
         } else {
-            return Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+            return Err(PyErr::new::<PyTypeError, _>(
                 "algorithm must be a string or enum with a 'value' attribute",
             ));
         }
@@ -465,29 +358,5 @@ fn signer_algorithm_from_py(obj: Option<&Bound<'_, PyAny>>) -> PyResult<KeyType>
 
     key_type
         .parse()
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("{e}")))
-}
-
-fn add_signer_algorithms(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    let py = m.py();
-    let enum_mod = py.import("enum")?;
-    let enum_type = enum_mod.getattr("Enum")?;
-    let members = PyDict::new(py);
-    members.set_item("SECP256K1", "secp256k1")?;
-    members.set_item("SECP256R1", "secp256r1")?;
-    members.set_item("ED25519", "ed25519")?;
-    let enum_obj = enum_type.call1(("SIGNER_ALGORITHMS", members))?;
-    m.add("SIGNER_ALGORITHMS", enum_obj)?;
-    Ok(())
-}
-
-fn usage_error(py: Python, msg: &str) -> PyErr {
-    let usage_error = (|| -> PyResult<PyErr> {
-        let module = py.import("eqty_sdk.errors")?;
-        let exc = module.getattr("UsageError")?;
-        let instance = exc.call1((msg,))?;
-        Ok(PyErr::from_value(instance))
-    })();
-
-    usage_error.unwrap_or_else(|_| pyo3::exceptions::PyRuntimeError::new_err(msg.to_string()))
+        .map_err(|e| PyErr::new::<PyValueError, _>(format!("{e}")))
 }

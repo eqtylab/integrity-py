@@ -1,11 +1,8 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional, cast
-from uuid import UUID, uuid4
+from typing import Optional, cast
+from uuid import uuid4
 
-from pydantic.types import UUID4
-
-from eqty_sdk import config
 from eqty_sdk._rust import (
     statements as eqty_core_statements,
 )
@@ -29,36 +26,5 @@ def add_vc_statement(
         subject, timestamp=timestamp, graph_id=uuid4()
     )
 
-    return cast(str, statement_id)
-
-
-class Statements:
-    def __init__(self):
-        self.statements: List[Dict[str, Any]] = []
-        self.attributes: Dict[str, Any] = {}
-        self.graphs: List[Dict[str, Any]] = []
-
-    @classmethod
-    def select_graph(cls, graph_id: Optional[list[UUID4] | UUID4] = None) -> "Statements":
-        """Returns a Statements object populated with statements for the provided graph_id.
-
-        Args:
-            graph_id: Optional[UUID4] - The graph_id to get statements for. If not provided, the root context  graph_id is used.
-
-        """
-        instance = cls()
-        graph_ids = []
-        if not graph_id:
-            id = config.get_default_graph().id
-            graph_ids = [id]
-        elif isinstance(graph_id, UUID):
-            graph_ids = [graph_id]
-        elif isinstance(graph_id, list):
-            for id in graph_id:
-                graph_ids.append(id)
-
-        logger.info(f"Getting statements for graph_id {graph_ids}")
-
-        graphs = eqty_core_statements.retrieve_graph(graph_ids)
-        instance.graphs = graphs
-        return instance
+    raise RuntimeError("add_vc_statement is not implemented yet")
+    # return cast(str, statement_id)

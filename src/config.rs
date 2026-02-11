@@ -1,6 +1,7 @@
 use std::{
     fs,
     fs::File,
+    future::Future,
     io::{Read, Write},
     path::{Path, PathBuf},
     sync::Arc,
@@ -13,9 +14,9 @@ use integrity::{
 };
 use once_cell::sync::Lazy;
 use pyo3::prelude::*;
-use pyo3_async_runtimes::tokio::get_runtime;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
+use tokio::task_local;
 use uuid::Uuid;
 
 use crate::{
@@ -71,6 +72,9 @@ impl From<CidIgnoreSettings> for CidIgnoreConfig {
 }
 
 static CTX: Lazy<RwLock<Option<Config>>> = Lazy::new(|| RwLock::new(None));
+task_local! {
+    static IN_WITH_CTX: bool;
+}
 
 /// Macro to reduce boilerplate for async config operations in pyfunctions.
 ///
@@ -87,8 +91,11 @@ macro_rules! with_ctx {
     ($py:expr, |$ctx:ident| $body:expr) => {
         $py.detach(|| {
             pyo3_async_runtimes::tokio::get_runtime().block_on(async {
-                let $ctx = $crate::config::ctx_async().await;
-                $body
+                $crate::config::with_ctx_guard(async {
+                    let $ctx = $crate::config::ctx_async().await;
+                    $body
+                })
+                .await
             })
         })
     };
@@ -109,22 +116,24 @@ pub async fn ctx_async() -> Config {
         .clone()
 }
 
-fn ctx_blocking() -> PyResult<Config> {
+pub async fn with_ctx_guard<F, T>(f: F) -> T
+where
+    F: Future<Output = T>,
+{
+    IN_WITH_CTX.scope(true, f).await
+}
+
+pub fn ctx_blocking() -> Result<Config> {
+    if IN_WITH_CTX.try_with(|in_with_ctx| *in_with_ctx).unwrap_or(false) {
+        return Err(anyhow!(
+            "ctx_blocking() cannot be called from within with_ctx"
+        ));
+    }
     let ctx_lock = CTX.blocking_read();
     let ctx = ctx_lock
         .as_ref()
-        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Config not initialized"))?;
+        .ok_or_else(|| anyhow!("Config not initialized"))?;
     Ok(ctx.clone())
-}
-
-fn ensure_blob_dir(app_dir: &Path) -> PyResult<PathBuf> {
-    let blob_dir = app_dir.join("blobs");
-    if !blob_dir.exists() {
-        fs::create_dir_all(&blob_dir).map_err(|e| {
-            pyo3::exceptions::PyIOError::new_err(format!("Failed to create blob directory: {e}"))
-        })?;
-    }
-    Ok(blob_dir)
 }
 
 fn set_integrity_service_url_inner(url: String) -> Result<()> {
@@ -215,13 +224,6 @@ pub struct Config {
 #[pymethods]
 // Python exported impl functions
 impl Config {
-    /// Resets the global config, allowing it to be reinitialized with a new app directory
-    #[staticmethod]
-    fn reset(py: Python<'_>) -> PyResult<()> {
-        py.detach(|| get_runtime().block_on(Self::reset_internal()))?;
-        Ok(())
-    }
-
     // Setters
 
     #[pyo3(signature = (url))]
@@ -268,42 +270,6 @@ impl Config {
     fn set_default_graph(&self, py: Python, graph: Graph) -> PyResult<Self> {
         set_default_graph_inner(py, graph)?;
         Ok(self.clone())
-    }
-
-    // Getters
-
-    fn get_integrity_service_url(&self) -> PyResult<Option<String>> {
-        Ok(ctx_blocking()?.integrity_service.clone())
-    }
-
-    fn get_store_all_blobs(&self) -> PyResult<bool> {
-        Ok(ctx_blocking()?.store_all_blobs)
-    }
-
-    fn get_cid_ignore_rules(&self) -> PyResult<(bool, bool, bool)> {
-        let ctx = ctx_blocking()?;
-        Ok((
-            ctx.cid_ignore.include_hidden_files,
-            ctx.cid_ignore.gitignore,
-            ctx.cid_ignore.include_symlinks,
-        ))
-    }
-
-    fn get_generate_model_signing_signatures(&self) -> PyResult<bool> {
-        Ok(ctx_blocking()?.generate_model_signing_signatures)
-    }
-
-    fn get_app_dir(&self) -> PyResult<PathBuf> {
-        Ok(ctx_blocking()?.app_dir.clone())
-    }
-
-    fn get_blob_dir(&self) -> PyResult<PathBuf> {
-        let ctx = ctx_blocking()?;
-        ensure_blob_dir(&ctx.app_dir)
-    }
-
-    fn get_default_graph(&self) -> PyResult<Graph> {
-        Ok(ctx_blocking()?.default_graph.clone())
     }
 }
 
@@ -387,7 +353,7 @@ impl Config {
     }
 
     /// Resets the global config, allowing it to be reinitialized (internal async version)
-    pub(crate) async fn reset_internal() -> Result<()> {
+    pub async fn reset_internal() -> Result<()> {
         let mut ctx_lock = CTX.write().await;
         *ctx_lock = None;
         Ok(())
@@ -572,114 +538,4 @@ pub async fn create_vc_for_statement(
         .await?;
 
     Ok(vc_id)
-}
-
-// Standalone pyfunctions that access CTX directly
-
-#[pyfunction]
-pub fn get_integrity_service_url() -> PyResult<Option<String>> {
-    Ok(ctx_blocking()?.integrity_service.clone())
-}
-
-#[pyfunction]
-pub fn get_store_all_blobs() -> PyResult<bool> {
-    Ok(ctx_blocking()?.store_all_blobs)
-}
-
-#[pyfunction]
-pub fn get_cid_ignore_rules() -> PyResult<(bool, bool, bool)> {
-    let ctx = ctx_blocking()?;
-    Ok((
-        ctx.cid_ignore.include_hidden_files,
-        ctx.cid_ignore.gitignore,
-        ctx.cid_ignore.include_symlinks,
-    ))
-}
-
-#[pyfunction]
-pub fn get_generate_model_signing_signatures() -> PyResult<bool> {
-    Ok(ctx_blocking()?.generate_model_signing_signatures)
-}
-
-#[pyfunction]
-pub fn get_app_dir() -> PyResult<PathBuf> {
-    Ok(ctx_blocking()?.app_dir.clone())
-}
-
-#[pyfunction]
-pub fn get_blob_dir() -> PyResult<PathBuf> {
-    let ctx = ctx_blocking()?;
-    ensure_blob_dir(&ctx.app_dir)
-}
-
-#[pyfunction]
-pub fn get_default_graph() -> PyResult<Graph> {
-    Ok(ctx_blocking()?.default_graph.clone())
-}
-
-#[pyfunction]
-#[pyo3(signature = (url))]
-pub fn set_integrity_service_url(url: String) -> PyResult<()> {
-    set_integrity_service_url_inner(url).map_err(Into::into)
-}
-
-#[pyfunction]
-#[pyo3(signature = (multithread=None, memory_map=None))]
-pub fn set_hashing_config(multithread: Option<bool>, memory_map: Option<bool>) -> PyResult<()> {
-    set_hashing_config_inner(multithread, memory_map).map_err(Into::into)
-}
-
-#[pyfunction]
-#[pyo3(signature = (include_hidden_files=None, gitignore=None, include_symlinks=None))]
-pub fn set_cid_ignore_rules(
-    include_hidden_files: Option<bool>,
-    gitignore: Option<bool>,
-    include_symlinks: Option<bool>,
-) -> PyResult<()> {
-    set_cid_ignore_rules_inner(include_hidden_files, gitignore, include_symlinks)
-        .map_err(Into::into)
-}
-
-#[pyfunction]
-#[pyo3(signature = (enable))]
-pub fn set_generate_model_signing_signatures(enable: bool) -> PyResult<()> {
-    set_generate_model_signing_signatures_inner(enable).map_err(Into::into)
-}
-
-#[pyfunction]
-#[pyo3(signature = (value))]
-pub fn set_store_all_blobs(value: bool) -> PyResult<()> {
-    set_store_all_blobs_inner(value).map_err(Into::into)
-}
-
-#[pyfunction]
-#[pyo3(signature = (graph))]
-pub fn set_default_graph(py: Python, graph: Graph) -> PyResult<()> {
-    set_default_graph_inner(py, graph).map_err(Into::into)
-}
-
-#[pyfunction]
-pub fn reset() -> PyResult<()> {
-    get_runtime().block_on(Config::reset_internal())?;
-    Ok(())
-}
-
-/// Python submodule for config functions
-#[pymodule]
-pub fn config(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(get_integrity_service_url, m)?)?;
-    m.add_function(wrap_pyfunction!(get_store_all_blobs, m)?)?;
-    m.add_function(wrap_pyfunction!(get_cid_ignore_rules, m)?)?;
-    m.add_function(wrap_pyfunction!(get_generate_model_signing_signatures, m)?)?;
-    m.add_function(wrap_pyfunction!(get_app_dir, m)?)?;
-    m.add_function(wrap_pyfunction!(get_blob_dir, m)?)?;
-    m.add_function(wrap_pyfunction!(get_default_graph, m)?)?;
-    m.add_function(wrap_pyfunction!(set_integrity_service_url, m)?)?;
-    m.add_function(wrap_pyfunction!(set_hashing_config, m)?)?;
-    m.add_function(wrap_pyfunction!(set_cid_ignore_rules, m)?)?;
-    m.add_function(wrap_pyfunction!(set_generate_model_signing_signatures, m)?)?;
-    m.add_function(wrap_pyfunction!(set_store_all_blobs, m)?)?;
-    m.add_function(wrap_pyfunction!(set_default_graph, m)?)?;
-    m.add_function(wrap_pyfunction!(reset, m)?)?;
-    Ok(())
 }

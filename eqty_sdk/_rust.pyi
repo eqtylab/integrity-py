@@ -7,6 +7,14 @@ def init(custom_dir: Optional[PathLike[str]] = None) -> Any:
     """Initializes the sdk config. Must be called before setting individual config values"""
     ...
 
+def get_cid_for_bytes(data: Any, store: Optional[bool] = None) -> str:
+    """Calculates and returns the CID for the provided bytes."""
+    ...
+
+def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> str:
+    """Resolves the provided path and reads the file or directory to calculate the CID."""
+    ...
+
 class Canon:
     """Canonicalization options."""
     RDFC1: Canon
@@ -40,6 +48,64 @@ class CidResult:
     @property
     def blob(self) -> bytes:
         """Get the binary blob data."""
+        ...
+
+
+class Config:
+    """Global configuration handle."""
+    def set_integrity_service_url(self, url: str) -> Config:
+        ...
+
+    def set_hashing_config(self, multithread: Optional[bool], memory_map: Optional[bool]) -> Config:
+        ...
+
+    def set_cid_ignore_rules(self, include_hidden_files: Optional[bool], gitignore: Optional[bool], include_symlinks: Optional[bool]) -> Config:
+        ...
+
+    def set_generate_model_signing_signatures(self, enable: bool) -> Config:
+        ...
+
+    def set_store_all_blobs(self, value: bool) -> Config:
+        ...
+
+    def set_default_graph(self, graph: Graph) -> Config:
+        ...
+
+
+class Did:
+    """DID registration helper."""
+    @property
+    def ctx(self) -> Graph:
+        """Graph context for the DID."""
+        ...
+
+    @property
+    def statement_ids(self) -> List[str]:
+        """Statement IDs created for this DID."""
+        ...
+
+    def __init__(self, ctx: Graph, did: str, signer: Optional[PySigner]) -> None:
+        ...
+
+    @staticmethod
+    def from_signer(signer: PySigner) -> Did:
+        ...
+
+    @staticmethod
+    def from_did_string(did: str) -> Did:
+        ...
+
+    @staticmethod
+    def with_context(ctx: Graph) -> DidFactory:
+        ...
+
+
+class DidFactory:
+    """Factory for creating DID objects with a fixed context."""
+    def from_signer(self, signer: PySigner) -> Did:
+        ...
+
+    def from_did_string(self, did: str) -> Did:
         ...
 
 
@@ -108,94 +174,6 @@ class Graph:
 
     @staticmethod
     def from_parent(id: Any, name: str, graph: Graph) -> Graph:
-        ...
-
-
-class PySigner:
-    """Python wrapper for Rust signer."""
-    @property
-    def name(self) -> str:
-        """Get the signer name."""
-        ...
-
-    @property
-    def did_key(self) -> str:
-        """Get the DID key."""
-        ...
-
-
-# Config module
-class config:
-    Graph: type[Graph]
-
-    @staticmethod
-    def get_integrity_service_url() -> Optional[str]:
-        """Get Integrity Service Url."""
-        ...
-
-    @staticmethod
-    def get_store_all_blobs() -> bool:
-        """Get Store All Blobs."""
-        ...
-
-    @staticmethod
-    def get_cid_ignore_rules() -> Any:
-        """Get Cid Ignore Rules."""
-        ...
-
-    @staticmethod
-    def get_generate_model_signing_signatures() -> bool:
-        """Get Generate Model Signing Signatures."""
-        ...
-
-    @staticmethod
-    def get_app_dir() -> PathLike[str]:
-        """Get App Dir."""
-        ...
-
-    @staticmethod
-    def get_blob_dir() -> PathLike[str]:
-        """Get Blob Dir."""
-        ...
-
-    @staticmethod
-    def get_default_graph() -> Any:
-        """Get Default Graph."""
-        ...
-
-    @staticmethod
-    def set_integrity_service_url(url: str) -> None:
-        """Set Integrity Service Url."""
-        ...
-
-    @staticmethod
-    def set_hashing_config(multithread: Optional[bool] = None, memory_map: Optional[bool] = None) -> None:
-        """Set Hashing Config."""
-        ...
-
-    @staticmethod
-    def set_cid_ignore_rules(include_hidden_files: Optional[bool] = None, gitignore: Optional[bool] = None, include_symlinks: Optional[bool] = None) -> None:
-        """Set Cid Ignore Rules."""
-        ...
-
-    @staticmethod
-    def set_generate_model_signing_signatures(enable: bool) -> None:
-        """Set Generate Model Signing Signatures."""
-        ...
-
-    @staticmethod
-    def set_store_all_blobs(value: bool) -> None:
-        """Set Store All Blobs."""
-        ...
-
-    @staticmethod
-    def set_default_graph(graph: Any) -> None:
-        """Set Default Graph."""
-        ...
-
-    @staticmethod
-    def reset() -> None:
-        """Reset."""
         ...
 
 
@@ -305,26 +283,6 @@ class signer:
     @staticmethod
     def set_active_signer(signer: Any) -> None:
         """Sets the active signer by name or signer instance.  # Arguments * `signer` - Signer name string or Signer instance"""
-        ...
-
-    @staticmethod
-    def get_active_signer_did_key() -> str:
-        """Get the active signers Did Key"""
-        ...
-
-    @staticmethod
-    def get_signer_type(name: str) -> str:
-        """Get signer type string ('vcomp_notary', 'yubihsm2', etc) by name.  # Arguments * `name` - Name of the signer to retrieve"""
-        ...
-
-    @staticmethod
-    def get_signer_statements(name: str) -> List[str]:
-        """Retrieves the statements associated with a signer if any.  # Arguments * `name` - Name of the signer to retrieve statements from"""
-        ...
-
-    @staticmethod
-    def get_signer_blobs(name: str) -> Any:
-        """Retrieves the blobs associated with a signer if any.  # Arguments * `name` - Name of the signer to retrieve blobs from"""
         ...
 
 
