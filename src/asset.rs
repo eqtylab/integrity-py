@@ -112,7 +112,7 @@ impl Asset {
     #[staticmethod]
     fn _factory_with_context(ctx: Graph, asset_type: Py<PyAny>) -> PyResult<Py<PyAny>> {
         Python::attach(|py| {
-            let module = py.import("eqty_sdk.asset.asset")?;
+            let module = py.import("eqty_sdk.asset")?;
             let factory = module.getattr("_Factory")?;
             factory.call1((ctx, asset_type))?.into_py_any(py)
         })
@@ -410,7 +410,7 @@ fn build_metadata(
 }
 
 fn serialize_for_hashing(py: Python, obj: Py<PyAny>) -> PyResult<Vec<u8>> {
-    let module = py.import("eqty_sdk.asset.asset")?;
+    let module = py.import("eqty_sdk.asset")?;
     let func = module.getattr("serialize_for_hashing")?;
     let bytes = func.call1((obj,))?;
     bytes.extract::<Vec<u8>>()

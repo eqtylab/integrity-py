@@ -4,7 +4,7 @@ from typing import Any, Optional, Union
 from eqty_sdk._rust import Graph as Context
 from eqty_sdk.types import Cid
 
-from .asset import Asset, AssetType
+from . import Asset, AssetType
 
 
 class Custom(Asset):

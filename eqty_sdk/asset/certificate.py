@@ -1,4 +1,4 @@
-from .asset import AssetType, TypedAsset
+from . import AssetType, TypedAsset
 
 
 class Certificate(TypedAsset):
