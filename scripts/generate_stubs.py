@@ -261,7 +261,7 @@ class RustStubParser:
         return variants
 
     def _extract_pymethods(self, content: str):
-        impl_pattern = r"#\[pymethods\]\s*impl\s+(\w+)\s*\{" 
+        impl_pattern = r"#\[pymethods\]\s*impl\s+(\w+)\s*\{"
         for match in re.finditer(impl_pattern, content):
             rust_name = match.group(1)
             class_info = self.classes.get(rust_name)
@@ -272,9 +272,7 @@ class RustStubParser:
             if not block:
                 continue
 
-            for const_match in re.finditer(
-                r"#\[classattr\]\s*const\s+(\w+)\s*:\s*([^=]+)=", block
-            ):
+            for const_match in re.finditer(r"#\[classattr\]\s*const\s+(\w+)\s*:\s*([^=]+)=", block):
                 const_name = const_match.group(1)
                 rust_type = const_match.group(2).strip()
                 const_type = RustTypeMapper.map_type(rust_type, self.class_name_map)
@@ -299,9 +297,7 @@ class RustStubParser:
                 method_name = py_name_override or rust_method_name
 
                 params = self._parse_parameters(func_match.group("params"))
-                doc = self._extract_docstring(
-                    content, match.start() + func_match.start()
-                )
+                doc = self._extract_docstring(content, match.start() + func_match.start())
 
                 if is_getter:
                     prop_type = RustTypeMapper.map_type(return_type, self.class_name_map)
@@ -553,7 +549,9 @@ class StubGenerator:
 
             if module_info["functions"]:
                 for func in module_info["functions"]:
-                    lines.extend(self._generate_function_stub(func, indent="    ", qualify_types=True))
+                    lines.extend(
+                        self._generate_function_stub(func, indent="    ", qualify_types=True)
+                    )
                     lines.append("")
             elif not module_info["classes"]:
                 lines.append("    ...")
@@ -669,8 +667,7 @@ class StubGenerator:
             if class_info["properties"]:
                 for prop_name, prop_info in class_info["properties"].items():
                     lines.append("    @property")
-                    lines.append(
-                        f"    def {prop_name}(self) -> {prop_info['type']}:")
+                    lines.append(f"    def {prop_name}(self) -> {prop_info['type']}:")
                     if prop_info.get("doc"):
                         lines.append(f'        """{prop_info["doc"]}"""')
                     lines.append("        ...")

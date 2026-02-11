@@ -4,6 +4,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from os import PathLike
 
+def serialize_for_hashing(obj: Any) -> bytes:
+    """Serializes a Python object to bytes for hashing.  Handles str, int, float, list, dict, objects with serialize_for_hashing method, ML models with state_dict, and falls back to pickle for other types."""
+    ...
+
 def init(custom_dir: Optional[PathLike[str]] = None) -> Config:
     """Initializes the sdk config. Must be called before setting individual config values"""
     ...
@@ -18,10 +22,6 @@ def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> str:
 
 def maybe_create_model_signing_statement(collection_cid: str, model_signing_name: str, is_dir: bool) -> None:
     """Creates a model signing statement if enabled in config and the asset is a directory."""
-    ...
-
-def serialize_for_hashing(obj: Any) -> bytes:
-    """Serializes a Python object to bytes for hashing.  Handles str, int, float, list, dict, objects with serialize_for_hashing method, ML models with state_dict, and falls back to pickle for other types."""
     ...
 
 class Asset:

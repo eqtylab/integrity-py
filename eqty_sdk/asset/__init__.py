@@ -1,14 +1,12 @@
-import json
 import logging
 from enum import Enum
 from os import PathLike
-from typing import Any, Optional, Union, cast
-
-import dill as pickle
+from typing import Any, Optional, Union
 
 from eqty_sdk._rust import (
     Asset as Asset,
     Graph as Context,
+    serialize_for_hashing as serialize_for_hashing,
 )
 from eqty_sdk.types import Cid
 
@@ -30,25 +28,8 @@ class AssetType(Enum):
     TOKEN = "Token"
 
 
-def serialize_for_hashing(obj: Any) -> bytes:
-    if isinstance(obj, str):
-        return obj.encode("utf-8")
-    if isinstance(obj, (int, float)):
-        return str(obj).encode("utf-8")
-    if isinstance(obj, list) or isinstance(obj, dict):
-        return json.dumps(obj).encode("utf-8")
-    if hasattr(obj, "serialize_for_hashing"):
-        return cast(bytes, obj.serialize_for_hashing())
-    try:
-        if hasattr(obj, "model"):
-            state_dict = getattr(obj, "model").state_dict()
-            return cast(bytes, pickle.dumps(state_dict))
-        return cast(bytes, pickle.dumps(obj))
-    except (pickle.PickleError, TypeError) as e:
-        raise TypeError(f"Unsupported data type for hashing: {type(obj)} - {e}")
-
-
 def get_asset_name(asset_type: Union[AssetType, str], cid: str) -> str:
+    """Generate asset name from type and CID suffix."""
     if isinstance(asset_type, AssetType):
         return f"{asset_type.value}-{cid[-4:]}"
     return f"{asset_type}-{cid[-4:]}"

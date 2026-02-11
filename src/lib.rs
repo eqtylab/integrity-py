@@ -99,6 +99,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<entity::Entity>()?;
     m.add_class::<did::DidFactory>()?;
 
+    m.add_function(wrap_pyfunction!(asset::serialize_for_hashing, m)?)?;
     m.add_function(wrap_pyfunction!(init, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_path, m)?)?;
