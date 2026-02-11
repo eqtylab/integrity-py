@@ -15,8 +15,7 @@ use integrity::{
 use once_cell::sync::Lazy;
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
-use tokio::sync::RwLock;
-use tokio::task_local;
+use tokio::{sync::RwLock, task_local};
 use uuid::Uuid;
 
 use crate::{
@@ -124,7 +123,10 @@ where
 }
 
 pub fn ctx_blocking() -> Result<Config> {
-    if IN_WITH_CTX.try_with(|in_with_ctx| *in_with_ctx).unwrap_or(false) {
+    if IN_WITH_CTX
+        .try_with(|in_with_ctx| *in_with_ctx)
+        .unwrap_or(false)
+    {
         return Err(anyhow!(
             "ctx_blocking() cannot be called from within with_ctx"
         ));

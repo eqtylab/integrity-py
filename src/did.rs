@@ -96,7 +96,9 @@ fn build_did(
 ) -> PyResult<Did> {
     let metadata_json = if let Some(kwargs) = kwargs {
         let json = py.import("json")?;
-        json.getattr("dumps")?.call1((kwargs,))?.extract::<String>()?
+        json.getattr("dumps")?
+            .call1((kwargs,))?
+            .extract::<String>()?
     } else {
         "{}".to_string()
     };
@@ -131,9 +133,7 @@ fn build_did(
                         let statement: Statement =
                             serde_json::from_value(value.clone()).context("Invalid statement")?;
                         let id = statement.get_id();
-                        cfg.sql_lite
-                            .register_statement(&statement, &ctx.id)
-                            .await?;
+                        cfg.sql_lite.register_statement(&statement, &ctx.id).await?;
                         ids.push(id);
                     }
                 }
@@ -153,8 +153,7 @@ fn build_did(
 
         statement_ids.append(&mut vcomp_statement_ids);
     } else {
-        let mut did_ids =
-            statements::did::add_did_statement(py, did.clone(), None, Some(ctx.id))?;
+        let mut did_ids = statements::did::add_did_statement(py, did.clone(), None, Some(ctx.id))?;
         statement_ids.append(&mut did_ids);
     }
 

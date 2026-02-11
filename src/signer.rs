@@ -8,9 +8,9 @@ use integrity::signer::{
     YubiHsmSigner,
 };
 use pyo3::{
+    exceptions::{PyRuntimeError, PyTypeError, PyValueError},
     prelude::*,
     types::PyAny,
-    exceptions::{PyRuntimeError, PyValueError, PyTypeError},
     Bound,
 };
 use pyo3_async_runtimes::tokio::get_runtime;

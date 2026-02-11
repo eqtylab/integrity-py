@@ -514,7 +514,11 @@ class StubGenerator:
             "Config": {
                 "methods": [
                     ("set_integrity_service_url", [("url", "str")], "Config"),
-                    ("set_hashing_config", [("multithread", "Optional[bool]"), ("memory_map", "Optional[bool]")], "Config"),
+                    (
+                        "set_hashing_config",
+                        [("multithread", "Optional[bool]"), ("memory_map", "Optional[bool]")],
+                        "Config",
+                    ),
                     (
                         "set_cid_ignore_rules",
                         [
@@ -553,7 +557,11 @@ class StubGenerator:
                     ("statement_ids", "List[str]", "Statement IDs created for this DID."),
                 ],
                 "methods": [
-                    ("__init__", [("ctx", "Graph"), ("did", "str"), ("signer", "Optional[PySigner]")], "None"),
+                    (
+                        "__init__",
+                        [("ctx", "Graph"), ("did", "str"), ("signer", "Optional[PySigner]")],
+                        "None",
+                    ),
                     ("from_signer", [("signer", "PySigner")], "Did", True),
                     ("from_did_string", [("did", "str")], "Did", True),
                     ("with_context", [("ctx", "Graph")], "DidFactory", True),

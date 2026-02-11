@@ -6,9 +6,12 @@
 use std::{env, path::PathBuf};
 
 use config::Config;
-use integrity::cid::{blake3::blake3_cid_raw_binary, iroh::{compute_dir_cid, compute_file_cid}};
-use pyo3_async_runtimes::tokio::get_runtime;
+use integrity::cid::{
+    blake3::blake3_cid_raw_binary,
+    iroh::{compute_dir_cid, compute_file_cid},
+};
 use pyo3::exceptions::PyRuntimeError;
+use pyo3_async_runtimes::tokio::get_runtime;
 use tokio::fs;
 
 /// Resolves skip_proof from provided option or EQTY_SKIP_PROOF environment variable.
@@ -166,7 +169,9 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
 
             Ok(cid)
         } else {
-            Err(PyRuntimeError::new_err("The provided path {path:?} was not found"))
+            Err(PyRuntimeError::new_err(
+                "The provided path {path:?} was not found",
+            ))
         }
     })
 }

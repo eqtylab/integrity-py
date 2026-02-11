@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from eqty_sdk._rust import (
+    Did as _Did,
     cid as _cid,
     entity as _entity,
     manifest as _manifest,
-    Did as _Did,
     signer as _signer,
 )
 

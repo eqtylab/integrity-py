@@ -1,7 +1,10 @@
 from pathlib import Path
 from typing import Optional
 
-from eqty_sdk._rust import Config as _Config, init as _init
+from eqty_sdk._rust import (
+    Config as _Config,
+    init as _init,
+)
 
 __all__ = ["init"]
 

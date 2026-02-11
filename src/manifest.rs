@@ -142,12 +142,9 @@ impl Manifest {
     }
 
     fn register(&self, py: Python) -> PyResult<()> {
-        let api_key = env::var("EQTY_API_KEY")
-            .map_err(|_| {
-                pyo3::exceptions::PyRuntimeError::new_err(
-                    "The env var 'EQTY_API_KEY' must be set",
-                )
-            })?;
+        let api_key = env::var("EQTY_API_KEY").map_err(|_| {
+            pyo3::exceptions::PyRuntimeError::new_err("The env var 'EQTY_API_KEY' must be set")
+        })?;
         register(py, self.manifest_str.clone(), Some(api_key))
     }
 }

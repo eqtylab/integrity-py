@@ -1,8 +1,10 @@
 from pathlib import Path
 from typing import Optional
 
-from eqty_sdk._rust import get_cid_for_bytes as _get_cid_for_bytes
-from eqty_sdk._rust import get_cid_for_path as _get_cid_for_path
+from eqty_sdk._rust import (
+    get_cid_for_bytes as _get_cid_for_bytes,
+    get_cid_for_path as _get_cid_for_path,
+)
 
 
 def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> str:
