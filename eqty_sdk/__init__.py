@@ -1,4 +1,3 @@
-from eqty_sdk import config
 from eqty_sdk._rust import (
     Graph as Context,
     init,
@@ -35,7 +34,6 @@ from eqty_sdk.errors import (
     UnsupportedError,
     UsageError,
 )
-from eqty_sdk.statements import Statements
 from eqty_sdk.types import (
     SIGNER_ALGORITHMS,
     Cid,
@@ -43,6 +41,7 @@ from eqty_sdk.types import (
     Did,
     Entity,
     Manifest,
+    Metadata,
     Signer,
     set_active_signer,
 )
@@ -71,8 +70,6 @@ __all__ = [
     "compute",
     "Compute",
     "Computation",
-    # Config
-    "config",
     # Context
     "Context",
     # Errors
@@ -87,8 +84,8 @@ __all__ = [
     "Cid",
     "SIGNER_ALGORITHMS",
     "Signer",
+    "Metadata",
     "set_active_signer",
     "Entity",
     "Manifest",
-    "Statements",
 ]

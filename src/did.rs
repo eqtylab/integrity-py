@@ -66,7 +66,7 @@ impl Did {
 #[pymethods]
 impl DidFactory {
     #[pyo3(signature = (signer, **kwargs))]
-    fn from_signer(
+    fn build_from_signer(
         &self,
         py: Python,
         signer: Py<Signer>,
@@ -77,7 +77,7 @@ impl DidFactory {
     }
 
     #[pyo3(signature = (did, **kwargs))]
-    fn from_did_string(
+    fn build_from_did_string(
         &self,
         py: Python,
         did: String,

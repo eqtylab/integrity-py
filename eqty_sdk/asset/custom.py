@@ -1,4 +1,4 @@
-from pathlib import Path
+from os import PathLike
 from typing import Any, Optional, Union
 
 from eqty_sdk._rust import Graph as Context
@@ -12,7 +12,7 @@ class Custom(Asset):
 
     @staticmethod
     def from_path(
-        path: Union[str, Path],
+        path: PathLike[str],
         asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM,
         store: Optional[bool] = None,
         **kwargs,

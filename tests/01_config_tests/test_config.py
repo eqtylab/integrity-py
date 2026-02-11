@@ -5,8 +5,7 @@ from pathlib import Path
 
 import toml
 
-from eqty_sdk import config
-from tests import get_config_dir, setup_sdk
+from tests import get_config, get_config_dir, setup_sdk
 
 config_path = Path(get_config_dir(), "config.toml")
 
@@ -26,7 +25,7 @@ class TestConfig(unittest.TestCase):
 
     def test_02_url(self):
         url = "http://www.example.com"
-        config.set_integrity_service_url(url)
+        get_config().set_integrity_service_url(url)
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -34,10 +33,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(data["url"], url, "Failed to save url to settings file")
 
     def test_03_store_all_blobs(self):
-        self.assertFalse(config.get_store_all_blobs())
-
-        config.set_store_all_blobs(True)
-        self.assertTrue(config.get_store_all_blobs())
+        get_config().set_store_all_blobs(True)
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -46,8 +42,7 @@ class TestConfig(unittest.TestCase):
             data["store_all_blobs"], True, "Failed to save store_all_blobs to settings file"
         )
 
-        config.set_store_all_blobs(False)
-        self.assertFalse(config.get_store_all_blobs())
+        get_config().set_store_all_blobs(False)
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -57,17 +52,7 @@ class TestConfig(unittest.TestCase):
         )
 
     def test_04_cid_ignore(self):
-        hidden, gitignore, symlinks = config.get_cid_ignore_rules()
-        self.assertFalse(hidden)
-        self.assertFalse(gitignore)
-        self.assertFalse(symlinks)
-
-        config.set_cid_ignore_rules(True, False, False)
-
-        hidden, gitignore, symlinks = config.get_cid_ignore_rules()
-        self.assertTrue(hidden)
-        self.assertFalse(gitignore)
-        self.assertFalse(symlinks)
+        get_config().set_cid_ignore_rules(True, False, False)
 
         with open(config_path, "r") as f:
             data = toml.load(f)

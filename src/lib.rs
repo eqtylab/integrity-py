@@ -5,7 +5,7 @@
 
 use std::{env, path::PathBuf};
 
-use config::Config;
+use config::{ctx_blocking, Config};
 use integrity::cid::{
     blake3::blake3_cid_raw_binary,
     iroh::{compute_dir_cid, compute_file_cid},
@@ -37,10 +37,14 @@ pub fn resolve_timestamp(timestamp: Option<String>) -> Option<String> {
     timestamp.or_else(|| env::var("EQTY_TIMESTAMP").ok())
 }
 
+/// Asset model and helpers.
+pub mod asset;
 /// Content identifier (CID) computation and utilities.
 pub mod cid;
 /// Global application configuration management.
 pub mod config;
+/// Declaration model for governance statements.
+pub mod declaration;
 /// DID type for registering DID statements and metadata.
 pub mod did;
 /// Entity type for unhashed objects with UUID identifiers.
@@ -51,6 +55,8 @@ pub mod indexer;
 pub mod integrity_service;
 /// Manifest generation, import, and registration for integrity graphs.
 pub mod manifest;
+/// Metadata model for subject descriptions.
+pub mod metadata;
 /// Cryptographic signer creation and management.
 pub mod signer;
 /// Lineage statement creation and storage operations.
@@ -77,14 +83,26 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(statements::statements))?;
     m.add_wrapped(wrap_pymodule!(stream::stream))?;
 
+    m.add_class::<asset::Asset>()?;
+    m.add_class::<cid::Canon>()?;
+    m.add_class::<cid::Cid>()?;
+    m.add_class::<cid::CidResult>()?;
+    m.add_class::<cid::DirCidResult>()?;
     m.add_class::<Graph>()?;
     m.add_class::<Config>()?;
+    m.add_class::<declaration::Declaration>()?;
     m.add_class::<did::Did>()?;
+    m.add_class::<metadata::Metadata>()?;
+    m.add_class::<manifest::Manifest>()?;
+    m.add_class::<signer::Signer>()?;
+    m.add_class::<signer::SignerAlgorithms>()?;
+    m.add_class::<entity::Entity>()?;
     m.add_class::<did::DidFactory>()?;
 
     m.add_function(wrap_pyfunction!(init, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_path, m)?)?;
+    m.add_function(wrap_pyfunction!(maybe_create_model_signing_statement, m)?)?;
     Ok(())
 }
 
@@ -169,9 +187,46 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
 
             Ok(cid)
         } else {
-            Err(PyRuntimeError::new_err(
-                "The provided path {path:?} was not found",
-            ))
+            Err(PyRuntimeError::new_err(format!(
+                "The provided path {path:?} was not found"
+            )))
         }
     })
+}
+
+/// Creates a model signing statement if enabled in config and the asset is a directory.
+#[pyfunction]
+#[pyo3(signature = (collection_cid, model_signing_name, is_dir))]
+fn maybe_create_model_signing_statement(
+    py: Python<'_>,
+    collection_cid: String,
+    model_signing_name: String,
+    is_dir: bool,
+) -> PyResult<()> {
+    if !is_dir {
+        return Ok(());
+    }
+
+    let ctx = ctx_blocking().map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+    if !ctx.generate_model_signing_signatures {
+        return Ok(());
+    }
+
+    let blobs_dir = ctx.app_dir.join("blobs");
+    std::fs::create_dir_all(&blobs_dir)
+        .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+
+    let allow_symlinks = ctx.cid_ignore.include_symlinks;
+    crate::statements::model_signing::create_model_signing_statement(
+        py,
+        collection_cid,
+        blobs_dir,
+        model_signing_name,
+        allow_symlinks,
+        Vec::new(),
+        None,
+        None,
+    )?;
+
+    Ok(())
 }

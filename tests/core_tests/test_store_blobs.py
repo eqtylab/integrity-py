@@ -2,8 +2,8 @@ import os
 import unittest
 from pathlib import Path
 
-from eqty_sdk import config, get_cid_for_bytes
-from tests import clean_blobs, get_config_dir, setup_sdk
+from eqty_sdk import get_cid_for_bytes
+from tests import clean_blobs, get_config, get_config_dir, setup_sdk
 
 
 class TestCoreStore(unittest.TestCase):
@@ -33,11 +33,11 @@ class TestCoreStore(unittest.TestCase):
         )
         clean_blobs()
 
-        config.set_store_all_blobs(False)
+        get_config().set_store_all_blobs(False)
         get_cid_for_bytes(test_bytes)
         self.assertFalse(os.path.exists(blob_path), "Config Failure. Blob should not be stored")
 
-        config.set_store_all_blobs(True)
+        get_config().set_store_all_blobs(True)
         get_cid_for_bytes(test_bytes)
 
         self.assertTrue(os.path.exists(blob_path), "Config Failure. Blob should be stored")

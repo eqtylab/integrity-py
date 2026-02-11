@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
-from eqty_sdk import config
+from eqty_sdk import Metadata
 from eqty_sdk._rust import (
     Graph as Context,
     statements as eqty_core_statements,
@@ -11,7 +11,6 @@ from eqty_sdk._rust import (
 from eqty_sdk.asset import serialize_for_hashing
 from eqty_sdk.core import get_cid_for_bytes, get_cid_for_path
 from eqty_sdk.errors import UsageError
-from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement
 from eqty_sdk.types import Cid
 
@@ -52,12 +51,12 @@ class Computation:
             self._skip_proof = os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
 
     @classmethod
-    def new(cls, **kwargs) -> "Computation":
+    def new(cls, ctx: Context, **kwargs) -> "Computation":
         skip_proof = kwargs.pop("skip_proof", None)
 
         metadata = Metadata(**kwargs)
         instance = object.__new__(cls)
-        instance.__init_internal__(config.root_context(), metadata, skip_proof)
+        instance.__init_internal__(ctx, metadata, skip_proof)
         return instance
 
     @staticmethod

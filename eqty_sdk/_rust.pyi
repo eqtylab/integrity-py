@@ -15,6 +15,60 @@ def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> str:
     """Resolves the provided path and reads the file or directory to calculate the CID."""
     ...
 
+def maybe_create_model_signing_statement(collection_cid: str, model_signing_name: str, is_dir: bool) -> None:
+    """Creates a model signing statement if enabled in config and the asset is a directory."""
+    ...
+
+class Asset:
+    """Asset wrapper for data/metadata registration."""
+    @property
+    def statement_ids(self) -> List[str]:
+        """Statement IDs created for this asset."""
+        ...
+
+    @property
+    def cid(self) -> str:
+        """Content identifier."""
+        ...
+
+    @property
+    def asset_type(self) -> str:
+        """Asset type."""
+        ...
+
+    @property
+    def name(self) -> str:
+        """Asset name."""
+        ...
+
+    @property
+    def value(self) -> Any:
+        """Underlying value."""
+        ...
+
+    def __init__(self, obj: Any, asset_type: Any, cid: str, is_dir: bool) -> None:
+        ...
+
+    @staticmethod
+    def _from_object(obj: Any, asset_type: Any, ctx: Optional[Graph], store: Optional[bool]) -> Asset:
+        ...
+
+    @staticmethod
+    def _from_path(path: PathLike[str], asset_type: Any, ctx: Optional[Graph], store: Optional[bool]) -> Asset:
+        ...
+
+    @staticmethod
+    def _from_cid(cid: str, asset_type: Any, ctx: Optional[Graph]) -> Asset:
+        ...
+
+    @staticmethod
+    def _factory_with_context(ctx: Graph, asset_type: Any) -> Any:
+        ...
+
+    def add_declaration(self, declaration: Any) -> Asset:
+        ...
+
+
 class Canon:
     """Canonicalization options."""
     RDFC1: Canon
@@ -72,6 +126,72 @@ class Config:
         ...
 
 
+class Declaration:
+    """Declaration for governance statements."""
+    @property
+    def subject_line(self) -> str:
+        """Subject line for the declaration."""
+        ...
+
+    @property
+    def statement(self) -> str:
+        """Declaration statement."""
+        ...
+
+    @property
+    def submitted_at(self) -> Optional[str]:
+        """Submission timestamp."""
+        ...
+
+    @property
+    def submitted_by(self) -> Optional[str]:
+        """DID key of submitter."""
+        ...
+
+    @property
+    def control_cid(self) -> List[str]:
+        """Control CIDs."""
+        ...
+
+    @property
+    def attachment_cid(self) -> List[str]:
+        """Attachment CIDs."""
+        ...
+
+    @property
+    def extra(self) -> Dict[str, str]:
+        """Additional metadata."""
+        ...
+
+    def __init__(self, subject_line: str, statement: str) -> None:
+        ...
+
+    @staticmethod
+    def new(subject_line: str, statement: str) -> Declaration:
+        ...
+
+    def add_attachment_cid(self, cid: str) -> Declaration:
+        ...
+
+    def add_control_cid(self, cid: str) -> Declaration:
+        ...
+
+    def add_extra(self, key: str, val: str) -> Declaration:
+        ...
+
+    def finalize(self) -> Declaration:
+        ...
+
+    def cid(self) -> str:
+        ...
+
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+
+    def to_json(self) -> str:
+        ...
+
+
 class Did:
     """DID registration helper."""
     @property
@@ -102,10 +222,10 @@ class Did:
 
 class DidFactory:
     """Factory for creating DID objects with a fixed context."""
-    def from_signer(self, signer: Signer) -> Did:
+    def build_from_signer(self, signer: Signer) -> Did:
         ...
 
-    def from_did_string(self, did: str) -> Did:
+    def build_from_did_string(self, did: str) -> Did:
         ...
 
 
@@ -177,6 +297,46 @@ class Graph:
         ...
 
 
+class Manifest:
+    """Manifest utilities and representation."""
+    @property
+    def manifest_str(self) -> str:
+        """Manifest JSON string."""
+        ...
+
+    def __init__(self, manifest: str) -> None:
+        ...
+
+    @staticmethod
+    def from_statements(statements: Any, include_context: bool) -> Manifest:
+        ...
+
+    def export(self, file: PathLike[str]) -> None:
+        ...
+
+    @staticmethod
+    def import_manifest(manifest: Any) -> None:
+        ...
+
+
+class Metadata:
+    """Metadata for subject descriptions."""
+    def __init__(self) -> None:
+        ...
+
+    def __getattr__(self, attr: str) -> Any:
+        ...
+
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+
+    def to_json_str(self) -> str:
+        ...
+
+    def create_statement(self, subject_cid: str, skip_proof: bool) -> List[str]:
+        ...
+
+
 class Signer:
     """Python wrapper for Rust signer."""
     @property
@@ -190,8 +350,17 @@ class Signer:
         ...
 
 
+class SIGNER_ALGORITHMS:
+    """Signer algorithm constants."""
+    ED25519: SignerAlgorithms
+    SECP256K1: SignerAlgorithms
+    SECP256R1: SignerAlgorithms
+
+
 # Manifest module
 class manifest:
+    Manifest: type[Manifest]
+
     @staticmethod
     def generate(statements: List[Any], blobs_dir: PathLike[str], include_context: Optional[bool] = None) -> str:
         """ # Arguments * `py` - Python interpreter reference * `graphs` - Python list of graph dictionaries, each containing 'id', 'name', 'parent', and 'statements' * `blobs_dir` - Path to directory containing blob files referenced by statements * `include_context` - Whether to include context information in the manifest (default: false)  # Returns * `PyResult<String>` - JSON string representation of the manifest, or error on failure"""
@@ -267,6 +436,7 @@ class stream:
 # Signer module
 class signer:
     Signer: type[Signer]
+    SIGNER_ALGORITHMS: type[SIGNER_ALGORITHMS]
 
     @staticmethod
     def create_new_signer(key_type: str, name: Optional[Any] = None) -> Any:

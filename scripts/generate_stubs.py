@@ -50,6 +50,7 @@ class RustTypeMapper:
         "PyResult<Graph>": "Graph",
         "PyResult<Config>": "Config",
         "PyResult<Did>": "Did",
+        "PyResult<Declaration>": "Declaration",
         "PyResult<DidFactory>": "DidFactory",
         "Uuid": "Any",
         "uuid::Uuid": "Any",
@@ -347,9 +348,14 @@ class StubGenerator:
     MODULE_CLASSES = {
         "cid": ["Cid", "CidResult", "DirCidResult", "Canon"],
         "entity": ["Entity"],
-        "signer": ["Signer"],
+        "signer": ["Signer", "SIGNER_ALGORITHMS"],
+        "manifest": ["Manifest"],
         "config": ["Graph"],
         "_rust": ["Config"],
+    }
+
+    CLASS_NAME_OVERRIDES = {
+        "SignerAlgorithms": "SIGNER_ALGORITHMS",
     }
 
     def __init__(self):
@@ -511,6 +517,10 @@ class StubGenerator:
                 ],
                 "doc": "Python wrapper for Rust signer.",
             },
+            "SIGNER_ALGORITHMS": {
+                "attributes": ["ED25519", "SECP256K1", "SECP256R1"],
+                "doc": "Signer algorithm constants.",
+            },
             "Config": {
                 "methods": [
                     ("set_integrity_service_url", [("url", "str")], "Config"),
@@ -551,6 +561,112 @@ class StubGenerator:
                 ],
                 "doc": "Graph for organizing statements.",
             },
+            "Declaration": {
+                "properties": [
+                    ("subject_line", "str", "Subject line for the declaration."),
+                    ("statement", "str", "Declaration statement."),
+                    ("submitted_at", "Optional[str]", "Submission timestamp."),
+                    ("submitted_by", "Optional[str]", "DID key of submitter."),
+                    ("control_cid", "List[str]", "Control CIDs."),
+                    ("attachment_cid", "List[str]", "Attachment CIDs."),
+                    ("extra", "Dict[str, str]", "Additional metadata."),
+                ],
+                "methods": [
+                    ("__init__", [("subject_line", "str"), ("statement", "str")], "None"),
+                    ("new", [("subject_line", "str"), ("statement", "str")], "Declaration", True),
+                    ("add_attachment_cid", [("cid", "str")], "Declaration"),
+                    ("add_control_cid", [("cid", "str")], "Declaration"),
+                    ("add_extra", [("key", "str"), ("val", "str")], "Declaration"),
+                    ("finalize", [], "Declaration"),
+                    ("cid", [], "str"),
+                    ("to_dict", [], "Dict[str, Any]"),
+                    ("to_json", [], "str"),
+                ],
+                "doc": "Declaration for governance statements.",
+            },
+            "Metadata": {
+                "methods": [
+                    ("__init__", [], "None"),
+                    ("__getattr__", [("attr", "str")], "Any"),
+                    ("to_dict", [], "Dict[str, Any]"),
+                    ("to_json_str", [], "str"),
+                    (
+                        "create_statement",
+                        [("subject_cid", "str"), ("skip_proof", "bool")],
+                        "List[str]",
+                    ),
+                ],
+                "doc": "Metadata for subject descriptions.",
+            },
+            "Manifest": {
+                "properties": [
+                    ("manifest_str", "str", "Manifest JSON string."),
+                ],
+                "methods": [
+                    ("__init__", [("manifest", "str")], "None"),
+                    (
+                        "from_statements",
+                        [("statements", "Any"), ("include_context", "bool")],
+                        "Manifest",
+                        True,
+                    ),
+                    ("export", [("file", "PathLike[str]")], "None"),
+                    ("import_manifest", [("manifest", "Any")], "None", True),
+                ],
+                "doc": "Manifest utilities and representation.",
+            },
+            "Asset": {
+                "properties": [
+                    ("statement_ids", "List[str]", "Statement IDs created for this asset."),
+                    ("cid", "str", "Content identifier."),
+                    ("asset_type", "str", "Asset type."),
+                    ("name", "str", "Asset name."),
+                    ("value", "Any", "Underlying value."),
+                ],
+                "methods": [
+                    (
+                        "__init__",
+                        [("obj", "Any"), ("asset_type", "Any"), ("cid", "str"), ("is_dir", "bool")],
+                        "None",
+                    ),
+                    (
+                        "_from_object",
+                        [
+                            ("obj", "Any"),
+                            ("asset_type", "Any"),
+                            ("ctx", "Optional[Graph]"),
+                            ("store", "Optional[bool]"),
+                        ],
+                        "Asset",
+                        True,
+                    ),
+                    (
+                        "_from_path",
+                        [
+                            ("path", "PathLike[str]"),
+                            ("asset_type", "Any"),
+                            ("ctx", "Optional[Graph]"),
+                            ("store", "Optional[bool]"),
+                        ],
+                        "Asset",
+                        True,
+                    ),
+                    (
+                        "_from_cid",
+                        [("cid", "str"), ("asset_type", "Any"), ("ctx", "Optional[Graph]")],
+                        "Asset",
+                        True,
+                    ),
+                    (
+                        "_factory_with_context",
+                        [("ctx", "Graph"), ("asset_type", "Any")],
+                        "Any",
+                        True,
+                    ),
+                    ("add_declaration", [("declaration", "Any")], "Asset"),
+                ],
+                "doc": "Asset wrapper for data/metadata registration.",
+            },
             "Did": {
                 "properties": [
                     ("ctx", "Graph", "Graph context for the DID."),
@@ -570,17 +686,18 @@ class StubGenerator:
             },
             "DidFactory": {
                 "methods": [
-                    ("from_signer", [("signer", "Signer")], "Did"),
-                    ("from_did_string", [("did", "str")], "Did"),
+                    ("build_from_signer", [("signer", "Signer")], "Did"),
+                    ("build_from_did_string", [("did", "str")], "Did"),
                 ],
                 "doc": "Factory for creating DID objects with a fixed context.",
             },
         }
 
         for class_name in sorted(classes):
-            if class_name in class_definitions:
-                definition = class_definitions[class_name]
-                lines.append(f"class {class_name}:")
+            public_name = self.CLASS_NAME_OVERRIDES.get(class_name, class_name)
+            if public_name in class_definitions:
+                definition = class_definitions[public_name]
+                lines.append(f"class {public_name}:")
                 lines.append(f'    """{definition["doc"]}"""')
 
                 # Add attributes

@@ -2,9 +2,9 @@ import os
 import unittest
 from pathlib import Path
 
-from eqty_sdk import config, get_cid_for_bytes, get_cid_for_path
+from eqty_sdk import get_cid_for_bytes, get_cid_for_path
 from eqty_sdk._rust import cid as core_cid
-from tests import get_config_dir, setup_sdk
+from tests import get_config, get_config_dir, setup_sdk
 
 
 class TestCoreCid(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestCoreCid(unittest.TestCase):
             result.meta.cid, "bafkr4ibjcxelwo3leme7bbacs54mjfixjffxb6zmezpbvw63yx5ujpe7ku"
         )
 
-        config.set_cid_ignore_rules(include_symlinks=True)
+        get_config().set_cid_ignore_rules(include_symlinks=True)
 
         symlink_src = Path("./tests/fixtures/assets/datasets/file/file_text.txt").resolve()
         symlink_dst = Path("./tests/fixtures/iroh/collection/linked_file.txt").resolve()

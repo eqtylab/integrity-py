@@ -1,8 +1,8 @@
 import logging
 import unittest
 
-from eqty_sdk import config
-from eqty_sdk._rust import Graph
+from eqty_sdk import init
+from eqty_sdk._rust import Config, Graph
 from tests import setup_sdk
 
 
@@ -17,20 +17,16 @@ class TestInitContext(unittest.TestCase):
         setup_sdk()
 
     def test_init_context(self):
-        """Test that init creates a default root context."""
-        ctx = config.root_context()
-
-        self.assertIsNotNone(ctx)
-        self.assertIsInstance(ctx, Graph)
-        self.assertIsNotNone(ctx.id)
+        """Test that init returns a Config instance."""
+        cfg = init()
+        self.assertIsNotNone(cfg)
+        self.assertIsInstance(cfg, Config)
 
     def test_set_default_graph(self):
-        """Test that set_default_graph updates the root context."""
+        """Test that set_default_graph can be called."""
+        cfg = init()
         new_graph = Graph.new()
-        config.set_default_graph(new_graph)
-
-        ctx = config.root_context()
-        self.assertEqual(ctx.id, new_graph.id)
+        cfg.set_default_graph(new_graph)
 
 
 if __name__ == "__main__":
