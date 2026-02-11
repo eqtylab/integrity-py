@@ -27,13 +27,6 @@ from eqty_sdk.core import (
     get_cid_for_bytes,
     get_cid_for_path,
 )
-from eqty_sdk.errors import (
-    AuthenticationError,
-    Error,
-    ExternalError,
-    UnsupportedError,
-    UsageError,
-)
 from eqty_sdk.types import (
     SIGNER_ALGORITHMS,
     Cid,
@@ -72,12 +65,6 @@ __all__ = [
     "Computation",
     # Context
     "Context",
-    # Errors
-    "AuthenticationError",
-    "Error",
-    "ExternalError",
-    "UsageError",
-    "UnsupportedError",
     # Types
     "Declaration",
     "Did",
