@@ -411,60 +411,20 @@ fn build_metadata(
 
 /// Serializes a Python object to bytes for hashing.
 ///
-/// Handles str, int, float, list, dict, objects with serialize_for_hashing method,
-/// ML models with state_dict, and falls back to pickle for other types.
+/// Uses serialize_for_hashing when available, otherwise json.dumps for JSON-serializable inputs.
 #[pyfunction]
 pub fn serialize_for_hashing(py: Python, obj: Py<PyAny>) -> PyResult<Vec<u8>> {
     let obj_ref = obj.bind(py);
 
-    // Handle str
-    if obj_ref.is_instance_of::<pyo3::types::PyString>() {
-        let s: String = obj_ref.extract()?;
-        return Ok(s.into_bytes());
-    }
-
-    // Handle int
-    if obj_ref.is_instance_of::<pyo3::types::PyInt>() {
-        let i: i64 = obj_ref.extract()?;
-        return Ok(i.to_string().into_bytes());
-    }
-
-    // Handle float
-    if obj_ref.is_instance_of::<pyo3::types::PyFloat>() {
-        let f: f64 = obj_ref.extract()?;
-        return Ok(f.to_string().into_bytes());
-    }
-
-    // Handle list or dict via json.dumps
-    if obj_ref.is_instance_of::<pyo3::types::PyList>()
-        || obj_ref.is_instance_of::<pyo3::types::PyDict>()
-    {
-        let json_module = py.import("json")?;
-        let json_str: String = json_module.call_method1("dumps", (obj_ref,))?.extract()?;
-        return Ok(json_str.into_bytes());
-    }
-
-    // Handle objects with serialize_for_hashing method
+    let json_module = py.import("json")?;
     if obj_ref.hasattr("serialize_for_hashing")? {
-        let bytes: Vec<u8> = obj_ref.call_method0("serialize_for_hashing")?.extract()?;
-        return Ok(bytes);
+        return obj_ref.call_method0("serialize_for_hashing")?.extract();
     }
-
-    // Handle objects with model attribute (e.g., ML models)
-    // Use dill for pickling as the Python code does
-    let dill = py.import("dill")?;
-    if obj_ref.hasattr("model")? {
-        let model = obj_ref.getattr("model")?;
-        if model.hasattr("state_dict")? {
-            let state_dict = model.call_method0("state_dict")?;
-            let bytes: Vec<u8> = dill.call_method1("dumps", (state_dict,))?.extract()?;
-            return Ok(bytes);
+    match json_module.call_method1("dumps", (obj_ref,)) {
+        Ok(result) => {
+            let json_str: String = result.extract()?;
+            Ok(json_str.into_bytes())
         }
-    }
-
-    // Fallback to pickle/dill
-    match dill.call_method1("dumps", (obj_ref,)) {
-        Ok(result) => result.extract(),
         Err(e) => Err(PyTypeError::new_err(format!(
             "Unsupported data type for hashing: {} - {}",
             obj_ref.get_type().name()?,
