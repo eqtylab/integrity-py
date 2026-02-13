@@ -4,7 +4,7 @@ import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from eqty_sdk import Metadata
+from eqty_sdk.types import Metadata
 from eqty_sdk._rust import (
     Graph as Context,
     statements,
@@ -12,7 +12,6 @@ from eqty_sdk._rust import (
 )
 from eqty_sdk.asset import Asset, AssetType, Code, Custom, Dataset, Model
 from eqty_sdk.core import get_cid_for_bytes
-from eqty_sdk.errors import UsageError
 from eqty_sdk.statements import add_computation_statement
 
 logger = logging.getLogger("eqty.sdk.computation")
@@ -61,8 +60,6 @@ class Compute:
     ) -> None:
         logger.debug("Initalizing Compute")
 
-        if ctx is None:
-            raise UsageError("ctx is required; pass a Graph context from eqty_sdk.init().")
         self._ctx = ctx
 
         if metadata is None:
@@ -183,7 +180,7 @@ class Compute:
     def __results_to_assets__(self, result: Any) -> Any:
         """Converts a Tuple, List, or single value to an equivalent Asset type."""
         if result is None:
-            raise UsageError("The captured function must return a result")
+            raise RuntimeError("The captured function must return a result")
 
         output_type = self.metadata.output_type
 

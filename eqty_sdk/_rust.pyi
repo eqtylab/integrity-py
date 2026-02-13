@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from os import PathLike
 
 def serialize_for_hashing(obj: Any) -> bytes:
-    """Serializes a Python object to bytes for hashing.  Handles str, int, float, list, dict, objects with serialize_for_hashing method, ML models with state_dict, and falls back to pickle for other types."""
+    """Serializes a Python object to bytes for hashing.  Uses serialize_for_hashing when available, otherwise json.dumps for JSON-serializable inputs."""
     ...
 
 def init(custom_dir: Optional[PathLike[str]] = None) -> Config:

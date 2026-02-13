@@ -2,7 +2,7 @@ import json
 import logging
 import unittest
 
-from eqty_sdk import Dataset, UsageError, compute
+from eqty_sdk import Dataset, compute
 from tests import setup_sdk
 
 logger = logging.getLogger("unittests")
@@ -92,7 +92,7 @@ class TestComputeDecorator(unittest.TestCase):
         def empty_function():
             pass
 
-        with self.assertRaises(UsageError):
+        with self.assertRaises(RuntimeError):
             empty_function()
 
     def test_wrong_argument_type(self):

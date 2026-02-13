@@ -1,7 +1,6 @@
 import unittest
 
 from eqty_sdk import Compute, Dataset
-from eqty_sdk.errors import UsageError
 from tests import setup_sdk
 
 
@@ -38,7 +37,7 @@ class TestCompute(unittest.TestCase):
 
         compute_empty = Compute(empty_function)
 
-        with self.assertRaises(UsageError):
+        with self.assertRaises(RuntimeError):
             compute_empty()
 
     def test_wrong_argument_type(self):

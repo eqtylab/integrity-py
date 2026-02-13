@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context as AnyhowContext};
+use anyhow::{anyhow, Context as AnyhowContext, Result};
 use integrity::{
     lineage::models::statements::{Statement, StatementTrait},
     signer::{load_signer as utils_load_signer, SignerType},
@@ -94,6 +94,7 @@ fn build_did(
     signer: Option<Py<Signer>>,
     kwargs: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<Did> {
+    log::debug!("Building signer. DID: {did}");
     let metadata_json = if let Some(kwargs) = kwargs {
         let json = py.import("json")?;
         json.getattr("dumps")?
@@ -107,7 +108,7 @@ fn build_did(
 
     let is_vcomp_signer = if let Some(signer) = signer.as_ref() {
         let signer_name = signer.bind(py).borrow().name.clone();
-        is_vcomp_signer(&signer_name, py)?
+        is_vcomp_signer(&signer_name)?
     } else {
         false
     };
@@ -164,14 +165,14 @@ fn build_did(
     Ok(Did { ctx, statement_ids })
 }
 
-fn is_vcomp_signer(name: &str, py: Python) -> PyResult<bool> {
-    let result = with_ctx!(py, |cfg| {
-        let signer_file = cfg.app_dir.join("signers").join(name);
-        if !signer_file.exists() {
-            return Err(anyhow!("No Signer named '{name}' found"));
-        }
-        let signer = utils_load_signer(signer_file)?;
-        Ok::<_, anyhow::Error>(matches!(signer, SignerType::VCompNotarySigner(_)))
-    })?;
-    Ok(result)
+fn is_vcomp_signer(name: &str) -> Result<bool> {
+    log::trace!("Checking if {name} is a known vcomp signer");
+    let cfg = ctx_blocking()?;
+    let signer_file = cfg.app_dir.join("signers").join(name);
+    if !signer_file.exists() {
+        log::trace!("{name} is not vcomp");
+        return Ok(false);
+    }
+    let signer = utils_load_signer(signer_file)?;
+    Ok(matches!(signer, SignerType::VCompNotarySigner(_)))
 }

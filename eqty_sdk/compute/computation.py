@@ -3,14 +3,13 @@ import os
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
-from eqty_sdk import Metadata
+from eqty_sdk.types import Metadata
 from eqty_sdk._rust import (
     Graph as Context,
     statements as eqty_core_statements,
 )
 from eqty_sdk.asset import serialize_for_hashing
 from eqty_sdk.core import get_cid_for_bytes, get_cid_for_path
-from eqty_sdk.errors import UsageError
 from eqty_sdk.statements import add_computation_statement
 from eqty_sdk.types import Cid
 
@@ -28,7 +27,7 @@ def __cid_path__(path: Union[str, Path], store: Optional[bool] = None) -> str:
         try:
             return get_cid_for_path(resolved_path, store)
         except (IOError, OSError):
-            raise UsageError(f"The input path '{resolved_path}' was not found.")
+            raise IOError(f"The input path '{resolved_path}' was not found.")
 
 
 class Computation:

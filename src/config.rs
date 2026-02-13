@@ -298,6 +298,7 @@ impl Config {
         if !app_dir.exists() {
             fs::create_dir_all(&app_dir)?;
         }
+        fs::create_dir_all(app_dir.join("blobs"))?;
 
         let db_path = app_dir.join("graphs.db");
         let db_init_required = !db_path.exists();
