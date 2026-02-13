@@ -3,15 +3,13 @@ import os
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
-from eqty_sdk.types import Metadata
 from eqty_sdk._rust import (
     Graph as Context,
-    statements as eqty_core_statements,
 )
 from eqty_sdk.asset import serialize_for_hashing
 from eqty_sdk.core import get_cid_for_bytes, get_cid_for_path
 from eqty_sdk.statements import add_computation_statement
-from eqty_sdk.types import Cid
+from eqty_sdk.types import Cid, Metadata
 
 logger = logging.getLogger("eqty.sdk.computation")
 

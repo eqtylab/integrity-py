@@ -4,7 +4,6 @@ import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from eqty_sdk.types import Metadata
 from eqty_sdk._rust import (
     Graph as Context,
     statements,
@@ -13,6 +12,7 @@ from eqty_sdk._rust import (
 from eqty_sdk.asset import Asset, AssetType, Code, Custom, Dataset, Model
 from eqty_sdk.core import get_cid_for_bytes
 from eqty_sdk.statements import add_computation_statement
+from eqty_sdk.types import Metadata
 
 logger = logging.getLogger("eqty.sdk.computation")
 
