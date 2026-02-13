@@ -35,14 +35,13 @@ class Computation:
         raise TypeError("Use Computation.new() to create instances of this class.")
 
     def __init_internal__(
-        self, ctx: Context, metadata: Metadata, skip_proof: Optional[bool] = None
+        self, ctx: Optional[Context], metadata: Metadata, skip_proof: Optional[bool] = None
     ):
         self._ctx = ctx
         self._metadata = metadata
         self._input_cids: List[str] = []
         self._output_cids: List[str] = []
         self._computation_cid: Union[str, None] = None
-        self._associated_statement_ids: List[str] = []
 
         if skip_proof is not None:
             self._skip_proof = skip_proof
@@ -50,12 +49,12 @@ class Computation:
             self._skip_proof = os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
 
     @classmethod
-    def new(cls, ctx: Context, **kwargs) -> "Computation":
+    def new(cls, **kwargs) -> "Computation":
         skip_proof = kwargs.pop("skip_proof", None)
 
         metadata = Metadata(**kwargs)
         instance = object.__new__(cls)
-        instance.__init_internal__(ctx, metadata, skip_proof)
+        instance.__init_internal__(None, metadata, skip_proof)
         return instance
 
     @staticmethod
@@ -189,13 +188,7 @@ class Computation:
             computation=self._computation_cid,
             skip_proof=self._skip_proof,
         )
-        self._associated_statement_ids.extend(statement_ids)
 
-        ids = self._metadata.create_statement(statement_ids[0], self._skip_proof)
-        self._associated_statement_ids.extend(ids)
-
-        for id in self._associated_statement_ids:
-            logger.info(f"Registering data statement {id} to graph: {self._ctx.id}")
-            eqty_core_statements.register_statement_to_graph(id, str(self._ctx.id))
+        self._metadata.create_statement(statement_ids[0], self._skip_proof)
 
         return self
