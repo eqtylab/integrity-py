@@ -154,6 +154,24 @@ class CidResult:
 
 class Config:
     """Global application config containing configuration and state.  The config stores application-wide settings including storage directories, service URLs, hashing preferences, and file filtering rules."""
+    def set_integrity_service_url(self, url: str) -> Config:
+        ...
+
+    def set_hashing_config(self, multithread: Optional[bool] = None, memory_map: Optional[bool] = None) -> Config:
+        ...
+
+    def set_cid_ignore_rules(self, include_hidden_files: Optional[bool] = None, gitignore: Optional[bool] = None, include_symlinks: Optional[bool] = None) -> Config:
+        ...
+
+    def set_generate_model_signing_signatures(self, enable: bool) -> Config:
+        ...
+
+    def set_store_all_blobs(self, value: bool) -> Config:
+        ...
+
+    def set_default_graph(self, graph: Graph) -> Config:
+        ...
+
 
 class Declaration:
     @property

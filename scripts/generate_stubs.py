@@ -261,7 +261,7 @@ class RustStubParser:
         return variants
 
     def _extract_pymethods(self, content: str):
-        impl_pattern = r"#\[pymethods\]\s*impl\s+(\w+)\s*\{"
+        impl_pattern = r"#\[pymethods\][\s\S]*?impl\s+(\w+)\s*\{"
         for match in re.finditer(impl_pattern, content):
             rust_name = match.group(1)
             class_info = self.classes.get(rust_name)
