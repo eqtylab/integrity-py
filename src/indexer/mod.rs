@@ -12,6 +12,8 @@ pub use sqlite::Sqlite;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use uuid::Uuid;
 
+use crate::with_ctx;
+
 // ============================================================================
 // Graph
 // ============================================================================
@@ -41,25 +43,63 @@ pub struct Graph {
 #[pymethods]
 impl Graph {
     #[new]
-    pub fn new(id: Uuid, name: String) -> Self {
-        Graph {
-            id,
+    pub fn constructor(py: Python<'_>, name: String) -> Self {
+        let graph = Graph {
+            id: Uuid::new_v4(),
             name,
             parent: None,
             statements: None,
-        }
+        };
+
+        with_ctx!(py, |ctx| {
+            ctx.sql_lite
+                .create_graph(&graph)
+                .await
+                .expect("Failed to create record in database");
+        });
+
+        graph
+    }
+
+    pub fn new(&self, py: Python<'_>, name: String) -> Graph {
+        let p_id = self.id;
+        log::info!("Creating graph with parent");
+        let graph = Graph {
+            id: Uuid::new_v4(),
+            name,
+            parent: Some(p_id),
+            statements: None,
+        };
+
+        with_ctx!(py, |ctx| {
+            ctx.sql_lite
+                .create_graph(&graph)
+                .await
+                .expect("Failed to create record in database");
+        });
+        graph
     }
 
     #[staticmethod]
-    pub fn from_parent(id: Uuid, name: String, graph: Graph) -> Self {
-        Graph {
+    pub fn from_project(py: Python<'_>, id: Uuid) -> Self {
+        log::info!("Creating graph from project");
+        let graph = Graph {
             id,
-            name,
-            parent: Some(graph.id),
+            name: id.to_string(),
+            parent: None,
             statements: None,
-        }
+        };
+
+        with_ctx!(py, |ctx| {
+            ctx.sql_lite
+                .create_graph(&graph)
+                .await
+                .expect("Failed to create record in database");
+        });
+        graph
     }
 }
+
 impl Default for Graph {
     fn default() -> Self {
         let id = uuid::uuid!("00000000-0000-0000-0000-000000000000");

@@ -14,11 +14,20 @@ mod sql_tests {
         db
     }
 
+    fn make_graph(id: uuid::Uuid, name: &str) -> Graph {
+        Graph {
+            id,
+            name: name.to_string(),
+            parent: None,
+            statements: None,
+        }
+    }
+
     #[tokio::test]
     async fn test_register_computation_statement() {
         let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000010");
-        let graph = Graph::new(graph_id, "comp_test".to_string());
+        let graph = make_graph(graph_id, "comp_test");
         db.create_graph(&graph).await.unwrap();
 
         let did = String::from("did:key:comp_statement");
@@ -49,7 +58,7 @@ mod sql_tests {
     async fn test_register_data_statement() {
         let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000011");
-        let graph = Graph::new(graph_id, "data_test".to_string());
+        let graph = make_graph(graph_id, "data_test");
         db.create_graph(&graph).await.unwrap();
 
         let did = String::from("did:key:data_statement");
@@ -92,7 +101,7 @@ mod sql_tests {
     async fn test_register_metadata_statement() {
         let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000012");
-        let graph = Graph::new(graph_id, "metadata_test".to_string());
+        let graph = make_graph(graph_id, "metadata_test");
         db.create_graph(&graph).await.unwrap();
 
         let did = String::from("did:key:metadata_statement");
@@ -139,7 +148,7 @@ mod sql_tests {
     async fn test_register_storage_statement() {
         let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000013");
-        let graph = Graph::new(graph_id, "storage_test".to_string());
+        let graph = make_graph(graph_id, "storage_test");
         db.create_graph(&graph).await.unwrap();
 
         let did = String::from("did:key:storage_statement");
@@ -186,7 +195,7 @@ mod sql_tests {
     async fn test_register_association_statement() {
         let db = setup_db().await;
         let graph_id = uuid::uuid!("00000000-0000-0000-0000-000000000014");
-        let graph = Graph::new(graph_id, "association_test".to_string());
+        let graph = make_graph(graph_id, "association_test");
         db.create_graph(&graph).await.unwrap();
 
         let did = String::from("did:key:association_statement");
@@ -302,15 +311,15 @@ mod sql_tests {
     async fn test_statement_retrieval_with_hierarchy() {
         let db = setup_db().await;
         let root_graph_id = uuid::uuid!("00000000-0000-0000-0000-500000000001");
-        let graph = Graph::new(root_graph_id, "Root Graph".to_string());
+        let graph = make_graph(root_graph_id, "Root Graph");
         db.create_graph(&graph).await.unwrap();
 
         let child_graph_id = uuid::uuid!("00000000-0000-0000-0000-500000000002");
-        let graph = Graph::new(child_graph_id, "Child Graph".to_string());
+        let graph = make_graph(child_graph_id, "Child Graph");
         db.create_graph(&graph).await.unwrap();
 
         let child_graph_id_2 = uuid::uuid!("00000000-0000-0000-0000-500000000003");
-        let graph = Graph::new(child_graph_id_2, "Child Graph 2".to_string());
+        let graph = make_graph(child_graph_id_2, "Child Graph 2");
         db.create_graph(&graph).await.unwrap();
 
         let input_data = vec![
