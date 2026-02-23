@@ -5,7 +5,7 @@ Run this after making changes to PyO3 functions in the Rust codebase.
 
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 
 class RustTypeMapper:
@@ -14,618 +14,709 @@ class RustTypeMapper:
     TYPE_MAP = {
         "String": "str",
         "&str": "str",
+        "str": "str",
         "PathBuf": "PathLike[str]",
-        "Vec<String>": "List[str]",
-        "Vec<PyObject>": "List[Any]",
-        "Vec<u8>": "bytes",
-        "Vec<&[u8]>": "List[bytes]",
-        "Option<String>": "Optional[str]",
-        "Option<&str>": "Optional[str]",
-        "Option<bool>": "Optional[bool]",
-        "Option<PyObject>": "Optional[Any]",
         "bool": "bool",
         "u8": "int",
         "u16": "int",
         "u32": "int",
         "u64": "int",
+        "usize": "int",
         "i32": "int",
         "i64": "int",
         "f32": "float",
         "f64": "float",
-        "&[u8]": "bytes",
-        "&PyDict": "Dict[str, Any]",
-        "PyResult<()>": "None",
-        "PyResult<String>": "str",
-        "PyResult<bool>": "bool",
-        "PyResult<Vec<String>>": "List[str]",
-        "PyResult<DirCidResult>": "DirCidResult",
-        "PyResult<CidResult>": "CidResult",
-        "PyResult<Py<Signer>>": "Signer",
-        "PyResult<(PyObject, PyObject)>": "Tuple[List[Any], Any]",
-        "PyResult<HashMap<String, &PyBytes>>": "Dict[str, bytes]",
-        "HashMap<String, bool>": "Dict[str, bool]",
-        "HashMap<String, &PyBytes>": "Dict[str, bytes]",
-        "&PyAny": "Any",
+        "Bytes": "bytes",
+        "PyAny": "Any",
         "PyObject": "Any",
-        "PyResult<Graph>": "Graph",
-        "PyResult<Config>": "Config",
-        "PyResult<Did>": "Did",
-        "PyResult<DidFactory>": "DidFactory",
+        "Py<PyAny>": "Any",
+        "PyBytes": "bytes",
         "Uuid": "Any",
         "uuid::Uuid": "Any",
-        "Option<Uuid>": "Optional[Any]",
-        "Option<uuid::Uuid>": "Optional[Any]",
+        "PyResult<()>": "None",
     }
 
     @classmethod
-    def map_type(cls, rust_type: str) -> str:
+    def map_type(cls, rust_type: str, class_map: Dict[str, str]) -> str:
         """Convert Rust type to Python type annotation."""
-        # Clean up the type string
         rust_type = rust_type.strip()
+        if not rust_type:
+            return "Any"
 
-        # Special case for Vec<u8> which should be bytes, not List[int]
+        rust_type = rust_type.replace("mut ", "").strip()
+        rust_type = cls._strip_reference(rust_type)
+
         if rust_type == "Vec<u8>":
             return "bytes"
 
-        # Handle PyDict types (with or without lifetime parameters)
-        if "PyDict" in rust_type:
-            return "Dict[str, Any]"
+        if rust_type == "[u8]":
+            return "bytes"
 
-        # Handle generic types like Vec<T>
-        if rust_type.startswith("Vec<") and rust_type.endswith(">"):
-            inner_type = rust_type[4:-1]
-            mapped_inner = cls.map_type(inner_type)
-            return f"List[{mapped_inner}]"
+        if rust_type in cls.TYPE_MAP:
+            return cls.TYPE_MAP[rust_type]
 
-        # Handle Option<T>
-        if rust_type.startswith("Option<") and rust_type.endswith(">"):
-            inner_type = rust_type[7:-1]
-            mapped_inner = cls.map_type(inner_type)
-            return f"Optional[{mapped_inner}]"
+        if rust_type in class_map:
+            return class_map[rust_type]
 
-        # Handle PyResult<T>
-        if rust_type.startswith("PyResult<") and rust_type.endswith(">"):
-            inner_type = rust_type[9:-1]
-            if inner_type == "()":
+        if rust_type == "()":
+            return "None"
+
+        inner = cls._extract_generic(rust_type, "PyResult")
+        if inner is not None:
+            if inner.strip() == "()":
                 return "None"
-            return cls.map_type(inner_type)
+            return cls.map_type(inner, class_map)
 
-        # Direct mapping
-        return cls.TYPE_MAP.get(rust_type, "Any")
+        inner = cls._extract_generic(rust_type, "Option")
+        if inner is not None:
+            return f"Optional[{cls.map_type(inner, class_map)}]"
+
+        inner = cls._extract_generic(rust_type, "Vec")
+        if inner is not None:
+            return f"List[{cls.map_type(inner, class_map)}]"
+
+        inner = cls._extract_generic(rust_type, "HashMap")
+        if inner is not None:
+            key_val = cls._split_generic_args(inner)
+            if len(key_val) == 2:
+                key_type = cls.map_type(key_val[0], class_map)
+                val_type = cls.map_type(key_val[1], class_map)
+                return f"Dict[{key_type}, {val_type}]"
+            return "Dict[Any, Any]"
+
+        inner = cls._extract_generic(rust_type, "Result")
+        if inner is not None:
+            parts = cls._split_generic_args(inner)
+            if parts:
+                return cls.map_type(parts[0], class_map)
+
+        inner = cls._extract_generic(rust_type, "Py")
+        if inner is not None:
+            return cls.map_type(inner, class_map)
+
+        inner = cls._extract_generic(rust_type, "Bound")
+        if inner is not None:
+            parts = cls._split_generic_args(inner)
+            if parts:
+                return cls.map_type(parts[-1], class_map)
+
+        if rust_type.startswith("(") and rust_type.endswith(")"):
+            inner = rust_type[1:-1]
+            parts = cls._split_generic_args(inner)
+            mapped = ", ".join(cls.map_type(part, class_map) for part in parts if part)
+            return f"Tuple[{mapped}]" if mapped else "Tuple[Any, ...]"
+
+        return "Any"
+
+    @staticmethod
+    def _extract_generic(rust_type: str, name: str) -> Optional[str]:
+        prefix = f"{name}<"
+        if rust_type.startswith(prefix) and rust_type.endswith(">"):
+            return rust_type[len(prefix) : -1]
+        return None
+
+    @staticmethod
+    def _split_generic_args(arg_str: str) -> List[str]:
+        args = []
+        current = ""
+        angle_depth = 0
+        paren_depth = 0
+        for char in arg_str:
+            if char == "," and angle_depth == 0 and paren_depth == 0:
+                if current.strip():
+                    args.append(current.strip())
+                current = ""
+                continue
+            current += char
+            if char == "<":
+                angle_depth += 1
+            elif char == ">":
+                angle_depth -= 1
+            elif char == "(":
+                paren_depth += 1
+            elif char == ")":
+                paren_depth -= 1
+        if current.strip():
+            args.append(current.strip())
+        return args
+
+    @staticmethod
+    def _strip_reference(rust_type: str) -> str:
+        if rust_type.startswith("&"):
+            rust_type = rust_type[1:].strip()
+            rust_type = re.sub(r"^'[\w_]+\s*", "", rust_type).strip()
+        return rust_type
 
 
-class PyFunctionParser:
-    """Parses PyO3 function definitions from Rust source files."""
+class RustStubParser:
+    """Parses PyO3 modules, classes, and functions from Rust sources."""
 
     def __init__(self, src_dir: Path):
         self.src_dir = src_dir
-        self.modules = {}
-        self.classes = set()
+        self.classes: Dict[str, dict] = {}
+        self.functions: Dict[str, dict] = {}
+        self.modules: Dict[str, dict] = {}
+        self.class_name_map: Dict[str, str] = {}
 
-    def parse_all_files(self) -> Dict[str, List[dict]]:
-        """Parse all Rust files and extract PyO3 function definitions."""
-        # Find all .rs files
+    def parse_all_files(self):
         rust_files = list(self.src_dir.rglob("*.rs"))
-
         for rust_file in rust_files:
-            self._parse_file(rust_file)
-
-        return self.modules
-
-    def _parse_file(self, file_path: Path):
-        """Parse a single Rust file for PyO3 functions."""
-        try:
-            content = file_path.read_text()
-
-            # Always extract pyclass definitions from all files
+            content = rust_file.read_text()
             self._extract_classes(content)
 
-            # Find module name from pymodule attribute
-            module_match = re.search(r"#\[pymodule\]\s*(?:pub\s+)?fn (\w+)", content)
-            if module_match:
-                module_name = module_match.group(1)
-                if module_name not in self.modules:
-                    self.modules[module_name] = []
-            else:
-                # Use parent directory name for statements submodules
-                if "statements" in str(file_path):
-                    module_name = "statements"
-                elif "config" in str(file_path):
-                    module_name = "config"
+        for rust_file in rust_files:
+            content = rust_file.read_text()
+            self._extract_pymethods(content)
+            self._extract_pyfunctions(content)
+        for rust_file in rust_files:
+            content = rust_file.read_text()
+            self._extract_pymodules(content)
+
+        return self
+
+    def _extract_classes(self, content: str):
+        class_pattern = (
+            r"#\[pyclass(?P<attrs>[^\]]*)\](?:\s*#\[[^\]]+\])*\s*"
+            r"(?:pub\s+)?(?P<kind>struct|enum)\s+(?P<name>\w+)"
+        )
+        for match in re.finditer(class_pattern, content):
+            rust_name = match.group("name")
+            attrs = match.group("attrs")
+            py_name = self._parse_pyclass_name(attrs) or rust_name
+            doc = self._extract_docstring(content, match.start())
+
+            class_info = self.classes.get(
+                rust_name,
+                {
+                    "rust_name": rust_name,
+                    "name": py_name,
+                    "doc": doc,
+                    "properties": {},
+                    "methods": [],
+                    "classattrs": {},
+                },
+            )
+            class_info["name"] = py_name
+            if doc and not class_info.get("doc"):
+                class_info["doc"] = doc
+
+            block, _ = self._extract_block(content, match.end())
+            if block:
+                if match.group("kind") == "enum":
+                    variants = self._parse_enum_variants(block)
+                    for variant in variants:
+                        class_info["classattrs"].setdefault(variant, py_name)
                 else:
-                    return
+                    properties = self._parse_struct_getters(block)
+                    for prop_name, prop_type, prop_doc in properties:
+                        existing = class_info["properties"].get(prop_name)
+                        if not existing:
+                            class_info["properties"][prop_name] = {
+                                "type": prop_type,
+                                "doc": prop_doc,
+                            }
+                        elif not existing.get("doc") and prop_doc:
+                            existing["doc"] = prop_doc
 
-            # Find all pyfunction definitions
-            functions = self._extract_functions(content)
+            self.classes[rust_name] = class_info
+            self.class_name_map[rust_name] = py_name
 
-            if module_name and functions:
-                if module_name not in self.modules:
-                    self.modules[module_name] = []
-                self.modules[module_name].extend(functions)
+    def _parse_struct_getters(self, block: str) -> List[Tuple[str, str, str]]:
+        properties = []
+        doc_lines: List[str] = []
+        has_getter = False
+        for line in block.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("///"):
+                doc_lines.append(stripped[3:].strip())
+                continue
+            if stripped.startswith("#[pyo3(") and "get" in stripped:
+                has_getter = True
+                continue
+            field_match = re.match(r"(?:pub\s+)?(\w+)\s*:\s*([^,]+),", stripped)
+            if field_match:
+                if has_getter:
+                    name = field_match.group(1)
+                    rust_type = field_match.group(2).strip()
+                    prop_type = RustTypeMapper.map_type(rust_type, self.class_name_map)
+                    doc = " ".join(doc_lines).strip()
+                    properties.append((name, prop_type, doc))
+                has_getter = False
+                doc_lines = []
+                continue
+            if not stripped:
+                doc_lines = []
+        return properties
 
-        except Exception as e:
-            print(f"Warning: Could not parse {file_path}: {e}")
+    @staticmethod
+    def _parse_enum_variants(block: str) -> List[str]:
+        variants = []
+        for line in block.splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("///") or stripped.startswith("#"):
+                continue
+            match = re.match(r"(\w+)\s*(?:=|,)", stripped)
+            if match:
+                variants.append(match.group(1))
+        return variants
 
-    def _skip_pyo3_attributes(self, content: str, start_pos: int) -> int:
-        """Skip over any #[pyo3(...)] attributes after #[pyfunction], handling nested brackets."""
-        pos = start_pos
-        while pos < len(content):
-            # Skip whitespace
-            while pos < len(content) and content[pos] in " \t\n\r":
-                pos += 1
-
-            # Check if we have a #[pyo3 attribute
-            if content[pos : pos + 7] == "#[pyo3(":
-                pos += 7
-                # Find the matching closing ]
-                depth = 1  # We're inside [pyo3(
-                while pos < len(content) and depth > 0:
-                    if content[pos] == "(":
-                        depth += 1
-                    elif content[pos] == ")":
-                        depth -= 1
-                    pos += 1
-                # Skip the closing ]
-                if pos < len(content) and content[pos] == "]":
-                    pos += 1
-            else:
-                # No more pyo3 attributes
-                break
-
-        return pos
-
-    def _extract_functions(self, content: str) -> List[dict]:
-        """Extract pyfunction definitions from file content."""
-        functions = []
-
-        # Find all #[pyfunction] markers
-        pyfunction_pattern = r"#\[pyfunction\]"
-
-        for match in re.finditer(pyfunction_pattern, content):
-            start_pos = match.end()
-
-            # Skip over any #[pyo3(...)] attributes
-            pos_after_attrs = self._skip_pyo3_attributes(content, start_pos)
-            section = content[pos_after_attrs:]
-
-            # Match the function definition
-            # Simplified pattern that just looks for fn name() -> return_type {
-            func_pattern = r"^\s*(?:\/\/\/[^\n]*)?\s*(?:pub\s+)?fn\s+(\w+)(?:<[^>]*>)?\s*\(.*?\)\s*(?:->\s*([^{]+?))?\s*\{"
-            func_match = re.match(func_pattern, section, re.MULTILINE | re.DOTALL)
-
-            if not func_match:
+    def _extract_pymethods(self, content: str):
+        impl_pattern = r"#\[pymethods\][\s\S]*?impl\s+(\w+)\s*\{"
+        for match in re.finditer(impl_pattern, content):
+            rust_name = match.group(1)
+            class_info = self.classes.get(rust_name)
+            if not class_info:
                 continue
 
-            func_name = func_match.group(1)
-            return_type = func_match.group(2).strip() if func_match.group(2) else "PyResult<()>"
+            block, _ = self._extract_block(content, match.end() - 1)
+            if not block:
+                continue
 
-            # Extract full function signature
-            func_start = match.start()
+            for const_match in re.finditer(r"#\[classattr\]\s*const\s+(\w+)\s*:\s*([^=]+)=", block):
+                const_name = const_match.group(1)
+                rust_type = const_match.group(2).strip()
+                const_type = RustTypeMapper.map_type(rust_type, self.class_name_map)
+                class_info["classattrs"][const_name] = const_type
 
-            # Find the complete function definition
-            func_def = self._extract_full_function(content, func_start)
-            if func_def:
-                params = self._parse_parameters(func_def)
+            func_pattern = (
+                r"(?P<attrs>(?:\s*#\[[^\]]+\]\s*)*)\s*"
+                r"(?:pub\s+)?fn\s+(?P<name>\w+)(?:<[^>]*>)?\s*"
+                r"\((?P<params>.*?)\)\s*(?:->\s*(?P<return>[^{]+))?\s*\{"
+            )
+            for func_match in re.finditer(func_pattern, block, re.DOTALL):
+                attrs = func_match.group("attrs") or ""
+                rust_method_name = func_match.group("name")
+                return_type = func_match.group("return")
+                return_type = return_type.strip() if return_type else "PyResult<()>"
 
-                # Extract docstring from comments
-                doc = self._extract_docstring(content, func_start)
+                is_new = "#[new]" in attrs
+                is_static = "#[staticmethod]" in attrs
+                is_getter = "#[getter]" in attrs
 
-                functions.append(
+                py_name_override, signature = self._parse_pyo3_attrs(attrs)
+                method_name = py_name_override or rust_method_name
+
+                params = self._parse_parameters(func_match.group("params"))
+                doc = self._extract_docstring(content, match.start() + func_match.start())
+
+                if is_getter:
+                    prop_type = RustTypeMapper.map_type(return_type, self.class_name_map)
+                    existing = class_info["properties"].get(method_name)
+                    if not existing:
+                        class_info["properties"][method_name] = {
+                            "type": prop_type,
+                            "doc": doc,
+                        }
+                    elif not existing.get("doc") and doc:
+                        existing["doc"] = doc
+                    continue
+
+                return_type_mapped = return_type
+                if "Self" in return_type_mapped:
+                    return_type_mapped = re.sub(r"\bSelf\b", rust_name, return_type_mapped)
+
+                class_info["methods"].append(
                     {
-                        "name": func_name,
+                        "name": method_name,
                         "params": params,
-                        "return_type": RustTypeMapper.map_type(return_type),
+                        "signature": signature,
+                        "return_type": RustTypeMapper.map_type(
+                            return_type_mapped, self.class_name_map
+                        ),
                         "doc": doc,
+                        "is_static": is_static,
+                        "is_new": is_new,
                     }
                 )
 
-        return functions
+    def _extract_pyfunctions(self, content: str):
+        func_pattern = (
+            r"#\[pyfunction\](?P<attrs>(?:\s*#\[[^\]]+\])*)\s*"
+            r"(?:pub\s+)?fn\s+(?P<name>\w+)(?:<[^>]*>)?\s*"
+            r"\((?P<params>.*?)\)\s*(?:->\s*(?P<return>[^{]+))?\s*\{"
+        )
+        for match in re.finditer(func_pattern, content, re.DOTALL):
+            attrs = match.group("attrs") or ""
+            rust_name = match.group("name")
+            return_type = match.group("return")
+            return_type = return_type.strip() if return_type else "PyResult<()>"
 
-    def _extract_full_function(self, content: str, start_pos: int) -> Optional[str]:
-        """Extract the complete function definition including parameters."""
-        lines = content[start_pos:].split("\n")
-        func_lines = []
-        in_params = False
+            py_name_override, signature = self._parse_pyo3_attrs(attrs)
+            name = py_name_override or rust_name
+            params = self._parse_parameters(match.group("params"))
+            doc = self._extract_docstring(content, match.start())
 
-        for line in lines:
-            if "fn " in line:
-                in_params = True
+            self.functions[rust_name] = {
+                "name": name,
+                "params": params,
+                "signature": signature,
+                "return_type": RustTypeMapper.map_type(return_type, self.class_name_map),
+                "doc": doc,
+            }
 
-            if in_params:
-                func_lines.append(line)
-                if "{" in line:
-                    break
+    def _extract_pymodules(self, content: str):
+        module_pattern = r"#\[pymodule\]\s*(?:pub\s+)?fn\s+(\w+)\s*\("
+        for match in re.finditer(module_pattern, content):
+            module_name = match.group(1)
+            module_info = self.modules.setdefault(
+                module_name, {"functions": [], "classes": [], "submodules": []}
+            )
 
-        return "\n".join(func_lines) if func_lines else None
+            block, _ = self._extract_block(content, match.end())
+            if not block:
+                continue
 
-    def _parse_parameters(self, func_def: str) -> List[dict]:
-        """Parse function parameters from function definition."""
+            for class_match in re.finditer(r"add_class::<\s*([\w:]+)\s*>", block):
+                rust_class = class_match.group(1).split("::")[-1]
+                class_info = self.classes.get(rust_class)
+                if not class_info:
+                    continue
+                class_name = class_info["name"]
+                if class_name not in module_info["classes"]:
+                    module_info["classes"].append(class_name)
+
+            for fn_match in re.finditer(r"wrap_pyfunction!\(\s*([\w:]+)\s*,", block):
+                rust_fn = fn_match.group(1).split("::")[-1]
+                func_info = self.functions.get(rust_fn)
+                if not func_info:
+                    continue
+                module_info["functions"].append(func_info)
+
+            for sub_match in re.finditer(r"wrap_pymodule!\(\s*([\w:]+)\s*\)", block):
+                submodule_name = sub_match.group(1).split("::")[-1]
+                if submodule_name not in module_info["submodules"]:
+                    module_info["submodules"].append(submodule_name)
+                self.modules.setdefault(
+                    submodule_name, {"functions": [], "classes": [], "submodules": []}
+                )
+
+    def _parse_parameters(self, param_str: str) -> List[dict]:
         params = []
-
-        # Extract parameter list - handle multi-line and nested parentheses
-        param_match = re.search(r"fn\s+\w+(?:<[^>]*>)?\s*\((.*?)\)", func_def, re.DOTALL)
-        if not param_match:
-            return params
-
-        param_str = param_match.group(1)
-
-        # Split parameters, handling nested generics
         raw_params = self._split_parameters(param_str)
 
         for param in raw_params:
             param = param.strip()
-            if not param or param.startswith("_py:") or param.startswith("py:"):
+            if not param:
+                continue
+            if ":" not in param:
                 continue
 
-            # Parse parameter name and type
-            if ":" in param:
-                name_part, type_part = param.split(":", 1)
-                name = name_part.strip()
-                rust_type = type_part.strip()
+            name_part, type_part = param.split(":", 1)
+            name = name_part.strip().replace("mut ", "")
+            rust_type = type_part.strip().replace("mut ", "")
 
-                # Handle references, mutability, and lifetime parameters
-                name = name.replace("mut ", "").replace("&", "").strip()
-                # Remove lifetime parameters and references from types
-                rust_type = re.sub(r"&'?\w*\s*", "", rust_type).strip()
-                rust_type = rust_type.replace("mut ", "").strip()
+            if name in {"py", "_py", "slf"}:
+                continue
+            if "Python" in rust_type or "PyRef" in rust_type:
+                continue
 
-                # Check if parameter is optional
-                is_optional = "Option<" in rust_type
+            rust_type = RustTypeMapper._strip_reference(rust_type)
+            rust_type = rust_type.replace("mut ", "").strip()
 
-                params.append(
-                    {
-                        "name": name,
-                        "type": RustTypeMapper.map_type(rust_type),
-                        "optional": is_optional,
-                    }
-                )
+            is_optional = "Option<" in rust_type
+
+            params.append(
+                {
+                    "name": name,
+                    "type": RustTypeMapper.map_type(rust_type, self.class_name_map),
+                    "optional": is_optional,
+                }
+            )
 
         return params
 
-    def _split_parameters(self, param_str: str) -> List[str]:
-        """Split parameter string, handling nested generics properly."""
+    @staticmethod
+    def _split_parameters(param_str: str) -> List[str]:
         params = []
-        current_param = ""
+        current = ""
         paren_depth = 0
         angle_depth = 0
 
         for char in param_str:
             if char == "," and paren_depth == 0 and angle_depth == 0:
-                if current_param.strip():
-                    params.append(current_param.strip())
-                current_param = ""
-            else:
-                current_param += char
-                if char == "(":
-                    paren_depth += 1
-                elif char == ")":
-                    paren_depth -= 1
-                elif char == "<":
-                    angle_depth += 1
-                elif char == ">":
-                    angle_depth -= 1
+                if current.strip():
+                    params.append(current.strip())
+                current = ""
+                continue
+            current += char
+            if char == "(":
+                paren_depth += 1
+            elif char == ")":
+                paren_depth -= 1
+            elif char == "<":
+                angle_depth += 1
+            elif char == ">":
+                angle_depth -= 1
 
-        if current_param.strip():
-            params.append(current_param.strip())
+        if current.strip():
+            params.append(current.strip())
 
         return params
 
-    def _extract_docstring(self, content: str, func_start: int) -> str:
-        """Extract docstring from comments before function."""
+    @staticmethod
+    def _extract_docstring(content: str, func_start: int) -> str:
         lines_before = content[:func_start].split("\n")
         doc_lines = []
 
-        # Look backwards for doc comments
-        for line in reversed(lines_before[-10:]):  # Check last 10 lines
+        for line in reversed(lines_before[-10:]):
             line = line.strip()
             if line.startswith("///"):
                 doc_lines.insert(0, line[3:].strip())
             elif line.startswith("//"):
                 continue
-            elif line == "" or line.startswith("#["):
+            elif line == "" or line.startswith("#"):
                 continue
             else:
                 break
 
         return " ".join(doc_lines) if doc_lines else ""
 
-    def _extract_classes(self, content: str):
-        """Extract pyclass definitions."""
-        # Handle #[pyclass] potentially followed by other attributes like #[derive(...)]
-        class_pattern = (
-            r"#\[pyclass[^\]]*\](?:\s*#\[[^\]]+\])*\s*(?:pub\s+)?(?:struct|enum)\s+(\w+)"
-        )
-        matches = re.findall(class_pattern, content)
-        for class_name in matches:
-            self.classes.add(class_name)
+    @staticmethod
+    def _parse_pyclass_name(attrs: str) -> Optional[str]:
+        match = re.search(r"name\s*=\s*\"([^\"]+)\"", attrs)
+        if match:
+            return match.group(1)
+        return None
+
+    @staticmethod
+    def _parse_pyo3_attrs(attrs: str) -> Tuple[Optional[str], Optional[str]]:
+        py_name = None
+        signature = None
+        for attr_match in re.finditer(r"#\[pyo3\(([^\]]+)\)\]", attrs, re.DOTALL):
+            attr_body = attr_match.group(1)
+            name_match = re.search(r"name\s*=\s*\"([^\"]+)\"", attr_body)
+            if name_match:
+                py_name = name_match.group(1)
+            sig_match = re.search(r"signature\s*=\s*\(([^\)]*)\)", attr_body, re.DOTALL)
+            if sig_match:
+                signature = sig_match.group(1).strip()
+        return py_name, signature
+
+    @staticmethod
+    def _extract_block(content: str, start_pos: int) -> Tuple[Optional[str], int]:
+        brace_pos = content.find("{", start_pos)
+        if brace_pos == -1:
+            return None, -1
+        depth = 0
+        for idx in range(brace_pos, len(content)):
+            if content[idx] == "{":
+                depth += 1
+            elif content[idx] == "}":
+                depth -= 1
+                if depth == 0:
+                    return content[brace_pos + 1 : idx], idx
+        return None, -1
 
 
 class StubGenerator:
     """Generates Python stub file from parsed Rust functions."""
 
-    # Maps module names to the classes that should be accessible as attributes
-    MODULE_CLASSES = {
-        "cid": ["Cid", "CidResult", "DirCidResult", "Canon"],
-        "entity": ["Entity"],
-        "signer": ["Signer"],
-        "config": ["Graph"],
-        "_rust": ["Config"],
-    }
+    def __init__(self, class_names: Optional[List[str]] = None):
+        self.class_names = set(class_names or [])
 
-    def __init__(self):
-        self.imports = {
-            "pathlib": ["Path"],
-            "typing": ["Any", "Dict", "List", "Optional", "Tuple", "Union"],
-            "os": ["PathLike"],
-        }
-
-    def generate_stub_file(self, modules: Dict[str, List[dict]], classes: set, output_path: Path):
-        """Generate the complete stub file."""
+    def generate_stub_file(
+        self, modules: Dict[str, dict], classes: Dict[str, dict], output_path: Path
+    ):
         lines = []
 
-        # Header and imports
         lines.append('"""Type stubs for the eqty_sdk._rust module."""')
+        lines.append("import eqty_sdk")
         lines.append("from pathlib import Path")
         lines.append("from typing import Any, Dict, List, Optional, Tuple, Union")
         lines.append("from os import PathLike")
         lines.append("")
 
-        # Top-level functions (from lib.rs)
-        if "_rust" in modules:
-            for func in modules["_rust"]:
+        rust_module = modules.get("_rust")
+        if rust_module:
+            for func in rust_module["functions"]:
                 lines.extend(self._generate_function_stub(func, is_module_function=False))
                 lines.append("")
 
-        # Module functions that appear at top level
-        top_level_funcs = []
-        for module_name, functions in modules.items():
-            if module_name in ["lib", "_rust"]:
-                top_level_funcs.extend(functions)
-
-        # Generate class definitions for known classes
         lines.extend(self._generate_class_definitions(classes))
 
-        # Generate module classes
-        for module_name, functions in modules.items():
-            if module_name in ["_rust", "lib"]:
+        for module_name in sorted(modules.keys()):
+            if module_name == "_rust":
                 continue
 
+            module_info = modules[module_name]
             lines.append(f"# {module_name.title()} module")
             lines.append(f"class {module_name}:")
 
-            # Add class references for classes that belong to this module
-            if module_name in self.MODULE_CLASSES:
-                for class_name in self.MODULE_CLASSES[module_name]:
+            if module_info["classes"]:
+                for class_name in module_info["classes"]:
                     lines.append(f"    {class_name}: type[{class_name}]")
                 lines.append("")
 
-            if not functions:
-                if module_name not in self.MODULE_CLASSES:
-                    lines.append("    ...")
-            else:
-                for func in functions:
-                    lines.extend(self._generate_function_stub(func, indent="    "))
+            if module_info["functions"]:
+                for func in module_info["functions"]:
+                    lines.extend(
+                        self._generate_function_stub(func, indent="    ", qualify_types=True)
+                    )
                     lines.append("")
+            elif not module_info["classes"]:
+                lines.append("    ...")
 
             lines.append("")
 
-        # Write to file
         output_path.write_text("\n".join(lines))
         print(f"Generated stub file: {output_path}")
 
     def _generate_function_stub(
-        self, func: dict, is_module_function: bool = True, indent: str = ""
+        self,
+        func: dict,
+        is_module_function: bool = True,
+        indent: str = "",
+        qualify_types: bool = False,
     ) -> List[str]:
-        """Generate stub for a single function."""
         lines = []
 
         if is_module_function:
             lines.append(f"{indent}@staticmethod")
 
-        # Build parameter list
-        params = []
-        for param in func["params"]:
-            param_str = f"{param['name']}: {param['type']}"
-            if param["optional"] and not param_str.endswith(" = None"):
-                param_str += " = None"
-            params.append(param_str)
+        param_str = self._build_param_str(func, qualify_types=qualify_types)
+        return_type = func["return_type"]
+        if qualify_types:
+            return_type = self._qualify_type(return_type)
 
-        param_str = ", ".join(params)
-
-        # Handle special signature cases
-        if func["name"] == "create_data_statement":
-            # Fix the keyword-only arguments
-            required_params = []
-            keyword_params = []
-
-            for param in func["params"]:
-                if param["name"] in ["graph_id", "timestamp"]:
-                    keyword_params.append(f"{param['name']}: {param['type']} = None")
-                else:
-                    required_params.append(f"{param['name']}: {param['type']}")
-
-            if keyword_params:
-                param_str = ", ".join(required_params) + ", *, " + ", ".join(keyword_params)
-            else:
-                param_str = ", ".join(required_params)
-
-        lines.append(f"{indent}def {func['name']}({param_str}) -> {func['return_type']}:")
-
-        # Add docstring
-        doc = func["doc"] or f"{func['name'].replace('_', ' ').title()}."
-        lines.append(f'{indent}    """{doc}"""')
+        lines.append(f"{indent}def {func['name']}({param_str}) -> {return_type}:")
+        doc = func.get("doc") or ""
+        if doc:
+            lines.append(f'{indent}    """{doc}"""')
         lines.append(f"{indent}    ...")
 
         return lines
 
-    def _generate_class_definitions(self, classes: set) -> List[str]:
-        """Generate class definitions for PyO3 classes."""
+    def _build_param_str(self, func: dict, qualify_types: bool = False) -> str:
+        if func.get("signature"):
+            params = self._parse_signature_params(
+                func["signature"], func["params"], qualify_types=qualify_types
+            )
+            return ", ".join(params)
+        return ", ".join(self._format_param(p, qualify_types=qualify_types) for p in func["params"])
+
+    def _parse_signature_params(
+        self, signature: str, rust_params: List[dict], qualify_types: bool = False
+    ) -> List[str]:
+        params = []
+        type_map = {p["name"]: p for p in rust_params}
+        for raw in signature.split(","):
+            token = raw.strip()
+            if not token:
+                continue
+            if token == "*":
+                params.append("*")
+                continue
+            if token.startswith("**"):
+                name = token[2:].strip() or "kwargs"
+                params.append(f"**{name}: Any")
+                continue
+            optional = False
+            name = token
+            if "=" in token:
+                name, _ = token.split("=", 1)
+                name = name.strip()
+                optional = True
+
+            param_info = type_map.get(name)
+            if param_info:
+                param_type = param_info["type"]
+                if optional and not param_type.startswith("Optional["):
+                    param_type = f"Optional[{param_type}]"
+            else:
+                param_type = "Any"
+
+            if qualify_types:
+                param_type = self._qualify_type(param_type)
+            param_str = f"{name}: {param_type}"
+            if optional:
+                param_str += " = None"
+            params.append(param_str)
+
+        return params
+
+    def _format_param(self, param: dict, qualify_types: bool = False) -> str:
+        param_type = param["type"]
+        if qualify_types:
+            param_type = self._qualify_type(param_type)
+        param_str = f"{param['name']}: {param_type}"
+        if param["optional"] and not param_str.endswith(" = None"):
+            param_str += " = None"
+        return param_str
+
+    def _qualify_type(self, type_str: str) -> str:
+        qualified = type_str
+        for class_name in sorted(self.class_names, key=len, reverse=True):
+            pattern = rf"(?<![\w.]){re.escape(class_name)}(?![\w])"
+            replacement = f"eqty_sdk._rust.{class_name}"
+            qualified = re.sub(pattern, replacement, qualified)
+        return qualified
+
+    def _generate_class_definitions(self, classes: Dict[str, dict]) -> List[str]:
         lines = []
 
-        # Known class structures
-        class_definitions = {
-            "Canon": {"attributes": ["RDFC1", "JSONJCS"], "doc": "Canonicalization options."},
-            "CidResult": {
-                "properties": [
-                    ("cid", "str", "Get the CID string."),
-                    ("blob", "bytes", "Get the binary blob data."),
-                ],
-                "doc": "Result of CID computation.",
-            },
-            "DirCidResult": {
-                "properties": [
-                    ("collection", "CidResult", "Get the collection CID result."),
-                    ("meta", "CidResult", "Get the metadata CID result."),
-                    ("file_hashes", "List[Tuple[str, str]]", "Get list of (filename, CID) tuples."),
-                ],
-                "doc": "Result of directory CID computation.",
-            },
-            "Cid": {
-                "properties": [
-                    ("cid", "str", "Get the CID string."),
-                ],
-                "methods": [
-                    ("__init__", [("cid", "str")], "None"),
-                    ("__str__", [], "str"),
-                    ("__repr__", [], "str"),
-                ],
-                "doc": "A simple wrapper around a content identifier (CID) string.",
-            },
-            "Entity": {
-                "properties": [
-                    ("uuid", "str", "Get the UUID string."),
-                ],
-                "methods": [
-                    ("__init__", [("uuid", "str")], "None"),
-                    ("generate", [], "Entity", True),
-                    ("from_uuid", [("uuid", "str")], "Entity", True),
-                    ("__str__", [], "str"),
-                    ("__repr__", [], "str"),
-                ],
-                "doc": "Represents an unhashed entity with a UUID identifier.",
-            },
-            "Signer": {
-                "properties": [
-                    ("name", "str", "Get the signer name."),
-                    ("did_key", "str", "Get the DID key."),
-                ],
-                "doc": "Python wrapper for Rust signer.",
-            },
-            "Config": {
-                "methods": [
-                    ("set_integrity_service_url", [("url", "str")], "Config"),
-                    (
-                        "set_hashing_config",
-                        [("multithread", "Optional[bool]"), ("memory_map", "Optional[bool]")],
-                        "Config",
-                    ),
-                    (
-                        "set_cid_ignore_rules",
-                        [
-                            ("include_hidden_files", "Optional[bool]"),
-                            ("gitignore", "Optional[bool]"),
-                            ("include_symlinks", "Optional[bool]"),
-                        ],
-                        "Config",
-                    ),
-                    ("set_generate_model_signing_signatures", [("enable", "bool")], "Config"),
-                    ("set_store_all_blobs", [("value", "bool")], "Config"),
-                    ("set_default_graph", [("graph", "Graph")], "Config"),
-                ],
-                "doc": "Global configuration handle.",
-            },
-            "Graph": {
-                "properties": [
-                    ("id", "Any", "UUID of the graph."),
-                    ("name", "str", "Name of the graph."),
-                    ("parent", "Optional[Any]", "UUID of the parent graph."),
-                ],
-                "methods": [
-                    ("__init__", [("id", "Any"), ("name", "str")], "None"),
-                    (
-                        "from_parent",
-                        [("id", "Any"), ("name", "str"), ("graph", "Graph")],
-                        "Graph",
-                        True,
-                    ),
-                ],
-                "doc": "Graph for organizing statements.",
-            },
-            "Did": {
-                "properties": [
-                    ("ctx", "Graph", "Graph context for the DID."),
-                    ("statement_ids", "List[str]", "Statement IDs created for this DID."),
-                ],
-                "methods": [
-                    (
-                        "__init__",
-                        [("ctx", "Graph"), ("did", "str"), ("signer", "Optional[Signer]")],
-                        "None",
-                    ),
-                    ("from_signer", [("signer", "Signer")], "Did", True),
-                    ("from_did_string", [("did", "str")], "Did", True),
-                    ("with_context", [("ctx", "Graph")], "DidFactory", True),
-                ],
-                "doc": "DID registration helper.",
-            },
-            "DidFactory": {
-                "methods": [
-                    ("from_signer", [("signer", "Signer")], "Did"),
-                    ("from_did_string", [("did", "str")], "Did"),
-                ],
-                "doc": "Factory for creating DID objects with a fixed context.",
-            },
-        }
+        for class_info in sorted(classes.values(), key=lambda c: c["name"]):
+            lines.append(f"class {class_info['name']}:")
+            if class_info.get("doc"):
+                lines.append(f'    """{class_info["doc"]}"""')
 
-        for class_name in sorted(classes):
-            if class_name in class_definitions:
-                definition = class_definitions[class_name]
-                lines.append(f"class {class_name}:")
-                lines.append(f'    """{definition["doc"]}"""')
+            if class_info["classattrs"]:
+                for name, attr_type in class_info["classattrs"].items():
+                    lines.append(f"    {name}: {attr_type}")
+                lines.append("")
 
-                # Add attributes
-                if "attributes" in definition:
-                    for attr in definition["attributes"]:
-                        lines.append(f"    {attr}: {class_name}")
+            if class_info["properties"]:
+                for prop_name, prop_info in class_info["properties"].items():
+                    lines.append("    @property")
+                    lines.append(f"    def {prop_name}(self) -> {prop_info['type']}:")
+                    if prop_info.get("doc"):
+                        lines.append(f'        """{prop_info["doc"]}"""')
+                    lines.append("        ...")
                     lines.append("")
 
-                # Add properties
-                if "properties" in definition:
-                    for prop_name, prop_type, prop_doc in definition["properties"]:
-                        lines.append("    @property")
-                        lines.append(f"    def {prop_name}(self) -> {prop_type}:")
-                        lines.append(f'        """{prop_doc}"""')
-                        lines.append("        ...")
-                        lines.append("")
+            if class_info["methods"]:
+                for method in class_info["methods"]:
+                    lines.extend(self._generate_method_stub(method))
+                    lines.append("")
 
-                # Add methods
-                if "methods" in definition:
-                    for method_def in definition["methods"]:
-                        method_name = method_def[0]
-                        params = method_def[1]
-                        return_type = method_def[2]
-                        is_static = len(method_def) > 3 and method_def[3]
+            if (
+                not class_info["classattrs"]
+                and not class_info["properties"]
+                and not class_info["methods"]
+                and not class_info.get("doc")
+            ):
+                lines.append("    ...")
 
-                        if is_static:
-                            lines.append("    @staticmethod")
-                            param_str = ", ".join(f"{p[0]}: {p[1]}" for p in params)
-                        else:
-                            param_str = "self"
-                            if params:
-                                param_str += ", " + ", ".join(f"{p[0]}: {p[1]}" for p in params)
+            lines.append("")
 
-                        lines.append(f"    def {method_name}({param_str}) -> {return_type}:")
-                        lines.append("        ...")
-                        lines.append("")
+        return lines
 
-                lines.append("")
+    def _generate_method_stub(self, method: dict) -> List[str]:
+        lines = []
+        indent = "    "
+        name = "__init__" if method["is_new"] else method["name"]
+        return_type = "None" if method["is_new"] else method["return_type"]
+
+        if method["is_static"]:
+            lines.append(f"{indent}@staticmethod")
+            param_str = self._build_param_str(method)
+        else:
+            param_str = self._build_param_str(method)
+            if param_str:
+                param_str = f"self, {param_str}"
+            else:
+                param_str = "self"
+
+        lines.append(f"{indent}def {name}({param_str}) -> {return_type}:")
+        doc = method.get("doc") or ""
+        if doc:
+            lines.append(f'{indent}    """{doc}"""')
+        lines.append(f"{indent}    ...")
 
         return lines
 
 
 def main():
     """Main function to generate stub file."""
-    # Paths
     script_dir = Path(__file__).parent.parent
     src_dir = script_dir / "src"
     output_file = script_dir / "eqty_sdk" / "_rust.pyi"
@@ -634,28 +725,25 @@ def main():
         print(f"Error: Source directory not found: {src_dir}")
         return 1
 
-    # Parse Rust files
-    parser = PyFunctionParser(src_dir)
-    modules = parser.parse_all_files()
+    parser = RustStubParser(src_dir).parse_all_files()
 
-    if not modules:
-        print("Warning: No PyO3 functions found in Rust source files")
+    if not parser.modules:
+        print("Warning: No PyO3 modules found in Rust source files")
         return 1
 
-    # Generate stub file
-    generator = StubGenerator()
-    generator.generate_stub_file(modules, parser.classes, output_file)
+    generator = StubGenerator([info["name"] for info in parser.classes.values()])
+    generator.generate_stub_file(parser.modules, parser.classes, output_file)
 
-    # Append extra stubs if present
     extra_stubs = script_dir / "eqty_sdk" / "_rust_extra.pyi"
     if extra_stubs.exists():
         output_file.write_text(
             output_file.read_text().rstrip() + "\n\n# -- extra stubs --\n" + extra_stubs.read_text()
         )
 
-    print(f"Successfully generated {len(sum(modules.values(), []))} function stubs")
+    total_functions = sum(len(m["functions"]) for m in parser.modules.values())
+    print(f"Successfully generated {total_functions} function stubs")
     return 0
 
 
 if __name__ == "__main__":
-    exit(main())
+    raise SystemExit(main())

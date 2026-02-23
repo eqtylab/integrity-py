@@ -12,7 +12,8 @@ install: _poetry-config
   poetry install
 
 # Set up git hooks for prek
-init:
+init: install
+  poetry env activate
   prek install --hook-type pre-push
 
 # Build the Rust/Python wheel using maturin
@@ -21,7 +22,7 @@ build:
 
 # Install the local build of the wheel into the venv
 install-package: generate-stubs
-  maturin develop
+  poetry run maturin develop
 
 # Run linters without auto-fixing (Rust clippy + Python ruff)
 lint-check:
@@ -35,7 +36,7 @@ lint:
 
 # Check that all public items have documentation
 lint-docs:
-    cargo rustdoc --lib -- -D missing_docs -D rustdoc::broken_intra_doc_links
+  cargo rustdoc --lib -- -D missing_docs -D rustdoc::broken_intra_doc_links
 
 # Auto-fix Rust clippy warnings
 fix:
@@ -69,16 +70,16 @@ generate-stubs:
 
 # Update README.md with auto-generated content (Justfile commands, etc.)
 readme-update:
-    present --in-place README.md
+  present --in-place README.md
 
 # Check if README.md is up to date with auto-generated content
 readme-check: _tmp
-    present README.md > tmp/README.md
-    diff README.md tmp/README.md
+  present README.md > tmp/README.md
+  diff README.md tmp/README.md
 
 # Create temporary directory for artifacts
 _tmp:
-    mkdir -p tmp
+  mkdir -p tmp
 
 # Run full CI pipeline: format check, lint, type check, build, and test
 ci: fmt-check readme-check lint-docs lint-check type-check install-package test-py test-rs
