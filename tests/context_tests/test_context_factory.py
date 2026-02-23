@@ -2,6 +2,7 @@ import unittest
 import uuid
 
 from eqty_sdk.context import Context
+
 from tests import setup_sdk
 
 

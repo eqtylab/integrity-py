@@ -22,7 +22,7 @@ def add_vc_statement(
         logger.info("Skipping issuing of VC")
         return None
 
-    statement_id = eqty_core_statements.create_vc_statement(
+    eqty_core_statements.create_vc_statement(
         subject, timestamp=timestamp, graph_id=uuid4()
     )
 

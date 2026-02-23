@@ -5,8 +5,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union, cast
 
-import dill as pickle
-
 from eqty_sdk import config
 from eqty_sdk._rust import (
     Graph as Context,
@@ -62,17 +60,15 @@ def serialize_for_hashing(obj: Any) -> bytes:
         return json.dumps(obj).encode("utf-8")  # JSON-encode complex data structures
     elif hasattr(obj, "serialize_for_hashing"):  # Check for custom implementation
         return cast(bytes, obj.serialize_for_hashing())
-    # Because 'object' types can be arbitrary, we'll pickle them. This is not recommended for untrusted data.
-    elif isinstance(obj, object):
+    elif hasattr(obj, "model"):
+        # Serialize model state dict to JSON if available
+        state_dict = getattr(obj, "model").state_dict()
         try:
-            # Check if the object has a 'model' attribute
-            if hasattr(obj, "model"):
-                # Serialize the state dictionary of the model
-                state_dict = getattr(obj, "model").state_dict()
-                return cast(bytes, pickle.dumps(state_dict))
-            return cast(bytes, pickle.dumps(obj))  # Pickle objects
-        except (pickle.PickleError, TypeError) as e:
-            raise TypeError(f"Unsupported data type for hashing: {type(obj)} - {e}")
+            return json.dumps(state_dict).encode("utf-8")
+        except (TypeError, ValueError) as e:
+            raise TypeError(
+                f"Unsupported model state dict for hashing: {type(state_dict)} - {e}"
+            )
     # Add more cases for other data types as needed
     else:
         raise TypeError(f"Unsupported data type for hashing: {type(obj)}")
