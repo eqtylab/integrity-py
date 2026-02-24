@@ -208,13 +208,13 @@ impl Sqlite {
             | Statement::EntityRegistration(_)
             | Statement::GovernanceRegistration(_)
             | Statement::MetadataRegistration(_)
-            | Statement::StorageRegistration(_)
-                => { self.register_graph_statement(statement, graph_id).await }
+            | Statement::StorageRegistration(_) => {
+                self.register_graph_statement(statement, graph_id).await
+            }
             Statement::CredentialDsseRegistration(_)
             | Statement::CredentialRegistration(_)
             | Statement::CredentialSigstoreBundleRegistration(_)
-            | Statement::DidRegistration(_)
-                => { self.register_global_statement(statement).await }
+            | Statement::DidRegistration(_) => self.register_global_statement(statement).await,
         }
     }
 
@@ -341,7 +341,7 @@ impl Sqlite {
         Ok(statements.into_values().collect())
     }
 
-    /// Returns all association IDs linked to the given subject.
+    // /// Returns all association IDs linked to the given subject.
     // pub async fn get_associations_for_subject(&self, subject: &str) -> Result<Vec<String>> {
     //     log::trace!("Retrieving associations for subject={subject}.");
     //
@@ -364,7 +364,7 @@ impl Sqlite {
     //     Ok(associations)
     // }
     //
-    /// Returns all subject IDs linked to the given association.
+    // /// Returns all subject IDs linked to the given association.
     // pub async fn get_subjects_for_association(&self, _association: &str) -> Result<Vec<String>> {
     //     log::trace!("Retrieving subjects for association={association}.");
     //

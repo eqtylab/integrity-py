@@ -41,7 +41,6 @@ pub struct Graph {
 
 #[pymethods]
 impl Graph {
-
     #[staticmethod]
     #[allow(clippy::new_ret_no_self)]
     pub fn new(py: Python<'_>, name: String) -> Self {

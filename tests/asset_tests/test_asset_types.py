@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 
+from eqty_sdk import CID
 from eqty_sdk.asset import (
     Attribution,
     Benchmark,
@@ -14,7 +15,6 @@ from eqty_sdk.asset import (
     Model,
     Token,
 )
-from eqty_sdk import CID
 from tests import setup_sdk
 
 

@@ -57,7 +57,6 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
 #[pyfunction]
 #[pyo3(signature = (graph=None), text_signature = "(graph: Optional[list[UUID]]) -> list[Statements]")]
 pub fn select(py: Python, graph: Option<Vec<Uuid>>) -> PyResult<Py<PyList>> {
-
     let statements: Vec<Statement> = with_ctx!(py, |ctx| {
         let graph_ids = if let Some(graphs) = graph {
             graphs

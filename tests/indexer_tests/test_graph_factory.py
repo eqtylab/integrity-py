@@ -54,12 +54,12 @@ class GraphFactoryTests(unittest.TestCase):
         self.assertEqual(child_row["parent_id"], str(project_id))
 
     def _get_graph_row(self, graph_id):
-        db_path = f\"{self.temp_dir}/graphs.db\"
+        db_path = f"{self.temp_dir}/graphs.db"
         with sqlite3.connect(db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute(
-                \"SELECT graph_id, name, parent_id FROM graphs WHERE graph_id = ?\",
+                "SELECT graph_id, name, parent_id FROM graphs WHERE graph_id = ?",
                 (str(graph_id),),
             )
             return cursor.fetchone()

@@ -1,7 +1,6 @@
 import json
 import tempfile
 import unittest
-import uuid
 from pathlib import Path
 
 from eqty_sdk._rust import get_cid_for_path, statements

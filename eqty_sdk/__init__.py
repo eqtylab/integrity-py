@@ -36,10 +36,10 @@ from eqty_sdk.errors import (
     UsageError,
 )
 from eqty_sdk.types import (
-    SIGNER_ALGORITHMS,
     CID,
-    Declaration,
     DID,
+    SIGNER_ALGORITHMS,
+    Declaration,
     Entity,
     Manifest,
     Signer,

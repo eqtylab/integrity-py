@@ -2,11 +2,11 @@ import unittest
 from pathlib import Path
 
 from eqty_sdk import (
+    CID,
     AssetType,
     Attribution,
     Benchmark,
     Certificate,
-    CID,
     Code,
     Custom,
     Database,

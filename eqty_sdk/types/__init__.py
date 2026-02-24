@@ -1,8 +1,8 @@
 from eqty_sdk._rust import (
-    SIGNER_ALGORITHMS,
     CID,
-    Declaration,
     DID,
+    SIGNER_ALGORITHMS,
+    Declaration,
     Entity,
     Manifest,
     Signer,
