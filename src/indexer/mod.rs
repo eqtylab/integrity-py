@@ -63,7 +63,7 @@ impl Graph {
     }
 
     #[staticmethod]
-    pub fn from_project(py: Python<'_>, project_id: Uuid) -> PyResult<GraphFactory> {
+    pub fn from_uuid(py: Python<'_>, project_id: Uuid) -> PyResult<GraphFactory> {
         let graph = Graph {
             id: project_id,
             name: project_id.to_string(),

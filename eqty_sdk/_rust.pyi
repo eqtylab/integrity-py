@@ -234,7 +234,7 @@ class Graph:
         ...
 
     @staticmethod
-    def from_project(project_id: uuid.UUID) -> GraphFactory:
+    def from_uuid(project_id: uuid.UUID) -> GraphFactory:
         ...
 
 

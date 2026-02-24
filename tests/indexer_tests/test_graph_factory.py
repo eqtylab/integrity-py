@@ -41,9 +41,9 @@ class GraphFactoryTests(unittest.TestCase):
         self.assertIsNotNone(child_row)
         self.assertEqual(child_row["parent_id"], str(parent.id))
 
-    def test_context_from_project(self):
+    def test_context_from_uuid(self):
         project_id = uuid.UUID("00000000-0000-0000-0000-000000000001")
-        child = Context.from_project(project_id).new("step-1")
+        child = Context.from_uuid(project_id).new("step-1")
         self.assertEqual(child.name, "step-1")
         self.assertEqual(child.parent, project_id)
         project_row = self._get_graph_row(project_id)
