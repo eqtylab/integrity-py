@@ -1,4 +1,4 @@
-from eqty_sdk._rust import statements as eqty_core_statements
+from eqty_sdk._rust import Statements, statements as eqty_core_statements
 
 add_data_statement = eqty_core_statements.add_data_statement
 add_association_statement = eqty_core_statements.add_association_statement
@@ -20,4 +20,5 @@ __all__ = [
     "add_metadata_statement",
     "add_storage_statement",
     "add_vc_statement",
+    "Statements",
 ]

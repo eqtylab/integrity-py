@@ -18,8 +18,7 @@ from eqty_sdk.statements import (
     add_governance_statement,
     add_metadata_statement,
 )
-from eqty_sdk.types import Cid
-from eqty_sdk.types.declaration import Declaration
+from eqty_sdk.types import Cid, Declaration
 
 logger = logging.getLogger("eqty.sdk.Asset")
 
@@ -176,7 +175,7 @@ class Asset:
 
     @staticmethod
     def _from_cid(
-        cid: str, asset_type: Union[AssetType, str], ctx: Optional[Context], **kwargs
+        cid: str, asset_type: Union[AssetType, str], ctx: Optional[Context] = None, **kwargs
     ) -> "Asset":
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 

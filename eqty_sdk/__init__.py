@@ -45,6 +45,7 @@ from eqty_sdk.types import (
     Signer,
     set_active_signer,
 )
+from eqty_sdk.statements import Statements
 
 __all__ = [
     # Core

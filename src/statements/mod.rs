@@ -35,7 +35,7 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(vc::add_vc_statement, m)?)?;
 
     m.add_function(wrap_pyfunction!(storage::add_storage_statement, m)?)?;
-    m.add_function(wrap_pyfunction!(retrieve_graph, m)?)?;
+    m.add_function(wrap_pyfunction!(select, m)?)?;
     m.add_function(wrap_pyfunction!(register_statement, m)?)?;
     m.add_function(wrap_pyfunction!(register_statement_to_graph, m)?)?;
 
@@ -55,9 +55,15 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
 /// Returns:
 ///     List of statements
 #[pyfunction]
-#[pyo3(signature = (graph_ids), text_signature = "(graph_ids: list[UUID]) -> list[Statements]")]
-pub fn retrieve_graph(py: Python, graph_ids: Vec<Uuid>) -> PyResult<Py<PyList>> {
+#[pyo3(signature = (graph=None), text_signature = "(graph: Optional[list[UUID]]) -> list[Statements]")]
+pub fn select(py: Python, graph: Option<Vec<Uuid>>) -> PyResult<Py<PyList>> {
+
     let statements: Vec<Statement> = with_ctx!(py, |ctx| {
+        let graph_ids = if let Some(graphs) = graph {
+            graphs
+        } else {
+            vec![ctx.default_graph.id]
+        };
         let sql_client = ctx.sql_lite;
 
         log::info!("Retrieving graphs {graph_ids:?}");
