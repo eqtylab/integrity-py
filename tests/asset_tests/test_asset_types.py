@@ -14,7 +14,7 @@ from eqty_sdk.asset import (
     Model,
     Token,
 )
-from eqty_sdk.types import cid
+from eqty_sdk import CID
 from tests import setup_sdk
 
 
@@ -98,7 +98,7 @@ class AssetTypes(unittest.TestCase):
         self.assertEqual(asset.asset_type, "Token", "Token asset_type mismatch")
 
     def test_from_cid_type(self):
-        test_obj = cid.Cid("bafkr4ic6sphckk3a5x2fmgdeqod6tvv6k253q37icpfsk73wp2f524pok2")
+        test_obj = CID("bafkr4ic6sphckk3a5x2fmgdeqod6tvv6k253q37icpfsk73wp2f524pok2")
 
         asset = Attribution.from_cid(test_obj)
         self.assertEqual(asset.asset_type, "Attribution", "Attribution asset_type mismatch")

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 from eqty_sdk._rust import Graph as Context
-from eqty_sdk.types import Cid
+from eqty_sdk.types import CID
 
 from .asset import Asset, AssetType
 
@@ -22,12 +22,12 @@ class Custom(Asset):
 
     @staticmethod
     def from_cid(
-        cid: Union[Cid, str],
+        cid: Union[CID, str],
         asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM,
         **kwargs,
     ) -> "Asset":
         custom_type = _resolve_type(asset_type)
-        cid_str = cid.cid if isinstance(cid, Cid) else cid
+        cid_str = cid.cid if isinstance(cid, CID) else cid
         return Asset._from_cid(cid_str, custom_type, ctx=None, **kwargs)
 
     @staticmethod

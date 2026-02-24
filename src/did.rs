@@ -8,7 +8,7 @@ use pyo3::{prelude::*, types::PyDict, Bound};
 use crate::{config::ctx_blocking, indexer::Graph, signer::Signer, statements, with_ctx};
 
 #[pyclass]
-pub struct Did {
+pub struct DID {
     #[pyo3(get)]
     pub ctx: Graph,
     #[pyo3(get)]
@@ -21,7 +21,7 @@ pub struct DidFactory {
 }
 
 #[pymethods]
-impl Did {
+impl DID {
     #[new]
     #[pyo3(signature = (ctx, did, signer=None, **kwargs))]
     fn new(
@@ -71,7 +71,7 @@ impl DidFactory {
         py: Python,
         signer: Py<Signer>,
         kwargs: Option<&Bound<'_, PyDict>>,
-    ) -> PyResult<Did> {
+    ) -> PyResult<DID> {
         let did_key = signer.bind(py).borrow().did_key.clone();
         build_did(py, self.ctx.clone(), did_key, Some(signer), kwargs)
     }
@@ -82,7 +82,7 @@ impl DidFactory {
         py: Python,
         did: String,
         kwargs: Option<&Bound<'_, PyDict>>,
-    ) -> PyResult<Did> {
+    ) -> PyResult<DID> {
         build_did(py, self.ctx.clone(), did, None, kwargs)
     }
 }
@@ -93,7 +93,7 @@ fn build_did(
     did: String,
     signer: Option<Py<Signer>>,
     kwargs: Option<&Bound<'_, PyDict>>,
-) -> PyResult<Did> {
+) -> PyResult<DID> {
     log::debug!("Building signer. DID: {did}");
     let metadata_json = if let Some(kwargs) = kwargs {
         let json = py.import("json")?;
@@ -162,7 +162,7 @@ fn build_did(
         statements::metadata::add_metadata_statement(py, did, metadata_json, None, Some(ctx.id))?;
     statement_ids.append(&mut metadata_ids);
 
-    Ok(Did { ctx, statement_ids })
+    Ok(DID { ctx, statement_ids })
 }
 
 fn is_vcomp_signer(name: &str) -> Result<bool> {

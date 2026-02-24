@@ -6,7 +6,7 @@ from eqty_sdk import (
     Attribution,
     Benchmark,
     Certificate,
-    Cid,
+    CID,
     Code,
     Custom,
     Database,
@@ -79,7 +79,7 @@ class AssetTypes(unittest.TestCase):
         asset = Code.from_path(test_obj)
         self.assertEqual(asset.asset_type, "Code", "Code asset_type mismatch")
 
-        asset = Custom.from_object(test_obj, AssetType.CUSTOM)
+        asset = Custom.from_path(test_obj, AssetType.CUSTOM)
         self.assertEqual(asset.asset_type, "Custom", "Custom asset_type mismatch")
 
         asset = Database.from_path(test_obj)
@@ -102,7 +102,7 @@ class AssetTypes(unittest.TestCase):
 
     def test_from_cid_type(self):
         """Test the from_cid constructor."""
-        test_obj = Cid("bafkr4ic6sphckk3a5x2fmgdeqod6tvv6k253q37icpfsk73wp2f524pok2")
+        test_obj = CID("bafkr4ic6sphckk3a5x2fmgdeqod6tvv6k253q37icpfsk73wp2f524pok2")
 
         asset = Attribution.from_cid(test_obj)
         self.assertEqual(asset.asset_type, "Attribution", "Attribution asset_type mismatch")
@@ -116,7 +116,7 @@ class AssetTypes(unittest.TestCase):
         asset = Code.from_cid(test_obj)
         self.assertEqual(asset.asset_type, "Code", "Code asset_type mismatch")
 
-        asset = Custom.from_object(test_obj, AssetType.CUSTOM)
+        asset = Custom.from_cid(test_obj, AssetType.CUSTOM)
         self.assertEqual(asset.asset_type, "Custom", "Custom asset_type mismatch")
 
         asset = Database.from_cid(test_obj)

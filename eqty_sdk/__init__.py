@@ -37,9 +37,9 @@ from eqty_sdk.errors import (
 )
 from eqty_sdk.types import (
     SIGNER_ALGORITHMS,
-    Cid,
+    CID,
     Declaration,
-    Did,
+    DID,
     Entity,
     Manifest,
     Signer,
@@ -82,8 +82,8 @@ __all__ = [
     "UnsupportedError",
     # Types
     "Declaration",
-    "Did",
-    "Cid",
+    "DID",
+    "CID",
     "SIGNER_ALGORITHMS",
     "Signer",
     "set_active_signer",

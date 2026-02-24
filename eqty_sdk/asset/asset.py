@@ -18,7 +18,7 @@ from eqty_sdk.statements import (
     add_governance_statement,
     add_metadata_statement,
 )
-from eqty_sdk.types import Cid, Declaration
+from eqty_sdk.types import CID, Declaration
 
 logger = logging.getLogger("eqty.sdk.Asset")
 
@@ -102,8 +102,8 @@ class TypedAsset:
         return Asset._from_path(path, cls._asset_type, store=store, **kwargs)
 
     @classmethod
-    def from_cid(cls, cid: Union[Cid, str], **kwargs) -> "Asset":
-        cid_str = cid.cid if isinstance(cid, Cid) else cid
+    def from_cid(cls, cid: Union[CID, str], **kwargs) -> "Asset":
+        cid_str = cid.cid if isinstance(cid, CID) else cid
         return Asset._from_cid(cid_str, cls._asset_type, **kwargs)
 
     @classmethod
@@ -197,8 +197,8 @@ class Asset:
             ) -> "Asset":
                 return Asset._from_path(path, asset_type, ctx, store, **kwargs)
 
-            def from_cid(self, cid: Union[Cid, str], **kwargs) -> "Asset":
-                cid_str = cid.cid if isinstance(cid, Cid) else cid
+            def from_cid(self, cid: Union[CID, str], **kwargs) -> "Asset":
+                cid_str = cid.cid if isinstance(cid, CID) else cid
                 return Asset._from_cid(cid_str, asset_type, ctx, **kwargs)
 
             def from_object(self, obj: Any, store: Optional[bool] = None, **kwargs) -> "Asset":

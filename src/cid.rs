@@ -78,16 +78,16 @@ pub struct CidResult {
 /// Provides a typed wrapper for CID strings with property access and string conversion.
 #[derive(Clone, Debug)]
 #[pyclass]
-pub struct Cid {
+pub struct CID {
     #[pyo3(get)]
     cid: String,
 }
 
 #[pymethods]
-impl Cid {
+impl CID {
     #[new]
     fn new(cid: String) -> Self {
-        Cid { cid }
+        CID { cid }
     }
 
     fn __str__(&self) -> String {
@@ -142,7 +142,7 @@ pub fn cid(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Canon>()?;
     m.add_class::<DirCidResult>()?;
     m.add_class::<CidResult>()?;
-    m.add_class::<Cid>()?;
+    m.add_class::<CID>()?;
 
     Ok(())
 }

@@ -11,7 +11,7 @@ from eqty_sdk.core import get_cid_for_bytes, get_cid_for_path
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement
-from eqty_sdk.types import Cid
+from eqty_sdk.types import CID
 
 logger = logging.getLogger("eqty.sdk.computation")
 
@@ -70,12 +70,12 @@ class Computation:
 
         return _Factory()
 
-    def add_input_cid(self, cid: Union[List[Cid], List[str], Cid, str]) -> "Computation":
+    def add_input_cid(self, cid: Union[List[CID], List[str], CID, str]) -> "Computation":
         """Adds the CID(s) to the computations input list."""
-        if isinstance(cid, Cid):
+        if isinstance(cid, CID):
             self._input_cids.append(cid.cid)
-        elif isinstance(cid, list) and all(isinstance(item, Cid) for item in cid):
-            cids = [cast(Cid, item).cid for item in cid]
+        elif isinstance(cid, list) and all(isinstance(item, CID) for item in cid):
+            cids = [cast(CID, item).cid for item in cid]
             self._input_cids.extend(cids)
         elif isinstance(cid, str):
             self._input_cids.append(cid)
@@ -115,12 +115,12 @@ class Computation:
 
         return self
 
-    def add_output_cid(self, cid: Union[List[Cid], List[str], Cid, str]) -> "Computation":
+    def add_output_cid(self, cid: Union[List[CID], List[str], CID, str]) -> "Computation":
         """Adds the CID(s) to the computations output list."""
-        if isinstance(cid, Cid):
+        if isinstance(cid, CID):
             self._output_cids.append(cid.cid)
-        elif isinstance(cid, list) and all(isinstance(item, Cid) for item in cid):
-            cids = [cast(Cid, item).cid for item in cid]
+        elif isinstance(cid, list) and all(isinstance(item, CID) for item in cid):
+            cids = [cast(CID, item).cid for item in cid]
             self._output_cids.extend(cids)
         elif isinstance(cid, str):
             self._output_cids.append(cid)
@@ -160,9 +160,9 @@ class Computation:
 
         return self
 
-    def set_computation_cid(self, cid: Union[Cid, str]) -> "Computation":
+    def set_computation_cid(self, cid: Union[CID, str]) -> "Computation":
         """Sets the computation CID with the provided cid."""
-        if isinstance(cid, Cid):
+        if isinstance(cid, CID):
             self._computation_cid = cid.cid
         elif isinstance(cid, str):
             self._computation_cid = cid

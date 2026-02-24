@@ -21,13 +21,7 @@ def maybe_create_model_signing_statement(collection_cid: str, model_signing_name
     """Creates a model signing statement if enabled in config and the asset is a directory."""
     ...
 
-class Canon:
-    """Canonicalization algorithm for computing content identifiers."""
-    RDFC1: Canon
-    JSONJCS: Canon
-
-
-class Cid:
+class CID:
     """A simple wrapper around a content identifier (CID) string.  Provides a typed wrapper for CID strings with property access and string conversion."""
     @property
     def cid(self) -> str:
@@ -41,6 +35,12 @@ class Cid:
 
     def __repr__(self) -> str:
         ...
+
+
+class Canon:
+    """Canonicalization algorithm for computing content identifiers."""
+    RDFC1: Canon
+    JSONJCS: Canon
 
 
 class CidResult:
@@ -72,6 +72,31 @@ class Config:
         ...
 
     def set_default_graph(self, graph: Graph) -> Config:
+        ...
+
+
+class DID:
+    @property
+    def ctx(self) -> Any:
+        ...
+
+    @property
+    def statement_ids(self) -> List[str]:
+        ...
+
+    def __init__(self, ctx: Graph, did: str, signer: Optional[Signer] = None, **kwargs: Any) -> None:
+        ...
+
+    @staticmethod
+    def from_signer(signer: Signer, **kwargs: Any) -> DID:
+        ...
+
+    @staticmethod
+    def from_did_string(did: str, **kwargs: Any) -> DID:
+        ...
+
+    @staticmethod
+    def with_context(ctx: Graph) -> DidFactory:
         ...
 
 
@@ -133,36 +158,11 @@ class Declaration:
         ...
 
 
-class Did:
-    @property
-    def ctx(self) -> Any:
-        ...
-
-    @property
-    def statement_ids(self) -> List[str]:
-        ...
-
-    def __init__(self, ctx: Graph, did: str, signer: Optional[Signer] = None, **kwargs: Any) -> None:
-        ...
-
-    @staticmethod
-    def from_signer(signer: Signer, **kwargs: Any) -> Did:
-        ...
-
-    @staticmethod
-    def from_did_string(did: str, **kwargs: Any) -> Did:
-        ...
-
-    @staticmethod
-    def with_context(ctx: Graph) -> DidFactory:
-        ...
-
-
 class DidFactory:
-    def build_from_signer(self, signer: Signer, **kwargs: Any) -> Did:
+    def build_from_signer(self, signer: Signer, **kwargs: Any) -> DID:
         ...
 
-    def build_from_did_string(self, did: str, **kwargs: Any) -> Did:
+    def build_from_did_string(self, did: str, **kwargs: Any) -> DID:
         ...
 
 
@@ -223,9 +223,6 @@ class Graph:
     @property
     def parent(self) -> Optional[uuid.UUID]:
         """Optional parent graph ID for hierarchical organization"""
-        ...
-
-    def constructor(self, name: str) -> Graph:
         ...
 
     @staticmethod
@@ -318,7 +315,7 @@ class cid:
     Canon: type[Canon]
     DirCidResult: type[DirCidResult]
     CidResult: type[CidResult]
-    Cid: type[Cid]
+    CID: type[CID]
 
     @staticmethod
     def compute_cid_for_directory(path: PathLike[str]) -> eqty_sdk._rust.DirCidResult:

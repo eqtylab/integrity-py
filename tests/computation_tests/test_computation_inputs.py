@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from eqty_sdk import Cid, Computation
+from eqty_sdk import CID, Computation
 from tests import setup_sdk
 
 
@@ -34,20 +34,20 @@ class TestComputationInputs(unittest.TestCase):
         self.assertEqual(computation._input_cids, expected_cids)
 
     def test_cid(self):
-        """Test setting Cid input."""
-        cid = Cid("urn:cid:4")
+        """Test setting CID input."""
+        cid = CID("urn:cid:4")
         expected_cids = [cid.cid]
         computation = Computation.new().add_input_cid(cid)
-        self.assertEqual(len(computation._input_cids), 1, "Adding cid Cid error")
+        self.assertEqual(len(computation._input_cids), 1, "Adding cid CID error")
         self.assertEqual(computation._input_cids, expected_cids)
 
     def test_cid_list(self):
-        """Test setting List[Cid] input."""
-        cid5 = Cid("urn:cid:5")
-        cid6 = Cid("urn:cid:6")
+        """Test setting List[CID] input."""
+        cid5 = CID("urn:cid:5")
+        cid6 = CID("urn:cid:6")
         computation = Computation.new().add_input_cid([cid5, cid6])
         expected_cids = [cid5.cid, cid6.cid]
-        self.assertEqual(len(computation._input_cids), 2, "Adding cid List[Cid] error")
+        self.assertEqual(len(computation._input_cids), 2, "Adding cid List[CID] error")
         self.assertEqual(computation._input_cids, expected_cids)
 
     def test_path(self):

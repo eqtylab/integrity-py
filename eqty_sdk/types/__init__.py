@@ -1,11 +1,10 @@
 from eqty_sdk._rust import (
     SIGNER_ALGORITHMS,
-    Cid,
+    CID,
     Declaration,
-    Did,
+    DID,
     Entity,
     Manifest,
-    # Metadata,
     Signer,
     signer,
 )
@@ -13,9 +12,9 @@ from eqty_sdk._rust import (
 set_active_signer = signer.set_active_signer
 
 __all__ = [
-    "Cid",
+    "CID",
     "Declaration",
-    "Did",
+    "DID",
     "Signer",
     "signer",
     "set_active_signer",
