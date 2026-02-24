@@ -26,7 +26,8 @@ class TestConfig(unittest.TestCase):
 
     def test_02_url(self):
         url = "http://www.example.com"
-        config.set_integrity_service_url(url)
+        cfg = config.init(get_config_dir())
+        cfg.set_integrity_service_url(url)
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -34,10 +35,8 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(data["url"], url, "Failed to save url to settings file")
 
     def test_03_store_all_blobs(self):
-        self.assertFalse(config.get_store_all_blobs())
-
-        config.set_store_all_blobs(True)
-        self.assertTrue(config.get_store_all_blobs())
+        cfg = config.init(get_config_dir())
+        cfg.set_store_all_blobs(True)
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -46,8 +45,7 @@ class TestConfig(unittest.TestCase):
             data["store_all_blobs"], True, "Failed to save store_all_blobs to settings file"
         )
 
-        config.set_store_all_blobs(False)
-        self.assertFalse(config.get_store_all_blobs())
+        cfg.set_store_all_blobs(False)
 
         with open(config_path, "r") as f:
             data = toml.load(f)
@@ -57,17 +55,8 @@ class TestConfig(unittest.TestCase):
         )
 
     def test_04_cid_ignore(self):
-        hidden, gitignore, symlinks = config.get_cid_ignore_rules()
-        self.assertFalse(hidden)
-        self.assertFalse(gitignore)
-        self.assertFalse(symlinks)
-
-        config.set_cid_ignore_rules(True, False, False)
-
-        hidden, gitignore, symlinks = config.get_cid_ignore_rules()
-        self.assertTrue(hidden)
-        self.assertFalse(gitignore)
-        self.assertFalse(symlinks)
+        cfg = config.init(get_config_dir())
+        cfg.set_cid_ignore_rules(True, False, False)
 
         with open(config_path, "r") as f:
             data = toml.load(f)

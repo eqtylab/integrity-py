@@ -48,9 +48,8 @@ class TestAsset(unittest.TestCase):
 
     def test_add_with_unsupported_operation(self):
         """Test adding Asset with an object that doesn't support addition."""
-        data = Dataset.from_object(object())
         with self.assertRaises(TypeError):
-            data + 5
+            Dataset.from_object(object())
 
     def test_other_operations(self):
         """Test other potential operations on the underlying value (assuming multiplication)."""

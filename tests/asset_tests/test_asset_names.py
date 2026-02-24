@@ -15,7 +15,7 @@ from eqty_sdk.asset import (
     Model,
     Token,
 )
-from eqty_sdk.types import cid
+from eqty_sdk.types import Cid
 from tests import setup_sdk
 
 
@@ -99,7 +99,7 @@ class AssetNames(unittest.TestCase):
         self.assertEqual(asset.name, "Token-mmi4", "Token name mismatch")
 
     def test_default_name_from_cid_type(self):
-        test_obj = cid.Cid("bafkr4ic6sphckk3a5x2fmgdeqod6tvv6k253q37icpfsk73wp2f524pok2")
+        test_obj = Cid("bafkr4ic6sphckk3a5x2fmgdeqod6tvv6k253q37icpfsk73wp2f524pok2")
 
         asset = Attribution.from_cid(test_obj)
         self.assertEqual(asset.name, "Attribution-pok2", "Attribution name mismatch")
@@ -207,7 +207,7 @@ class AssetNames(unittest.TestCase):
         self.assertEqual(asset.name, "path", "Token name mismatch")
 
     def test_custom_name_from_cid(self):
-        test_obj = cid.Cid("bafkr4ic6sphckk3a5x2fmgdeqod6tvv6k253q37icpfsk73wp2f524pok2")
+        test_obj = Cid("bafkr4ic6sphckk3a5x2fmgdeqod6tvv6k253q37icpfsk73wp2f524pok2")
 
         asset = Attribution.from_cid(test_obj, name="cid")
         self.assertEqual(asset.name, "cid", "Attribution name mismatch")

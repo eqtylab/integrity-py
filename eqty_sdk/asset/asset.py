@@ -55,6 +55,8 @@ def serialize_for_hashing(obj: Any) -> bytes:
         return str(obj).encode("utf-8")  # Encode numbers as strings
     elif isinstance(obj, list) or isinstance(obj, dict):
         return json.dumps(obj).encode("utf-8")  # JSON-encode complex data structures
+    elif isinstance(obj, (Path, os.PathLike)):
+        return os.fspath(obj).encode("utf-8")
     elif hasattr(obj, "serialize_for_hashing"):  # Check for custom implementation
         return cast(bytes, obj.serialize_for_hashing())
     elif hasattr(obj, "model"):
@@ -64,6 +66,11 @@ def serialize_for_hashing(obj: Any) -> bytes:
             return json.dumps(state_dict).encode("utf-8")
         except (TypeError, ValueError) as e:
             raise TypeError(f"Unsupported model state dict for hashing: {type(state_dict)} - {e}")
+    elif hasattr(obj, "__dict__"):
+        try:
+            return json.dumps(obj.__dict__).encode("utf-8")
+        except (TypeError, ValueError) as e:
+            raise TypeError(f"Unsupported __dict__ for hashing: {type(obj)} - {e}")
     # Add more cases for other data types as needed
     else:
         raise TypeError(f"Unsupported data type for hashing: {type(obj)}")
