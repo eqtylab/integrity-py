@@ -94,14 +94,14 @@ impl<'r> FromRow<'r, SqliteRow> for Graph {
 // Row Types
 // ============================================================================
 
-/// Database row representing an association between statements.
-#[derive(Debug, sqlx::FromRow)]
-pub(crate) struct AssociationRow {
-    #[allow(dead_code)]
-    pub id: String,
-    pub subject: String,
-    pub association: String,
-}
+// /// Database row representing an association between statements.
+// #[derive(Debug, sqlx::FromRow)]
+// pub(crate) struct AssociationRow {
+//     #[allow(dead_code)]
+//     pub id: String,
+//     pub subject: String,
+//     pub association: String,
+// }
 
 /// Database row representing a statement with optional metadata and credentials.
 #[derive(Debug)]

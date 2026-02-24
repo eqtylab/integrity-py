@@ -5,7 +5,7 @@ use integrity::lineage::models::statements::{Statement, StatementTrait};
 use sqlx::{sqlite::SqliteRow, SqlitePool};
 use uuid::Uuid;
 
-use super::{rows_to_statements, AssociationRow, Graph};
+use super::{rows_to_statements, Graph};
 
 /// Provides persistent storage for statements organized in graphs
 /// with support for hierarchical relationships and queries.
@@ -198,26 +198,23 @@ impl Sqlite {
     /// Registers a statement in the database, optionally associating it with a graph.
     ///
     /// Graph-specific statements (computation, data, metadata, etc.) are linked to the
-    /// provided graph_id. Global statements (credentials, DIDs, governance) are stored
-    /// without graph association.
+    /// provided graph_id. Global statements (credentials, DIDs) are stored without graph association.
     pub async fn register_statement(&self, statement: &Statement, graph_id: &Uuid) -> Result<()> {
         log::trace!("Registering statement");
         match statement {
-            Statement::ComputationRegistration(_)
-            | Statement::AssociationRegistration(_)
+            Statement::AssociationRegistration(_)
+            | Statement::ComputationRegistration(_)
             | Statement::DataRegistration(_)
+            | Statement::EntityRegistration(_)
+            | Statement::GovernanceRegistration(_)
             | Statement::MetadataRegistration(_)
             | Statement::StorageRegistration(_)
-            | Statement::EntityRegistration(_) => {
-                self.register_graph_statement(statement, graph_id).await
-            }
-            Statement::CredentialSigstoreBundleRegistration(_)
+                => { self.register_graph_statement(statement, graph_id).await }
+            Statement::CredentialDsseRegistration(_)
             | Statement::CredentialRegistration(_)
+            | Statement::CredentialSigstoreBundleRegistration(_)
             | Statement::DidRegistration(_)
-            | Statement::GovernanceRegistration(_)
-            | Statement::CredentialDsseRegistration(_) => {
-                self.register_global_statement(statement).await
-            }
+                => { self.register_global_statement(statement).await }
         }
     }
 
@@ -345,114 +342,114 @@ impl Sqlite {
     }
 
     /// Returns all association IDs linked to the given subject.
-    pub async fn get_associations_for_subject(&self, subject: &str) -> Result<Vec<String>> {
-        log::trace!("Retrieving associations for subject={subject}.");
-
-        let rows: Vec<AssociationRow> = sqlx::query_as(
-            r#"
-            SELECT id, subject, association
-            FROM association_statements
-            WHERE subject = $1
-            "#,
-        )
-        .bind(subject)
-        .fetch_all(&self.pool)
-        .await?;
-
-        let mut associations = rows.into_iter().map(|r| r.association).collect::<Vec<_>>();
-
-        associations.sort();
-        associations.dedup();
-
-        Ok(associations)
-    }
-
+    // pub async fn get_associations_for_subject(&self, subject: &str) -> Result<Vec<String>> {
+    //     log::trace!("Retrieving associations for subject={subject}.");
+    //
+    //     let rows: Vec<AssociationRow> = sqlx::query_as(
+    //         r#"
+    //         SELECT id, subject, association
+    //         FROM association_statements
+    //         WHERE subject = $1
+    //         "#,
+    //     )
+    //     .bind(subject)
+    //     .fetch_all(&self.pool)
+    //     .await?;
+    //
+    //     let mut associations = rows.into_iter().map(|r| r.association).collect::<Vec<_>>();
+    //
+    //     associations.sort();
+    //     associations.dedup();
+    //
+    //     Ok(associations)
+    // }
+    //
     /// Returns all subject IDs linked to the given association.
-    pub async fn get_subjects_for_association(&self, association: &str) -> Result<Vec<String>> {
-        log::trace!("Retrieving subjects for association={association}.");
+    // pub async fn get_subjects_for_association(&self, _association: &str) -> Result<Vec<String>> {
+    //     log::trace!("Retrieving subjects for association={association}.");
+    //
+    //     let rows: Vec<AssociationRow> = sqlx::query_as(
+    //         r#"
+    //         SELECT id, subject, association
+    //         FROM association_statements
+    //         WHERE association = $1
+    //         "#,
+    //     )
+    //     .bind(association)
+    //     .fetch_all(&self.pool)
+    //     .await?;
+    //
+    //     let mut subjects = rows.into_iter().map(|r| r.subject).collect::<Vec<_>>();
+    //
+    //     subjects.sort();
+    //     subjects.dedup();
+    //
+    //     Ok(subjects)
+    // }
 
-        let rows: Vec<AssociationRow> = sqlx::query_as(
-            r#"
-            SELECT id, subject, association
-            FROM association_statements
-            WHERE association = $1
-            "#,
-        )
-        .bind(association)
-        .fetch_all(&self.pool)
-        .await?;
+    // /// Returns a single graph by ID.
+    // pub async fn retrieve_graph(&self, graph_id: &Uuid) -> Result<Graph> {
+    //     log::trace!("Retrieving graph {graph_id:?}");
+    //
+    //     let graph: Graph = sqlx::query_as(
+    //         r#"
+    //         SELECT graph_id, name, parent_id
+    //         FROM graphs
+    //         WHERE graph_id = ?1
+    //         "#,
+    //     )
+    //     .bind(graph_id.to_string())
+    //     .fetch_one(&self.pool)
+    //     .await?;
+    //
+    //     Ok(graph)
+    // }
 
-        let mut subjects = rows.into_iter().map(|r| r.subject).collect::<Vec<_>>();
+    // /// Returns metadata for all graphs in the database.
+    // pub async fn get_graph_info(&self) -> Result<Vec<Graph>> {
+    //     log::trace!("Retrieving all graph info");
+    //
+    //     let rows: Vec<Graph> = sqlx::query_as(
+    //         r#"
+    //         SELECT graph_id, name, parent_id
+    //         FROM graphs
+    //         "#,
+    //     )
+    //     .fetch_all(&self.pool)
+    //     .await?;
+    //
+    //     Ok(rows)
+    // }
 
-        subjects.sort();
-        subjects.dedup();
-
-        Ok(subjects)
-    }
-
-    /// Returns a single graph by ID.
-    pub async fn retrieve_graph(&self, graph_id: &Uuid) -> Result<Graph> {
-        log::trace!("Retrieving graph {graph_id:?}");
-
-        let graph: Graph = sqlx::query_as(
-            r#"
-            SELECT graph_id, name, parent_id
-            FROM graphs
-            WHERE graph_id = ?1
-            "#,
-        )
-        .bind(graph_id.to_string())
-        .fetch_one(&self.pool)
-        .await?;
-
-        Ok(graph)
-    }
-
-    /// Returns metadata for all graphs in the database.
-    pub async fn get_graph_info(&self) -> Result<Vec<Graph>> {
-        log::trace!("Retrieving all graph info");
-
-        let rows: Vec<Graph> = sqlx::query_as(
-            r#"
-            SELECT graph_id, name, parent_id
-            FROM graphs
-            "#,
-        )
-        .fetch_all(&self.pool)
-        .await?;
-
-        Ok(rows)
-    }
-
-    /// Returns metadata for all descendant graphs of the given parent.
-    pub async fn get_child_graph_info(&self, parent_id: &Uuid) -> Result<Vec<Graph>> {
-        log::trace!("Retrieving child graph info for {parent_id:?}");
-
-        let rows: Vec<Graph> = sqlx::query_as(
-            r#"
-            WITH RECURSIVE descendants AS (
-                -- Base case: direct children
-                SELECT graph_id, name, parent_id
-                FROM graphs
-                WHERE parent_id = ?1
-
-                UNION ALL
-
-                -- Recursive case: children of children
-                SELECT g.graph_id, g.name, g.parent_id
-                FROM graphs g
-                INNER JOIN descendants d ON g.parent_id = d.graph_id
-            )
-            SELECT graph_id, name, parent_id
-            FROM descendants
-            "#,
-        )
-        .bind(parent_id.to_string())
-        .fetch_all(&self.pool)
-        .await?;
-
-        Ok(rows)
-    }
+    // /// Returns metadata for all descendant graphs of the given parent.
+    // pub async fn get_child_graph_info(&self, parent_id: &Uuid) -> Result<Vec<Graph>> {
+    //     log::trace!("Retrieving child graph info for {parent_id:?}");
+    //
+    //     let rows: Vec<Graph> = sqlx::query_as(
+    //         r#"
+    //         WITH RECURSIVE descendants AS (
+    //             -- Base case: direct children
+    //             SELECT graph_id, name, parent_id
+    //             FROM graphs
+    //             WHERE parent_id = ?1
+    //
+    //             UNION ALL
+    //
+    //             -- Recursive case: children of children
+    //             SELECT g.graph_id, g.name, g.parent_id
+    //             FROM graphs g
+    //             INNER JOIN descendants d ON g.parent_id = d.graph_id
+    //         )
+    //         SELECT graph_id, name, parent_id
+    //         FROM descendants
+    //         "#,
+    //     )
+    //     .bind(parent_id.to_string())
+    //     .fetch_all(&self.pool)
+    //     .await?;
+    //
+    //     Ok(rows)
+    // }
 
     /// Used to register statements associtated with a specific graph_id (aka NON-Global)
     async fn register_graph_statement(&self, statement: &Statement, graph_id: &Uuid) -> Result<()> {
@@ -604,9 +601,29 @@ impl Sqlite {
 
                 self.associate_statement_to_graph(&id, graph_id).await
             }
+            Statement::GovernanceRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let statement_data = serde_json::to_string(&statement)?;
+                log::debug!("Registering governance '{id}'");
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO governance_statements
+                    (id, statement, registered_by, subject, document) VALUES (?1, ?2, ?3, ?4, ?5)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(&s.registered_by)
+                .bind(&s.subject)
+                .bind(&s.document)
+                .execute(&self.pool)
+                .await?;
+
+                Ok(())
+            }
             Statement::CredentialSigstoreBundleRegistration(_)
             | Statement::DidRegistration(_)
-            | Statement::GovernanceRegistration(_)
             | Statement::CredentialDsseRegistration(_)
             | Statement::CredentialRegistration(_) => {
                 log::error!(
@@ -710,32 +727,12 @@ impl Sqlite {
 
                 Ok(())
             }
-            Statement::GovernanceRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering governance '{id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO governance_statements
-                    (id, statement, registered_by, subject, document) VALUES (?1, ?2, ?3, ?4, ?5)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .bind(&s.subject)
-                .bind(&s.document)
-                .execute(&self.pool)
-                .await?;
-
-                Ok(())
-            }
             Statement::ComputationRegistration(_)
             | Statement::AssociationRegistration(_)
             | Statement::DataRegistration(_)
             | Statement::MetadataRegistration(_)
             | Statement::StorageRegistration(_)
+            | Statement::GovernanceRegistration(_)
             | Statement::EntityRegistration(_) => {
                 log::error!(
                     "Attempted to register a graph specific statement '{}' to the global store",
@@ -750,7 +747,8 @@ impl Sqlite {
         &self,
         statements: &mut HashMap<String, Statement>,
     ) -> Result<()> {
-        // TODO: Get the Credential, CredDsse, CredSigStore, DID, Governance Statements
+        log::error!("get_global_statements fn is not fully implemented");
+        // TODO: Get the Credential, CredDsse, CredSigStore, DID Statements
         // for ALL the previously fetched statements regardless of project
         let mut dids = HashSet::new();
         let mut credential_subjects = HashSet::new();
