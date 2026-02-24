@@ -45,7 +45,7 @@ class Metadata:
 
     def create_statement(self, subject_cid: str, skip_proof: bool) -> List[str]:
         metadata_json = self.to_json_str()
-        return add_metadata_statement(subject_cid, metadata_json, skip_proof)
+        return add_metadata_statement(subject_cid, metadata_json, skip_proof=skip_proof)
 
     def __iter__(self):
         """Return an iterator that includes both the standard and additional metadata keys."""

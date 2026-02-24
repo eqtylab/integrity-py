@@ -9,7 +9,7 @@ use crate::with_ctx;
 
 #[pyfunction]
 #[pyo3(signature = (subject, *, timestamp=None, graph_id=None))]
-pub fn create_vc_statement(
+pub fn add_vc_statement(
     py: Python,
     subject: String,
     timestamp: Option<String>,

@@ -16,6 +16,10 @@ def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> str:
     """Resolves the provided path and reads the file or directory to calculate the CID."""
     ...
 
+def maybe_create_model_signing_statement(collection_cid: str, model_signing_name: str, is_dir: bool) -> None:
+    """Creates a model signing statement if enabled in config and the asset is a directory."""
+    ...
+
 class Canon:
     """Canonicalization algorithm for computing content identifiers."""
     RDFC1: Canon
@@ -70,6 +74,64 @@ class Config:
         ...
 
 
+class Declaration:
+    @property
+    def subject_line(self) -> str:
+        ...
+
+    @property
+    def statement(self) -> str:
+        ...
+
+    @property
+    def submitted_at(self) -> Optional[str]:
+        ...
+
+    @property
+    def submitted_by(self) -> Optional[str]:
+        ...
+
+    @property
+    def control_cid(self) -> List[str]:
+        ...
+
+    @property
+    def attachment_cid(self) -> List[str]:
+        ...
+
+    @property
+    def extra(self) -> Any:
+        ...
+
+    def __init__(self, subject_line: str, statement: str) -> None:
+        ...
+
+    @staticmethod
+    def new(subject_line: str, statement: str) -> Declaration:
+        ...
+
+    def add_attachment_cid(self, cid: str) -> Declaration:
+        ...
+
+    def add_control_cid(self, cid: str) -> Declaration:
+        ...
+
+    def add_extra(self, key: str, val: str) -> Declaration:
+        ...
+
+    def finalize(self) -> Declaration:
+        ...
+
+    def cid(self) -> str:
+        ...
+
+    def to_dict(self) -> Any:
+        ...
+
+    def to_json(self) -> str:
+        ...
+
+
 class Did:
     @property
     def ctx(self) -> Any:
@@ -96,10 +158,10 @@ class Did:
 
 
 class DidFactory:
-    def from_signer(self, signer: Signer, **kwargs: Any) -> Did:
+    def build_from_signer(self, signer: Signer, **kwargs: Any) -> Did:
         ...
 
-    def from_did_string(self, did: str, **kwargs: Any) -> Did:
+    def build_from_did_string(self, did: str, **kwargs: Any) -> Did:
         ...
 
 
@@ -193,6 +255,12 @@ class Manifest:
 
     def register(self) -> None:
         ...
+
+
+class SIGNER_ALGORITHMS:
+    ED25519: str
+    SECP256K1: str
+    SECP256R1: str
 
 
 class Signer:
@@ -292,6 +360,7 @@ class manifest:
 # Signer module
 class signer:
     Signer: type[Signer]
+    SIGNER_ALGORITHMS: type[SIGNER_ALGORITHMS]
 
     @staticmethod
     def create_new_signer(key_type: str, name: Optional[str] = None) -> eqty_sdk._rust.Signer:
@@ -355,7 +424,7 @@ class statements:
         ...
 
     @staticmethod
-    def create_vc_statement(subject: str, *, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
+    def add_vc_statement(subject: str, *, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
         ...
 
     @staticmethod

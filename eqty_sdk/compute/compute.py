@@ -4,9 +4,9 @@ import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from eqty_sdk import config
 from eqty_sdk._rust import (
     Graph as Context,
+    statements,
     stream as eqty_core_stream,
 )
 from eqty_sdk.asset import Asset, AssetType, Code, Custom, Dataset, Model
@@ -14,7 +14,6 @@ from eqty_sdk.core import get_cid_for_bytes
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement
-from eqty_sdk.statements.common import add_vc_statement
 
 logger = logging.getLogger("eqty.sdk.computation")
 
@@ -62,7 +61,7 @@ class Compute:
     ) -> None:
         logger.debug("Initalizing Compute")
 
-        self._ctx = ctx if ctx is not None else config.root_context()
+        self._ctx = ctx
 
         if metadata is None:
             metadata = {}
@@ -223,7 +222,7 @@ class Compute:
         stream = result.get("stream")
         logger.debug(f"Stream committed '{stream_uuid}'. Computation CID:'{compute_cid}'")
         self.statement_ids.append(compute_cid)
-        vc_id = add_vc_statement(compute_cid, None, self.skip_proof)
+        vc_id = statements.add_vc_statement(compute_cid)
         if vc_id:
             self.statement_ids.append(vc_id)
 

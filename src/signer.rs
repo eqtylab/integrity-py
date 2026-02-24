@@ -22,6 +22,7 @@ use crate::config::{ctx_async, ctx_blocking, Config};
 #[pymodule]
 pub fn signer(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Signer>()?;
+    m.add_class::<SignerAlgorithms>()?;
     m.add_function(wrap_pyfunction!(create_new_signer, m)?)?;
     m.add_function(wrap_pyfunction!(create_signer_from_private_key, m)?)?;
     m.add_function(wrap_pyfunction!(create_vcomp_signer, m)?)?;
@@ -43,6 +44,19 @@ pub struct Signer {
     pub name: String,
     /// Decentralized Identifier (DID) key for the signer.
     pub did_key: String,
+}
+
+#[pyclass(name = "SIGNER_ALGORITHMS")]
+pub struct SignerAlgorithms;
+
+#[pymethods]
+impl SignerAlgorithms {
+    #[classattr]
+    const ED25519: &'static str = "ed25519";
+    #[classattr]
+    const SECP256K1: &'static str = "secp256k1";
+    #[classattr]
+    const SECP256R1: &'static str = "secp256r1";
 }
 
 #[pymethods]

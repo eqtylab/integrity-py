@@ -5,10 +5,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union, cast
 
-from eqty_sdk import config
 from eqty_sdk._rust import (
     Graph as Context,
-    statements as eqty_core_statements,
 )
 from eqty_sdk.core import (
     get_cid_for_bytes,
@@ -66,9 +64,7 @@ def serialize_for_hashing(obj: Any) -> bytes:
         try:
             return json.dumps(state_dict).encode("utf-8")
         except (TypeError, ValueError) as e:
-            raise TypeError(
-                f"Unsupported model state dict for hashing: {type(state_dict)} - {e}"
-            )
+            raise TypeError(f"Unsupported model state dict for hashing: {type(state_dict)} - {e}")
     # Add more cases for other data types as needed
     else:
         raise TypeError(f"Unsupported data type for hashing: {type(obj)}")
@@ -226,27 +222,29 @@ class Asset:
 
     def add_declaration(self, declaration: Declaration) -> "Asset":
         document_cid = declaration.cid()
-        ids = add_governance_statement(self.cid, document_cid, self._skip_proof)
+        ids = add_governance_statement(self.cid, document_cid, skip_proof=self._skip_proof)
         self.statement_ids.extend(ids)
         return self
 
     def _create_eqty_statements(self) -> None:
         """Creates DataStatement, MetadataStatement, and VcStatement."""
-        self.statement_ids.extend(add_data_statement([self.cid], self._skip_proof))
+        self.statement_ids.extend(add_data_statement([self.cid], skip_proof=self._skip_proof))
         self.statement_ids.extend(
-            add_metadata_statement(self.cid, self._metadata.to_json_str(), self._skip_proof)
+            add_metadata_statement(
+                self.cid, self._metadata.to_json_str(), skip_proof=self._skip_proof
+            )
         )
 
-        if config.get_generate_model_signing_signatures() and self._is_dir:
-            _, _, include_symlinks = config.get_cid_ignore_rules()
-            eqty_core_statements.create_model_signing_statement(
-                collection_cid=self.cid,
-                blobs_dir=config.blob_dir(),
-                model_signing_name=self._metadata.name or "Unnamed Asset",
-                allow_symlinks=include_symlinks,
-                ignore_paths=[],  # TODO: populate this, ok for now, just makes recreation require more out-of-band info
-                timestamp=None,
-            )
+        # if config.get_generate_model_signing_signatures() and self._is_dir:
+        #     _, _, include_symlinks = config.get_cid_ignore_rules()
+        #     eqty_core_statements.create_model_signing_statement(
+        #         collection_cid=self.cid,
+        #         blobs_dir=config.blob_dir(),
+        #         model_signing_name=self._metadata.name or "Unnamed Asset",
+        #         allow_symlinks=include_symlinks,
+        #         ignore_paths=[],  # TODO: populate this, ok for now, just makes recreation require more out-of-band info
+        #         timestamp=None,
+        #     )
 
     def __repr__(self) -> str:
         return f"Asset({self._value!r})"

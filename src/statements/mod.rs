@@ -9,12 +9,12 @@ use crate::with_ctx;
 
 mod association;
 mod computation;
-mod data;
+pub(crate) mod data;
 pub(crate) mod did;
-mod entity;
-mod governance;
+pub(crate) mod entity;
+pub(crate) mod governance;
 pub(crate) mod metadata;
-mod model_signing;
+pub(crate) mod model_signing;
 /// Storage statement creation for referencing external data stores.
 pub mod storage;
 mod vc;
@@ -32,7 +32,7 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(entity::add_entity_statement, m)?)?;
     m.add_function(wrap_pyfunction!(governance::add_governance_statement, m)?)?;
     m.add_function(wrap_pyfunction!(metadata::add_metadata_statement, m)?)?;
-    m.add_function(wrap_pyfunction!(vc::create_vc_statement, m)?)?;
+    m.add_function(wrap_pyfunction!(vc::add_vc_statement, m)?)?;
 
     m.add_function(wrap_pyfunction!(storage::add_storage_statement, m)?)?;
     m.add_function(wrap_pyfunction!(retrieve_graph, m)?)?;

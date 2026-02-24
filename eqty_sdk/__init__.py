@@ -35,7 +35,6 @@ from eqty_sdk.errors import (
     UnsupportedError,
     UsageError,
 )
-from eqty_sdk.statements import Statements
 from eqty_sdk.types import (
     SIGNER_ALGORITHMS,
     Cid,

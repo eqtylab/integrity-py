@@ -3,10 +3,8 @@ import os
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
-from eqty_sdk import config
 from eqty_sdk._rust import (
     Graph as Context,
-    statements as eqty_core_statements,
 )
 from eqty_sdk.asset import serialize_for_hashing
 from eqty_sdk.core import get_cid_for_bytes, get_cid_for_path
@@ -37,14 +35,13 @@ class Computation:
         raise TypeError("Use Computation.new() to create instances of this class.")
 
     def __init_internal__(
-        self, ctx: Context, metadata: Metadata, skip_proof: Optional[bool] = None
+        self, ctx: Optional[Context], metadata: Metadata, skip_proof: Optional[bool] = None
     ):
         self._ctx = ctx
         self._metadata = metadata
         self._input_cids: List[str] = []
         self._output_cids: List[str] = []
         self._computation_cid: Union[str, None] = None
-        self._associated_statement_ids: List[str] = []
 
         if skip_proof is not None:
             self._skip_proof = skip_proof
@@ -57,7 +54,7 @@ class Computation:
 
         metadata = Metadata(**kwargs)
         instance = object.__new__(cls)
-        instance.__init_internal__(config.root_context(), metadata, skip_proof)
+        instance.__init_internal__(None, metadata, skip_proof)
         return instance
 
     @staticmethod
@@ -191,13 +188,7 @@ class Computation:
             computation=self._computation_cid,
             skip_proof=self._skip_proof,
         )
-        self._associated_statement_ids.extend(statement_ids)
 
-        ids = self._metadata.create_statement(statement_ids[0], self._skip_proof)
-        self._associated_statement_ids.extend(ids)
-
-        for id in self._associated_statement_ids:
-            logger.info(f"Registering data statement {id} to graph: {self._ctx.id}")
-            eqty_core_statements.register_statement_to_graph(id, str(self._ctx.id))
+        self._metadata.create_statement(statement_ids[0], self._skip_proof)
 
         return self
