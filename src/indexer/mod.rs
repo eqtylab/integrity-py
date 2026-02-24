@@ -84,6 +84,7 @@ pub struct GraphFactory {
 
 #[pymethods]
 impl GraphFactory {
+    #[allow(clippy::new_ret_no_self)]
     #[pyo3(signature = (name))]
     pub fn new(&self, py: Python<'_>, name: String) -> Graph {
         let graph = Graph {
@@ -108,10 +109,10 @@ fn create_graph_record(py: Python<'_>, graph: &Graph) {
 
 impl Default for Graph {
     fn default() -> Self {
-        let id = uuid::uuid!("00000000-0000-0000-0000-000000000000");
+        let id = Uuid::new_v4();
         Graph {
             id,
-            name: String::from("Default"),
+            name: id.into(),
             parent: None,
             statements: None,
         }
