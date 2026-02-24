@@ -84,6 +84,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<cid::CidResult>()?;
     m.add_class::<cid::DirCidResult>()?;
     m.add_class::<Graph>()?;
+    m.add_class::<indexer::GraphFactory>()?;
     m.add_class::<Config>()?;
     m.add_class::<declaration::Declaration>()?;
     m.add_class::<did::Did>()?;

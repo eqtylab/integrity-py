@@ -31,8 +31,8 @@ class RustTypeMapper:
         "PyObject": "Any",
         "Py<PyAny>": "Any",
         "PyBytes": "bytes",
-        "Uuid": "Any",
-        "uuid::Uuid": "Any",
+        "Uuid": "uuid.UUID",
+        "uuid::Uuid": "uuid.UUID",
         "PyResult<()>": "None",
     }
 
@@ -523,6 +523,7 @@ class StubGenerator:
         lines.append("import eqty_sdk")
         lines.append("from pathlib import Path")
         lines.append("from typing import Any, Dict, List, Optional, Tuple, Union")
+        lines.append("import uuid")
         lines.append("from os import PathLike")
         lines.append("")
 

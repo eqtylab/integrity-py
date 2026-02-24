@@ -1,5 +1,4 @@
 mod sqlite;
-mod tests;
 
 use std::collections::HashMap;
 
@@ -11,6 +10,8 @@ use serde_json::Value;
 pub use sqlite::Sqlite;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use uuid::Uuid;
+
+use crate::with_ctx;
 
 // ============================================================================
 // Graph
@@ -40,32 +41,77 @@ pub struct Graph {
 
 #[pymethods]
 impl Graph {
-    #[new]
-    pub fn new(id: Uuid, name: String) -> Self {
-        Graph {
-            id,
+
+    #[staticmethod]
+    #[allow(clippy::new_ret_no_self)]
+    pub fn new(py: Python<'_>, name: String) -> Self {
+        let graph = Graph {
+            id: Uuid::new_v4(),
             name,
             parent: None,
             statements: None,
+        };
+        create_graph_record(py, &graph);
+        graph
+    }
+
+    #[staticmethod]
+    pub fn from_parent(parent: Graph) -> GraphFactory {
+        GraphFactory {
+            parent: Some(parent.id),
         }
     }
 
     #[staticmethod]
-    pub fn from_parent(id: Uuid, name: String, graph: Graph) -> Self {
-        Graph {
-            id,
-            name,
-            parent: Some(graph.id),
+    pub fn from_project(py: Python<'_>, project_id: Uuid) -> PyResult<GraphFactory> {
+        let graph = Graph {
+            id: project_id,
+            name: project_id.to_string(),
+            parent: None,
             statements: None,
-        }
+        };
+        create_graph_record(py, &graph);
+        Ok(GraphFactory {
+            parent: Some(project_id),
+        })
     }
 }
+
+#[pyclass]
+pub struct GraphFactory {
+    parent: Option<Uuid>,
+}
+
+#[pymethods]
+impl GraphFactory {
+    #[pyo3(signature = (name))]
+    pub fn new(&self, py: Python<'_>, name: String) -> Graph {
+        let graph = Graph {
+            id: Uuid::new_v4(),
+            name,
+            parent: self.parent,
+            statements: None,
+        };
+        create_graph_record(py, &graph);
+        graph
+    }
+}
+
+fn create_graph_record(py: Python<'_>, graph: &Graph) {
+    with_ctx!(py, |ctx| {
+        ctx.sql_lite
+            .create_graph(graph)
+            .await
+            .expect("Failed to create record in database");
+    });
+}
+
 impl Default for Graph {
     fn default() -> Self {
         let id = uuid::uuid!("00000000-0000-0000-0000-000000000000");
         Graph {
             id,
-            name: "Default".to_owned(),
+            name: String::from("Default"),
             parent: None,
             statements: None,
         }
@@ -93,15 +139,6 @@ impl<'r> FromRow<'r, SqliteRow> for Graph {
 // ============================================================================
 // Row Types
 // ============================================================================
-
-// /// Database row representing an association between statements.
-// #[derive(Debug, sqlx::FromRow)]
-// pub(crate) struct AssociationRow {
-//     #[allow(dead_code)]
-//     pub id: String,
-//     pub subject: String,
-//     pub association: String,
-// }
 
 /// Database row representing a statement with optional metadata and credentials.
 #[derive(Debug)]

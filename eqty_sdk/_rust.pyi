@@ -2,6 +2,7 @@
 import eqty_sdk
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+import uuid
 from os import PathLike
 
 def init(custom_dir: Optional[PathLike[str]] = None) -> Config:
@@ -210,7 +211,7 @@ class Entity:
 class Graph:
     """A graph structure for organizing related statements hierarchically.  Graphs group statements together with optional parent-child relationships, enabling versioning and organizational structure for lineage data."""
     @property
-    def id(self) -> Any:
+    def id(self) -> uuid.UUID:
         """Unique identifier for this graph"""
         ...
 
@@ -220,15 +221,28 @@ class Graph:
         ...
 
     @property
-    def parent(self) -> Optional[Any]:
+    def parent(self) -> Optional[uuid.UUID]:
         """Optional parent graph ID for hierarchical organization"""
         ...
 
-    def __init__(self, id: Any, name: str) -> None:
+    def constructor(self, name: str) -> Graph:
         ...
 
     @staticmethod
-    def from_parent(id: Any, name: str, graph: Graph) -> Graph:
+    def new(name: str) -> Graph:
+        ...
+
+    @staticmethod
+    def from_parent(parent: Graph) -> GraphFactory:
+        ...
+
+    @staticmethod
+    def from_project(project_id: uuid.UUID) -> GraphFactory:
+        ...
+
+
+class GraphFactory:
+    def new(self, name: str) -> Graph:
         ...
 
 
@@ -327,12 +341,12 @@ class entity:
     Entity: type[Entity]
 
     @staticmethod
-    def create_entity(metadata_json: str, skip_proof: Optional[bool] = None, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> Tuple[eqty_sdk._rust.Entity, Any]:
+    def create_entity(metadata_json: str, skip_proof: Optional[bool] = None, timestamp: Optional[str] = None, graph_id: Optional[uuid.UUID] = None) -> Tuple[eqty_sdk._rust.Entity, Any]:
         """ # Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
     @staticmethod
-    def create_entity_from_uuid(uuid: str, metadata_json: str, skip_proof: Optional[bool] = None, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> Tuple[eqty_sdk._rust.Entity, Any]:
+    def create_entity_from_uuid(uuid: str, metadata_json: str, skip_proof: Optional[bool] = None, timestamp: Optional[str] = None, graph_id: Optional[uuid.UUID] = None) -> Tuple[eqty_sdk._rust.Entity, Any]:
         """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
@@ -396,39 +410,39 @@ class signer:
 # Statements module
 class statements:
     @staticmethod
-    def add_association_statement(subject: str, association: str, *, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None) -> List[str]:
+    def add_association_statement(subject: str, association: str, *, skip_proof: Optional[bool] = None, graph_id: Optional[uuid.UUID] = None) -> List[str]:
         ...
 
     @staticmethod
-    def add_computation_statement(inputs: List[str], outputs: List[str], computation: Optional[str] = None, *, operated_by: Optional[str] = None, executed_on: Optional[str] = None, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None) -> List[str]:
+    def add_computation_statement(inputs: List[str], outputs: List[str], computation: Optional[str] = None, *, operated_by: Optional[str] = None, executed_on: Optional[str] = None, skip_proof: Optional[bool] = None, graph_id: Optional[uuid.UUID] = None) -> List[str]:
         ...
 
     @staticmethod
-    def add_data_statement(data: List[str], *, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None) -> List[str]:
+    def add_data_statement(data: List[str], *, skip_proof: Optional[bool] = None, graph_id: Optional[uuid.UUID] = None) -> List[str]:
         ...
 
     @staticmethod
-    def add_did_statement(did: str, *, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None) -> List[str]:
+    def add_did_statement(did: str, *, skip_proof: Optional[bool] = None, graph_id: Optional[uuid.UUID] = None) -> List[str]:
         ...
 
     @staticmethod
-    def add_entity_statement(entity: str, *, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None) -> List[str]:
+    def add_entity_statement(entity: str, *, skip_proof: Optional[bool] = None, graph_id: Optional[uuid.UUID] = None) -> List[str]:
         ...
 
     @staticmethod
-    def add_governance_statement(subject: str, document: str, *, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None) -> List[str]:
+    def add_governance_statement(subject: str, document: str, *, skip_proof: Optional[bool] = None, graph_id: Optional[uuid.UUID] = None) -> List[str]:
         ...
 
     @staticmethod
-    def add_metadata_statement(subject: str, metadata: str, *, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None) -> List[str]:
+    def add_metadata_statement(subject: str, metadata: str, *, skip_proof: Optional[bool] = None, graph_id: Optional[uuid.UUID] = None) -> List[str]:
         ...
 
     @staticmethod
-    def add_vc_statement(subject: str, *, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
+    def add_vc_statement(subject: str, *, timestamp: Optional[str] = None, graph_id: Optional[uuid.UUID] = None) -> str:
         ...
 
     @staticmethod
-    def add_storage_statement(data: str, stored_on: str, *, operated_by: Optional[str] = None, skip_proof: Optional[bool] = None, graph_id: Optional[Any] = None) -> List[str]:
+    def add_storage_statement(data: str, stored_on: str, *, operated_by: Optional[str] = None, skip_proof: Optional[bool] = None, graph_id: Optional[uuid.UUID] = None) -> List[str]:
         ...
 
     @staticmethod
@@ -442,7 +456,7 @@ class statements:
         ...
 
     @staticmethod
-    def create_model_signing_statement(collection_cid: str, blobs_dir: PathLike[str], model_signing_name: str, allow_symlinks: bool, ignore_paths: List[str], *, timestamp: Optional[str] = None, graph_id: Optional[Any] = None) -> str:
+    def create_model_signing_statement(collection_cid: str, blobs_dir: PathLike[str], model_signing_name: str, allow_symlinks: bool, ignore_paths: List[str], *, timestamp: Optional[str] = None, graph_id: Optional[uuid.UUID] = None) -> str:
         ...
 
 
@@ -459,7 +473,7 @@ class stream:
         ...
 
     @staticmethod
-    def finalize(id: str, static_output_cids: Optional[List[str]] = None, graph_id: Optional[Any] = None) -> Any:
+    def finalize(id: str, static_output_cids: Optional[List[str]] = None, graph_id: Optional[uuid.UUID] = None) -> Any:
         """Finalizes the computation stream and creates the ComputationStatement and (optionally) the VC and VCStatement returns the CID of the computation statement"""
         ...
 
