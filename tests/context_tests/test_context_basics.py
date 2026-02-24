@@ -1,8 +1,6 @@
 import unittest
-import uuid
 
 from eqty_sdk import Computation, Compute, Context, Dataset
-from eqty_sdk._rust import statements
 from tests import setup_sdk
 
 
@@ -15,11 +13,10 @@ class TestContextBasics(unittest.TestCase):
 
     def test_dataset(self):
         """Test initializing Dataset asset with context."""
-        project_id = str(uuid.uuid4())
-        ctx = Context(project_id=project_id)
+        ctx = Context.new("test_dataset")
 
         # verigy original context
-        self.assertFalse(hasattr(ctx, "name"))
+        self.assertFalse(hasattr(ctx, "tests_dataset"))
         self.assertFalse(hasattr(ctx, "parent_graph"))
 
         dataset_cid = "bafkr4iff6c2wj5hsaff57e4svjqwziq75vkg72z6zdp5stakweld7lt7ge"
@@ -78,8 +75,7 @@ class TestContextBasics(unittest.TestCase):
 
     def test_computation(self):
         """Test initializing Computation with context."""
-        project_id = str(uuid.uuid4())
-        ctx = Context(project_id=project_id)
+        ctx = Context.new("test_computation")
 
         computation = (
             Computation.with_context(ctx)
@@ -114,8 +110,7 @@ class TestContextBasics(unittest.TestCase):
         def add(x, y):
             return x + y
 
-        project_id = str(uuid.uuid4())
-        ctx = Context(project_id=project_id)
+        ctx = Context.new("test_compute")
 
         wrapped_add = Compute(add, ctx=ctx)
 
@@ -135,8 +130,7 @@ class TestContextBasics(unittest.TestCase):
         """Test using the @compute decorator with context."""
         from eqty_sdk import compute
 
-        project_id = str(uuid.uuid4())
-        ctx = Context(project_id=project_id)
+        ctx = Context.new("test_compute_decorator")
 
         @compute(
             metadata={
