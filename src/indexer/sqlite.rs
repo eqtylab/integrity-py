@@ -387,40 +387,35 @@ impl Sqlite {
     //     Ok(subjects)
     // }
 
-    // /// Returns a single graph by ID.
-    // pub async fn retrieve_graph(&self, graph_id: &Uuid) -> Result<Graph> {
-    //     log::trace!("Retrieving graph {graph_id:?}");
-    //
-    //     let graph: Graph = sqlx::query_as(
-    //         r#"
-    //         SELECT graph_id, name, parent_id
-    //         FROM graphs
-    //         WHERE graph_id = ?1
-    //         "#,
-    //     )
-    //     .bind(graph_id.to_string())
-    //     .fetch_one(&self.pool)
-    //     .await?;
-    //
-    //     Ok(graph)
-    // }
+    pub async fn get_graph_ancestors(&self, graph_id: &Uuid) -> Result<Vec<Graph>> {
+        log::info!("Getting ancestors of graph {graph_id}");
 
-    // /// Returns metadata for all graphs in the database.
-    // pub async fn get_graph_info(&self) -> Result<Vec<Graph>> {
-    //     log::trace!("Retrieving all graph info");
-    //
-    //     let rows: Vec<Graph> = sqlx::query_as(
-    //         r#"
-    //         SELECT graph_id, name, parent_id
-    //         FROM graphs
-    //         "#,
-    //     )
-    //     .fetch_all(&self.pool)
-    //     .await?;
-    //
-    //     Ok(rows)
-    // }
+        let rows: Vec<Graph> = sqlx::query_as(
+            r#"
+            WITH RECURSIVE ancestors AS (
+                SELECT graph_id, name, parent_id, 0 as depth
+                FROM graphs
+                WHERE graph_id = ?1
 
+                UNION ALL
+
+                SELECT g.graph_id, g.name, g.parent_id, a.depth + 1
+                FROM graphs g
+                INNER JOIN ancestors a ON g.graph_id = a.parent_id
+            )
+            SELECT graph_id, name, parent_id
+            FROM ancestors
+            ORDER BY depth DESC
+            "#,
+        )
+        .bind(graph_id.to_string())
+        .fetch_all(&self.pool)
+        .await?;
+
+        log::info!("{} generations in {graph_id}", rows.len());
+
+        Ok(rows)
+    }
     // /// Returns metadata for all descendant graphs of the given parent.
     // pub async fn get_child_graph_info(&self, parent_id: &Uuid) -> Result<Vec<Graph>> {
     //     log::trace!("Retrieving child graph info for {parent_id:?}");

@@ -5,10 +5,14 @@
 
 use std::{env, path::PathBuf};
 
-use config::{ctx_blocking, Config};
-use integrity::cid::{
-    blake3::blake3_cid_raw_binary,
-    iroh::{compute_dir_cid, compute_file_cid},
+use config::Config;
+use integrity::{
+    blob_store::BlobStore,
+    cid::{
+        blake3::blake3_cid_raw_binary,
+        iroh::{compute_dir_cid, compute_file_cid},
+        multicodec,
+    },
 };
 use pyo3::exceptions::PyRuntimeError;
 use pyo3_async_runtimes::tokio::get_runtime;
@@ -93,6 +97,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<signer::SignerAlgorithms>()?;
     m.add_class::<entity::Entity>()?;
     m.add_class::<did::DidFactory>()?;
+    m.add_class::<integrity_service::Service>()?;
 
     m.add_function(wrap_pyfunction!(init, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_bytes, m)?)?;
@@ -126,10 +131,9 @@ fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResu
         let store_flag = store.unwrap_or(ctx.store_all_blobs);
 
         if store_flag {
-            let blob_dir = ctx.app_dir.join("blobs");
-            fs::create_dir_all(&blob_dir).await?;
-            let file_path = blob_dir.join(&cid);
-            fs::write(&file_path, data).await?;
+            ctx.blob_store
+                .put(data.to_vec(), multicodec::RAW_BINARY, Some(&cid))
+                .await?;
         }
 
         Ok(cid)
@@ -142,16 +146,19 @@ fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResu
 fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyResult<String> {
     with_ctx!(py, |ctx| {
         let store_flag = store.unwrap_or(ctx.store_all_blobs);
-        let blob_dir = ctx.app_dir.join("blobs");
-        fs::create_dir_all(&blob_dir).await?;
 
         if path.is_file() {
             let file_cid_result = compute_file_cid(path.clone(), ctx.hashing.clone()).await?;
             let cid = file_cid_result.cid.clone();
 
             if store_flag {
-                let storage_path = blob_dir.join(&cid);
-                fs::copy(&path, &storage_path).await?;
+                ctx.blob_store
+                    .put(
+                        file_cid_result.blob.to_vec(),
+                        multicodec::RAW_BINARY,
+                        Some(&cid),
+                    )
+                    .await?;
             }
 
             Ok(cid)
@@ -161,22 +168,20 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
             let cid = dir_cid_result.collection.cid.clone();
 
             // Always store iroh collections
-            fs::write(
-                blob_dir.join(&dir_cid_result.collection.cid),
-                dir_cid_result.collection.blob,
-            )
-            .await?;
-            fs::write(
-                blob_dir.join(&dir_cid_result.meta.cid),
-                dir_cid_result.meta.blob,
-            )
-            .await?;
+            ctx.blob_store
+                .put(dir_cid_result.collection.blob.to_vec(), multicodec::RAW_BINARY, None)
+                .await?;
+            ctx.blob_store
+                .put(dir_cid_result.meta.blob.to_vec(), multicodec::RAW_BINARY, None)
+                .await?;
 
             if store_flag {
                 for (file_name, file_cid) in dir_cid_result.file_hashes {
                     let src = path.join(file_name);
-                    let dst = blob_dir.join(file_cid);
-                    fs::copy(src, dst).await?;
+                    let data = fs::read(src).await?;
+                    ctx.blob_store
+                        .put(data, multicodec::RAW_BINARY, Some(&file_cid))
+                        .await?;
                 }
             }
 
@@ -191,37 +196,38 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
 
 /// Creates a model signing statement if enabled in config and the asset is a directory.
 #[pyfunction]
-#[pyo3(signature = (collection_cid, model_signing_name, is_dir))]
+#[pyo3(signature = (_collection_cid, _model_signing_name, _is_dir))]
 fn maybe_create_model_signing_statement(
-    py: Python<'_>,
-    collection_cid: String,
-    model_signing_name: String,
-    is_dir: bool,
+    _py: Python<'_>,
+    _collection_cid: String,
+    _model_signing_name: String,
+    _is_dir: bool,
 ) -> PyResult<()> {
-    if !is_dir {
-        return Ok(());
-    }
-
-    let ctx = ctx_blocking().map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-    if !ctx.generate_model_signing_signatures {
-        return Ok(());
-    }
-
-    let blobs_dir = ctx.app_dir.join("blobs");
-    std::fs::create_dir_all(&blobs_dir)
-        .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
-
-    let allow_symlinks = ctx.cid_ignore.include_symlinks;
-    crate::statements::model_signing::create_model_signing_statement(
-        py,
-        collection_cid,
-        blobs_dir,
-        model_signing_name,
-        allow_symlinks,
-        Vec::new(),
-        None,
-        None,
-    )?;
-
-    Ok(())
+    todo!("This interferes with general directory hashing");
+    // if !is_dir {
+    //     return Ok(());
+    // }
+    //
+    // let ctx = ctx_blocking().map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+    // if !ctx.generate_model_signing_signatures {
+    //     return Ok(());
+    // }
+    //
+    // let blobs_dir = ctx.app_dir.join("blobs");
+    // std::fs::create_dir_all(&blobs_dir)
+    //     .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+    //
+    // let allow_symlinks = ctx.cid_ignore.include_symlinks;
+    // crate::statements::model_signing::create_model_signing_statement(
+    //     py,
+    //     collection_cid,
+    //     blobs_dir,
+    //     model_signing_name,
+    //     allow_symlinks,
+    //     Vec::new(),
+    //     None,
+    //     None,
+    // )?;
+    //
+    // Ok(())
 }

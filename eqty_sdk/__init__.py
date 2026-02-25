@@ -1,6 +1,7 @@
 from eqty_sdk import config
 from eqty_sdk._rust import (
     Graph as Context,
+    Service,
     init,
 )
 from eqty_sdk.asset import (
@@ -74,6 +75,7 @@ __all__ = [
     "config",
     # Context
     "Context",
+    "Service",
     # Errors
     "AuthenticationError",
     "Error",

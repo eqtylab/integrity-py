@@ -1,10 +1,10 @@
-use std::{collections::HashMap, env, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
-use anyhow::{anyhow, Context as AnyhowContext, Result};
+use anyhow::{Context as AnyhowContext, Result};
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
 use integrity::{
     blob_store::{self, BlobStore},
-    cid::{get_multicodec, multicodec},
+    cid::get_multicodec,
     lineage::models::{
         manifest::{generate_manifest, merge_async, Manifest as IntegrityManifest},
         statements::Statement,
@@ -18,14 +18,7 @@ use pyo3::{
 use pyo3_async_runtimes::tokio::get_runtime;
 use serde_json::Value;
 
-use crate::{
-    integrity_service::{
-        blobs::put_jcs,
-        statements::{create_statement, CreateStatementRequestBody},
-        Configuration,
-    },
-    with_ctx,
-};
+use crate::with_ctx;
 
 /// `manifest` submodule.
 #[pymodule]
@@ -33,7 +26,6 @@ pub fn manifest(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Manifest>()?;
     m.add_function(wrap_pyfunction!(generate, m)?)?;
     m.add_function(wrap_pyfunction!(merge, m)?)?;
-    m.add_function(wrap_pyfunction!(register, m)?)?;
 
     Ok(())
 }
@@ -63,12 +55,8 @@ impl Manifest {
     ) -> PyResult<Self> {
         let graphs_any = statements.getattr(py, "graphs")?;
         let graphs: Vec<Py<PyAny>> = graphs_any.extract(py)?;
-        let blobs_dir = with_ctx!(py, |ctx| {
-            let blob_dir = ctx.app_dir.join("blobs");
-            tokio::fs::create_dir_all(&blob_dir).await?;
-            Ok::<_, anyhow::Error>(blob_dir)
-        })?;
-        let manifest_str = generate(py, graphs, blobs_dir, Some(include_context))?;
+
+        let manifest_str = generate(py, graphs, Some(include_context))?;
         Ok(Self { manifest_str })
     }
 
@@ -96,7 +84,7 @@ impl Manifest {
             ));
         };
 
-        let blobs: HashMap<String, Vec<u8>> = with_ctx!(py, |ctx| {
+        with_ctx!(py, |ctx| {
             let graph_id = ctx.resolve_graph_id(None);
             let manifest = serde_json::from_str::<IntegrityManifest>(&manifest_str)?;
             log::trace!("Manifest str: \n{manifest:?}");
@@ -115,23 +103,16 @@ impl Manifest {
                     Ok((key, decoded_bytes))
                 })
                 .collect::<Result<HashMap<String, Vec<u8>>, anyhow::Error>>()?;
-            Ok::<_, anyhow::Error>(decoded_blobs)
-        })?;
 
-        let blob_dir = with_ctx!(py, |ctx| {
-            let blob_dir = ctx.app_dir.join("blobs");
-            tokio::fs::create_dir_all(&blob_dir).await?;
-            Ok::<_, anyhow::Error>(blob_dir)
+            for (blob_key, blob_content) in decoded_blobs {
+                let codec = get_multicodec(&blob_key)?;
+                ctx.blob_store
+                    .put(blob_content, codec, Some(&blob_key))
+                    .await?;
+            }
+
+            Ok::<_, anyhow::Error>(())
         })?;
-        for (blob_key, blob_content) in blobs {
-            let blob_file_path = blob_dir.join(blob_key);
-            std::fs::write(&blob_file_path, blob_content).map_err(|e| {
-                pyo3::exceptions::PyIOError::new_err(format!(
-                    "Failed to write blob {}: {e}",
-                    blob_file_path.display()
-                ))
-            })?;
-        }
 
         Ok(())
     }
@@ -140,13 +121,6 @@ impl Manifest {
     fn merge(py: Python, a: String, b: String) -> PyResult<String> {
         merge(py, a, b)
     }
-
-    fn register(&self, py: Python) -> PyResult<()> {
-        let api_key = env::var("EQTY_API_KEY").map_err(|_| {
-            pyo3::exceptions::PyRuntimeError::new_err("The env var 'EQTY_API_KEY' must be set")
-        })?;
-        register(py, self.manifest_str.clone(), Some(api_key))
-    }
 }
 
 /// Generates an integrity graph manifest JSON string from multiple graphs.
@@ -154,7 +128,6 @@ impl Manifest {
 /// # Arguments
 /// * `py` - Python interpreter reference
 /// * `graphs` - Python list of graph dictionaries, each containing 'id', 'name', 'parent', and 'statements'
-/// * `blobs_dir` - Path to directory containing blob files referenced by statements
 /// * `include_context` - Whether to include context information in the manifest (default: false)
 ///
 /// # Returns
@@ -163,7 +136,6 @@ impl Manifest {
 pub fn generate(
     py: Python,
     statements: Vec<Py<PyAny>>,
-    blobs_dir: PathBuf,
     include_context: Option<bool>,
 ) -> PyResult<String> {
     // Convert PyObjects to Statements
@@ -179,20 +151,21 @@ pub fn generate(
 
     let rust_statements = rust_statements?;
 
-    py.detach(|| {
-        get_runtime().block_on(async {
-            let blobs = resolve_blobs(&rust_statements, blobs_dir).await?;
+    let manifest_json = with_ctx!(py, |ctx| {
+        let blob_store = Arc::new(ctx.blob_store.clone());
+        let blobs = integrity::lineage::models::manifest::resolve_blobs(&rust_statements, blob_store, 8).await?;
 
-            log::info!("Generating manifest");
+        log::info!("Generating manifest");
 
-            let manifest =
-                generate_manifest(include_context.unwrap_or(true), rust_statements, blobs).await?;
+        let manifest =
+            generate_manifest(include_context.unwrap_or(true), rust_statements, blobs).await?;
 
-            let manifest_json =
-                serde_json::to_string(&manifest).context("Failed to serialize manifest")?;
-            Ok(manifest_json)
-        })
-    })
+        let manifest_json =
+            serde_json::to_string(&manifest).context("Failed to serialize manifest")?;
+        Ok::<_, anyhow::Error>(manifest_json)
+    })?;
+
+    Ok(manifest_json)
 }
 
 /// Merges the manifests `a` and `b` and returns the merged manifest.
@@ -241,94 +214,4 @@ fn python_to_json_value(py: Python, obj: &Py<PyAny>) -> PyResult<Value> {
             "Unsupported Python type for JSON conversion",
         ))
     }
-}
-
-/// Register the manfiest with integrity platform
-#[pyfunction]
-fn register(py: Python, manifest: String, api_key: Option<String>) -> PyResult<()> {
-    with_ctx!(py, |ctx| {
-        let manifest = serde_json::from_str::<IntegrityManifest>(&manifest)
-            .context("Failed to parse manifest")?;
-        let ig_service_config = ctx.get_integrity_service_config(api_key)?;
-
-        register_async(&ig_service_config, manifest).await?;
-        Ok(())
-    })
-}
-
-async fn register_async(config: &Configuration, manifest: IntegrityManifest) -> Result<()> {
-    for statement in manifest.statements.into_iter() {
-        register_statement(config, statement.1).await?;
-    }
-
-    for blob in manifest.blobs.into_iter() {
-        register_blob(config, blob.0, blob.1).await?;
-    }
-    Ok(())
-}
-
-async fn register_statement(ig_service_config: &Configuration, statement: Statement) -> Result<()> {
-    log::debug!("Registering statement: {statement:?}");
-
-    let statement_str = serde_json::to_value(&statement)?;
-    let body = CreateStatementRequestBody::new(Some(statement_str));
-
-    match create_statement(ig_service_config, body).await {
-        Ok(result) => {
-            log::info!("Registered {statement:?} JCS CID {:?}", result.jcs_cid);
-            Ok(())
-        }
-        Err(e) => {
-            let msg = format!("Error registering {statement:?}: {e:?}");
-            log::error!("{msg}");
-            Err(anyhow!("msg"))
-        }
-    }
-}
-
-async fn register_blob(ig_service_config: &Configuration, cid: String, blob: String) -> Result<()> {
-    let multicodec = get_multicodec(&cid)?;
-
-    let decoded_blob = BASE64.decode(blob)?;
-
-    if multicodec == multicodec::JSON_JCS {
-        let blob = String::from_utf8(decoded_blob.clone())?;
-        log::debug!("Registering jsc blob: {blob}. CID {cid}");
-        let json = serde_json::from_slice(&decoded_blob)?;
-        put_jcs(ig_service_config, json).await?;
-    } else {
-        reqwest::Client::new()
-            .put(format!("{}/store/v1/blob", ig_service_config.base_path))
-            // TODO: clean this up, would be better to fix the opeanpi generated code and use that
-            //       instead of handling auth differently here
-            .headers(
-                if let Some(api_key) = &ig_service_config.bearer_access_token {
-                    let mut headers = reqwest::header::HeaderMap::new();
-                    headers.insert(
-                        "Authorization",
-                        reqwest::header::HeaderValue::from_str(&format!("Bearer {api_key}"))?,
-                    );
-                    headers
-                } else {
-                    reqwest::header::HeaderMap::new()
-                },
-            )
-            .body(decoded_blob)
-            .query(&[("multicodec_code", multicodec)])
-            .send()
-            .await?;
-    }
-    Ok(())
-}
-
-/// Gets the blobs that are referenced by the statements
-async fn resolve_blobs(
-    statements: &Vec<Statement>,
-    blobs_dir: PathBuf,
-) -> Result<HashMap<String, String>> {
-    let mut blob_store = blob_store::LocalFs::new(blobs_dir);
-    blob_store.init().await?;
-
-    let blob_store = Arc::new(blob_store);
-    integrity::lineage::models::manifest::resolve_blobs(statements, blob_store, 8).await
 }

@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use serde::{self, Deserialize, Serialize};
 use serde_json::{self, Value};
 
-use super::Configuration;
+use super::Service;
 
 /// Response from the blob store PUT APIs containing the computed CID.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
@@ -30,22 +30,22 @@ impl PutResponse {
 /// and then stored in the blob store.
 ///
 /// # Arguments
-/// * `configuration` - API configuration containing base path and authentication
+/// * `service` - API configuration containing base path and authentication
 /// * `body` - JSON value to serialize and store
 ///
 /// # Returns
 /// * `Result<PutResponse>` - The CID of the stored blob on success, or an error on failure
-pub async fn put_jcs(configuration: &Configuration, body: Value) -> Result<PutResponse> {
-    let uri_str = format!("{}/store/v1/jcs", configuration.base_path);
-    let mut req_builder = configuration.client.request(reqwest::Method::PUT, &uri_str);
+pub async fn put_jcs(service: &Service, body: Value) -> Result<PutResponse> {
+    let uri_str = format!("{}/store/v1/jcs", service.base_path);
+    let mut req_builder = service.client.request(reqwest::Method::PUT, &uri_str);
 
-    if let Some(ref token) = configuration.bearer_access_token {
+    if let Some(ref token) = service.bearer_access_token {
         req_builder = req_builder.bearer_auth(token.to_owned());
     };
     req_builder = req_builder.json(&body);
 
     let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
+    let resp = service.client.execute(req).await?;
 
     let status = resp.status();
 
@@ -62,21 +62,17 @@ pub async fn put_jcs(configuration: &Configuration, body: Value) -> Result<PutRe
 /// Stores a raw blob in the blob store with the specified multicodec.
 ///
 /// # Arguments
-/// * `configuration` - API configuration containing base path and authentication
+/// * `service` - API configuration containing base path and authentication
 /// * `blob` - Raw byte data to store
 /// * `multicodec` - Multicodec identifier indicating the blob's format
 ///
 /// # Returns
 /// * `Result<PutResponse>` - The CID of the stored blob on success, or an error on failure
-pub async fn put_blob(
-    configuration: &Configuration,
-    blob: Vec<u8>,
-    multicodec: u64,
-) -> Result<PutResponse> {
-    let uri_str = format!("{}/store/v1/blob", configuration.base_path);
-    let mut req_builder = configuration.client.request(reqwest::Method::PUT, &uri_str);
+pub async fn put_blob(service: &Service, blob: Vec<u8>, multicodec: u64) -> Result<PutResponse> {
+    let uri_str = format!("{}/store/v1/blob", service.base_path);
+    let mut req_builder = service.client.request(reqwest::Method::PUT, &uri_str);
 
-    if let Some(ref token) = configuration.bearer_access_token {
+    if let Some(ref token) = service.bearer_access_token {
         req_builder = req_builder.bearer_auth(token.to_owned());
     };
     req_builder = req_builder
@@ -84,7 +80,7 @@ pub async fn put_blob(
         .query(&[("multicodec_code", multicodec)]);
 
     let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
+    let resp = service.client.execute(req).await?;
 
     let status = resp.status();
 

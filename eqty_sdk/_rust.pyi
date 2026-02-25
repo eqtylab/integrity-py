@@ -46,8 +46,7 @@ class CidResult:
     def blob(self) -> bytes: ...
 
 class Config:
-    """Global application config containing configuration and state.  The config stores application-wide settings including storage directories, service URLs, hashing preferences, and file filtering rules."""
-    def set_integrity_service_url(self, url: str) -> Config: ...
+    """Global application config containing configuration and state.  The config stores application-wide settings including storage directories, hashing preferences, and file filtering rules."""
     def set_hashing_config(
         self, multithread: Optional[bool] = None, memory_map: Optional[bool] = None
     ) -> Config: ...
@@ -159,6 +158,8 @@ class Graph:
     def from_parent(parent: Graph) -> GraphFactory: ...
     @staticmethod
     def from_uuid(project_id: uuid.UUID) -> GraphFactory: ...
+    def register(self, service: Service) -> None: ...
+    def __str__(self) -> str: ...
 
 class GraphFactory:
     def new(self, name: str) -> Graph: ...
@@ -174,12 +175,21 @@ class Manifest:
     def import_manifest(self, manifest: Any) -> None: ...
     @staticmethod
     def merge(a: str, b: str) -> str: ...
-    def register(self) -> None: ...
 
 class SIGNER_ALGORITHMS:
     ED25519: str
     SECP256K1: str
     SECP256R1: str
+
+class Service:
+    """Service for connecting to the Integrity Service API."""
+    @property
+    def base_path(self) -> str:
+        """Base URL path for the API (e.g., `https://api.example.com`)."""
+        ...
+
+    @staticmethod
+    def new(url: str, api_key: Optional[str] = None) -> Service: ...
 
 class Signer:
     """Python-exposed signer information.  Contains the name and DID key of a cryptographic signer."""
@@ -266,11 +276,6 @@ class manifest:
     @staticmethod
     def merge(a: str, b: str) -> str:
         """Merges the manifests `a` and `b` and returns the merged manifest."""
-        ...
-
-    @staticmethod
-    def register(manifest: str, api_key: Optional[str] = None) -> None:
-        """Register the manfiest with integrity platform"""
         ...
 
 # Signer module

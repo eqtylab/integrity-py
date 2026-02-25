@@ -1,5 +1,9 @@
 use anyhow::{anyhow, Context as AnyhowContext};
-use integrity::lineage::models::statements::{MetadataStatement, Statement, StatementTrait};
+use integrity::{
+    blob_store::BlobStore,
+    cid::multicodec,
+    lineage::models::statements::{MetadataStatement, Statement, StatementTrait},
+};
 use pyo3::{pyfunction, PyResult, Python};
 use serde_json::Value;
 use uuid::Uuid;
@@ -46,10 +50,9 @@ pub fn add_metadata_statement(
         let id = statement.get_id();
         let mut statement_ids = vec![id.clone()];
 
-        let blob_dir = ctx.app_dir.join("blobs");
-        let metadata_cid = metadata.trim_start_matches("urn:cid:");
-        let metadata_file = blob_dir.join(metadata_cid);
-        tokio::fs::write(metadata_file, metadata).await?;
+        ctx.blob_store
+            .put(metadata.into(), multicodec::JSON_JCS, None)
+            .await?;
 
         if !skip_proof {
             let vc_id = create_vc_for_statement(&ctx, &id, graph_id, timestamp).await?;

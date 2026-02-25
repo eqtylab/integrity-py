@@ -9,6 +9,7 @@ use std::{
 
 use anyhow::{anyhow, Result};
 use integrity::{
+    blob_store::{BlobStore, LocalFs},
     cid::iroh::{CidIgnoreConfig, HashingConfig},
     signer::SignerType,
 };
@@ -18,15 +19,11 @@ use serde::{Deserialize, Serialize};
 use tokio::{sync::RwLock, task_local};
 use uuid::Uuid;
 
-use crate::{
-    indexer::{Graph, Sqlite},
-    integrity_service::Configuration as IntegrityServiceConfig,
-};
+use crate::indexer::{Graph, Sqlite};
 
 /// Serializable settings for TOML persistence
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 struct PersistentSettings {
-    url: Option<String>,
     store_all_blobs: bool,
     cid_ignore: CidIgnoreSettings,
     generate_model_signing_signatures: bool,
@@ -35,7 +32,6 @@ struct PersistentSettings {
 impl From<Config> for PersistentSettings {
     fn from(config: Config) -> Self {
         Self {
-            url: config.integrity_service.clone(),
             store_all_blobs: config.store_all_blobs,
             cid_ignore: config.cid_ignore.clone().into(),
             generate_model_signing_signatures: config.generate_model_signing_signatures,
@@ -138,14 +134,6 @@ pub fn ctx_blocking() -> Result<Config> {
     Ok(ctx.clone())
 }
 
-fn set_integrity_service_url_inner(url: String) -> Result<()> {
-    Config::update_config(|ctx| {
-        ctx.integrity_service = Some(url);
-    })?;
-    Config::save_config()?;
-    Ok(())
-}
-
 fn set_hashing_config_inner(multithread: Option<bool>, memory_map: Option<bool>) -> Result<()> {
     let hash_config = HashingConfig {
         multithread: multithread.unwrap_or(false),
@@ -199,12 +187,10 @@ fn set_default_graph_inner(py: Python<'_>, graph: Graph) -> Result<()> {
 /// Global application config containing configuration and state.
 ///
 /// The config stores application-wide settings including storage directories,
-/// service URLs, hashing preferences, and file filtering rules.
+/// hashing preferences, and file filtering rules.
 #[derive(Clone)]
 #[pyclass]
 pub struct Config {
-    /// URL for the integrity service
-    pub integrity_service: Option<String>,
     /// Directory to store statements, keys, etc
     pub app_dir: PathBuf,
     /// settings to change hashing features
@@ -221,18 +207,13 @@ pub struct Config {
     pub store_all_blobs: bool,
 
     pub default_graph: Graph,
+    pub blob_store: LocalFs,
 }
 
 #[pymethods]
 // Python exported impl functions
 impl Config {
     // Setters
-
-    #[pyo3(signature = (url))]
-    fn set_integrity_service_url(&self, url: String) -> PyResult<Self> {
-        set_integrity_service_url_inner(url)?;
-        Ok(self.clone())
-    }
 
     #[pyo3(signature = (multithread=None, memory_map=None))]
     fn set_hashing_config(
@@ -298,6 +279,8 @@ impl Config {
         if !app_dir.exists() {
             fs::create_dir_all(&app_dir)?;
         }
+        let mut blob_store = LocalFs::new(app_dir.join("blobs"));
+        blob_store.init().await?;
 
         let db_path = app_dir.join("graphs.db");
         let db_init_required = !db_path.exists();
@@ -325,7 +308,6 @@ impl Config {
                 .as_ref()
                 .map(|p| p.cid_ignore.clone().into())
                 .unwrap_or_default(),
-            integrity_service: persisted.as_ref().and_then(|p| p.url.clone()),
             active_signer: None,
             generate_model_signing_signatures: persisted
                 .as_ref()
@@ -336,6 +318,7 @@ impl Config {
                 .map(|p| p.store_all_blobs)
                 .unwrap_or(false),
             default_graph,
+            blob_store,
         };
 
         if persisted.is_none() {
@@ -413,29 +396,6 @@ impl Config {
         Config::update_config_async(|ctx| ctx.active_signer = Some(signer)).await
     }
 
-    /// Creates configuration for the Integrity Service API client.
-    ///
-    /// # Arguments
-    /// * `api_key` - Optional API key for authentication with the service
-    ///
-    /// # Returns
-    /// * `Result<IntegrityServiceConfig>` - Configuration object for API client, or error if service URL not set
-    pub fn get_integrity_service_config(
-        &self,
-        api_key: Option<String>,
-    ) -> Result<IntegrityServiceConfig> {
-        let base_path = self
-            .integrity_service
-            .clone()
-            .ok_or_else(|| anyhow!("Integrity service URL not set"))?;
-
-        Ok(IntegrityServiceConfig {
-            base_path,
-            bearer_access_token: api_key,
-            ..Default::default()
-        })
-    }
-
     /// Resolves the Optional graph id, or the default graph id
     ///
     /// # Arguments
@@ -494,7 +454,6 @@ impl Config {
             .ok_or_else(|| anyhow!("Config not initialized"))?;
 
         let settings = PersistentSettings {
-            url: ctx.integrity_service.clone(),
             store_all_blobs: ctx.store_all_blobs,
             cid_ignore: ctx.cid_ignore.clone().into(),
             generate_model_signing_signatures: ctx.generate_model_signing_signatures,

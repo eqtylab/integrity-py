@@ -13,10 +13,9 @@ use pyo3::{
     types::PyAny,
     Bound,
 };
-use pyo3_async_runtimes::tokio::get_runtime;
 use serde::Serialize;
 
-use crate::config::{ctx_async, ctx_blocking, Config};
+use crate::{config::ctx_blocking, with_ctx, Config};
 
 /// `signer` submodule.
 #[pymodule]
@@ -306,23 +305,22 @@ fn set_active_signer(py: Python, signer: &Bound<'_, PyAny>) -> PyResult<()> {
             "signer must be a signer name string or a Signer instance",
         ));
     };
-    Ok(py.detach(|| {
-        get_runtime().block_on(async {
-            log::debug!("Setting '{name}' as the active");
-            let ctx = ctx_async().await;
-            let signer_file = ctx.app_dir.join(SIGNER_DIR).join(&name);
-            if !signer_file.exists() {
-                return Err(anyhow::anyhow!("No Signer named '{name}' found"));
-            }
+    with_ctx!(py, |ctx| {
+        log::debug!("Setting '{name}' as the active");
+        let signer_file = ctx.app_dir.join(SIGNER_DIR).join(&name);
+        if !signer_file.exists() {
+            return Err(anyhow::anyhow!("No Signer named '{name}' found"));
+        }
 
-            let signer = utils_load_signer(signer_file)?;
-            Config::set_active_signer_async(signer).await
-        })
-    })?)
+        let signer = utils_load_signer(signer_file)?;
+        Config::set_active_signer_async(signer).await?;
+        Ok::<_, anyhow::Error>(())
+    })?;
+    Ok(())
 }
 
 /// Subdirectory name for storing signer key files.
-static SIGNER_DIR: &str = "signers";
+pub static SIGNER_DIR: &str = "signers";
 
 /// Checks if a signer already exists with the provided name
 fn signer_exists(name: Option<&str>) -> PyResult<()> {

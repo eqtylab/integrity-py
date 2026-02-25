@@ -4178,7 +4178,7 @@ dependencies = [
 [[package]]
 name = "integrity"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#6ed02febbf364638d34344da5465205132583d6a"
+source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#c55bfd6079f8664929b559772ff19c9c4eb575c4"
 dependencies = [
  "anyhow",
  "async-trait",

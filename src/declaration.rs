@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
-use integrity::cid::blake3::blake3_cid_raw_binary;
+use integrity::{blob_store::BlobStore, cid::blake3::blake3_cid_raw_binary};
 use pyo3::{
     prelude::*,
     types::{PyAny, PyDict, PyList},
     IntoPyObjectExt,
 };
+use pyo3_async_runtimes::tokio::get_runtime;
 use serde_json::{Map, Value};
 
 use crate::config::ctx_blocking;
@@ -75,17 +76,14 @@ impl Declaration {
         self.submitted_by = Some(submitted_by);
 
         let declaration_json = self.to_json()?;
-        let cid = blake3_cid_raw_binary(declaration_json.as_bytes())
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
 
-        let ctx =
-            ctx_blocking().map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-        let blob_dir = ctx.app_dir.join("blobs");
-        std::fs::create_dir_all(&blob_dir)
-            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
-        let file_path = blob_dir.join(&cid);
-        std::fs::write(file_path, declaration_json.as_bytes())
-            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+        let blob_store = ctx_blocking()
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?
+            .blob_store
+            .clone();
+        get_runtime()
+            .block_on(blob_store.put(declaration_json.as_bytes().to_vec(), 0, None))
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
 
         Ok(self.clone())
     }

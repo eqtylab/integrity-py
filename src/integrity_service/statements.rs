@@ -1,8 +1,10 @@
 use anyhow::{anyhow, Result};
+use integrity::lineage::models::statements::Statement;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use uuid::Uuid;
 
-use super::Configuration;
+use super::Service;
 
 /// Request body for creating a statement via the Integrity Service API.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
@@ -16,6 +18,7 @@ pub struct CreateStatementRequestBody {
     /// The statement payload as JSON.
     #[serde(deserialize_with = "Option::deserialize")]
     pub statement: Option<Value>,
+    pub graph_id: Uuid,
 }
 
 impl CreateStatementRequestBody {
@@ -26,11 +29,12 @@ impl CreateStatementRequestBody {
     ///
     /// # Returns
     /// A new `CreateStatementRequestBody` with the provided values
-    pub fn new(statement: Option<Value>) -> CreateStatementRequestBody {
+    pub fn new(graph_id: Uuid, statement: Option<Value>) -> CreateStatementRequestBody {
         CreateStatementRequestBody {
             generate_id: None,
             issue_vc: None,
             statement,
+            graph_id,
         }
     }
 }
@@ -61,25 +65,29 @@ impl CreateStatementResponse {
 /// Creates a statement via the Integrity Service API.
 ///
 /// # Arguments
-/// * `configuration` - API configuration containing base path and authentication
+/// * `service` - API configuration containing base path and authentication
 /// * `statements_create_request_body` - Request body containing the statement and attributes
 ///
 /// # Returns
 /// * `Result<CreateStatementResponse>` - The computed CIDs on success, or an error on failure
 pub async fn create_statement(
-    configuration: &Configuration,
-    statements_create_request_body: CreateStatementRequestBody,
+    service: &Service,
+    statement: Statement,
+    graph_id: Uuid,
+    // statements_create_request_body: CreateStatementRequestBody,
 ) -> Result<CreateStatementResponse> {
-    let uri_str = format!("{}/statements/v1", configuration.base_path);
-    let mut req_builder = configuration.client.request(reqwest::Method::PUT, &uri_str);
+    let statement_str = serde_json::to_value(&statement)?;
+    let body = CreateStatementRequestBody::new(graph_id, Some(statement_str));
+    let uri_str = format!("{}/statements/v1", service.base_path);
+    let mut req_builder = service.client.request(reqwest::Method::PUT, &uri_str);
 
-    if let Some(ref token) = configuration.bearer_access_token {
+    if let Some(ref token) = service.bearer_access_token {
         req_builder = req_builder.bearer_auth(token.to_owned());
     };
-    req_builder = req_builder.json(&statements_create_request_body);
+    req_builder = req_builder.json(&body);
 
     let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
+    let resp = service.client.execute(req).await?;
 
     let status = resp.status();
 

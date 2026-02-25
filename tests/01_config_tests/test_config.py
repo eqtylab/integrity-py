@@ -24,16 +24,6 @@ class TestConfig(unittest.TestCase):
         # Config file is created on first setter call, not on init
         # Check that the directory exists
 
-    def test_02_url(self):
-        url = "http://www.example.com"
-        cfg = config.init(get_config_dir())
-        cfg.set_integrity_service_url(url)
-
-        with open(config_path, "r") as f:
-            data = toml.load(f)
-
-        self.assertEqual(data["url"], url, "Failed to save url to settings file")
-
     def test_03_store_all_blobs(self):
         cfg = config.init(get_config_dir())
         cfg.set_store_all_blobs(True)

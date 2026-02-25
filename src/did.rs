@@ -1,11 +1,17 @@
 use anyhow::{anyhow, Context as AnyhowContext, Result};
 use integrity::{
+    blob_store::BlobStore,
     lineage::models::statements::{Statement, StatementTrait},
     signer::{load_signer as utils_load_signer, SignerType},
 };
 use pyo3::{prelude::*, types::PyDict, Bound};
 
-use crate::{config::ctx_blocking, indexer::Graph, signer::Signer, statements, with_ctx};
+use crate::{
+    config::ctx_blocking,
+    indexer::Graph,
+    signer::{Signer, SIGNER_DIR},
+    statements, with_ctx,
+};
 
 #[pyclass]
 pub struct DID {
@@ -120,7 +126,7 @@ fn build_did(
             .unwrap_or_default();
 
         let mut vcomp_statement_ids = with_ctx!(py, |cfg| {
-            let signer_file = cfg.app_dir.join("signers").join(&signer_name);
+            let signer_file = cfg.app_dir.join(SIGNER_DIR).join(&signer_name);
             if !signer_file.exists() {
                 return Err(anyhow!("No Signer named '{signer_name}' found"));
             }
@@ -140,11 +146,8 @@ fn build_did(
                 }
 
                 if let Some(blobs) = vcomp_signer.did_blobs {
-                    let blob_dir = cfg.app_dir.join("blobs");
-                    tokio::fs::create_dir_all(&blob_dir).await?;
-                    for (cid, data) in blobs {
-                        let blob_path = blob_dir.join(cid);
-                        tokio::fs::write(blob_path, data).await?;
+                    for (_, data) in blobs {
+                        cfg.blob_store.put(data, 0, None).await?;
                     }
                 }
             }
@@ -168,7 +171,7 @@ fn build_did(
 fn is_vcomp_signer(name: &str) -> Result<bool> {
     log::trace!("Checking if {name} is a known vcomp signer");
     let cfg = ctx_blocking()?;
-    let signer_file = cfg.app_dir.join("signers").join(name);
+    let signer_file = cfg.app_dir.join(SIGNER_DIR).join(name);
     if !signer_file.exists() {
         log::trace!("{name} is not vcomp");
         return Ok(false);

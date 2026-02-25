@@ -1,6 +1,6 @@
 mod sqlite;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
 use integrity::lineage::models::statements::{Statement, StatementTrait};
@@ -11,7 +11,7 @@ pub use sqlite::Sqlite;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use uuid::Uuid;
 
-use crate::with_ctx;
+use crate::{integrity_service::Service, with_ctx};
 
 // ============================================================================
 // Graph
@@ -73,6 +73,44 @@ impl Graph {
         Ok(GraphFactory {
             parent: Some(project_id),
         })
+    }
+
+    #[pyo3(signature = (service))]
+    pub fn register(&self, py: Python, service: Service) -> PyResult<()> {
+        log::info!("Registering graph {}", self.id);
+        with_ctx!(py, |ctx| {
+            let graph_id = self.id;
+            let sql_client = ctx.sql_lite;
+
+            log::info!("Retrieving graphs {graph_id:?}");
+
+            let graphs = sql_client.get_graph_ancestors(&graph_id).await?;
+            service.register_graphs(graphs).await?;
+
+            let statements = sql_client.retrieve_statements(&graph_id).await?;
+            let blob_map = integrity::lineage::models::manifest::resolve_blobs(
+                &statements,
+                Arc::new(ctx.blob_store.clone()),
+                8,
+            )
+            .await?;
+            service.register_blobs(blob_map).await?;
+
+            service.register_statements(graph_id, statements).await?;
+            Ok::<(), anyhow::Error>(())
+        })?;
+
+        Ok(())
+    }
+
+    fn __str__(&self) -> String {
+        match self.parent {
+            Some(parent) => format!(
+                "Context(id={}, name={}, parent={})",
+                self.id, self.name, parent
+            ),
+            None => format!("Context(id={}, name={})", self.id, self.name),
+        }
     }
 }
 
