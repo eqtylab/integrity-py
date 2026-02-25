@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use anyhow::{Context as AnyhowContext, Result};
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
 use integrity::{
-    blob_store::{self, BlobStore},
+    blob_store::BlobStore,
     cid::get_multicodec,
     lineage::models::{
         manifest::{generate_manifest, merge_async, Manifest as IntegrityManifest},
@@ -153,7 +153,9 @@ pub fn generate(
 
     let manifest_json = with_ctx!(py, |ctx| {
         let blob_store = Arc::new(ctx.blob_store.clone());
-        let blobs = integrity::lineage::models::manifest::resolve_blobs(&rust_statements, blob_store, 8).await?;
+        let blobs =
+            integrity::lineage::models::manifest::resolve_blobs(&rust_statements, blob_store, 8)
+                .await?;
 
         log::info!("Generating manifest");
 

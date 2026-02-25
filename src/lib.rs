@@ -169,10 +169,18 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
 
             // Always store iroh collections
             ctx.blob_store
-                .put(dir_cid_result.collection.blob.to_vec(), multicodec::RAW_BINARY, None)
+                .put(
+                    dir_cid_result.collection.blob.to_vec(),
+                    multicodec::RAW_BINARY,
+                    None,
+                )
                 .await?;
             ctx.blob_store
-                .put(dir_cid_result.meta.blob.to_vec(), multicodec::RAW_BINARY, None)
+                .put(
+                    dir_cid_result.meta.blob.to_vec(),
+                    multicodec::RAW_BINARY,
+                    None,
+                )
                 .await?;
 
             if store_flag {
