@@ -9,6 +9,7 @@ repos:
         language: system
         types: [rust]
         pass_filenames: false
+        stages: [pre-commit]
 
       - id: cargo-clippy
         name: Rust lint (cargo clippy)
@@ -26,6 +27,7 @@ repos:
         types: [rust]
 
   - repo: builtin
+    stages: [pre-commit]
     hooks:
       - id: trailing-whitespace
       - id: mixed-line-ending
@@ -48,3 +50,4 @@ repos:
         entry: ruff format
         language: system
         types: [python]
+        stages: [pre-commit]
