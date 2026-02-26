@@ -32,4 +32,4 @@ jobs:
       - name: Run Import Test
         run: |
           IMAGE=${{ matrix.image }} \
-          integration-tests/install-and-run.sh latest _basic_import.py
+          integration-tests/install_and_run.sh latest _basic_import.py
