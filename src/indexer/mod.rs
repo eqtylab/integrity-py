@@ -1,9 +1,12 @@
 mod sqlite;
 
-use std::{collections::HashMap, fmt, sync::Arc};
+use std::{collections::HashMap, env, fmt, fs::File, path::PathBuf, sync::Arc};
 
-use anyhow::Result;
-use integrity::lineage::models::statements::{Statement, StatementTrait};
+use anyhow::{Context, Result};
+use integrity::lineage::models::{
+    manifest::{generate_manifest, resolve_blobs},
+    statements::{Statement, StatementTrait},
+};
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -87,6 +90,37 @@ impl Graph {
             Ok::<(), anyhow::Error>(())
         })?;
 
+        Ok(())
+    }
+
+    #[pyo3(signature = (path))]
+    pub fn export(&self, py: Python, path: PathBuf) -> PyResult<()> {
+        log::info!("Exporting {}", self.id);
+        with_ctx!(py, |ctx| {
+            let graph_id = self.id;
+            let sql_client = ctx.sql_lite;
+
+            let statements = sql_client.retrieve_statements(&graph_id).await?;
+
+            let blob_store = Arc::new(ctx.blob_store.clone());
+            let blobs = resolve_blobs(&statements, blob_store, 8).await?;
+
+            let include_context = env::var("EQTY_INCLUDE_MANIFEST_CONTEXT")
+                .map(|v| v.to_lowercase() != "false")
+                .unwrap_or(true);
+            log::debug!("including manifest context: {include_context}");
+            let manifest = generate_manifest(include_context, statements, blobs).await?;
+
+            let file = File::create(&path)
+                .map_err(|e| anyhow::anyhow!("Failed to create manifest file: {e}"))?;
+
+            serde_json::to_writer(&file, &manifest)
+                .context("Failed to serialize manifest to file")?;
+
+            log::info!("Manifest exported to {}", path.display());
+
+            Ok::<_, anyhow::Error>(())
+        })?;
         Ok(())
     }
 

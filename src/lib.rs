@@ -92,7 +92,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Config>()?;
     m.add_class::<declaration::Declaration>()?;
     m.add_class::<did::DID>()?;
-    m.add_class::<manifest::Manifest>()?;
+    // m.add_class::<manifest::Manifest>()?;
     m.add_class::<signer::Signer>()?;
     m.add_class::<signer::SignerAlgorithms>()?;
     m.add_class::<entity::Entity>()?;
@@ -102,7 +102,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(init, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_path, m)?)?;
-    m.add_function(wrap_pyfunction!(maybe_create_model_signing_statement, m)?)?;
+    // m.add_function(wrap_pyfunction!(maybe_create_model_signing_statement, m)?)?;
     Ok(())
 }
 
@@ -161,7 +161,8 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
                     .put(
                         file_cid_result.blob.to_vec(),
                         multicodec::RAW_BINARY,
-                        Some(&cid),
+                        None,
+                        // Some(&cid),
                     )
                     .await?;
             }
