@@ -1,13 +1,5 @@
-use std::path::PathBuf;
-
 use bytes::Bytes;
-use integrity::cid::{
-    blake3::blake3_cid_raw_binary,
-    iroh::{compute_dir_cid, compute_file_cid},
-};
 use pyo3::{prelude::*, types::PyBytes, Bound};
-
-use crate::with_ctx;
 
 /// Canonicalization algorithm for computing content identifiers.
 #[derive(Clone, Copy, Debug)]
@@ -136,41 +128,10 @@ impl std::str::FromStr for Canon {
 /// `cid` submodule.
 #[pymodule]
 pub fn cid(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(compute_cid_for_directory, m)?)?;
-    m.add_function(wrap_pyfunction!(compute_cid_for_file, m)?)?;
-    m.add_function(wrap_pyfunction!(compute_cid_for_bytes, m)?)?;
     m.add_class::<Canon>()?;
     m.add_class::<DirCidResult>()?;
     m.add_class::<CidResult>()?;
     m.add_class::<CID>()?;
 
     Ok(())
-}
-
-/// Compute CID for a directory at `path`.
-#[pyfunction]
-#[pyo3(signature = (path), text_signature = "(path: PathLike) -> DirCidResult")]
-fn compute_cid_for_directory(py: Python, path: PathBuf) -> PyResult<DirCidResult> {
-    with_ctx!(py, |ctx| {
-        let dir_cid_result =
-            compute_dir_cid(path.clone(), ctx.hashing.clone(), ctx.cid_ignore.clone()).await?;
-
-        Ok(dir_cid_result.into())
-    })
-}
-
-/// Compute CID for a file `path`.
-#[pyfunction]
-#[pyo3(signature = (path), text_signature = "(path: PathLike) -> CidResult")]
-fn compute_cid_for_file(py: Python, path: PathBuf) -> PyResult<CidResult> {
-    with_ctx!(py, |ctx| {
-        Ok(compute_file_cid(path.clone(), ctx.hashing).await?.into())
-    })
-}
-
-/// Compute CID for provided bytes.
-#[pyfunction]
-#[pyo3(signature = (bytes), text_signature = "(bytes: bytes) -> str")]
-fn compute_cid_for_bytes(_py: Python, bytes: &[u8]) -> PyResult<String> {
-    Ok(blake3_cid_raw_binary(bytes)?)
 }
