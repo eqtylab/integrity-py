@@ -13,9 +13,11 @@ concurrency:
 
 jobs:
   import-tests:
-    name: Run Import Tests
     strategy:
       matrix:
+        runner:
+          - ubuntu-latest # x86_64
+          - ubuntu-24.04-arm64 # ARM
         image: 
           - debian:trixie
           - debian:bookworm
@@ -25,7 +27,7 @@ jobs:
           # - ubuntu:22.04
           # - ubuntu:20.04
           # - alpine:latest
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout Repo
         uses: eqtylab-actions/checkout@v4
