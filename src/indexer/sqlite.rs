@@ -13,6 +13,13 @@ pub struct Sqlite {
     pool: SqlitePool,
 }
 
+#[cfg(test)]
+impl Sqlite {
+    pub(crate) fn pool(&self) -> &SqlitePool {
+        &self.pool
+    }
+}
+
 impl Sqlite {
     fn parse_statement_rows(rows: Vec<SqliteRow>) -> Result<HashMap<String, Statement>> {
         rows_to_statements(rows)

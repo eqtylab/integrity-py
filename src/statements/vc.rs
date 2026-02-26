@@ -172,7 +172,9 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         get_runtime().block_on(async {
             Config::reset_internal().await.unwrap();
-            let ctx = Config::init(temp_dir.path().to_path_buf()).await.unwrap();
+            let ctx = Config::init(temp_dir.path().to_path_buf(), None)
+                .await
+                .unwrap();
             assert!(ctx.active_signer.is_none());
         });
     }
@@ -182,7 +184,9 @@ mod tests {
         let temp_dir = tempdir().unwrap();
         get_runtime().block_on(async {
             Config::reset_internal().await.unwrap();
-            let _ = Config::init(temp_dir.path().to_path_buf()).await.unwrap();
+            let _ = Config::init(temp_dir.path().to_path_buf(), None)
+                .await
+                .unwrap();
 
             // Create and set signer
             let signer = Ed25519Signer::create().unwrap();

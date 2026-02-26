@@ -1,4 +1,6 @@
 mod sqlite;
+#[cfg(test)]
+mod sqlite_tests;
 
 use std::{collections::HashMap, env, fmt, fs::File, path::PathBuf, sync::Arc};
 
