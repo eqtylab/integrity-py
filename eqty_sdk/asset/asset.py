@@ -187,9 +187,7 @@ class Asset:
     @staticmethod
     def _factory_with_context(ctx: Context, asset_type: Union[AssetType, str]):
         class _Factory:
-            def from_path(
-                self, path: PathLike, store: Optional[bool] = None, **kwargs
-            ) -> "Asset":
+            def from_path(self, path: PathLike, store: Optional[bool] = None, **kwargs) -> "Asset":
                 return Asset._from_path(path, asset_type, ctx, store, **kwargs)
 
             def from_cid(self, cid: Union[CID, str], **kwargs) -> "Asset":

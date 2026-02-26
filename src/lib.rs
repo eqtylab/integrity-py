@@ -10,6 +10,7 @@ use integrity::{
     blob_store::BlobStore,
     cid::{
         blake3::blake3_cid_raw_binary,
+        get_multicodec,
         iroh::{compute_dir_cid, compute_file_cid},
         multicodec,
     },
@@ -167,18 +168,20 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
             let cid = dir_cid_result.collection.cid.clone();
 
             // Always store iroh collections
+            let collection_codec = get_multicodec(&dir_cid_result.collection.cid)?;
             ctx.blob_store
                 .put(
                     dir_cid_result.collection.blob.to_vec(),
-                    multicodec::RAW_BINARY,
-                    None,
+                    collection_codec,
+                    Some(&dir_cid_result.collection.cid),
                 )
                 .await?;
+            let meta_codec = get_multicodec(&dir_cid_result.meta.cid)?;
             ctx.blob_store
                 .put(
                     dir_cid_result.meta.blob.to_vec(),
-                    multicodec::RAW_BINARY,
-                    None,
+                    meta_codec,
+                    Some(&dir_cid_result.meta.cid),
                 )
                 .await?;
 
