@@ -14,6 +14,7 @@ concurrency:
 jobs:
   import-tests:
     strategy:
+      fail-fast: false
       matrix:
         runner:
           - ubuntu-latest # x86_64
@@ -33,8 +34,63 @@ jobs:
         uses: eqtylab-actions/checkout@v4
 
       - name: Run Import Test
+        id: run_import_test
+        continue-on-error: true
         env:
           IMAGE: ${{ matrix.image }}
           EQTY_PYPI_USER: ${{ secrets.EQTY_PYPI_USER }}
           EQTY_PYPI_PASSWORD: ${{ secrets.EQTY_PYPI_PASSWORD }}
         run: integration-tests/install_and_run.sh latest _basic_import.py
+
+      - name: Build summary row
+        if: always()
+        run: |
+          if [ "${{ steps.run_import_test.outcome }}" = "success" ]; then
+            result="✅"
+          elif [ "${{ steps.run_import_test.outcome }}" = "failure" ]; then
+            result="❌"
+          else
+            result="${{ steps.run_import_test.outcome }}"
+          fi
+
+          mkdir -p summary-rows
+          echo "| \`${{ matrix.runner }}\` | \`${{ matrix.image }}\` | ${result} |" > summary-rows/row.md
+
+      - name: Upload summary row
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-test-result-${{ strategy.job-index }}
+          path: summary-rows/row.md
+          retention-days: 1
+
+      - name: Mark job as failed when import test fails
+        if: always() && steps.run_import_test.outcome != 'success'
+        run: exit 1
+
+  import-tests-summary:
+    if: always()
+    needs: import-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download matrix summary rows
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: import-test-result-*
+          path: summary-rows
+          merge-multiple: true
+
+      - name: Publish matrix summary table
+        run: |
+          {
+            echo "## Import Test Results"
+            echo
+            echo "| Runner | Image | Result |"
+            echo "|---|---|---|"
+            if ls summary-rows/*.md >/dev/null 2>&1; then
+              cat summary-rows/*.md | sort
+            else
+              echo "| _none_ | _none_ | no result artifacts found |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
