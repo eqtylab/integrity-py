@@ -6,11 +6,11 @@ from typing import Any, Callable, Dict, List, Optional, cast
 
 from eqty_sdk._rust import (
     Graph as Context,
+    get_cid_for_bytes,
     statements,
     stream as eqty_core_stream,
 )
 from eqty_sdk.asset import Asset, AssetType, Code, Custom, Dataset, Model
-from eqty_sdk._rust import get_cid_for_bytes
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement
@@ -192,7 +192,7 @@ class Compute:
     async def __call_async_gen__(self, input_cids, *args: Any, **kwargs: Any) -> Any:
         stream = self._func(*args, **kwargs)
 
-        stream_uuid = await eqty_core_stream.create(input_cids)
+        stream_uuid = await eqty_core_stream.create(input_cids, None, None, None)
 
         buffer = []
 
@@ -218,7 +218,7 @@ class Compute:
             yield chunk
 
         # Finalizing the stream will add the computation statement
-        result = await eqty_core_stream.finalize(stream_uuid)
+        result = await eqty_core_stream.finalize(stream_uuid, [], graph=self._ctx)
         compute_cid = result.get("compute_id")
         stream = result.get("stream")
         logger.debug(f"Stream committed '{stream_uuid}'. Computation CID:'{compute_cid}'")

@@ -1,15 +1,16 @@
 import json
 import logging
 import os
-from os import PathLike, fspath
 from enum import Enum
+from os import PathLike, fspath
 from pathlib import Path
 from typing import Any, Optional, Union, cast
 
 from eqty_sdk._rust import (
     Graph as Context,
+    get_cid_for_bytes,
+    get_cid_for_path,
 )
-from eqty_sdk._rust import get_cid_for_bytes, get_cid_for_path
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import (
     add_data_statement,

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import toml
 
-from eqty_sdk import Context, config
+from eqty_sdk import config
 from tests import get_config_dir, setup_sdk
 
 config_path = Path(get_config_dir(), "config.toml")

@@ -32,39 +32,36 @@ def get_config_dir() -> Path:
 
 def get_statement_count_by_type(statement_type: str) -> int | None:
     """Returns the number of statements in the database of the specified type."""
-    db_file = Path(test_dir).joinpath("statements.db")
+    db_file = Path(test_dir).joinpath("graphs.db")
 
-    logger.info("getting statement count by type ", db_file)
+    logger.info("getting statement count by type %s from %s", statement_type, db_file)
     with sqlite3.connect(db_file) as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT COUNT(statement_id) FROM statements WHERE statement_type= ?",
-            (statement_type,),
-        )
+        if statement_type == "CredentialRegistration":
+            cursor.execute("SELECT COUNT(*) FROM credential_statements")
+        elif statement_type == "CredentialSigstoreBundleRegistration":
+            cursor.execute("SELECT COUNT(*) FROM sigstore_statements")
+        elif statement_type == "CredentialDsseRegistration":
+            cursor.execute("SELECT COUNT(*) FROM dsse_statements")
+        else:
+            raise ValueError(f"Unsupported statement type for count: {statement_type}")
         result = cursor.fetchone()
-
-        if not result:
-            print(f"No statement of type '{statement_type}' found")
-            return 0
-    return int(result[0]) if result else None
+        return int(result[0]) if result else 0
 
 
 def reset_statement_db() -> None:
     """Deletes all records from the 'statements' table in sqlite."""
-    db_file = Path(test_dir).joinpath("statements.db")
+    db_file = Path(test_dir).joinpath("graphs.db")
 
     try:
         with sqlite3.connect(db_file) as conn:
             cursor = conn.cursor()
-            # Check if the table exists before trying to delete from it
-            cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='statements'"
-            )
-            if cursor.fetchone():
-                cursor.execute("DELETE FROM statements")
-                conn.commit()
+            cursor.execute("DELETE FROM credential_statements")
+            cursor.execute("DELETE FROM sigstore_statements")
+            cursor.execute("DELETE FROM dsse_statements")
+            conn.commit()
     except Exception as e:
-        print("unable to delete statements table", e)
+        print("unable to delete credential tables", e)
 
 
 def clean_blobs() -> None:

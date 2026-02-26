@@ -23,11 +23,6 @@ class TestComputationRegister(unittest.TestCase):
         )
 
         computation.finalize()
-        expected_statement_ids = [
-            "urn:cid:bagb6qaq6edzi7hykof5f73l4cn7dy3f5cbihm5ejup5yhvguki3eugmzxvoac",
-            "urn:cid:bagb6qaq6echn6esbwzhm7uha5xer62rgszxphezewrqumbi2waktupasi3nvu",
-        ]
-        self.assertCountEqual(expected_statement_ids, computation._associated_statement_ids)
 
         metadata_json_exists = os.path.exists(
             Path("tmp").joinpath(

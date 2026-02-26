@@ -179,11 +179,11 @@ if __name__ == "__main__":
 
 
 def get_compute_statement_inputs_and_outputs(id: str) -> Tuple[List[str], List[str]]:
-    db_file = get_config_dir().joinpath("statements.db")
+    db_file = get_config_dir().joinpath("graphs.db")
 
     with sqlite3.connect(db_file) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT statement_data FROM statements WHERE statement_id = ?", (id,))
+        cursor.execute("SELECT statement FROM computation_statements WHERE id = ?", (id,))
         result = cursor.fetchone()
 
         if not result:
