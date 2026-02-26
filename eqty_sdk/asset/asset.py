@@ -94,7 +94,9 @@ class TypedAsset:
     _asset_type: AssetType
 
     @classmethod
-    def from_path(cls, path: Union[str, PathLike[str]], store: Optional[bool] = None, **kwargs) -> "Asset":
+    def from_path(
+        cls, path: Union[str, PathLike[str]], store: Optional[bool] = None, **kwargs
+    ) -> "Asset":
         return Asset._from_path(path, cls._asset_type, store=store, **kwargs)
 
     @classmethod

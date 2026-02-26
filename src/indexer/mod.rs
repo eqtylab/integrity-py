@@ -43,12 +43,14 @@ pub struct Graph {
 impl Graph {
     #[staticmethod]
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(name: String) -> Self {
-        Graph {
+    pub fn new(py: Python<'_>, name: String) -> Self {
+        let graph = Graph {
             id: Uuid::new_v4(),
             name,
             parent: None,
-        }
+        };
+        maybe_create_graph_in_db(py, &graph);
+        graph
     }
 
     #[staticmethod]
@@ -144,13 +146,14 @@ pub struct GraphFactory {
 impl GraphFactory {
     #[allow(clippy::new_ret_no_self)]
     #[pyo3(signature = (name))]
-    pub fn new(&self, name: String) -> Graph {
+    pub fn new(&self, py: Python<'_>, name: String) -> Graph {
         let graph = Graph {
             id: Uuid::new_v4(),
             name,
             parent: self.parent,
         };
         log::debug!("Creating new graph: {:?}", graph.__str__());
+        maybe_create_graph_in_db(py, &graph);
         graph
     }
 }
@@ -269,4 +272,14 @@ pub(crate) fn rows_to_statements(rows: Vec<SqliteRow>) -> Result<HashMap<String,
         }
     }
     Ok(statements)
+}
+
+// GraphFactor::new may be called before sdk initalization
+// If we are initalized, save the graph to the db, otherwise .init() will save the graph
+fn maybe_create_graph_in_db(py: Python<'_>, graph: &Graph) {
+    if let Ok(ctx) = crate::config::ctx_blocking() {
+        let _ = py.detach(|| {
+            pyo3_async_runtimes::tokio::get_runtime().block_on(ctx.sql_lite.create_graph(&graph))
+        });
+    }
 }

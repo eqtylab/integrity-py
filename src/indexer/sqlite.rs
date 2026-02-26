@@ -178,6 +178,19 @@ impl Sqlite {
 
     /// Creates a record in the "graphs" table
     pub async fn create_graph(&self, graph: &Graph) -> Result<()> {
+        if let Some(parent_id) = graph.parent {
+            sqlx::query(
+                r#"
+                INSERT OR IGNORE INTO graphs
+                (graph_id, name, parent_id)
+                VALUES (?1, ?2, NULL)
+                "#,
+            )
+            .bind(parent_id.to_string())
+            .bind(parent_id.to_string())
+            .execute(&self.pool)
+            .await?;
+        }
         sqlx::query(
             r#"
             INSERT INTO graphs

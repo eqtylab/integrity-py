@@ -280,14 +280,6 @@ impl Config {
 
         let default_graph = default_graph.unwrap_or_default();
         log::debug!("Initializing default graph: {default_graph}");
-        if let Some(id) = default_graph.parent {
-            let parent = Graph {
-                id,
-                name: id.to_string(),
-                parent: None,
-            };
-            sqlite.create_graph(&parent).await?;
-        }
         sqlite.create_graph(&default_graph).await?;
 
         // Load persisted settings if config.toml exists
