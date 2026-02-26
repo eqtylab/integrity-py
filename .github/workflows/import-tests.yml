@@ -1,6 +1,8 @@
 name: Import Tests
 
 on:
+  schedule:
+    - cron: "0 0 * * *"
   push:
     paths:
       - ".github/workflows/import-tests.yml"
