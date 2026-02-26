@@ -10,7 +10,7 @@ from eqty_sdk._rust import (
     stream as eqty_core_stream,
 )
 from eqty_sdk.asset import Asset, AssetType, Code, Custom, Dataset, Model
-from eqty_sdk.core import get_cid_for_bytes
+from eqty_sdk._rust import get_cid_for_bytes
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement

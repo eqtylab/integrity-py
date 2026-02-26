@@ -25,10 +25,7 @@ from eqty_sdk.compute import (
     Compute,
     compute,
 )
-from eqty_sdk.core import (
-    get_cid_for_bytes,
-    get_cid_for_path,
-)
+from eqty_sdk._rust import get_cid_for_bytes, get_cid_for_path
 from eqty_sdk.errors import (
     AuthenticationError,
     Error,

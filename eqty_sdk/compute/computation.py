@@ -7,7 +7,7 @@ from eqty_sdk._rust import (
     Graph as Context,
 )
 from eqty_sdk.asset import serialize_for_hashing
-from eqty_sdk.core import get_cid_for_bytes, get_cid_for_path
+from eqty_sdk._rust import get_cid_for_bytes, get_cid_for_path
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement
