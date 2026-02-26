@@ -18,7 +18,7 @@ jobs:
       matrix:
         runner:
           - ubuntu-latest # x86_64
-          - macos-latest # aarch64
+          - macos-latest-xlarge # aarch64
         image: 
           - debian:trixie
           - debian:bookworm
