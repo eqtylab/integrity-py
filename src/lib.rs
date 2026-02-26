@@ -75,16 +75,12 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Initialize pyo3-log to route Rust log messages to Python's logging module
     let _ = pyo3_log::try_init();
 
-    m.add_wrapped(wrap_pymodule!(cid::cid))?;
     m.add_wrapped(wrap_pymodule!(entity::entity))?;
     m.add_wrapped(wrap_pymodule!(signer::signer))?;
     m.add_wrapped(wrap_pymodule!(statements::statements))?;
     m.add_wrapped(wrap_pymodule!(stream::stream))?;
 
-    m.add_class::<cid::Canon>()?;
     m.add_class::<cid::CID>()?;
-    m.add_class::<cid::CidResult>()?;
-    m.add_class::<cid::DirCidResult>()?;
     m.add_class::<Graph>()?;
     m.add_class::<indexer::GraphFactory>()?;
     m.add_class::<Config>()?;

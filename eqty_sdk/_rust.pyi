@@ -36,19 +36,6 @@ class CID:
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
 
-class Canon:
-    """Canonicalization algorithm for computing content identifiers."""
-
-    RDFC1: Canon
-    JSONJCS: Canon
-
-class CidResult:
-    """Result of computing a content identifier (CID).  Contains both the CID string and the raw blob data."""
-    @property
-    def cid(self) -> str: ...
-    @property
-    def blob(self) -> bytes: ...
-
 class Config:
     """Global application config containing configuration and state.  The config stores application-wide settings including storage directories, hashing preferences, and file filtering rules."""
     def set_hashing_config(
@@ -108,15 +95,6 @@ class Declaration:
 class DidFactory:
     def build_from_signer(self, signer: Signer, **kwargs: Any) -> DID: ...
     def build_from_did_string(self, did: str, **kwargs: Any) -> DID: ...
-
-class DirCidResult:
-    """Result of computing a CID for a directory.  Contains the collection CID, metadata CID, and individual file hashes."""
-    @property
-    def collection(self) -> CidResult: ...
-    @property
-    def meta(self) -> CidResult: ...
-    @property
-    def file_hashes(self) -> List[Tuple[str, str]]: ...
 
 class Entity:
     """Represents an unhashed entity with a UUID identifier.  Entities are used to represent objects that don't have a content-based identifier (CID) but need a unique identifier for tracking purposes."""
@@ -218,28 +196,6 @@ class Signer:
     def yubihsm2(auth_key_id: int, signing_key_id: int, password: str) -> Signer: ...
     @staticmethod
     def from_private_key(algorithm: Any, private_key: str) -> Signer: ...
-
-# Cid module
-class cid:
-    Canon: type[Canon]
-    DirCidResult: type[DirCidResult]
-    CidResult: type[CidResult]
-    CID: type[CID]
-
-    @staticmethod
-    def compute_cid_for_directory(path: PathLike[str]) -> eqty_sdk._rust.DirCidResult:
-        """Compute CID for a directory at `path`."""
-        ...
-
-    @staticmethod
-    def compute_cid_for_file(path: PathLike[str]) -> eqty_sdk._rust.CidResult:
-        """Compute CID for a file `path`."""
-        ...
-
-    @staticmethod
-    def compute_cid_for_bytes(bytes: bytes) -> str:
-        """Compute CID for provided bytes."""
-        ...
 
 # Entity module
 class entity:
