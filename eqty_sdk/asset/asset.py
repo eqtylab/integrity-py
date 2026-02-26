@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from os import PathLike, fspath
 from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union, cast
@@ -37,11 +38,9 @@ class AssetType(Enum):
     TOKEN = "Token"
 
 
-def _init_path_input(path: Union[str, Path]) -> Path:
+def _init_path_input(path: Union[str, PathLike[str]]) -> Path:
     """Gets the resolved Path."""
-    path2 = Path(path) if isinstance(path, str) else path
-    resolved_path = path2.resolve()
-    return resolved_path
+    return Path(fspath(path)).resolve()
 
 
 def serialize_for_hashing(obj: Any) -> bytes:
@@ -95,7 +94,7 @@ class TypedAsset:
     _asset_type: AssetType
 
     @classmethod
-    def from_path(cls, path: Union[str, Path], store: Optional[bool] = None, **kwargs) -> "Asset":
+    def from_path(cls, path: PathLike, store: Optional[bool] = None, **kwargs) -> "Asset":
         return Asset._from_path(path, cls._asset_type, store=store, **kwargs)
 
     @classmethod
@@ -162,7 +161,7 @@ class Asset:
 
     @staticmethod
     def _from_path(
-        path: Union[Path, str],
+        path: Union[str, PathLike[str]],
         asset_type: Union[AssetType, str],
         ctx: Optional[Context] = None,
         store: Optional[bool] = None,
@@ -189,7 +188,7 @@ class Asset:
     def _factory_with_context(ctx: Context, asset_type: Union[AssetType, str]):
         class _Factory:
             def from_path(
-                self, path: Union[str, Path], store: Optional[bool] = None, **kwargs
+                self, path: PathLike, store: Optional[bool] = None, **kwargs
             ) -> "Asset":
                 return Asset._from_path(path, asset_type, ctx, store, **kwargs)
 
