@@ -20,12 +20,6 @@ def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> str:
     """Resolves the provided path and reads the file or directory to calculate the CID."""
     ...
 
-def maybe_create_model_signing_statement(
-    _collection_cid: str, _model_signing_name: str, _is_dir: bool
-) -> None:
-    """Creates a model signing statement if enabled in config and the asset is a directory."""
-    ...
-
 class CID:
     """A simple wrapper around a content identifier (CID) string.  Provides a typed wrapper for CID strings with property access and string conversion."""
     @property

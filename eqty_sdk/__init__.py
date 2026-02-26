@@ -39,7 +39,6 @@ from eqty_sdk.types import (
     SIGNER_ALGORITHMS,
     Declaration,
     Entity,
-    Manifest,
     Signer,
     set_active_signer,
 )
@@ -87,5 +86,4 @@ __all__ = [
     "Signer",
     "set_active_signer",
     "Entity",
-    "Manifest",
 ]

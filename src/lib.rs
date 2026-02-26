@@ -55,8 +55,6 @@ pub mod entity;
 pub mod indexer;
 /// API functions for connecting to the integrity service.
 pub mod integrity_service;
-/// Manifest generation, import, and registration for integrity graphs.
-pub mod manifest;
 /// Cryptographic signer creation and management.
 pub mod signer;
 /// Lineage statement creation and storage operations.
@@ -79,7 +77,6 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(cid::cid))?;
     m.add_wrapped(wrap_pymodule!(entity::entity))?;
     m.add_wrapped(wrap_pymodule!(signer::signer))?;
-    m.add_wrapped(wrap_pymodule!(manifest::manifest))?;
     m.add_wrapped(wrap_pymodule!(statements::statements))?;
     m.add_wrapped(wrap_pymodule!(stream::stream))?;
 
@@ -92,7 +89,6 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Config>()?;
     m.add_class::<declaration::Declaration>()?;
     m.add_class::<did::DID>()?;
-    // m.add_class::<manifest::Manifest>()?;
     m.add_class::<signer::Signer>()?;
     m.add_class::<signer::SignerAlgorithms>()?;
     m.add_class::<entity::Entity>()?;
@@ -209,8 +205,8 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
 }
 
 /// Creates a model signing statement if enabled in config and the asset is a directory.
-#[pyfunction]
-#[pyo3(signature = (_collection_cid, _model_signing_name, _is_dir))]
+// #[pyfunction]
+// #[pyo3(signature = (_collection_cid, _model_signing_name, _is_dir))]
 fn maybe_create_model_signing_statement(
     _py: Python<'_>,
     _collection_cid: String,

@@ -4,7 +4,6 @@ from eqty_sdk._rust import (
     SIGNER_ALGORITHMS,
     Declaration,
     Entity,
-    Manifest,
     Signer,
     signer,
 )
@@ -20,5 +19,4 @@ __all__ = [
     "set_active_signer",
     "SIGNER_ALGORITHMS",
     "Entity",
-    "Manifest",
 ]
