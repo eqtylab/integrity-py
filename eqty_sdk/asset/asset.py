@@ -132,6 +132,7 @@ class Asset:
 
         self._cid = cid
         self._is_dir = is_dir
+        self.statement_ids: list[str] = []
 
         if isinstance(asset_type, AssetType):
             kwargs.update({"assetType": asset_type.value})
@@ -225,19 +226,24 @@ class Asset:
 
     def add_declaration(self, declaration: Declaration) -> "Asset":
         document_cid = declaration.cid()
-        add_governance_statement(
+        ids = add_governance_statement(
             self.cid, document_cid, skip_proof=self._skip_proof, graph=self._ctx
         )
+        self.statement_ids.extend(ids)
         return self
 
     def _create_eqty_statements(self) -> None:
         """Creates DataStatement, MetadataStatement, and VcStatement."""
-        add_data_statement([self.cid], skip_proof=self._skip_proof, graph=self._ctx)
-        add_metadata_statement(
-            self.cid,
-            self._metadata.to_json_str(),
-            skip_proof=self._skip_proof,
-            graph=self._ctx,
+        self.statement_ids.extend(
+            add_data_statement([self.cid], skip_proof=self._skip_proof, graph=self._ctx)
+        )
+        self.statement_ids.extend(
+            add_metadata_statement(
+                self.cid,
+                self._metadata.to_json_str(),
+                skip_proof=self._skip_proof,
+                graph=self._ctx,
+            )
         )
 
         # if config.get_generate_model_signing_signatures() and self._is_dir:
@@ -287,6 +293,7 @@ class Asset:
             "_metadata",
             "_asset_type",
             "_skip_proof",
+            "statement_ids",
         }:
             object.__setattr__(self, key, value)
         else:
