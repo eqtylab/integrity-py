@@ -94,7 +94,7 @@ class TypedAsset:
     _asset_type: AssetType
 
     @classmethod
-    def from_path(cls, path: PathLike, store: Optional[bool] = None, **kwargs) -> "Asset":
+    def from_path(cls, path: Union[str, PathLike[str]], store: Optional[bool] = None, **kwargs) -> "Asset":
         return Asset._from_path(path, cls._asset_type, store=store, **kwargs)
 
     @classmethod
@@ -121,6 +121,8 @@ class Asset:
         custom_ctx: Optional[Context],
         **kwargs,
     ):
+        if custom_ctx:
+            logger.info(f"Creating asset with custom context: {custom_ctx}")
         self._ctx = custom_ctx
 
         self._value: Any = obj
