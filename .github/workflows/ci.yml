@@ -70,16 +70,17 @@ jobs:
   
   import-tests:
     name: Run Import Tests
-    matrix:
-      image: 
-        - debian:trixie
-        - debian:bookworm
-        # - debian:bullseye
-        # - ubuntu:latest
-        # - ubuntu:24.04
-        # - ubuntu:22.04
-        # - ubuntu:20.04
-        # - alpine:latest
+    strategy:
+      matrix:
+        image: 
+          - debian:trixie
+          - debian:bookworm
+          # - debian:bullseye
+          # - ubuntu:latest
+          # - ubuntu:24.04
+          # - ubuntu:22.04
+          # - ubuntu:20.04
+          # - alpine:latest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
