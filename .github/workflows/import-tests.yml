@@ -3,6 +3,7 @@ name: Import Tests
 on:
   push:
     paths:
+      - ".github/workflows/import-tests.yml"
       - "integration-tests/**"
   workflow_dispatch:
 
