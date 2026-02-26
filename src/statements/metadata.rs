@@ -34,13 +34,12 @@ pub fn add_metadata_statement(
 
         let metadata_statement = MetadataStatement::create_from_json(
             subject,
-            metadata_json,
+            metadata_json.clone(),
             signer.get_did_doc().id,
             timestamp.clone(),
         )
         .await?;
 
-        let metadata = metadata_statement.metadata.clone();
         let statement = Statement::MetadataRegistration(metadata_statement);
 
         ctx.sql_lite
@@ -50,8 +49,12 @@ pub fn add_metadata_statement(
         let id = statement.get_id();
         let mut statement_ids = vec![id.clone()];
 
+        log::debug!(
+            "Saving metadata json to blob store. {}",
+            serde_json::to_string_pretty(&metadata_json).unwrap_or_default()
+        );
         ctx.blob_store
-            .put(metadata.into(), multicodec::JSON_JCS, None)
+            .put(metadata_json.to_string().into(), multicodec::JSON_JCS, None)
             .await?;
 
         if !skip_proof {

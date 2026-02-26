@@ -17,7 +17,7 @@ def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> str:
     ...
 
 def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> str:
-    """Resolves the provided path and reads the file or directory to calculate the CID."""
+    """Resolves the provided path and reads the file or directory to calculate the CID. The path is saved to the blob store if the store flag is set"""
     ...
 
 class CID:

@@ -142,6 +142,7 @@ fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResu
 }
 
 /// Resolves the provided path and reads the file or directory to calculate the CID.
+/// The path is saved to the blob store if the store flag is set
 #[pyfunction]
 #[pyo3(signature = (path, store=None))]
 fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyResult<String> {
@@ -153,13 +154,9 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
             let cid = file_cid_result.cid.clone();
 
             if store_flag {
+                let data = tokio::fs::read(&path).await?;
                 ctx.blob_store
-                    .put(
-                        file_cid_result.blob.to_vec(),
-                        multicodec::RAW_BINARY,
-                        None,
-                        // Some(&cid),
-                    )
+                    .put(data, multicodec::RAW_BINARY, Some(&cid))
                     .await?;
             }
 
