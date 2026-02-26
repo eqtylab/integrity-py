@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
 use integrity::lineage::models::statements::{Statement, StatementTrait};
-use sqlx::{sqlite::SqliteRow, SqlitePool};
+use sqlx::{sqlite::SqliteRow, Row, SqlitePool};
 use uuid::Uuid;
 
 use super::{rows_to_statements, Graph};
@@ -354,52 +354,6 @@ impl Sqlite {
         Ok(statements.into_values().collect())
     }
 
-    // /// Returns all association IDs linked to the given subject.
-    // pub async fn get_associations_for_subject(&self, subject: &str) -> Result<Vec<String>> {
-    //     log::trace!("Retrieving associations for subject={subject}.");
-    //
-    //     let rows: Vec<AssociationRow> = sqlx::query_as(
-    //         r#"
-    //         SELECT id, subject, association
-    //         FROM association_statements
-    //         WHERE subject = $1
-    //         "#,
-    //     )
-    //     .bind(subject)
-    //     .fetch_all(&self.pool)
-    //     .await?;
-    //
-    //     let mut associations = rows.into_iter().map(|r| r.association).collect::<Vec<_>>();
-    //
-    //     associations.sort();
-    //     associations.dedup();
-    //
-    //     Ok(associations)
-    // }
-    //
-    // /// Returns all subject IDs linked to the given association.
-    // pub async fn get_subjects_for_association(&self, _association: &str) -> Result<Vec<String>> {
-    //     log::trace!("Retrieving subjects for association={association}.");
-    //
-    //     let rows: Vec<AssociationRow> = sqlx::query_as(
-    //         r#"
-    //         SELECT id, subject, association
-    //         FROM association_statements
-    //         WHERE association = $1
-    //         "#,
-    //     )
-    //     .bind(association)
-    //     .fetch_all(&self.pool)
-    //     .await?;
-    //
-    //     let mut subjects = rows.into_iter().map(|r| r.subject).collect::<Vec<_>>();
-    //
-    //     subjects.sort();
-    //     subjects.dedup();
-    //
-    //     Ok(subjects)
-    // }
-
     pub async fn get_graph_ancestors(&self, graph_id: &Uuid) -> Result<Vec<Graph>> {
         log::info!("Getting ancestors of graph {graph_id}");
 
@@ -429,6 +383,38 @@ impl Sqlite {
 
         Ok(rows)
     }
+
+    /// Deletes all data from the database
+    pub async fn purge(&self) -> Result<()> {
+        // Drop all tables dynamically to avoid falling out of sync with schema changes.
+        sqlx::query("PRAGMA foreign_keys = OFF;")
+            .execute(&self.pool)
+            .await?;
+
+        let table_rows = sqlx::query(
+            r#"
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        for row in table_rows {
+            let name: String = row.try_get("name")?;
+            let drop_sql = format!("DROP TABLE IF EXISTS \"{}\";", name.replace('\"', "\"\""));
+            sqlx::query(&drop_sql).execute(&self.pool).await?;
+        }
+
+        sqlx::query("PRAGMA foreign_keys = ON;")
+            .execute(&self.pool)
+            .await?;
+
+        self.init().await?;
+        Ok(())
+    }
+
     // /// Returns metadata for all descendant graphs of the given parent.
     // pub async fn get_child_graph_info(&self, parent_id: &Uuid) -> Result<Vec<Graph>> {
     //     log::trace!("Retrieving child graph info for {parent_id:?}");

@@ -25,7 +25,12 @@ from eqty_sdk.compute import (
     Compute,
     compute,
 )
-from eqty_sdk._rust import get_cid_for_bytes, get_cid_for_path
+from eqty_sdk._rust import (
+    get_cid_for_bytes,
+    get_cid_for_path,
+    purge_statement_store,
+    purge_blob_store,
+)
 from eqty_sdk.errors import (
     AuthenticationError,
     Error,
@@ -48,6 +53,8 @@ __all__ = [
     "init",
     "get_cid_for_bytes",
     "get_cid_for_path",
+    "purge_blob_store",
+    "purge_statement_store",
     # Assets
     "Asset",
     "AssetType",

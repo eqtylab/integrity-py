@@ -20,6 +20,14 @@ def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> str:
     """Resolves the provided path and reads the file or directory to calculate the CID. The path is saved to the blob store if the store flag is set"""
     ...
 
+def purge_statement_store() -> None:
+    """Purges all statemetns from the store."""
+    ...
+
+def purge_blob_store() -> None:
+    """Purges all blobs from the blob store."""
+    ...
+
 class CID:
     """A simple wrapper around a content identifier (CID) string.  Provides a typed wrapper for CID strings with property access and string conversion."""
     @property

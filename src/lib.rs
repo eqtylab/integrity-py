@@ -99,6 +99,8 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(init, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_path, m)?)?;
+    m.add_function(wrap_pyfunction!(purge_statement_store, m)?)?;
+    m.add_function(wrap_pyfunction!(purge_blob_store, m)?)?;
     // m.add_function(wrap_pyfunction!(maybe_create_model_signing_statement, m)?)?;
     Ok(())
 }
@@ -202,6 +204,32 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
             )))
         }
     })
+}
+
+/// Purges all statemetns from the store.
+#[pyfunction]
+#[pyo3(signature = ())]
+fn purge_statement_store(py: Python<'_>) -> PyResult<()> {
+    with_ctx!(py, |ctx| {
+        ctx.sql_lite.purge().await?;
+        Ok::<_, anyhow::Error>(())
+    })?;
+    Ok(())
+}
+
+/// Purges all blobs from the blob store.
+#[pyfunction]
+#[pyo3(signature = ())]
+fn purge_blob_store(py: Python<'_>) -> PyResult<()> {
+    with_ctx!(py, |ctx| {
+        let blob_dir = ctx.app_dir.join("blobs");
+        if blob_dir.exists() {
+            tokio::fs::remove_dir_all(&blob_dir).await?;
+            tokio::fs::create_dir_all(&blob_dir).await?;
+        }
+        Ok::<_, anyhow::Error>(())
+    })?;
+    Ok(())
 }
 
 /// Creates a model signing statement if enabled in config and the asset is a directory.
