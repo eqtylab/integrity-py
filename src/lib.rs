@@ -108,8 +108,12 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 /// Initializes the sdk config. Must be called before setting individual config values
 #[pyfunction]
-#[pyo3(signature = (custom_dir=None))]
-fn init(py: Python<'_>, custom_dir: Option<PathBuf>) -> PyResult<Config> {
+#[pyo3(signature = (custom_dir=None, default_context=None))]
+fn init(
+    py: Python<'_>,
+    custom_dir: Option<PathBuf>,
+    default_context: Option<Graph>,
+) -> PyResult<Config> {
     // `None` → use the Python caller’s CWD (the same as the process CWD)
     let app_dir = custom_dir.unwrap_or_else(|| {
         // `current_dir` panics only if the process has no CWD
@@ -117,7 +121,8 @@ fn init(py: Python<'_>, custom_dir: Option<PathBuf>) -> PyResult<Config> {
         dir.join(".eqty_sdk")
     });
 
-    let cfg = py.detach(|| get_runtime().block_on(Config::init(app_dir)))?;
+    log::debug!("initializing sdk at {:?}", app_dir.display());
+    let cfg = py.detach(|| get_runtime().block_on(Config::init(app_dir, default_context)))?;
     log::debug!("initialized at {:?}", cfg.app_dir);
     Ok(cfg)
 }

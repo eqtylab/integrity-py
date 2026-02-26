@@ -175,15 +175,6 @@ fn set_store_all_blobs_inner(value: bool) -> Result<()> {
     Ok(())
 }
 
-fn set_default_graph_inner(py: Python<'_>, graph: Graph) -> Result<()> {
-    with_ctx!(py, |ctx| {
-        log::info!("Setting default graph: {graph:?}");
-        let _ = ctx.sql_lite.create_graph(&graph).await;
-    });
-    Config::update_config(|ctx| ctx.default_graph = graph)?;
-    Ok(())
-}
-
 /// Global application config containing configuration and state.
 ///
 /// The config stores application-wide settings including storage directories,
@@ -247,13 +238,6 @@ impl Config {
         set_store_all_blobs_inner(value)?;
         Ok(self.clone())
     }
-
-    /// Sets the default graph context
-    #[pyo3(signature = (graph))]
-    fn set_default_graph(&self, py: Python, graph: Graph) -> PyResult<Self> {
-        set_default_graph_inner(py, graph)?;
-        Ok(self.clone())
-    }
 }
 
 // Rust only impl functions
@@ -265,7 +249,7 @@ impl Config {
     ///
     /// # Returns
     /// * `Result<Config>` - Initialized config, or error if initialization fails
-    pub async fn init(app_dir: PathBuf) -> Result<Config> {
+    pub async fn init(app_dir: PathBuf, default_graph: Option<Graph>) -> Result<Config> {
         // Check if already initialized
         {
             let ctx_lock = CTX.read().await;
@@ -294,7 +278,16 @@ impl Config {
             sqlite.init().await?;
         }
 
-        let default_graph = Graph::default();
+        let default_graph = default_graph.unwrap_or_default();
+        log::debug!("Initializing default graph: {default_graph}");
+        if let Some(id) = default_graph.parent {
+            let parent = Graph {
+                id,
+                name: id.to_string(),
+                parent: None,
+            };
+            sqlite.create_graph(&parent).await?;
+        }
         sqlite.create_graph(&default_graph).await?;
 
         // Load persisted settings if config.toml exists

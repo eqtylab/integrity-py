@@ -6,7 +6,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import uuid
 from os import PathLike
 
-def init(custom_dir: Optional[PathLike[str]] = None) -> Config:
+def init(
+    custom_dir: Optional[PathLike[str]] = None, default_context: Optional[Graph] = None
+) -> Config:
     """Initializes the sdk config. Must be called before setting individual config values"""
     ...
 
@@ -19,7 +21,7 @@ def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> str:
     ...
 
 def maybe_create_model_signing_statement(
-    collection_cid: str, model_signing_name: str, is_dir: bool
+    _collection_cid: str, _model_signing_name: str, _is_dir: bool
 ) -> None:
     """Creates a model signing statement if enabled in config and the asset is a directory."""
     ...
@@ -58,7 +60,6 @@ class Config:
     ) -> Config: ...
     def set_generate_model_signing_signatures(self, enable: bool) -> Config: ...
     def set_store_all_blobs(self, value: bool) -> Config: ...
-    def set_default_graph(self, graph: Graph) -> Config: ...
 
 class DID:
     @property
@@ -267,10 +268,8 @@ class manifest:
     Manifest: type[Manifest]
 
     @staticmethod
-    def generate(
-        statements: List[Any], blobs_dir: PathLike[str], include_context: Optional[bool] = None
-    ) -> str:
-        """# Arguments * `py` - Python interpreter reference * `graphs` - Python list of graph dictionaries, each containing 'id', 'name', 'parent', and 'statements' * `blobs_dir` - Path to directory containing blob files referenced by statements * `include_context` - Whether to include context information in the manifest (default: false)  # Returns * `PyResult<String>` - JSON string representation of the manifest, or error on failure"""
+    def generate(statements: List[Any], include_context: Optional[bool] = None) -> str:
+        """Generates an integrity graph manifest JSON string from multiple graphs.  # Arguments * `py` - Python interpreter reference * `graphs` - Python list of graph dictionaries, each containing 'id', 'name', 'parent', and 'statements' * `include_context` - Whether to include context information in the manifest (default: false)  # Returns * `PyResult<String>` - JSON string representation of the manifest, or error on failure"""
         ...
 
     @staticmethod

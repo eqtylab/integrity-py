@@ -1,6 +1,6 @@
 mod sqlite;
 
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, fmt, sync::Arc};
 
 use anyhow::Result;
 use integrity::lineage::models::statements::{Statement, StatementTrait};
@@ -34,24 +34,18 @@ pub struct Graph {
     #[pyo3(get)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent: Option<Uuid>,
-    /// Statements contained in this graph (populated on retrieval)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub statements: Option<Vec<Statement>>,
 }
 
 #[pymethods]
 impl Graph {
     #[staticmethod]
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(py: Python<'_>, name: String) -> Self {
-        let graph = Graph {
+    pub fn new(name: String) -> Self {
+        Graph {
             id: Uuid::new_v4(),
             name,
             parent: None,
-            statements: None,
-        };
-        create_graph_record(py, &graph);
-        graph
+        }
     }
 
     #[staticmethod]
@@ -62,17 +56,10 @@ impl Graph {
     }
 
     #[staticmethod]
-    pub fn from_uuid(py: Python<'_>, project_id: Uuid) -> PyResult<GraphFactory> {
-        let graph = Graph {
-            id: project_id,
-            name: project_id.to_string(),
-            parent: None,
-            statements: None,
-        };
-        create_graph_record(py, &graph);
-        Ok(GraphFactory {
+    pub fn from_uuid(project_id: Uuid) -> GraphFactory {
+        GraphFactory {
             parent: Some(project_id),
-        })
+        }
     }
 
     #[pyo3(signature = (service))]
@@ -123,25 +110,15 @@ pub struct GraphFactory {
 impl GraphFactory {
     #[allow(clippy::new_ret_no_self)]
     #[pyo3(signature = (name))]
-    pub fn new(&self, py: Python<'_>, name: String) -> Graph {
+    pub fn new(&self, name: String) -> Graph {
         let graph = Graph {
             id: Uuid::new_v4(),
             name,
             parent: self.parent,
-            statements: None,
         };
-        create_graph_record(py, &graph);
+        log::debug!("Creating new graph: {:?}", graph.__str__());
         graph
     }
-}
-
-fn create_graph_record(py: Python<'_>, graph: &Graph) {
-    with_ctx!(py, |ctx| {
-        ctx.sql_lite
-            .create_graph(graph)
-            .await
-            .expect("Failed to create record in database");
-    });
 }
 
 impl Default for Graph {
@@ -151,7 +128,6 @@ impl Default for Graph {
             id,
             name: id.into(),
             parent: None,
-            statements: None,
         }
     }
 }
@@ -169,8 +145,13 @@ impl<'r> FromRow<'r, SqliteRow> for Graph {
                 .map(|p| Uuid::parse_str(&p))
                 .transpose()
                 .map_err(|e| sqlx::Error::Decode(Box::new(e)))?,
-            statements: None,
         })
+    }
+}
+
+impl fmt::Display for Graph {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.__str__())
     }
 }
 
