@@ -238,6 +238,11 @@ impl Config {
         set_store_all_blobs_inner(value)?;
         Ok(self.clone())
     }
+
+    fn get_default_context(&self) -> Graph {
+        log::debug!("Returning default graph {}", self.default_graph);
+        self.default_graph.clone()
+    }
 }
 
 // Rust only impl functions
