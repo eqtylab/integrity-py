@@ -208,6 +208,108 @@ impl Sqlite {
         Ok(())
     }
 
+    /// Deletes a graph and all descendant graphs, along with statements linked to those graphs.
+    pub async fn delete_graph_tree(&self, graph_id: &Uuid) -> Result<()> {
+        // Get all graph ids in the subtree (including the root).
+        log::debug!("Deleting graph tree for {graph_id}");
+        let graph_rows = sqlx::query(
+            r#"
+            WITH RECURSIVE descendants AS (
+                SELECT graph_id
+                FROM graphs
+                WHERE graph_id = ?1
+                UNION ALL
+                SELECT g.graph_id
+                FROM graphs g
+                INNER JOIN descendants d ON g.parent_id = d.graph_id
+            )
+            SELECT graph_id FROM descendants
+            "#,
+        )
+        .bind(graph_id.to_string())
+        .fetch_all(&self.pool)
+        .await?;
+
+        if graph_rows.is_empty() {
+            log::debug!("No graphs found for {graph_id}");
+            return Ok(());
+        }
+
+        let graph_ids: Vec<String> = graph_rows
+            .into_iter()
+            .map(|row| row.get::<String, _>("graph_id"))
+            .collect();
+        log::debug!("Found {} graph(s) to delete", graph_ids.len());
+
+        // Collect all statement ids linked to these graphs.
+        let placeholders = vec!["?"; graph_ids.len()].join(", ");
+        let stmt_query = format!(
+            "SELECT DISTINCT statement_id FROM statement_graph_link WHERE graph_id IN ({})",
+            placeholders
+        );
+        let mut stmt_sql = sqlx::query(&stmt_query);
+        for gid in &graph_ids {
+            stmt_sql = stmt_sql.bind(gid);
+        }
+        let stmt_rows = stmt_sql.fetch_all(&self.pool).await?;
+        let statement_ids: Vec<String> = stmt_rows
+            .into_iter()
+            .map(|row| row.get::<String, _>("statement_id"))
+            .collect();
+        log::debug!("Found {} statement(s) to delete", statement_ids.len());
+
+        // Delete links first.
+        let link_query = format!(
+            "DELETE FROM statement_graph_link WHERE graph_id IN ({})",
+            placeholders
+        );
+        let mut link_sql = sqlx::query(&link_query);
+        for gid in &graph_ids {
+            link_sql = link_sql.bind(gid);
+        }
+        link_sql.execute(&self.pool).await?;
+        log::debug!("Deleted statement graph links");
+
+        if !statement_ids.is_empty() {
+            let stmt_placeholders = vec!["?"; statement_ids.len()].join(", ");
+            let tables = [
+                "computation_statements",
+                "data_statements",
+                "metadata_statements",
+                "storage_statements",
+                "entity_statements",
+                "association_statements",
+            ];
+
+            for table in tables {
+                let q = format!("DELETE FROM {} WHERE id IN ({})", table, stmt_placeholders);
+                let mut sql = sqlx::query(&q);
+                for sid in &statement_ids {
+                    sql = sql.bind(sid);
+                }
+                sql.execute(&self.pool).await?;
+                log::debug!("Deleted statements from {table}");
+            }
+        }
+
+        // Delete graphs (disable FK checks to avoid parent/child ordering issues).
+        sqlx::query("PRAGMA foreign_keys = OFF;")
+            .execute(&self.pool)
+            .await?;
+        let graph_del_query = format!("DELETE FROM graphs WHERE graph_id IN ({})", placeholders);
+        let mut graph_del_sql = sqlx::query(&graph_del_query);
+        for gid in &graph_ids {
+            graph_del_sql = graph_del_sql.bind(gid);
+        }
+        graph_del_sql.execute(&self.pool).await?;
+        log::debug!("Deleted graphs");
+        sqlx::query("PRAGMA foreign_keys = ON;")
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+    }
+
     /// Registers a statement in the database, optionally associating it with a graph.
     ///
     /// Graph-specific statements (computation, data, metadata, etc.) are linked to the

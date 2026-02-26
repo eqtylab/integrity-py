@@ -95,6 +95,14 @@ impl Graph {
         Ok(())
     }
 
+    fn delete_tree(&self, py: Python<'_>) -> PyResult<()> {
+        with_ctx!(py, |ctx| {
+            ctx.sql_lite.delete_graph_tree(&self.id).await?;
+            Ok::<_, anyhow::Error>(())
+        })?;
+        Ok(())
+    }
+
     #[pyo3(signature = (path))]
     pub fn export(&self, py: Python, path: PathBuf) -> PyResult<()> {
         log::info!("Exporting {}", self.id);
