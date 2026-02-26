@@ -62,6 +62,7 @@ class Compute:
         logger.debug("Initalizing Compute")
 
         self._ctx = ctx
+        self.statement_ids = []
 
         if metadata is None:
             metadata = {}

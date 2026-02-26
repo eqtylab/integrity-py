@@ -5,7 +5,7 @@ from pathlib import Path
 
 import toml
 
-from eqty_sdk import config
+from eqty_sdk import Context, config
 from tests import get_config_dir, setup_sdk
 
 config_path = Path(get_config_dir(), "config.toml")
@@ -23,6 +23,10 @@ class TestConfig(unittest.TestCase):
         self.assertTrue(os.path.exists(get_config_dir()), "Failed to create config directory.")
         # Config file is created on first setter call, not on init
         # Check that the directory exists
+
+    def test_02_hashing_config(self):
+        cfg = config.init(get_config_dir())
+        self.assertIsNotNone(cfg.set_hashing_config(multithread=True, memory_map=True))
 
     def test_03_store_all_blobs(self):
         cfg = config.init(get_config_dir())
@@ -63,6 +67,27 @@ class TestConfig(unittest.TestCase):
             data["cid_ignore"]["include_symlinks"],
             False,
             "Failed to save cid_ignore to settings file",
+        )
+
+    def test_05_generate_model_signing_signatures(self):
+        cfg = config.init(get_config_dir())
+        cfg.set_generate_model_signing_signatures(True)
+
+        with open(config_path, "r") as f:
+            data = toml.load(f)
+        self.assertEqual(
+            data["generate_model_signing_signatures"],
+            True,
+            "Failed to save generate_model_signing_signatures to settings file",
+        )
+
+        cfg.set_generate_model_signing_signatures(False)
+        with open(config_path, "r") as f:
+            data = toml.load(f)
+        self.assertEqual(
+            data["generate_model_signing_signatures"],
+            False,
+            "Failed to save generate_model_signing_signatures to settings file",
         )
 
 

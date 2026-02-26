@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from eqty_sdk import Cid, Computation
+from eqty_sdk import CID, Computation
 from tests import setup_sdk
 
 
@@ -23,8 +23,8 @@ class TestComputationCompute(unittest.TestCase):
         self.assertEqual(computation._computation_cid, cid)
 
     def test_cid(self):
-        """Test setting compute Cid."""
-        cid = Cid("urn:cid:4")
+        """Test setting compute CID."""
+        cid = CID("urn:cid:4")
         computation = Computation.new().set_computation_cid(cid)
         self.assertIsNotNone(computation._computation_cid)
         self.assertEqual(computation._computation_cid, cid.cid)
