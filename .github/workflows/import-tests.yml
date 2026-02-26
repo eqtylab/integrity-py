@@ -47,11 +47,14 @@ jobs:
         run: |
           runner="${{ matrix.runner }}"
           case "$runner" in
-            *arm64*)
+            ubuntu-latest)
+              arch="x86_64"
+              ;;
+            eqty-thor)
               arch="aarch64"
               ;;
             *)
-              arch="x86_64"
+              arch="unknown"
               ;;
           esac
 
