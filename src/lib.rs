@@ -101,7 +101,6 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_cid_for_path, m)?)?;
     m.add_function(wrap_pyfunction!(purge_statement_store, m)?)?;
     m.add_function(wrap_pyfunction!(purge_blob_store, m)?)?;
-    // m.add_function(wrap_pyfunction!(maybe_create_model_signing_statement, m)?)?;
     Ok(())
 }
 
@@ -230,42 +229,4 @@ fn purge_blob_store(py: Python<'_>) -> PyResult<()> {
         Ok::<_, anyhow::Error>(())
     })?;
     Ok(())
-}
-
-/// Creates a model signing statement if enabled in config and the asset is a directory.
-// #[pyfunction]
-// #[pyo3(signature = (_collection_cid, _model_signing_name, _is_dir))]
-fn maybe_create_model_signing_statement(
-    _py: Python<'_>,
-    _collection_cid: String,
-    _model_signing_name: String,
-    _is_dir: bool,
-) -> PyResult<()> {
-    todo!("This interferes with general directory hashing");
-    // if !is_dir {
-    //     return Ok(());
-    // }
-    //
-    // let ctx = ctx_blocking().map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-    // if !ctx.generate_model_signing_signatures {
-    //     return Ok(());
-    // }
-    //
-    // let blobs_dir = ctx.app_dir.join("blobs");
-    // std::fs::create_dir_all(&blobs_dir)
-    //     .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
-    //
-    // let allow_symlinks = ctx.cid_ignore.include_symlinks;
-    // crate::statements::model_signing::create_model_signing_statement(
-    //     py,
-    //     collection_cid,
-    //     blobs_dir,
-    //     model_signing_name,
-    //     allow_symlinks,
-    //     Vec::new(),
-    //     None,
-    //     None,
-    // )?;
-    //
-    // Ok(())
 }
