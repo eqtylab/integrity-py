@@ -31,6 +31,8 @@ jobs:
         uses: eqtylab-actions/checkout@v4
 
       - name: Run Import Test
-        run: |
-          IMAGE=${{ matrix.image }} \
-          integration-tests/install_and_run.sh latest _basic_import.py
+        env:
+          IMAGE: ${{ matrix.image }}
+          EQTY_PYPI_USER: ${{ secrets.EQTY_PYPI_USER }}
+          EQTY_PYPI_PASSWORD: ${{ secrets.EQTY_PYPI_PASSWORD }}
+        run: integration-tests/install_and_run.sh latest _basic_import.py
