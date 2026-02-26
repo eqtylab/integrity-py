@@ -45,6 +45,16 @@ jobs:
       - name: Build summary row
         if: always()
         run: |
+          runner="${{ matrix.runner }}"
+          case "$runner" in
+            *arm64*)
+              arch="aarch64"
+              ;;
+            *)
+              arch="x86_64"
+              ;;
+          esac
+
           if [ "${{ steps.run_import_test.outcome }}" = "success" ]; then
             result="✅"
           elif [ "${{ steps.run_import_test.outcome }}" = "failure" ]; then
@@ -54,7 +64,7 @@ jobs:
           fi
 
           mkdir -p summary-rows
-          echo "| \`${{ matrix.runner }}\` | \`${{ matrix.image }}\` | ${result} |" > summary-rows/row.md
+          echo "| \`${{ matrix.runner }}\` | ${arch} | \`${{ matrix.image }}\` | ${result} |" > summary-rows/row.md
 
       - name: Upload summary row
         if: always()
@@ -86,11 +96,11 @@ jobs:
           {
             echo "## Import Test Results"
             echo
-            echo "| Runner | Image | Result |"
-            echo "|---|---|---|"
+            echo "| Runner | Arch | Image | Result |"
+            echo "|---|---|---|---|"
             if ls summary-rows/*.md >/dev/null 2>&1; then
               cat summary-rows/*.md | sort
             else
-              echo "| _none_ | _none_ | no result artifacts found |"
+              echo "| _none_ | _none_ | _none_ | no result artifacts found |"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
