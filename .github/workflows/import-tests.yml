@@ -64,14 +64,15 @@ jobs:
           fi
 
           mkdir -p summary-rows
-          echo "| \`${{ matrix.runner }}\` | ${arch} | \`${{ matrix.image }}\` | ${result} |" > summary-rows/row.md
+          row_file="summary-rows/row-${{ strategy.job-index }}.md"
+          echo "| \`${{ matrix.runner }}\` | ${arch} | \`${{ matrix.image }}\` | ${result} |" > "$row_file"
 
       - name: Upload summary row
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: import-test-result-${{ strategy.job-index }}
-          path: summary-rows/row.md
+          path: summary-rows/row-${{ strategy.job-index }}.md
           retention-days: 1
 
       - name: Mark job as failed when import test fails
