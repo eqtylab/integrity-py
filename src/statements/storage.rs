@@ -1,24 +1,25 @@
 use integrity::lineage::models::statements::{Statement, StatementTrait, StorageStatement};
 use pyo3::{pyfunction, PyResult, Python};
-use uuid::Uuid;
 
-use crate::{config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx};
+use crate::{
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph,
+};
 
 #[pyfunction]
-#[pyo3(signature = (data, stored_on, *, operated_by=None, skip_proof=None, graph_id=None))]
+#[pyo3(signature = (data, stored_on, *, operated_by=None, skip_proof=None, graph=None))]
 pub fn add_storage_statement(
     py: Python,
     data: String,
     stored_on: String,
     operated_by: Option<String>,
     skip_proof: Option<bool>,
-    graph_id: Option<Uuid>,
+    graph: Option<Graph>,
 ) -> PyResult<Vec<String>> {
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);
 
     with_ctx!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph_id);
+        let graph_id = ctx.resolve_graph_id(graph);
         let registered_by = ctx.clone().get_active_signer_did_key()?;
 
         let statement = Statement::StorageRegistration(

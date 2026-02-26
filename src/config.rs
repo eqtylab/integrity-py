@@ -384,13 +384,13 @@ impl Config {
     /// Resolves the Optional graph id, or the default graph id
     ///
     /// # Arguments
-    /// * `Option<graph_id>` - Optional graph id. MUST BE A VALID UUID
+    /// * `Option<Graph>` - Optional graph object
     ///
     /// # Returns
     /// * `Result<Uuid>` - The opional graph id converted to a UUID, or the default graph id
-    pub fn resolve_graph_id(&self, graph_id: Option<Uuid>) -> Uuid {
-        match graph_id {
-            Some(id) => id,
+    pub fn resolve_graph_id(&self, graph: Option<Graph>) -> Uuid {
+        match graph {
+            Some(g) => g.id,
             None => {
                 log::trace!(
                     "GraphID was not provided. Using default graph {:}",

@@ -6,24 +6,25 @@ use integrity::{
 };
 use pyo3::{pyfunction, PyResult, Python};
 use serde_json::Value;
-use uuid::Uuid;
 
-use crate::{config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx};
+use crate::{
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph,
+};
 
 #[pyfunction]
-#[pyo3(signature = (subject, metadata, *, skip_proof=None, graph_id=None))]
+#[pyo3(signature = (subject, metadata, *, skip_proof=None, graph=None))]
 pub fn add_metadata_statement(
     py: Python,
     subject: String,
     metadata: String,
     skip_proof: Option<bool>,
-    graph_id: Option<Uuid>,
+    graph: Option<Graph>,
 ) -> PyResult<Vec<String>> {
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);
 
     with_ctx!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph_id);
+        let graph_id = ctx.resolve_graph_id(graph);
         let metadata_json: Value =
             serde_json::from_str(&metadata).context("Invalid metadata JSON")?;
 
@@ -49,10 +50,7 @@ pub fn add_metadata_statement(
         let id = statement.get_id();
         let mut statement_ids = vec![id.clone()];
 
-        log::debug!(
-            "Saving metadata json to blob store. {}",
-            serde_json::to_string_pretty(&metadata_json).unwrap_or_default()
-        );
+        log::debug!("Saving metadata json to blob store. {metadata_json}");
         ctx.blob_store
             .put(metadata_json.to_string().into(), multicodec::JSON_JCS, None)
             .await?;

@@ -157,12 +157,18 @@ fn build_did(
 
         statement_ids.append(&mut vcomp_statement_ids);
     } else {
-        let mut did_ids = statements::did::add_did_statement(py, did.clone(), None, Some(ctx.id))?;
+        let mut did_ids =
+            statements::did::add_did_statement(py, did.clone(), None, Some(ctx.clone()))?;
         statement_ids.append(&mut did_ids);
     }
 
-    let mut metadata_ids =
-        statements::metadata::add_metadata_statement(py, did, metadata_json, None, Some(ctx.id))?;
+    let mut metadata_ids = statements::metadata::add_metadata_statement(
+        py,
+        did,
+        metadata_json,
+        None,
+        Some(ctx.clone()),
+    )?;
     statement_ids.append(&mut metadata_ids);
 
     Ok(DID { ctx, statement_ids })

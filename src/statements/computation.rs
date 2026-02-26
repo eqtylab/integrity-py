@@ -4,12 +4,13 @@ use integrity::{
     signer::SignerType,
 };
 use pyo3::{pyfunction, PyResult, Python};
-use uuid::Uuid;
 
-use crate::{config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx};
+use crate::{
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph,
+};
 
 #[pyfunction]
-#[pyo3(signature = (inputs, outputs, computation=None, *, operated_by=None, executed_on=None, skip_proof=None, graph_id=None))]
+#[pyo3(signature = (inputs, outputs, computation=None, *, operated_by=None, executed_on=None, skip_proof=None, graph=None))]
 pub fn add_computation_statement(
     py: Python,
     inputs: Vec<String>,
@@ -18,13 +19,13 @@ pub fn add_computation_statement(
     operated_by: Option<String>,
     executed_on: Option<String>,
     skip_proof: Option<bool>,
-    graph_id: Option<Uuid>,
+    graph: Option<Graph>,
 ) -> PyResult<Vec<String>> {
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);
 
     with_ctx!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph_id);
+        let graph_id = ctx.resolve_graph_id(graph);
         let signer = ctx
             .clone()
             .active_signer

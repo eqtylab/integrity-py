@@ -8,7 +8,9 @@ use pyo3::{prelude::*, types::PyList};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::{config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx};
+use crate::{
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph,
+};
 
 /// Represents an unhashed entity with a UUID identifier.
 ///
@@ -63,13 +65,13 @@ impl Entity {
 /// # Returns
 /// Tuple of (Entity, list of statement IDs)
 #[pyfunction]
-#[pyo3(signature = (metadata_json, skip_proof=None, timestamp=None, graph_id=None))]
+#[pyo3(signature = (metadata_json, skip_proof=None, timestamp=None, graph=None))]
 pub fn create_entity(
     py: Python,
     metadata_json: String,
     skip_proof: Option<bool>,
     timestamp: Option<String>,
-    graph_id: Option<Uuid>,
+    graph: Option<Graph>,
 ) -> PyResult<(Entity, Py<PyList>)> {
     let entity = Entity::generate();
     let statement_ids = create_entity_statements(
@@ -78,7 +80,7 @@ pub fn create_entity(
         metadata_json,
         skip_proof,
         timestamp,
-        graph_id,
+        graph,
     )?;
     Ok((entity, statement_ids))
 }
@@ -90,19 +92,19 @@ pub fn create_entity(
 /// * `metadata_json` - JSON string containing metadata to associate with the entity
 /// * `skip_proof` - If true, skip creating a VC statement
 /// * `timestamp` - Optional timestamp for statements
-/// * `graph_id` - Optional graph ID to register statements to
+/// * `graph` - Optional graph ID to register statements to
 ///
 /// # Returns
 /// Tuple of (Entity, list of statement IDs)
 #[pyfunction]
-#[pyo3(signature = (uuid, metadata_json, skip_proof=None, timestamp=None, graph_id=None))]
+#[pyo3(signature = (uuid, metadata_json, skip_proof=None, timestamp=None, graph=None))]
 pub fn create_entity_from_uuid(
     py: Python,
     uuid: String,
     metadata_json: String,
     skip_proof: Option<bool>,
     timestamp: Option<String>,
-    graph_id: Option<Uuid>,
+    graph: Option<Graph>,
 ) -> PyResult<(Entity, Py<PyList>)> {
     let entity = Entity::from_uuid(uuid);
     let statement_ids = create_entity_statements(
@@ -111,7 +113,7 @@ pub fn create_entity_from_uuid(
         metadata_json,
         skip_proof,
         timestamp,
-        graph_id,
+        graph,
     )?;
     Ok((entity, statement_ids))
 }
@@ -123,14 +125,14 @@ fn create_entity_statements(
     metadata_json: String,
     skip_proof: Option<bool>,
     timestamp: Option<String>,
-    graph_id: Option<Uuid>,
+    graph: Option<Graph>,
 ) -> PyResult<Py<PyList>> {
     let mut statement_ids: Vec<String> = Vec::new();
     let timestamp = resolve_timestamp(timestamp);
     let skip_proof = resolve_skip_proof(skip_proof);
 
     with_ctx!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph_id);
+        let graph_id = ctx.resolve_graph_id(graph);
         let registered_by = ctx.clone().get_active_signer_did_key()?;
 
         let entity_statement = Statement::EntityRegistration(

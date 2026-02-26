@@ -225,13 +225,20 @@ class Asset:
 
     def add_declaration(self, declaration: Declaration) -> "Asset":
         document_cid = declaration.cid()
-        add_governance_statement(self.cid, document_cid, skip_proof=self._skip_proof)
+        add_governance_statement(
+            self.cid, document_cid, skip_proof=self._skip_proof, graph=self._ctx
+        )
         return self
 
     def _create_eqty_statements(self) -> None:
         """Creates DataStatement, MetadataStatement, and VcStatement."""
-        add_data_statement([self.cid], skip_proof=self._skip_proof)
-        add_metadata_statement(self.cid, self._metadata.to_json_str(), skip_proof=self._skip_proof)
+        add_data_statement([self.cid], skip_proof=self._skip_proof, graph=self._ctx)
+        add_metadata_statement(
+            self.cid,
+            self._metadata.to_json_str(),
+            skip_proof=self._skip_proof,
+            graph=self._ctx,
+        )
 
         # if config.get_generate_model_signing_signatures() and self._is_dir:
         #     _, _, include_symlinks = config.get_cid_ignore_rules()

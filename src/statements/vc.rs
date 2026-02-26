@@ -5,18 +5,18 @@ use integrity::{
 };
 use pyo3::{pyfunction, PyResult, Python};
 
-use crate::with_ctx;
+use crate::{with_ctx, Graph};
 
 #[pyfunction]
-#[pyo3(signature = (subject, *, timestamp=None, graph_id=None))]
+#[pyo3(signature = (subject, *, timestamp=None, graph=None))]
 pub fn add_vc_statement(
     py: Python,
     subject: String,
     timestamp: Option<String>,
-    graph_id: Option<uuid::Uuid>,
+    graph: Option<Graph>,
 ) -> PyResult<String> {
     with_ctx!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph_id);
+        let graph_id = ctx.resolve_graph_id(graph);
         let signer = ctx
             .active_signer
             .ok_or_else(|| anyhow!("No active signer available"))?;

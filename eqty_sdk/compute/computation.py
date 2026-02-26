@@ -187,6 +187,7 @@ class Computation:
             outputs=self._output_cids,
             computation=self._computation_cid,
             skip_proof=self._skip_proof,
+            graph=self._ctx,
         )
 
         self._metadata.create_statement(statement_ids[0], self._skip_proof)
