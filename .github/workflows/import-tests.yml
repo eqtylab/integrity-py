@@ -20,14 +20,20 @@ jobs:
           - ubuntu-latest # x86_64
           - eqty-thor # aarch64
         image: 
-          - debian:trixie
-          - debian:bookworm
           - debian:bullseye
+          - debian:bookworm
+          - debian:trixie
           - ubuntu:latest
           - ubuntu:24.04
           - ubuntu:22.04
-          - ubuntu:20.04
           - alpine:latest
+          - alpine:3.23
+          - alpine:3.22
+          - python:3.13
+          - python:3.12
+          - python:3.11
+          - python:3.10
+          - python:3.9
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout Repo
