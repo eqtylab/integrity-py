@@ -15,8 +15,6 @@ pub(crate) mod model_signing;
 pub mod storage;
 mod vc;
 
-use uuid::Uuid;
-
 /// `statements` submodule to create lineage statements
 #[pymodule]
 pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -31,7 +29,6 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     m.add_function(wrap_pyfunction!(storage::add_storage_statement, m)?)?;
     m.add_function(wrap_pyfunction!(register_statement, m)?)?;
-    m.add_function(wrap_pyfunction!(register_statement_to_graph, m)?)?;
 
     m.add_function(wrap_pyfunction!(
         model_signing::create_model_signing_statement,
@@ -51,25 +48,6 @@ pub fn register_statement(py: Python, statement_json: String) -> PyResult<()> {
         let graph_id = ctx.default_graph.id;
         ctx.sql_lite
             .register_statement(&statement, &graph_id)
-            .await?;
-        Ok::<_, anyhow::Error>(())
-    })?;
-    Ok(())
-}
-
-/// Associate an existing statement with a graph.
-#[pyfunction]
-#[pyo3(signature = (statement_id, graph_id))]
-pub fn register_statement_to_graph(
-    py: Python,
-    statement_id: String,
-    graph_id: String,
-) -> PyResult<()> {
-    with_ctx!(py, |ctx| {
-        let graph_uuid =
-            Uuid::parse_str(&graph_id).map_err(|e| anyhow::anyhow!("Invalid graph UUID: {}", e))?;
-        ctx.sql_lite
-            .associate_statement_to_graph(&statement_id, &graph_uuid)
             .await?;
         Ok::<_, anyhow::Error>(())
     })?;
