@@ -1,0 +1,126 @@
+name: Import Tests
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  push:
+    paths:
+      - ".github/workflows/import-tests.yml"
+      - "integration-tests/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  import-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-latest # x86_64
+          - eqty-thor # aarch64
+        image:
+          - debian:bullseye
+          - debian:bookworm
+          - debian:trixie
+          - ubuntu:latest
+          - ubuntu:24.04
+          - ubuntu:22.04
+          - alpine:latest
+          - alpine:3.23
+          - alpine:3.22
+          - python:3.13
+          - python:3.12
+          - python:3.11
+          - python:3.10
+          - python:3.9
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout Repo
+        uses: eqtylab-actions/checkout@v4
+
+      - name: Run Import Test
+        id: run_import_test
+        continue-on-error: true
+        env:
+          IMAGE: ${{ matrix.image }}
+          EQTY_PYPI_USER: ${{ secrets.EQTY_PYPI_USER }}
+          EQTY_PYPI_PASSWORD: ${{ secrets.EQTY_PYPI_PASSWORD }}
+        run: integration-tests/install_and_run.sh latest _basic_import.py
+
+      - name: Build summary row
+        if: always()
+        run: |
+          runner="${{ matrix.runner }}"
+          case "$runner" in
+            ubuntu-latest)
+              arch="x86_64"
+              ;;
+            eqty-thor)
+              arch="aarch64"
+              ;;
+            *)
+              arch="unknown"
+              ;;
+          esac
+
+          image="${{ matrix.image }}"
+          glibc_version="$(
+            docker run --rm "$image" sh -c "getconf GNU_LIBC_VERSION 2>/dev/null | cut -d' ' -f2" 2>/dev/null || true
+          )"
+          if [ -z "$glibc_version" ]; then
+            glibc_version="unknown"
+          fi
+
+          if [ "${{ steps.run_import_test.outcome }}" = "success" ]; then
+            result="✅"
+          elif [ "${{ steps.run_import_test.outcome }}" = "failure" ]; then
+            result="❌"
+          else
+            result="${{ steps.run_import_test.outcome }}"
+          fi
+
+          mkdir -p summary-rows
+          row_file="summary-rows/row-${{ strategy.job-index }}.md"
+          echo "| \`${{ matrix.runner }}\` | ${arch} | \`${{ matrix.image }}\` | ${glibc_version} | ${result} |" > "$row_file"
+
+      - name: Upload summary row
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-test-result-${{ strategy.job-index }}
+          path: summary-rows/row-${{ strategy.job-index }}.md
+          retention-days: 1
+
+      - name: Mark job as failed when import test fails
+        if: always() && steps.run_import_test.outcome != 'success'
+        run: exit 1
+
+  import-tests-summary:
+    if: always()
+    needs: import-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download matrix summary rows
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: import-test-result-*
+          path: summary-rows
+          merge-multiple: true
+
+      - name: Publish matrix summary table
+        run: |
+          {
+            echo "## Import Test Results"
+            echo
+            echo "| Runner | Arch | Image | glibc | Result |"
+            echo "|---|---|---|---|---|"
+            if ls summary-rows/*.md >/dev/null 2>&1; then
+              cat summary-rows/*.md | sort
+            else
+              echo "| _none_ | _none_ | _none_ | _none_ | no result artifacts found |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
