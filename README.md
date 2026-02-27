@@ -108,6 +108,7 @@ Available recipes:
     fmt             # Auto-format code (Rust + Python)
     fmt-check       # Check code formatting without changes (Rust + Python)
     generate-stubs  # Generate type stubs from Rust code
+    init            # Set up git hooks for prek
     install         # Install all Python dependencies via poetry
     install-package # Install the local build of the wheel into the venv
     lint            # Run linters and auto-fix issues (Rust clippy + Python ruff)
