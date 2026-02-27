@@ -54,6 +54,9 @@ jobs:
       - name: lint-check
         run: nix develop . -c just lint-check
 
+      - name: install
+        run: nix develop . -c just install
+
       - name: type-check
         run: nix develop . -c just type-check
 
