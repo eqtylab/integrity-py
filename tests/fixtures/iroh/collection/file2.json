@@ -1,0 +1,10 @@
+{
+    "provider": {
+        "peer": "12D3KooWKBvLMNQb4hGQVkZH2pfKY98ss2LzdMXGQwi2jmMNMD2y",
+        "car": [
+            "urn:cid:bafybeibvnjp6riribjyyhaenvwgo35uc7slktd2bvsi6mhrowcm5slaien"
+        ],
+        "type": "ipfs"
+    },
+    "data": "urn:cid:bafkr4ihryr64xwgzkzw2w65anmmkoqcikzpfmlatp7p3uaeq4xctlaieyl"
+}
