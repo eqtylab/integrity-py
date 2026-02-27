@@ -13,8 +13,9 @@ INDEX_URL="http://$EQTY_PYPI_USER:$EQTY_PYPI_PASSWORD@eqty-pypi.westus2.cloudapp
 if [ "$EQTY_SDK_VERSION" = "latest" ]; then
     pip install \
         --index-url "$INDEX_URL" \
-        --trusted-host eqty-pypi.westus2.cloudapp.azure.com eqty_sdk \
-        --break-system-packages
+        --trusted-host eqty-pypi.westus2.cloudapp.azure.com \
+        --break-system-packages \
+        eqty_sdk
 else
     pip install \
         --index-url "$INDEX_URL" \
