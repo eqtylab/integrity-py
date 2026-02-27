@@ -1,8 +1,10 @@
 from os import PathLike
 from typing import Any, Optional, Union
 
-from eqty_sdk._rust import Graph as Context
-from eqty_sdk.types import CID
+from eqty_sdk._rust import (
+    CID,
+    Graph as Context,
+)
 
 from .asset import Asset, AssetType
 

@@ -2,7 +2,7 @@ import os
 import unittest
 from pathlib import Path
 
-from eqty_sdk import Compute, compute, purge_statement_store
+from eqty_sdk import Compute, compute
 from tests import get_statement_count_by_type, setup_sdk
 
 
@@ -38,8 +38,11 @@ class ComputeIssueVC(unittest.TestCase):
         setup_sdk()
 
     def setUp(self):
-        purge_statement_store()
-        pass
+        self._baseline_vc_count = get_statement_count_by_type("CredentialRegistration") or 0
+
+    def _vc_delta(self) -> int:
+        current = get_statement_count_by_type("CredentialRegistration") or 0
+        return current - self._baseline_vc_count
 
     def test_compute_default(self):
         """Check that by default a proof is created."""
@@ -49,8 +52,7 @@ class ComputeIssueVC(unittest.TestCase):
         self.assertFalse(compute._skip_proof, "Compute default skip_proof failed")
 
         decorator_default(5)
-        vc_count = get_statement_count_by_type("CredentialRegistration")
-        self.assertEqual(vc_count, 16, "Number of VCs is incorrect")
+        self.assertEqual(self._vc_delta(), 16, "Number of new VCs is incorrect")
 
     def test_compute_env_var_enable(self):
         """Check that the env var doesn't default on a bad setting."""
@@ -60,8 +62,7 @@ class ComputeIssueVC(unittest.TestCase):
         self.assertFalse(compute._skip_proof, "Compute env var enable skip_proof failed")
 
         decorator_default(5)
-        vc_count = get_statement_count_by_type("CredentialRegistration")
-        self.assertEqual(vc_count, 16, "Number of VCs is incorrect")
+        self.assertEqual(self._vc_delta(), 16, "Number of new VCs is incorrect")
 
     def test_compute_override(self):
         """Check that passing setting skip_proof param doesn't create vcs."""
@@ -70,8 +71,7 @@ class ComputeIssueVC(unittest.TestCase):
         self.assertTrue(compute._skip_proof, "Compute override skip_proof failed")
 
         decorator_no_vc(5)
-        vc_count = get_statement_count_by_type("CredentialRegistration")
-        self.assertEqual(vc_count, 0, "There should not be any VCs")
+        self.assertEqual(self._vc_delta(), 0, "There should not be any new VCs")
 
     def test_compute_env_var(self):
         """Check the case sensitivity of the env var."""
@@ -81,8 +81,7 @@ class ComputeIssueVC(unittest.TestCase):
         self.assertTrue(compute._skip_proof, "Compute env var disable skip_proof failed")
 
         decorator_default(5)
-        vc_count = get_statement_count_by_type("CredentialRegistration")
-        self.assertEqual(vc_count, 0, "There should not be any VCs")
+        self.assertEqual(self._vc_delta(), 0, "There should not be any new VCs")
 
     def test_compute_env_var_with_forced_vc(self):
         """Check that the parameter overrides the env var."""
@@ -90,8 +89,7 @@ class ComputeIssueVC(unittest.TestCase):
 
         decorator_default(5)
         decorator_forced_vc(5)
-        vc_count = get_statement_count_by_type("CredentialRegistration")
-        self.assertEqual(vc_count, 8, "The explicit VCs were not created")
+        self.assertEqual(self._vc_delta(), 8, "The explicit VCs were not created")
 
 
 if __name__ == "__main__":

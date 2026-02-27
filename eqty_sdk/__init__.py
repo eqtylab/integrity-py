@@ -1,12 +1,19 @@
 from eqty_sdk import config
 from eqty_sdk._rust import (
+    CID,
+    DID,
+    SIGNER_ALGORITHMS,
+    Declaration,
+    Entity,
     Graph as Context,
     Service,
+    Signer,
     get_cid_for_bytes,
     get_cid_for_path,
     init,
     purge_blob_store,
     purge_statement_store,
+    signer,
 )
 from eqty_sdk.asset import (
     Asset,
@@ -36,15 +43,8 @@ from eqty_sdk.errors import (
     UnsupportedError,
     UsageError,
 )
-from eqty_sdk.types import (
-    CID,
-    DID,
-    SIGNER_ALGORITHMS,
-    Declaration,
-    Entity,
-    Signer,
-    set_active_signer,
-)
+
+set_active_signer = signer.set_active_signer
 
 __all__ = [
     # Core

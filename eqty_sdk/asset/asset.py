@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any, Optional, Union, cast
 
 from eqty_sdk._rust import (
+    CID,
+    Declaration,
     Graph as Context,
     get_cid_for_bytes,
     get_cid_for_path,
@@ -17,7 +19,6 @@ from eqty_sdk.statements import (
     add_governance_statement,
     add_metadata_statement,
 )
-from eqty_sdk.types import CID, Declaration
 
 logger = logging.getLogger("eqty.sdk.Asset")
 

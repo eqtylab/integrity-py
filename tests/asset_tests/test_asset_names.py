@@ -15,7 +15,7 @@ from eqty_sdk.asset import (
     Model,
     Token,
 )
-from eqty_sdk.types import CID
+from eqty_sdk import CID
 from tests import setup_sdk
 
 

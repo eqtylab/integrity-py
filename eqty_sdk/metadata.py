@@ -2,9 +2,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
-from .statements import (
-    add_metadata_statement,
-)
+from .statements import add_metadata_statement
 
 
 class MetadataJSONEncoder(json.JSONEncoder):
