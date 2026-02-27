@@ -45,6 +45,7 @@ pub type BasicAuth = (String, Option<String>);
 impl Service {
     #[staticmethod]
     #[pyo3(signature = (url, api_key=None))]
+    /// Creates a service client using the provided URL and API key.
     pub fn new(url: String, api_key: Option<String>) -> Self {
         let token = if let Some(key) = api_key {
             key
@@ -63,6 +64,7 @@ impl Service {
 }
 
 impl Service {
+    /// Registers statements with the Integrity Service for the given graph.
     pub async fn register_statements(
         &self,
         graph_id: Uuid,
@@ -92,6 +94,7 @@ impl Service {
         Ok(())
     }
 
+    /// Registers a list of graphs with the Integrity Service.
     pub async fn register_graphs(&self, graphs: Vec<Graph>) -> Result<()> {
         log::info!("Registering graph tree");
         for graph in graphs {
@@ -101,6 +104,7 @@ impl Service {
         Ok(())
     }
 
+    /// Registers blobs (by CID) with the Integrity Service.
     pub async fn register_blobs(&self, blob_map: HashMap<String, String>) -> Result<()> {
         for (cid, blob) in blob_map {
             let multicodec = get_multicodec(&cid)?;

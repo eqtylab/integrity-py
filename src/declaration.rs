@@ -11,21 +11,29 @@ use serde_json::{Map, Value};
 
 use crate::config::ctx_blocking;
 
+/// A governance declaration describing a subject and related metadata.
 #[pyclass]
 #[derive(Clone)]
 pub struct Declaration {
+    /// Human-readable declaration subject line.
     #[pyo3(get, set)]
     pub subject_line: String,
+    /// Declaration statement text.
     #[pyo3(get, set)]
     pub statement: String,
+    /// ISO-8601 timestamp when the declaration was submitted.
     #[pyo3(get, set)]
     pub submitted_at: Option<String>,
+    /// DID key of the signer who submitted the declaration.
     #[pyo3(get, set)]
     pub submitted_by: Option<String>,
+    /// CIDs that are under the declarant's control.
     #[pyo3(get, set)]
     pub control_cid: Vec<String>,
+    /// CIDs attached to this declaration.
     #[pyo3(get, set)]
     pub attachment_cid: Vec<String>,
+    /// Additional key/value metadata for the declaration.
     #[pyo3(get, set)]
     pub extra: HashMap<String, String>,
 }

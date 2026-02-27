@@ -52,10 +52,17 @@ class Config:
     def get_default_context(self) -> Graph: ...
 
 class DID:
+    """A DID statement result bound to a context."""
     @property
-    def ctx(self) -> Any: ...
+    def ctx(self) -> Any:
+        """Graph/context where the DID statement was registered."""
+        ...
+
     @property
-    def statement_ids(self) -> List[str]: ...
+    def statement_ids(self) -> List[str]:
+        """IDs of statements created for this DID."""
+        ...
+
     def __init__(
         self, ctx: Graph, did: str, signer: Optional[Signer] = None, **kwargs: Any
     ) -> None: ...
@@ -67,20 +74,42 @@ class DID:
     def with_context(ctx: Graph) -> DidFactory: ...
 
 class Declaration:
+    """A governance declaration describing a subject and related metadata."""
     @property
-    def subject_line(self) -> str: ...
+    def subject_line(self) -> str:
+        """Human-readable declaration subject line."""
+        ...
+
     @property
-    def statement(self) -> str: ...
+    def statement(self) -> str:
+        """Declaration statement text."""
+        ...
+
     @property
-    def submitted_at(self) -> Optional[str]: ...
+    def submitted_at(self) -> Optional[str]:
+        """ISO-8601 timestamp when the declaration was submitted."""
+        ...
+
     @property
-    def submitted_by(self) -> Optional[str]: ...
+    def submitted_by(self) -> Optional[str]:
+        """DID key of the signer who submitted the declaration."""
+        ...
+
     @property
-    def control_cid(self) -> List[str]: ...
+    def control_cid(self) -> List[str]:
+        """CIDs that are under the declarant's control."""
+        ...
+
     @property
-    def attachment_cid(self) -> List[str]: ...
+    def attachment_cid(self) -> List[str]:
+        """CIDs attached to this declaration."""
+        ...
+
     @property
-    def extra(self) -> Any: ...
+    def extra(self) -> Any:
+        """Additional key/value metadata for the declaration."""
+        ...
+
     def __init__(self, subject_line: str, statement: str) -> None: ...
     @staticmethod
     def new(subject_line: str, statement: str) -> Declaration: ...
@@ -93,6 +122,7 @@ class Declaration:
     def to_json(self) -> str: ...
 
 class DidFactory:
+    """Builder for DID statements in a specific context."""
     def build_from_signer(self, signer: Signer, **kwargs: Any) -> DID: ...
     def build_from_did_string(self, did: str, **kwargs: Any) -> DID: ...
 
@@ -134,20 +164,35 @@ class Graph:
         """Optional parent graph ID for hierarchical organization"""
         ...
 
-    @staticmethod
-    def new(name: str) -> Graph: ...
-    @staticmethod
-    def from_parent(parent: Graph) -> GraphFactory: ...
-    @staticmethod
-    def from_uuid(project_id: uuid.UUID) -> GraphFactory: ...
-    def register(self, service: Service) -> None: ...
+    def new(self, name: str) -> Graph:
+        """Creates a new graph with the given name.  If the global config is initialized, the grap"""
+        ...
+
+    def from_parent(self, parent: Graph) -> GraphFactory:
+        """Returns a factory that creates graphs"""
+        ...
+
+    def from_uuid(self, project_id: uuid.UUID) -> GraphFactory:
+        """Returns a factory that creates graphs with the provide"""
+        ...
+
+    def register(self, service: Service) -> None:
+        """Registers this graph, its ancestors, statements,"""
+        ...
+
     def delete_tree(self) -> None: ...
     def delete(self) -> None: ...
-    def export(self, path: PathLike[str]) -> None: ...
+    def export(self, path: PathLike[str]) -> None:
+        """Exports this graph's statements and blobs"""
+        ...
+
     def __str__(self) -> str: ...
 
 class GraphFactory:
-    def new(self, name: str) -> Graph: ...
+    """Factory for creating graphs with an optional parent."""
+    def new(self, name: str) -> Graph:
+        """Creates a new graph us"""
+        ...
 
 class Manifest:
     @property
@@ -159,6 +204,8 @@ class Manifest:
     def merge(a: str, b: str) -> str: ...
 
 class SIGNER_ALGORITHMS:
+    """Supported signer algorithm identifiers."""
+
     ED25519: str
     SECP256K1: str
     SECP256R1: str
@@ -170,8 +217,9 @@ class Service:
         """Base URL path for the API (e.g., `https://api.example.com`)."""
         ...
 
-    @staticmethod
-    def new(url: str, api_key: Optional[str] = None) -> Service: ...
+    def new(self, url: str, api_key: Optional[str] = None) -> Service:
+        """Creates a service client using th"""
+        ...
 
 class Signer:
     """Python-exposed signer information.  Contains the name and DID key of a cryptographic signer."""
@@ -340,15 +388,13 @@ class statements:
         operated_by: Optional[str] = None,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
-    @staticmethod
-    def register_statement(statement_json: str) -> None:
-        """Register a statement from JSON string to the default graph."""
+    ) -> List[str]:
+        """Adds a storage statement linking data to a storage location."""
         ...
 
     @staticmethod
-    def register_statement_to_graph(statement_id: str, graph_id: str) -> None:
-        """Associate an existing statement with a graph."""
+    def register_statement(statement_json: str) -> None:
+        """Register a statement from JSON string to the default graph."""
         ...
 
     @staticmethod

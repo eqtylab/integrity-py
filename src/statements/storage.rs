@@ -5,6 +5,7 @@ use crate::{
     config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph,
 };
 
+/// Adds a storage statement linking data to a storage location.
 #[pyfunction]
 #[pyo3(signature = (data, stored_on, *, operated_by=None, skip_proof=None, graph=None))]
 pub fn add_storage_statement(

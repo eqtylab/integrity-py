@@ -4,17 +4,22 @@ use serde::{Deserialize, Serialize};
 use super::Service;
 use crate::indexer::Graph;
 
+/// Request body for registering a graph with the Integrity Service.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GraphRegistrationRequest {
     #[serde(rename = "graph_id")]
+    /// Graph UUID as a string.
     pub graph_id: String,
     #[serde(rename = "name")]
+    /// Human-readable graph name.
     pub name: String,
     #[serde(rename = "parent_id", default, skip_serializing_if = "Option::is_none")]
+    /// Optional parent graph UUID.
     pub parent_id: Option<Option<String>>,
 }
 
 impl GraphRegistrationRequest {
+    /// Creates a new graph registration request.
     pub fn new(graph_id: String, name: String) -> GraphRegistrationRequest {
         GraphRegistrationRequest {
             graph_id,
@@ -24,6 +29,7 @@ impl GraphRegistrationRequest {
     }
 }
 
+/// Creates or updates a graph record via the Integrity Service API.
 pub async fn create_graph_record(service: &Service, graph: Graph) -> Result<()> {
     let mut body = GraphRegistrationRequest::new(graph.id.to_string(), graph.name);
     if graph.parent.is_some() {

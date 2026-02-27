@@ -543,6 +543,7 @@ impl Sqlite {
         Ok(statements.into_values().collect())
     }
 
+    /// Returns the graph ancestry ordered from root to the provided graph.
     pub async fn get_graph_ancestors(&self, graph_id: &Uuid) -> Result<Vec<Graph>> {
         log::info!("Getting ancestors of graph {graph_id}");
 

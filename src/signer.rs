@@ -45,6 +45,7 @@ pub struct Signer {
     pub did_key: String,
 }
 
+/// Supported signer algorithm identifiers.
 #[pyclass(name = "SIGNER_ALGORITHMS")]
 pub struct SignerAlgorithms;
 

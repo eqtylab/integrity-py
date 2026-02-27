@@ -18,6 +18,7 @@ pub struct CreateStatementRequestBody {
     /// The statement payload as JSON.
     #[serde(deserialize_with = "Option::deserialize")]
     pub statement: Option<Value>,
+    /// Graph identifier for statement association.
     pub graph_id: Uuid,
 }
 

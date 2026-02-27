@@ -111,6 +111,9 @@ pub async fn ctx_async() -> Config {
         .clone()
 }
 
+/// Runs a future while marking `with_ctx` as active for this task.
+///
+/// This prevents calling blocking context helpers within a `with_ctx` scope.
 pub async fn with_ctx_guard<F, T>(f: F) -> T
 where
     F: Future<Output = T>,
@@ -118,6 +121,10 @@ where
     IN_WITH_CTX.scope(true, f).await
 }
 
+/// Gets a clone of the global application config (blocking version).
+///
+/// # Returns
+/// * `Result<Config>` - Clone of the initialized global config or an error if unset
 pub fn ctx_blocking() -> Result<Config> {
     if IN_WITH_CTX
         .try_with(|in_with_ctx| *in_with_ctx)
@@ -196,8 +203,9 @@ pub struct Config {
     pub generate_model_signing_signatures: bool,
     /// Whether to store all blobs when computing CIDs
     pub store_all_blobs: bool,
-
+    /// Default graph used when no graph/context is supplied.
     pub default_graph: Graph,
+    /// Blob store used for persisted binary data.
     pub blob_store: LocalFs,
 }
 

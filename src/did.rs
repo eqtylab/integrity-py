@@ -13,14 +13,18 @@ use crate::{
     statements, with_ctx,
 };
 
+/// A DID statement result bound to a context.
 #[pyclass]
 pub struct DID {
+    /// Graph/context where the DID statement was registered.
     #[pyo3(get)]
     pub ctx: Graph,
+    /// IDs of statements created for this DID.
     #[pyo3(get)]
     pub statement_ids: Vec<String>,
 }
 
+/// Builder for DID statements in a specific context.
 #[pyclass]
 pub struct DidFactory {
     ctx: Graph,

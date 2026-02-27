@@ -45,6 +45,9 @@ pub struct Graph {
 impl Graph {
     #[staticmethod]
     #[allow(clippy::new_ret_no_self)]
+    /// Creates a new graph with the given name.
+    ///
+    /// If the global config is initialized, the graph is persisted to sqlite.
     pub fn new(py: Python<'_>, name: String) -> Self {
         let graph = Graph {
             id: Uuid::new_v4(),
@@ -56,6 +59,7 @@ impl Graph {
     }
 
     #[staticmethod]
+    /// Returns a factory that creates graphs with the provided parent.
     pub fn from_parent(parent: Graph) -> GraphFactory {
         GraphFactory {
             parent: Some(parent.id),
@@ -63,6 +67,7 @@ impl Graph {
     }
 
     #[staticmethod]
+    /// Returns a factory that creates graphs with the provided project UUID as parent.
     pub fn from_uuid(project_id: Uuid) -> GraphFactory {
         GraphFactory {
             parent: Some(project_id),
@@ -70,6 +75,7 @@ impl Graph {
     }
 
     #[pyo3(signature = (service))]
+    /// Registers this graph, its ancestors, statements, and blobs with a service.
     pub fn register(&self, py: Python, service: Service) -> PyResult<()> {
         log::info!("Registering graph {}", self.id);
         with_ctx!(py, |ctx| {
@@ -114,6 +120,7 @@ impl Graph {
     }
 
     #[pyo3(signature = (path))]
+    /// Exports this graph's statements and blobs to a manifest JSON file.
     pub fn export(&self, py: Python, path: PathBuf) -> PyResult<()> {
         log::info!("Exporting {}", self.id);
         with_ctx!(py, |ctx| {
@@ -155,6 +162,7 @@ impl Graph {
     }
 }
 
+/// Factory for creating graphs with an optional parent.
 #[pyclass]
 pub struct GraphFactory {
     parent: Option<Uuid>,
@@ -164,6 +172,7 @@ pub struct GraphFactory {
 impl GraphFactory {
     #[allow(clippy::new_ret_no_self)]
     #[pyo3(signature = (name))]
+    /// Creates a new graph using the factory's parent if set.
     pub fn new(&self, py: Python<'_>, name: String) -> Graph {
         let graph = Graph {
             id: Uuid::new_v4(),

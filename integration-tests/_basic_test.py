@@ -44,8 +44,8 @@ def test_basic_functionality():
             Dataset,
             Signer,
             get_cid_for_bytes,
-            set_active_signer,
             init,
+            set_active_signer,
         )
 
         # Test init function (should not crash)
