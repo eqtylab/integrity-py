@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 EQTY_SDK_VERSION="${1:-latest}"
