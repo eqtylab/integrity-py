@@ -5,7 +5,7 @@ from pathlib import Path
 
 import toml
 
-from eqty_sdk import config
+from eqty_sdk import init
 from tests import get_config_dir, setup_sdk
 
 config_path = Path(get_config_dir(), "config.toml")
@@ -25,11 +25,11 @@ class TestConfig(unittest.TestCase):
         # Check that the directory exists
 
     def test_02_hashing_config(self):
-        cfg = config.init(get_config_dir())
+        cfg = init(get_config_dir())
         self.assertIsNotNone(cfg.set_hashing_config(multithread=True, memory_map=True))
 
     def test_03_store_all_blobs(self):
-        cfg = config.init(get_config_dir())
+        cfg = init(get_config_dir())
         cfg.set_store_all_blobs(True)
 
         with open(config_path, "r") as f:
@@ -49,7 +49,7 @@ class TestConfig(unittest.TestCase):
         )
 
     def test_04_cid_ignore(self):
-        cfg = config.init(get_config_dir())
+        cfg = init(get_config_dir())
         cfg.set_cid_ignore_rules(True, False, False)
 
         with open(config_path, "r") as f:
@@ -70,7 +70,7 @@ class TestConfig(unittest.TestCase):
         )
 
     def test_05_cid_ignore_symlink_behavior(self):
-        cfg = config.init(get_config_dir())
+        cfg = init(get_config_dir())
         cfg.set_cid_ignore_rules(include_symlinks=True)
 
         test_dir = Path("./tests/fixtures/iroh/collection").resolve()
@@ -91,7 +91,7 @@ class TestConfig(unittest.TestCase):
                 symlink_dst.unlink()
 
     def test_06_generate_model_signing_signatures(self):
-        cfg = config.init(get_config_dir())
+        cfg = init(get_config_dir())
         cfg.set_generate_model_signing_signatures(True)
 
         with open(config_path, "r") as f:

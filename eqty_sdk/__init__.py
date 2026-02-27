@@ -1,8 +1,11 @@
-from eqty_sdk import config
+from pathlib import Path
+from typing import Optional, cast
+
 from eqty_sdk._rust import (
     CID,
     DID,
     SIGNER_ALGORITHMS,
+    Config as _Config,
     Declaration,
     Entity,
     Graph as Context,
@@ -10,7 +13,7 @@ from eqty_sdk._rust import (
     Signer,
     get_cid_for_bytes,
     get_cid_for_path,
-    init,
+    init as _init,
     purge_blob_store,
     purge_statement_store,
     signer,
@@ -46,6 +49,13 @@ from eqty_sdk.errors import (
 
 set_active_signer = signer.set_active_signer
 
+
+def init(app_dir: Optional[Path] = None) -> _Config:
+    """Initialize the SDK and return the config instance."""
+    cfg = _init(app_dir)
+    return cast(_Config, cfg)
+
+
 __all__ = [
     # Core
     "init",
@@ -72,8 +82,6 @@ __all__ = [
     "compute",
     "Compute",
     "Computation",
-    # Config
-    "config",
     # Context
     "Context",
     "Service",

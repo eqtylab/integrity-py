@@ -3,7 +3,7 @@ import os
 import sqlite3
 from pathlib import Path
 
-from eqty_sdk import SIGNER_ALGORITHMS, Signer, config, set_active_signer
+from eqty_sdk import SIGNER_ALGORITHMS, Signer, init, set_active_signer
 from eqty_sdk._rust import Config
 
 test_dir = Path("tmp")
@@ -16,7 +16,7 @@ def setup_sdk() -> Config:
     _configure_debug_logging()
     global CONFIG
     if not CONFIG:
-        CONFIG = config.init(test_dir)
+        CONFIG = init(test_dir)
         signer = Signer.from_private_key(
             algorithm=SIGNER_ALGORITHMS.ED25519,
             private_key="eHb22WNFvUXihogn8fubQjW7hHEqwY3fEKt745V4xXg=",
