@@ -297,7 +297,7 @@ pub(crate) fn rows_to_statements(rows: Vec<SqliteRow>) -> Result<HashMap<String,
 fn maybe_create_graph_in_db(py: Python<'_>, graph: &Graph) {
     if let Ok(ctx) = crate::config::ctx_blocking() {
         let _ = py.detach(|| {
-            pyo3_async_runtimes::tokio::get_runtime().block_on(ctx.sql_lite.create_graph(&graph))
+            pyo3_async_runtimes::tokio::get_runtime().block_on(ctx.sql_lite.create_graph(graph))
         });
     }
 }

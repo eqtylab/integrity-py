@@ -2,7 +2,7 @@ import os
 import unittest
 
 from eqty_sdk import SIGNER_ALGORITHMS, Signer, set_active_signer
-from tests import setup_sdk, get_config_dir
+from tests import setup_sdk
 
 
 class SignerTests(unittest.TestCase):

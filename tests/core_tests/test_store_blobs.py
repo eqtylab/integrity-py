@@ -1,5 +1,5 @@
-import unittest
 import os
+import unittest
 from pathlib import Path
 
 from eqty_sdk import get_cid_for_bytes, purge_blob_store

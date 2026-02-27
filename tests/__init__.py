@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 import sqlite3
 from pathlib import Path
 

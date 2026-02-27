@@ -8,10 +8,10 @@ from .statements import (
 
 
 class MetadataJSONEncoder(json.JSONEncoder):
-    def default(self, obj: Any) -> Any:
-        if isinstance(obj, Metadata):
-            return obj.to_dict()
-        return super().default(obj)
+    def default(self, o: Any) -> Any:
+        if isinstance(o, Metadata):
+            return o.to_dict()
+        return super().default(o)
 
 
 @dataclass
