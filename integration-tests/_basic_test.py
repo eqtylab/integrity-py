@@ -15,7 +15,7 @@ def test_imports():
 
         print("✓ eqty_sdk imported successfully")
 
-        from eqty_sdk import config, get_cid_for_bytes, get_cid_for_path  # noqa: F401
+        from eqty_sdk import get_cid_for_bytes, get_cid_for_path  # noqa: F401
 
         print("✓ Core functions imported successfully")
 
@@ -43,10 +43,14 @@ def test_basic_functionality():
             SIGNER_ALGORITHMS,
             Dataset,
             Signer,
-            config,
             get_cid_for_bytes,
             set_active_signer,
+            init,
         )
+
+        # Test init function (should not crash)
+        init()
+        print("✓ init() function works")
 
         # Test CID generation for bytes
         test_data = b"Hello, eqty-sdk integration test!"
@@ -56,14 +60,6 @@ def test_basic_functionality():
         # Verify CID is a non-empty string
         if not isinstance(cid, str) or not cid:
             raise ValueError("CID should be a non-empty string")
-
-        # Test init function (should not crash)
-        config.init()
-        print("✓ config.init() function works")
-
-        # Test config functions
-        store_all = config.get_store_all_blobs()
-        print(f"✓ config.get_store_all_blobs() works: {store_all}")
 
         # Set up a test signer for Dataset operations (required for creating assets)
         try:
@@ -75,7 +71,7 @@ def test_basic_functionality():
             print("✓ Signer setup works")
 
             # Test Dataset creation with basic data (now that signer is set)
-            dataset = Dataset.from_object({"test": "data"}, name="Test Dataset", store=False)  # noqa: F841
+            Dataset.from_object({"test": "data"}, name="Test Dataset", store=False)  # noqa: F841
             print("✓ Dataset.from_object() works")
 
         except Exception as signer_error:
