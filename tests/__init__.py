@@ -5,24 +5,27 @@ import sqlite3
 from pathlib import Path
 
 from eqty_sdk import SIGNER_ALGORITHMS, Signer, config, set_active_signer
+from eqty_sdk._rust import Config
 
 test_dir = Path("tmp")
-CONFIG_INITIALIZED = False
+CONFIG = None
 logger = logging.getLogger("unit_tests_root")
 
 
-def setup_sdk() -> None:
+def setup_sdk() -> Config:
     """Initializes the SDK and sets a known signer."""
     _configure_debug_logging()
-    global CONFIG_INITIALIZED
-    if not CONFIG_INITIALIZED:
-        config.init(test_dir)
+    global CONFIG
+    if not CONFIG:
+        CONFIG = config.init(test_dir)
         signer = Signer.from_private_key(
             algorithm=SIGNER_ALGORITHMS.ED25519,
             private_key="eHb22WNFvUXihogn8fubQjW7hHEqwY3fEKt745V4xXg=",
         )
         set_active_signer(signer)
-        CONFIG_INITIALIZED = True
+        return CONFIG
+    else:
+        return CONFIG
 
 
 def get_config_dir() -> Path:
@@ -47,31 +50,6 @@ def get_statement_count_by_type(statement_type: str) -> int | None:
             raise ValueError(f"Unsupported statement type for count: {statement_type}")
         result = cursor.fetchone()
         return int(result[0]) if result else 0
-
-
-def reset_statement_db() -> None:
-    """Deletes all records from the 'statements' table in sqlite."""
-    db_file = Path(test_dir).joinpath("graphs.db")
-
-    try:
-        with sqlite3.connect(db_file) as conn:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM credential_statements")
-            cursor.execute("DELETE FROM sigstore_statements")
-            cursor.execute("DELETE FROM dsse_statements")
-            conn.commit()
-    except Exception as e:
-        print("unable to delete credential tables", e)
-
-
-def clean_blobs() -> None:
-    """Deletes the blobs directory."""
-    blob_dir = test_dir.joinpath("blobs")
-    if not os.path.exists(blob_dir):
-        return
-
-    logger.info("Deleting blobs dir %s", blob_dir)
-    shutil.rmtree(blob_dir)
 
 
 def _configure_debug_logging():

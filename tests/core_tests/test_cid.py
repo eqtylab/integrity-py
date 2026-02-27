@@ -1,10 +1,8 @@
-import os
 import unittest
+import os
 from pathlib import Path
 
-from eqty_sdk import config
 from eqty_sdk._rust import (
-    cid as core_cid,
     get_cid_for_bytes,
     get_cid_for_path,
 )
@@ -14,7 +12,7 @@ from tests import get_config_dir, setup_sdk
 class TestCoreCid(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        setup_sdk()
+        cls.cfg = setup_sdk()
 
     def test_bytes_cid_calc(self):
         test_bytes = b"hello world"
@@ -25,32 +23,27 @@ class TestCoreCid(unittest.TestCase):
 
     def test_dir_cid(self):
         test_dir = Path("./tests/fixtures/iroh/collection").resolve()
-        result = core_cid.compute_cid_for_directory(test_dir)
+        cid = get_cid_for_path(test_dir, store=True)
 
-        self.assertEqual(
-            result.collection.cid, "bagaachraq547k4actjefuc4u2t5ait2c2ozfgs2euayoujog4lzn7khy2b6a"
+        self.assertEqual(cid, "bagaachraq547k4actjefuc4u2t5ait2c2ozfgs2euayoujog4lzn7khy2b6a")
+        blob_dir = get_config_dir().joinpath("blobs")
+        iroh_collection = blob_dir.joinpath(
+            "bagaachraq547k4actjefuc4u2t5ait2c2ozfgs2euayoujog4lzn7khy2b6a"
         )
-        self.assertEqual(
-            result.meta.cid, "bafkr4ibjcxelwo3leme7bbacs54mjfixjffxb6zmezpbvw63yx5ujpe7ku"
-        )
+        self.assertTrue(os.path.exists(iroh_collection), "iroh_collection not saved")
 
-        config.set_cid_ignore_rules(include_symlinks=True)
+        self.cfg.set_cid_ignore_rules(include_symlinks=True)
 
         symlink_src = Path("./tests/fixtures/assets/datasets/file/file_text.txt").resolve()
         symlink_dst = Path("./tests/fixtures/iroh/collection/linked_file.txt").resolve()
         os.symlink(symlink_src, symlink_dst)
 
-        result = core_cid.compute_cid_for_directory(test_dir)
-        self.assertEqual(
-            result.collection.cid, "bagaachrarggs2jlg2y6fpoe63u7m46lu7whz57ifauwsnyuzj33o6phffkcq"
-        )
-        self.assertEqual(
-            result.meta.cid, "bafkr4iempezmwgos7b7oaeszugmiaw4fdefeos44kw2qoy3ph5p335axk4"
-        )
+        cid = get_cid_for_path(test_dir)
+        self.assertEqual(cid, "bagaachrarggs2jlg2y6fpoe63u7m46lu7whz57ifauwsnyuzj33o6phffkcq")
         os.unlink(symlink_dst)
 
     def test_iroh_collections(self):
-        test_dir = Path("../fixtures/cid-compute/iroh-collection/collection1").resolve()
+        test_dir = Path("./tests/fixtures/iroh/collection").resolve()
         cid = get_cid_for_path(test_dir, store=True)
         self.assertEqual(
             "bagaachraq547k4actjefuc4u2t5ait2c2ozfgs2euayoujog4lzn7khy2b6a",

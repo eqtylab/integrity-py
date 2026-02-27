@@ -1,24 +1,15 @@
 import sqlite3
-import tempfile
 import unittest
 import uuid
 
 from eqty_sdk import Context
-from tests.rust import core_init, enable_logging
+from tests import get_config_dir, setup_sdk
 
 
 class GraphFactoryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.logger = enable_logging(True)
-        cls.temp_dir = tempfile.mkdtemp(prefix=f"{cls.__name__}_")
-        core_init(cls.temp_dir)
-
-    @classmethod
-    def tearDownClass(cls):
-        import shutil
-
-        shutil.rmtree(cls.temp_dir)
+        cls.cfg = setup_sdk()
 
     def test_context_new(self):
         ctx = Context.new("root")
@@ -54,7 +45,7 @@ class GraphFactoryTests(unittest.TestCase):
         self.assertEqual(child_row["parent_id"], str(project_id))
 
     def _get_graph_row(self, graph_id):
-        db_path = f"{self.temp_dir}/graphs.db"
+        db_path = f"{get_config_dir()}/graphs.db"
         with sqlite3.connect(db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()

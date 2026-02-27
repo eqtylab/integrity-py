@@ -69,7 +69,28 @@ class TestConfig(unittest.TestCase):
             "Failed to save cid_ignore to settings file",
         )
 
-    def test_05_generate_model_signing_signatures(self):
+    def test_05_cid_ignore_symlink_behavior(self):
+        cfg = config.init(get_config_dir())
+        cfg.set_cid_ignore_rules(include_symlinks=True)
+
+        test_dir = Path("./tests/fixtures/iroh/collection").resolve()
+        symlink_src = Path("./tests/fixtures/assets/datasets/file/file_text.txt").resolve()
+        symlink_dst = Path("./tests/fixtures/iroh/collection/linked_file.txt").resolve()
+        if os.path.lexists(symlink_dst):
+            symlink_dst.unlink()
+
+        try:
+            os.symlink(symlink_src, symlink_dst)
+
+            from eqty_sdk import get_cid_for_path
+
+            cid = get_cid_for_path(test_dir, store=True)
+            self.assertEqual(cid, "bagaachrarggs2jlg2y6fpoe63u7m46lu7whz57ifauwsnyuzj33o6phffkcq")
+        finally:
+            if os.path.lexists(symlink_dst):
+                symlink_dst.unlink()
+
+    def test_06_generate_model_signing_signatures(self):
         cfg = config.init(get_config_dir())
         cfg.set_generate_model_signing_signatures(True)
 

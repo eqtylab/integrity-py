@@ -2,8 +2,8 @@ import os
 import unittest
 from pathlib import Path
 
-from eqty_sdk import Compute, compute
-from tests import get_statement_count_by_type, reset_statement_db, setup_sdk
+from eqty_sdk import Compute, compute, purge_statement_store
+from tests import get_statement_count_by_type, setup_sdk
 
 
 def dummy_func(count: int) -> str:
@@ -38,7 +38,7 @@ class ComputeIssueVC(unittest.TestCase):
         setup_sdk()
 
     def setUp(self):
-        reset_statement_db()
+        purge_statement_store()
         pass
 
     def test_compute_default(self):

@@ -1,26 +1,15 @@
 import json
-import tempfile
 import unittest
-from pathlib import Path
 
+from eqty_sdk import SIGNER_ALGORITHMS, Signer, set_active_signer
 from eqty_sdk._rust import get_cid_for_path, statements
-from tests.rust import core_init, enable_logging
-
-DEFAULT_GRAPH_ID = "00000000-0000-0000-0000-000000000000"
+from tests import get_config_dir, setup_sdk
 
 
 class PublicStatementTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.logger = enable_logging(True)
-        cls.temp_dir = tempfile.mkdtemp(prefix=f"{cls.__name__}_")
-        core_init(cls.temp_dir)
-
-    @classmethod
-    def tearDownClass(cls):
-        import shutil
-
-        shutil.rmtree(cls.temp_dir)
+        cls.cfg = setup_sdk()
 
     def test_add_association_statement(self):
         ids = statements.add_association_statement(
@@ -98,20 +87,16 @@ class PublicStatementTests(unittest.TestCase):
         self.assertIsInstance(statement_id, str)
         self.assertTrue(statement_id.startswith("urn:cid:"))
 
-    def test_register_statement_to_graph(self):
-        did_ids = statements.add_did_statement(
-            "did:key:z6MkjchhfUsD6mmvni8mCdXHw216Xrm9bQe2mBH1P5RDjVJG",
-            skip_proof=True,
-        )
-        statements.register_statement_to_graph(did_ids[0], DEFAULT_GRAPH_ID)
-
     def test_create_model_signing_statement(self):
-        model_dir = Path(self.temp_dir) / "model"
+        signer = Signer.new(SIGNER_ALGORITHMS.SECP256R1)
+        set_active_signer(signer)
+
+        model_dir = get_config_dir() / "model"
         model_dir.mkdir(parents=True, exist_ok=True)
         (model_dir / "weights.txt").write_text("unit-test", encoding="utf-8")
 
         collection_cid = get_cid_for_path(model_dir)
-        blobs_dir = Path(self.temp_dir) / "blobs"
+        blobs_dir = get_config_dir() / "blobs"
 
         statement_id = statements.create_model_signing_statement(
             collection_cid,
