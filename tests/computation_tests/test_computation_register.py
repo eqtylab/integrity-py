@@ -2,7 +2,7 @@ import os
 import unittest
 from pathlib import Path
 
-from eqty_sdk import Computation
+from eqty_sdk import Computation, CID
 from tests import setup_sdk
 
 
@@ -17,9 +17,9 @@ class TestComputationRegister(unittest.TestCase):
     def test_register(self):
         computation = (
             Computation.new(name="register", description="custom description")
-            .add_input_cid("urn:cid:input1")
-            .add_output_cid("urn:cid:output1")
-            .set_computation_cid("urn:cid:computation")
+            .add_input_cid(CID("urn:cid:input1"))
+            .add_output_cid(CID("urn:cid:output1"))
+            .set_computation_cid(CID("urn:cid:computation"))
         )
 
         computation.finalize()

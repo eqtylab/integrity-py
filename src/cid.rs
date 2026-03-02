@@ -1,3 +1,5 @@
+use std::fmt;
+
 use pyo3::prelude::*;
 
 /// A simple wrapper around a content identifier (CID) string.
@@ -46,11 +48,19 @@ impl CID {
         }
         Ok(chars[idx as usize].to_string())
     }
+
+    fn startswith(&self, prefix: &str) -> bool {
+        self.cid.starts_with(prefix)
+    }
+
+    fn __eq__(&self, other: &Self) -> bool {
+        self.cid == other.cid
+    }
 }
 
-impl ToString for CID {
-    fn to_string(&self) -> String {
-        self.cid.clone()
+impl fmt::Display for CID {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.cid)
     }
 }
 

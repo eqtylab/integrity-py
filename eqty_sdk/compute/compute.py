@@ -190,7 +190,7 @@ class Compute:
         result = self.__create_asset__(output_type, result)
         return result
 
-    async def __call_async_gen__(self, input_cids, *args: Any, **kwargs: Any) -> Any:
+    async def __call_async_gen__(self, input_cids: List[CID], *args: Any, **kwargs: Any) -> Any:
         stream = self._func(*args, **kwargs)
 
         stream_uuid = await eqty_core_stream.create(input_cids, None, None, None)

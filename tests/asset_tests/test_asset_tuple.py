@@ -1,7 +1,7 @@
 import asyncio
 import unittest
 
-from eqty_sdk import Custom, Model
+from eqty_sdk import CID, Custom, Model
 from tests import setup_sdk
 
 
@@ -12,8 +12,7 @@ class AssetTupleObject(unittest.TestCase):
 
         cls.test_object = [("tuple", "item1"), ("tuple", "item2"), ("tuple", "item3")]
         # This is computed based on the tuple value above via eqty-cli.
-        # correct_cid = "bafkr4ib3huzmbt7tyi66t2cbni63nmjpciim7a2nywsjekp7d7ahe2ctbq"
-        cls.correct_cid = "bafkr4ifl2kggudypuaw65wzuwo64lvdiljjfsw72ka6gelprl3ilpml56e"
+        cls.correct_cid = CID("urn:cid:bafkr4ifl2kggudypuaw65wzuwo64lvdiljjfsw72ka6gelprl3ilpml56e")
 
         cls.asset = Custom.from_object(cls.test_object, "custom", name="Test tuple")
 

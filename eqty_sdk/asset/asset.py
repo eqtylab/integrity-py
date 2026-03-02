@@ -75,10 +75,11 @@ def serialize_for_hashing(obj: Any) -> bytes:
 
 
 def get_asset_name(asset_type: Union[AssetType, str], cid: CID) -> str:
+    cid_suffix = str(cid)[-4:]
     if isinstance(asset_type, AssetType):
-        return f"{asset_type.value}-{cid[-4:]}"
+        return f"{asset_type.value}-{cid_suffix}"
     else:
-        return f"{asset_type}-{cid[-4:]}"
+        return f"{asset_type}-{cid_suffix}"
 
 
 def _should_skip_proof(**kwargs):

@@ -37,6 +37,8 @@ class CID:
     def __repr__(self) -> str: ...
     def __len__(self) -> int: ...
     def __getitem__(self, index: Any) -> str: ...
+    def startswith(self, prefix: str) -> bool: ...
+    def __eq__(self, other: Any) -> bool: ...
 
 class Config:
     """Global application config containing configuration and state.  The config stores application-wide settings including storage directories, hashing preferences, and file filtering rules."""
@@ -415,7 +417,7 @@ class statements:
 class stream:
     @staticmethod
     def create(
-        input_cids: List[str],
+        input_cids: List[eqty_sdk._rust.CID],
         operated_by: Optional[str] = None,
         executed_on: Optional[str] = None,
         timestamp: Optional[str] = None,
