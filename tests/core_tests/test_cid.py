@@ -17,17 +17,17 @@ class TestCoreCid(unittest.TestCase):
 
     def test_bytes_cid_calc(self):
         test_bytes = b"hello world"
-        correct_cid = "urn:cid:bafkr4igxjga67jykbseaxdmmdgc5a5o3zp3htom2l6mrjznk7fvyggu6eq"
+        correct_cid = CID("urn:cid:bafkr4igxjga67jykbseaxdmmdgc5a5o3zp3htom2l6mrjznk7fvyggu6eq")
 
         cid = get_cid_for_bytes(test_bytes)
-        self.assertEqual(str(cid), correct_cid)
+        self.assertEqual(cid, correct_cid)
 
     def test_dir_cid(self):
         test_dir = Path("./tests/fixtures/iroh/collection").resolve()
         cid = get_cid_for_path(test_dir, store=True)
 
         self.assertEqual(
-            str(cid), "urn:cid:bagaachraq547k4actjefuc4u2t5ait2c2ozfgs2euayoujog4lzn7khy2b6a"
+            cid, CID("urn:cid:bagaachraq547k4actjefuc4u2t5ait2c2ozfgs2euayoujog4lzn7khy2b6a")
         )
         blob_dir = get_config_dir().joinpath("blobs")
         iroh_collection = blob_dir.joinpath(
@@ -42,7 +42,7 @@ class TestCoreCid(unittest.TestCase):
         os.symlink(symlink_src, symlink_dst)
 
         cid = get_cid_for_path(test_dir)
-        self.assertEqual(str(cid), "bagaachrarggs2jlg2y6fpoe63u7m46lu7whz57ifauwsnyuzj33o6phffkcq")
+        self.assertEqual(cid, CID("bagaachrarggs2jlg2y6fpoe63u7m46lu7whz57ifauwsnyuzj33o6phffkcq"))
         os.unlink(symlink_dst)
 
     def test_iroh_collections(self):
