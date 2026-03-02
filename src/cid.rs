@@ -15,6 +15,7 @@ pub struct CID {
 #[pymethods]
 impl CID {
     #[new]
+    /// Creates a new CID, ensuring it is prefixed with `urn:cid:`.
     pub fn new(cid: String) -> Self {
         let cid = if cid.starts_with("urn:cid:") {
             cid
