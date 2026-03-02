@@ -2,7 +2,7 @@ import os
 import unittest
 from pathlib import Path
 
-from eqty_sdk import Computation, CID
+from eqty_sdk import CID, Computation
 from tests import setup_sdk
 
 

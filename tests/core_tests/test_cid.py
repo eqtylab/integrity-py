@@ -3,9 +3,9 @@ import unittest
 from pathlib import Path
 
 from eqty_sdk._rust import (
+    CID,
     get_cid_for_bytes,
     get_cid_for_path,
-    CID,
 )
 from tests import get_config_dir, setup_sdk
 

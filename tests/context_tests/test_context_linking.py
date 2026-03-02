@@ -1,7 +1,7 @@
 import sqlite3
 import unittest
 
-from eqty_sdk import Computation, Context, Dataset, CID
+from eqty_sdk import CID, Computation, Context, Dataset
 from tests import get_config_dir, setup_sdk
 
 
