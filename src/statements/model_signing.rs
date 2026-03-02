@@ -9,7 +9,7 @@ use integrity::{
 use pyo3::{pyfunction, PyResult, Python};
 use serde_json::Value;
 
-use crate::{with_ctx, Graph};
+use crate::{with_ctx, Graph, CID};
 
 #[pyfunction]
 #[pyo3(signature = (collection_cid, blobs_dir, model_signing_name, allow_symlinks, ignore_paths, *, timestamp=None, graph=None))]
@@ -22,7 +22,7 @@ pub fn create_model_signing_statement(
     ignore_paths: Vec<String>,
     timestamp: Option<String>,
     graph: Option<Graph>,
-) -> PyResult<String> {
+) -> PyResult<CID> {
     with_ctx!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph);
 
@@ -71,6 +71,6 @@ pub fn create_model_signing_statement(
             .register_statement(&sigstore_bundle_statement, &graph_id)
             .await?;
 
-        Ok(sigstore_bundle_statement.get_id())
+        Ok(sigstore_bundle_statement.get_id().into())
     })
 }

@@ -2,7 +2,7 @@ use integrity::lineage::models::statements::{EntityStatement, Statement, Stateme
 use pyo3::{pyfunction, PyResult, Python};
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph,
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph, CID,
 };
 
 #[pyfunction]
@@ -12,7 +12,7 @@ pub fn add_entity_statement(
     entity: String,
     skip_proof: Option<bool>,
     graph: Option<Graph>,
-) -> PyResult<Vec<String>> {
+) -> PyResult<Vec<CID>> {
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);
 
@@ -29,8 +29,8 @@ pub fn add_entity_statement(
             .register_statement(&statement, &graph_id)
             .await?;
 
-        let id = statement.get_id();
-        let mut statement_ids = vec![id.clone()];
+        let id: CID = statement.get_id().into();
+        let mut statement_ids: Vec<CID> = vec![id.clone()];
 
         if !skip_proof {
             let vc_id = create_vc_for_statement(&ctx, &id, graph_id, timestamp).await?;

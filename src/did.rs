@@ -10,7 +10,7 @@ use crate::{
     config::ctx_blocking,
     indexer::Graph,
     signer::{Signer, SIGNER_DIR},
-    statements, with_ctx,
+    statements, with_ctx, CID,
 };
 
 /// A DID statement result bound to a context.
@@ -21,7 +21,7 @@ pub struct DID {
     pub ctx: Graph,
     /// IDs of statements created for this DID.
     #[pyo3(get)]
-    pub statement_ids: Vec<String>,
+    pub statement_ids: Vec<CID>,
 }
 
 /// Builder for DID statements in a specific context.
@@ -114,7 +114,7 @@ fn build_did(
         "{}".to_string()
     };
 
-    let mut statement_ids: Vec<String> = Vec::new();
+    let mut statement_ids: Vec<CID> = Vec::new();
 
     let is_vcomp_signer = if let Some(signer) = signer.as_ref() {
         let signer_name = signer.bind(py).borrow().name.clone();
@@ -143,7 +143,7 @@ fn build_did(
                     for value in statements.values() {
                         let statement: Statement =
                             serde_json::from_value(value.clone()).context("Invalid statement")?;
-                        let id = statement.get_id();
+                        let id = CID::new(statement.get_id());
                         cfg.sql_lite.register_statement(&statement, &ctx.id).await?;
                         ids.push(id);
                     }

@@ -12,11 +12,11 @@ def init(
     """Initializes the sdk config. Must be called before setting individual config values"""
     ...
 
-def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> str:
+def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> CID:
     """Calculates and returns the CID for the provided bytes."""
     ...
 
-def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> str:
+def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> CID:
     """Resolves the provided path and reads the file or directory to calculate the CID. The path is saved to the blob store if the store flag is set"""
     ...
 
@@ -35,6 +35,8 @@ class CID:
     def __init__(self, cid: str) -> None: ...
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
+    def __len__(self) -> int: ...
+    def __getitem__(self, index: Any) -> str: ...
 
 class Config:
     """Global application config containing configuration and state.  The config stores application-wide settings including storage directories, hashing preferences, and file filtering rules."""
@@ -59,7 +61,7 @@ class DID:
         ...
 
     @property
-    def statement_ids(self) -> List[str]:
+    def statement_ids(self) -> List[CID]:
         """IDs of statements created for this DID."""
         ...
 
@@ -327,36 +329,36 @@ class statements:
         *,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_computation_statement(
-        inputs: List[str],
-        outputs: List[str],
-        computation: Optional[str] = None,
+        inputs: List[eqty_sdk._rust.CID],
+        outputs: List[eqty_sdk._rust.CID],
+        computation: Optional[eqty_sdk._rust.CID] = None,
         *,
         operated_by: Optional[str] = None,
         executed_on: Optional[str] = None,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_data_statement(
-        data: List[str],
+        data: List[eqty_sdk._rust.CID],
         *,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_did_statement(
         did: str, *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_entity_statement(
         entity: str,
         *,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_governance_statement(
         subject: str,
@@ -364,7 +366,7 @@ class statements:
         *,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_metadata_statement(
         subject: str,
@@ -372,14 +374,14 @@ class statements:
         *,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_vc_statement(
         subject: str,
         *,
         timestamp: Optional[str] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> str: ...
+    ) -> eqty_sdk._rust.CID: ...
     @staticmethod
     def add_storage_statement(
         data: str,
@@ -388,7 +390,7 @@ class statements:
         operated_by: Optional[str] = None,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]:
+    ) -> List[eqty_sdk._rust.CID]:
         """Adds a storage statement linking data to a storage location."""
         ...
 
@@ -407,7 +409,7 @@ class statements:
         *,
         timestamp: Optional[str] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> str: ...
+    ) -> eqty_sdk._rust.CID: ...
 
 # Stream module
 class stream:

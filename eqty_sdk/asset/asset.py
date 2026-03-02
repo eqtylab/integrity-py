@@ -74,7 +74,7 @@ def serialize_for_hashing(obj: Any) -> bytes:
         raise TypeError(f"Unsupported data type for hashing: {type(obj)}")
 
 
-def get_asset_name(asset_type: Union[AssetType, str], cid: str) -> str:
+def get_asset_name(asset_type: Union[AssetType, str], cid: CID) -> str:
     if isinstance(asset_type, AssetType):
         return f"{asset_type.value}-{cid[-4:]}"
     else:
@@ -102,9 +102,8 @@ class TypedAsset:
         return Asset._from_path(path, cls._asset_type, store=store, **kwargs)
 
     @classmethod
-    def from_cid(cls, cid: Union[CID, str], **kwargs) -> "Asset":
-        cid_str = cid.cid if isinstance(cid, CID) else cid
-        return Asset._from_cid(cid_str, cls._asset_type, **kwargs)
+    def from_cid(cls, cid: CID, **kwargs) -> "Asset":
+        return Asset._from_cid(cid, cls._asset_type, **kwargs)
 
     @classmethod
     def from_object(cls, obj: Any, store: Optional[bool] = None, **kwargs) -> "Asset":
@@ -120,7 +119,7 @@ class Asset:
         self,
         obj: Any,
         asset_type: Union[AssetType, str],
-        cid: str,
+        cid: CID,
         is_dir: bool,
         custom_ctx: Optional[Context],
         **kwargs,
@@ -134,7 +133,7 @@ class Asset:
 
         self._cid = cid
         self._is_dir = is_dir
-        self.statement_ids: list[str] = []
+        self.statement_ids: list[CID] = []
 
         if isinstance(asset_type, AssetType):
             kwargs.update({"assetType": asset_type.value})
@@ -184,7 +183,7 @@ class Asset:
 
     @staticmethod
     def _from_cid(
-        cid: str, asset_type: Union[AssetType, str], ctx: Optional[Context] = None, **kwargs
+        cid: CID, asset_type: Union[AssetType, str], ctx: Optional[Context] = None, **kwargs
     ) -> "Asset":
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
@@ -197,9 +196,8 @@ class Asset:
             def from_path(self, path: PathLike, store: Optional[bool] = None, **kwargs) -> "Asset":
                 return Asset._from_path(path, asset_type, ctx, store, **kwargs)
 
-            def from_cid(self, cid: Union[CID, str], **kwargs) -> "Asset":
-                cid_str = cid.cid if isinstance(cid, CID) else cid
-                return Asset._from_cid(cid_str, asset_type, ctx, **kwargs)
+            def from_cid(self, cid: CID, **kwargs) -> "Asset":
+                return Asset._from_cid(cid, asset_type, ctx, **kwargs)
 
             def from_object(self, obj: Any, store: Optional[bool] = None, **kwargs) -> "Asset":
                 return Asset._from_object(obj, asset_type, ctx, store, **kwargs)
@@ -212,7 +210,7 @@ class Asset:
         return cast(str, self._metadata.name)
 
     @property
-    def cid(self) -> str:
+    def cid(self) -> CID:
         """Get the CID of the asset."""
         return self._cid
 
@@ -229,7 +227,7 @@ class Asset:
     def add_declaration(self, declaration: Declaration) -> "Asset":
         document_cid = declaration.cid()
         ids = add_governance_statement(
-            self.cid, document_cid, skip_proof=self._skip_proof, graph=self._ctx
+            str(self.cid), document_cid, skip_proof=self._skip_proof, graph=self._ctx
         )
         self.statement_ids.extend(ids)
         return self
@@ -241,7 +239,7 @@ class Asset:
         )
         self.statement_ids.extend(
             add_metadata_statement(
-                self.cid,
+                str(self.cid),
                 self._metadata.to_json_str(),
                 skip_proof=self._skip_proof,
                 graph=self._ctx,
