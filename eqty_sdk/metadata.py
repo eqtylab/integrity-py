@@ -2,6 +2,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
+from eqty_sdk._rust import CID
+
 from .statements import add_metadata_statement
 
 
@@ -41,9 +43,9 @@ class Metadata:
     def to_json_str(self) -> str:
         return json.dumps(self, indent=4, cls=MetadataJSONEncoder)
 
-    def create_statement(self, subject_cid: str, skip_proof: bool) -> List[str]:
+    def create_statement(self, subject_cid: CID, skip_proof: bool) -> List[CID]:
         metadata_json = self.to_json_str()
-        return add_metadata_statement(subject_cid, metadata_json, skip_proof=skip_proof)
+        return add_metadata_statement(str(subject_cid), metadata_json, skip_proof=skip_proof)
 
     def __iter__(self):
         """Return an iterator that includes both the standard and additional metadata keys."""

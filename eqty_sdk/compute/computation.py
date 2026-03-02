@@ -17,7 +17,7 @@ from eqty_sdk.statements import add_computation_statement
 logger = logging.getLogger("eqty.sdk.computation")
 
 
-def __cid_path__(path: Union[str, Path], store: Optional[bool] = None) -> str:
+def __cid_path__(path: Union[str, Path], store: Optional[bool] = None) -> CID:
     """Resolves the path, and then calculates the CID."""
     path2 = Path(path) if isinstance(path, str) else path
     resolved_path = path2.resolve()
@@ -40,9 +40,9 @@ class Computation:
     ):
         self._ctx = ctx
         self._metadata = metadata
-        self._input_cids: List[str] = []
-        self._output_cids: List[str] = []
-        self._computation_cid: Union[str, None] = None
+        self._input_cids: List[CID] = []
+        self._output_cids: List[CID] = []
+        self._computation_cid: Union[CID, None] = None
 
         if skip_proof is not None:
             self._skip_proof = skip_proof
@@ -71,17 +71,13 @@ class Computation:
 
         return _Factory()
 
-    def add_input_cid(self, cid: Union[List[CID], List[str], CID, str]) -> "Computation":
+    def add_input_cid(self, cid: Union[List[CID], CID]) -> "Computation":
         """Adds the CID(s) to the computations input list."""
         if isinstance(cid, CID):
-            self._input_cids.append(cid.cid)
-        elif isinstance(cid, list) and all(isinstance(item, CID) for item in cid):
-            cids = [cast(CID, item).cid for item in cid]
-            self._input_cids.extend(cids)
-        elif isinstance(cid, str):
             self._input_cids.append(cid)
-        elif isinstance(cid, list) and all(isinstance(item, str) for item in cid):
-            self._input_cids.extend(cast(List[str], cid))
+        elif isinstance(cid, list) and all(isinstance(item, CID) for item in cid):
+            cids = [cast(CID, item) for item in cid]
+            self._input_cids.extend(cids)
         else:
             raise ValueError("Invalid type for cid")
 
@@ -116,17 +112,13 @@ class Computation:
 
         return self
 
-    def add_output_cid(self, cid: Union[List[CID], List[str], CID, str]) -> "Computation":
+    def add_output_cid(self, cid: Union[List[CID], CID]) -> "Computation":
         """Adds the CID(s) to the computations output list."""
         if isinstance(cid, CID):
-            self._output_cids.append(cid.cid)
-        elif isinstance(cid, list) and all(isinstance(item, CID) for item in cid):
-            cids = [cast(CID, item).cid for item in cid]
-            self._output_cids.extend(cids)
-        elif isinstance(cid, str):
             self._output_cids.append(cid)
-        elif isinstance(cid, list) and all(isinstance(item, str) for item in cid):
-            self._output_cids.extend(cast(List[str], cid))
+        elif isinstance(cid, list) and all(isinstance(item, CID) for item in cid):
+            cids = [cast(CID, item) for item in cid]
+            self._output_cids.extend(cids)
         else:
             raise ValueError("Invalid type for cid")
 
@@ -161,11 +153,9 @@ class Computation:
 
         return self
 
-    def set_computation_cid(self, cid: Union[CID, str]) -> "Computation":
+    def set_computation_cid(self, cid: CID) -> "Computation":
         """Sets the computation CID with the provided cid."""
         if isinstance(cid, CID):
-            self._computation_cid = cid.cid
-        elif isinstance(cid, str):
             self._computation_cid = cid
         return self
 

@@ -1,7 +1,7 @@
 import sqlite3
 import unittest
 
-from eqty_sdk import Computation, Context, Dataset
+from eqty_sdk import CID, Computation, Context, Dataset
 from tests import get_config_dir, setup_sdk
 
 
@@ -32,8 +32,10 @@ class TestContextLinking(unittest.TestCase):
     def test_computation_with_context_links_statements(self):
         ctx = Context.new("ctx_comp")
         Computation.with_context(ctx).new(name="Test Computation").add_input_cid(
-            "bafkreigh2akiscaildc3n6cnq3g5u5j4f6l5j5x4ux7z4x3t3j3t5v7szy"
-        ).add_output_cid("bafkreigh2akiscaildc3n6cnq3g5u5j4f6l5j5x4ux7z4x3t3j3t5v7szy").finalize()
+            CID("bafkreigh2akiscaildc3n6cnq3g5u5j4f6l5j5x4ux7z4x3t3j3t5v7szy")
+        ).add_output_cid(
+            CID("bafkreigh2akiscaildc3n6cnq3g5u5j4f6l5j5x4ux7z4x3t3j3t5v7szy")
+        ).finalize()
 
         db_path = f"{get_config_dir()}/graphs.db"
         link_count = _count_statement_links(db_path, str(ctx.id))

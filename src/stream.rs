@@ -13,7 +13,7 @@ use pyo3_async_runtimes::tokio::future_into_py;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{config::ctx_async, Graph};
+use crate::{config::ctx_async, Graph, CID};
 
 /// Result of finalizing a stream computation.
 ///
@@ -38,7 +38,7 @@ pub fn stream(m: &Bound<'_, PyModule>) -> PyResult<()> {
 #[pyfunction]
 fn create(
     py: Python<'_>,
-    input_cids: Vec<String>,
+    input_cids: Vec<CID>,
     operated_by: Option<String>,
     executed_on: Option<String>,
     timestamp: Option<String>,
@@ -121,13 +121,14 @@ struct StreamComputation {
 /// # Returns
 /// * `Result<Uuid>` - UUID identifier for the created stream computation
 async fn create_stream_computation(
-    static_input_cids: Vec<String>,
+    static_input_cids: Vec<CID>,
     operated_by: Option<String>,
     executed_on: Option<String>,
     timestamp: Option<String>,
 ) -> Result<Uuid> {
     let id = Uuid::new_v4();
 
+    let static_input_cids = static_input_cids.iter().map(|c| c.to_string()).collect();
     let stream_computation = StreamComputation {
         static_input_cids,
         streamed_output: None,

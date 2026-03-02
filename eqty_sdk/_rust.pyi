@@ -12,11 +12,11 @@ def init(
     """Initializes the sdk config. Must be called before setting individual config values"""
     ...
 
-def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> str:
+def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> CID:
     """Calculates and returns the CID for the provided bytes."""
     ...
 
-def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> str:
+def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> CID:
     """Resolves the provided path and reads the file or directory to calculate the CID. The path is saved to the blob store if the store flag is set"""
     ...
 
@@ -32,9 +32,17 @@ class CID:
     """A simple wrapper around a content identifier (CID) string.  Provides a typed wrapper for CID strings with property access and string conversion."""
     @property
     def cid(self) -> str: ...
-    def __init__(self, cid: str) -> None: ...
+    @staticmethod
+    def new(cid: str) -> CID:
+        """Creates a new CID, ensuring it is pr"""
+        ...
+
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
+    def __len__(self) -> int: ...
+    def __getitem__(self, index: Any) -> str: ...
+    def startswith(self, prefix: str) -> bool: ...
+    def __eq__(self, other: Any) -> bool: ...
 
 class Config:
     """Global application config containing configuration and state.  The config stores application-wide settings including storage directories, hashing preferences, and file filtering rules."""
@@ -59,7 +67,7 @@ class DID:
         ...
 
     @property
-    def statement_ids(self) -> List[str]:
+    def statement_ids(self) -> List[CID]:
         """IDs of statements created for this DID."""
         ...
 
@@ -164,15 +172,18 @@ class Graph:
         """Optional parent graph ID for hierarchical organization"""
         ...
 
-    def new(self, name: str) -> Graph:
+    @staticmethod
+    def new(name: str) -> Graph:
         """Creates a new graph with the given name.  If the global config is initialized, the grap"""
         ...
 
-    def from_parent(self, parent: Graph) -> GraphFactory:
+    @staticmethod
+    def from_parent(parent: Graph) -> GraphFactory:
         """Returns a factory that creates graphs"""
         ...
 
-    def from_uuid(self, project_id: uuid.UUID) -> GraphFactory:
+    @staticmethod
+    def from_uuid(project_id: uuid.UUID) -> GraphFactory:
         """Returns a factory that creates graphs with the provide"""
         ...
 
@@ -217,7 +228,8 @@ class Service:
         """Base URL path for the API (e.g., `https://api.example.com`)."""
         ...
 
-    def new(self, url: str, api_key: Optional[str] = None) -> Service:
+    @staticmethod
+    def new(url: str, api_key: Optional[str] = None) -> Service:
         """Creates a service client using th"""
         ...
 
@@ -327,36 +339,36 @@ class statements:
         *,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_computation_statement(
-        inputs: List[str],
-        outputs: List[str],
-        computation: Optional[str] = None,
+        inputs: List[eqty_sdk._rust.CID],
+        outputs: List[eqty_sdk._rust.CID],
+        computation: Optional[eqty_sdk._rust.CID] = None,
         *,
         operated_by: Optional[str] = None,
         executed_on: Optional[str] = None,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_data_statement(
-        data: List[str],
+        data: List[eqty_sdk._rust.CID],
         *,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_did_statement(
         did: str, *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_entity_statement(
         entity: str,
         *,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_governance_statement(
         subject: str,
@@ -364,7 +376,7 @@ class statements:
         *,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_metadata_statement(
         subject: str,
@@ -372,14 +384,14 @@ class statements:
         *,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]: ...
+    ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_vc_statement(
         subject: str,
         *,
         timestamp: Optional[str] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> str: ...
+    ) -> eqty_sdk._rust.CID: ...
     @staticmethod
     def add_storage_statement(
         data: str,
@@ -388,7 +400,7 @@ class statements:
         operated_by: Optional[str] = None,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[str]:
+    ) -> List[eqty_sdk._rust.CID]:
         """Adds a storage statement linking data to a storage location."""
         ...
 
@@ -407,13 +419,13 @@ class statements:
         *,
         timestamp: Optional[str] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> str: ...
+    ) -> eqty_sdk._rust.CID: ...
 
 # Stream module
 class stream:
     @staticmethod
     def create(
-        input_cids: List[str],
+        input_cids: List[eqty_sdk._rust.CID],
         operated_by: Optional[str] = None,
         executed_on: Optional[str] = None,
         timestamp: Optional[str] = None,

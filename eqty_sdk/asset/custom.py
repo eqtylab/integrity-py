@@ -24,13 +24,12 @@ class Custom(Asset):
 
     @staticmethod
     def from_cid(
-        cid: Union[CID, str],
+        cid: CID,
         asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM,
         **kwargs,
     ) -> "Asset":
         custom_type = _resolve_type(asset_type)
-        cid_str = cid.cid if isinstance(cid, CID) else cid
-        return Asset._from_cid(cid_str, custom_type, ctx=None, **kwargs)
+        return Asset._from_cid(cid, custom_type, ctx=None, **kwargs)
 
     @staticmethod
     def from_object(

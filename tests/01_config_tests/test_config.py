@@ -85,7 +85,9 @@ class TestConfig(unittest.TestCase):
             from eqty_sdk import get_cid_for_path
 
             cid = get_cid_for_path(test_dir, store=True)
-            self.assertEqual(cid, "bagaachrarggs2jlg2y6fpoe63u7m46lu7whz57ifauwsnyuzj33o6phffkcq")
+            self.assertEqual(
+                str(cid), "urn:cid:bagaachrarggs2jlg2y6fpoe63u7m46lu7whz57ifauwsnyuzj33o6phffkcq"
+            )
         finally:
             if os.path.lexists(symlink_dst):
                 symlink_dst.unlink()

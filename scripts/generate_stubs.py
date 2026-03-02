@@ -290,7 +290,10 @@ class RustStubParser:
                 return_type = return_type.strip() if return_type else "PyResult<()>"
 
                 is_new = "#[new]" in attrs
-                is_static = "#[staticmethod]" in attrs
+                has_self = re.search(r"\bself\b", func_match.group("params")) is not None
+                is_static_attr = "#[staticmethod]" in attrs
+                is_classmethod = "#[classmethod]" in attrs
+                is_static = is_static_attr or (not has_self and not is_new and not is_classmethod)
                 is_getter = "#[getter]" in attrs
 
                 py_name_override, signature = self._parse_pyo3_attrs(attrs)

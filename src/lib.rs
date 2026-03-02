@@ -19,6 +19,8 @@ use pyo3::exceptions::PyRuntimeError;
 use pyo3_async_runtimes::tokio::get_runtime;
 use tokio::fs;
 
+use crate::cid::CID;
+
 /// Resolves skip_proof from provided option or EQTY_SKIP_PROOF environment variable.
 ///
 /// Returns true if:
@@ -124,7 +126,7 @@ fn init(
 /// Calculates and returns the CID for the provided bytes.
 #[pyfunction]
 #[pyo3(signature = (data, store=None))]
-fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResult<String> {
+fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResult<CID> {
     with_ctx!(py, |ctx| {
         let cid = blake3_cid_raw_binary(data)?;
         let store_flag = store.unwrap_or(ctx.store_all_blobs);
@@ -135,7 +137,7 @@ fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResu
                 .await?;
         }
 
-        Ok(cid)
+        Ok(CID::new(cid))
     })
 }
 
@@ -143,7 +145,7 @@ fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResu
 /// The path is saved to the blob store if the store flag is set
 #[pyfunction]
 #[pyo3(signature = (path, store=None))]
-fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyResult<String> {
+fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyResult<CID> {
     with_ctx!(py, |ctx| {
         let store_flag = store.unwrap_or(ctx.store_all_blobs);
 
@@ -158,7 +160,7 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
                     .await?;
             }
 
-            Ok(cid)
+            Ok(CID::new(cid))
         } else if path.is_dir() {
             let dir_cid_result =
                 compute_dir_cid(path.clone(), ctx.hashing.clone(), ctx.cid_ignore.clone()).await?;
@@ -192,7 +194,7 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
                 }
             }
 
-            Ok(cid)
+            Ok(CID::new(cid))
         } else {
             Err(PyRuntimeError::new_err(format!(
                 "The provided path {path:?} was not found"

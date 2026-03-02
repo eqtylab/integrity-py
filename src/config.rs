@@ -19,7 +19,10 @@ use serde::{Deserialize, Serialize};
 use tokio::{sync::RwLock, task_local};
 use uuid::Uuid;
 
-use crate::indexer::{Graph, Sqlite};
+use crate::{
+    indexer::{Graph, Sqlite},
+    CID,
+};
 
 /// Serializable settings for TOML persistence
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -471,10 +474,10 @@ impl Config {
 /// Creates a VC statement for the given statement id and registers it to sqlite
 pub async fn create_vc_for_statement(
     config: &Config,
-    statement_id: &str,
+    statement_id: &CID,
     graph_id: Uuid,
     timestamp: Option<String>,
-) -> Result<String> {
+) -> Result<CID> {
     use integrity::{
         lineage::models::statements::{Statement, StatementTrait, VcStatement},
         vc,
@@ -486,7 +489,7 @@ pub async fn create_vc_for_statement(
         .ok_or_else(|| anyhow!("An active signer is not set"))?;
 
     let registered_by = signer.get_did_doc().id.clone();
-    let vc = vc::issue_vc(statement_id, signer).await?;
+    let vc = vc::issue_vc(&statement_id.to_string(), signer).await?;
     let vc_statement =
         Statement::CredentialRegistration(VcStatement::create(vc, registered_by, timestamp).await?);
     let vc_id = vc_statement.get_id();
@@ -496,5 +499,5 @@ pub async fn create_vc_for_statement(
         .register_statement(&vc_statement, &graph_id)
         .await?;
 
-    Ok(vc_id)
+    Ok(CID::new(vc_id))
 }

@@ -9,7 +9,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph,
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph, CID,
 };
 
 /// Represents an unhashed entity with a UUID identifier.
@@ -127,7 +127,7 @@ fn create_entity_statements(
     timestamp: Option<String>,
     graph: Option<Graph>,
 ) -> PyResult<Py<PyList>> {
-    let mut statement_ids: Vec<String> = Vec::new();
+    let mut statement_ids: Vec<CID> = Vec::new();
     let timestamp = resolve_timestamp(timestamp);
     let skip_proof = resolve_skip_proof(skip_proof);
 
@@ -143,7 +143,7 @@ fn create_entity_statements(
             )
             .await?,
         );
-        let entity_statement_id = entity_statement.get_id();
+        let entity_statement_id: CID = entity_statement.get_id().into();
         ctx.sql_lite
             .register_statement(&entity_statement, &graph_id)
             .await?;
@@ -165,7 +165,7 @@ fn create_entity_statements(
             .ok_or_else(|| anyhow!("No active signer available"))?;
 
         let metadata_statement = MetadataStatement::create_from_json(
-            entity_statement_id,
+            entity_statement_id.to_string(),
             metadata_value,
             signer.get_did_doc().id,
             timestamp,
@@ -177,7 +177,7 @@ fn create_entity_statements(
         ctx.sql_lite
             .register_statement(&metadata_stmt, &graph_id)
             .await?;
-        statement_ids.push(metadata_id);
+        statement_ids.push(metadata_id.into());
 
         Ok::<_, anyhow::Error>(())
     })?;

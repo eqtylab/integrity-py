@@ -5,7 +5,7 @@ use integrity::{
 };
 use pyo3::{pyfunction, PyResult, Python};
 
-use crate::{with_ctx, Graph};
+use crate::{with_ctx, Graph, CID};
 
 #[pyfunction]
 #[pyo3(signature = (subject, *, timestamp=None, graph=None))]
@@ -14,7 +14,7 @@ pub fn add_vc_statement(
     subject: String,
     timestamp: Option<String>,
     graph: Option<Graph>,
-) -> PyResult<String> {
+) -> PyResult<CID> {
     with_ctx!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph);
         let signer = ctx
@@ -32,7 +32,7 @@ pub fn add_vc_statement(
             .register_statement(&statement, &graph_id)
             .await?;
 
-        Ok(statement.get_id())
+        Ok(CID::new(statement.get_id()))
     })
 }
 

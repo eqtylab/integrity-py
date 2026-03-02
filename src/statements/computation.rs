@@ -6,21 +6,21 @@ use integrity::{
 use pyo3::{pyfunction, PyResult, Python};
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph,
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph, CID,
 };
 
 #[pyfunction]
 #[pyo3(signature = (inputs, outputs, computation=None, *, operated_by=None, executed_on=None, skip_proof=None, graph=None))]
 pub fn add_computation_statement(
     py: Python,
-    inputs: Vec<String>,
-    outputs: Vec<String>,
-    computation: Option<String>,
+    inputs: Vec<CID>,
+    outputs: Vec<CID>,
+    computation: Option<CID>,
     operated_by: Option<String>,
     executed_on: Option<String>,
     skip_proof: Option<bool>,
     graph: Option<Graph>,
-) -> PyResult<Vec<String>> {
+) -> PyResult<Vec<CID>> {
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);
 
@@ -56,6 +56,10 @@ pub fn add_computation_statement(
             None => registered_by.clone(),
         };
 
+        let computation = computation.map(|cid| cid.to_string());
+        let inputs: Vec<String> = inputs.into_iter().map(|cid| cid.to_string()).collect();
+        let outputs: Vec<String> = outputs.into_iter().map(|cid| cid.to_string()).collect();
+
         let statement = Statement::ComputationRegistration(
             ComputationStatement::create(
                 computation,
@@ -73,8 +77,8 @@ pub fn add_computation_statement(
             .register_statement(&statement, &graph_id)
             .await?;
 
-        let id = statement.get_id();
-        let mut statement_ids = vec![id.clone()];
+        let id = CID::new(statement.get_id());
+        let mut statement_ids: Vec<CID> = vec![id.clone()];
 
         if !skip_proof {
             let vc_id = create_vc_for_statement(&ctx, &id, graph_id, timestamp).await?;

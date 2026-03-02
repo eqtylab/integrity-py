@@ -18,7 +18,7 @@ class TestComputationInputs(unittest.TestCase):
     def test_cid_str(self):
         """Test setting CID input."""
         expected_cids = []
-        cid = "urn:cid:1"
+        cid = CID("urn:cid:1")
         computation = Computation.new().add_input_cid(cid)
         expected_cids.append(cid)
         self.assertEqual(len(computation._input_cids), 1, "Adding cid str error")
@@ -27,7 +27,7 @@ class TestComputationInputs(unittest.TestCase):
     def test_cid_str_list(self):
         """Test setting list of CID str input."""
         expected_cids = []
-        cid = ["urn:cid:2", "urn:cid:3"]
+        cid = [CID("urn:cid:2"), CID("urn:cid:3")]
         computation = Computation.new().add_input_cid(cid)
         expected_cids.extend(cid)
         self.assertEqual(len(computation._input_cids), 2, "Adding cid List[str] error")
@@ -36,7 +36,7 @@ class TestComputationInputs(unittest.TestCase):
     def test_cid(self):
         """Test setting CID input."""
         cid = CID("urn:cid:4")
-        expected_cids = [cid.cid]
+        expected_cids = [cid]
         computation = Computation.new().add_input_cid(cid)
         self.assertEqual(len(computation._input_cids), 1, "Adding cid CID error")
         self.assertEqual(computation._input_cids, expected_cids)
@@ -46,7 +46,7 @@ class TestComputationInputs(unittest.TestCase):
         cid5 = CID("urn:cid:5")
         cid6 = CID("urn:cid:6")
         computation = Computation.new().add_input_cid([cid5, cid6])
-        expected_cids = [cid5.cid, cid6.cid]
+        expected_cids = [cid5, cid6]
         self.assertEqual(len(computation._input_cids), 2, "Adding cid List[CID] error")
         self.assertEqual(computation._input_cids, expected_cids)
 
@@ -56,7 +56,7 @@ class TestComputationInputs(unittest.TestCase):
 
         file_path = "tests/fixtures/assets/datasets/file/file_text.txt.cid"
         with open(file_path, "r") as file:
-            cid = file.read().rstrip()
+            cid = CID(file.read().rstrip())
         cid
 
         computation = Computation.new().add_input_path(test_path)
@@ -77,14 +77,14 @@ class TestComputationInputs(unittest.TestCase):
 
     def test_obj(self):
         test_obj = "hello world"
-        correct_cid = "bafkr4igxjga67jykbseaxdmmdgc5a5o3zp3htom2l6mrjznk7fvyggu6eq"
+        correct_cid = CID("bafkr4igxjga67jykbseaxdmmdgc5a5o3zp3htom2l6mrjznk7fvyggu6eq")
         computation = Computation.new().add_input_object(test_obj)
         self.assertEqual(len(computation._input_cids), 1, "Adding obj error")
         self.assertEqual(computation._input_cids, [correct_cid])
 
     def test_obj_list(self):
         test_obj = "hello world"
-        correct_cid = "bafkr4igxjga67jykbseaxdmmdgc5a5o3zp3htom2l6mrjznk7fvyggu6eq"
+        correct_cid = CID("bafkr4igxjga67jykbseaxdmmdgc5a5o3zp3htom2l6mrjznk7fvyggu6eq")
         computation = Computation.new().add_input_object([test_obj, test_obj])
         self.assertEqual(len(computation._input_cids), 2, "Adding List[obj] error")
         self.assertEqual(computation._input_cids, [correct_cid, correct_cid])

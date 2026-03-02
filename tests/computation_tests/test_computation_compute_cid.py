@@ -17,7 +17,7 @@ class TestComputationCompute(unittest.TestCase):
 
     def test_cid_str(self):
         """Test setting compute CID."""
-        cid = "urn:cid:1"
+        cid = CID("urn:cid:1")
         computation = Computation.new().set_computation_cid(cid)
         self.assertIsNotNone(computation._computation_cid)
         self.assertEqual(computation._computation_cid, cid)
@@ -27,7 +27,7 @@ class TestComputationCompute(unittest.TestCase):
         cid = CID("urn:cid:4")
         computation = Computation.new().set_computation_cid(cid)
         self.assertIsNotNone(computation._computation_cid)
-        self.assertEqual(computation._computation_cid, cid.cid)
+        self.assertEqual(computation._computation_cid, cid)
 
     def test_path_str(self):
         """Test path computations."""
@@ -35,7 +35,7 @@ class TestComputationCompute(unittest.TestCase):
 
         file_path = "tests/fixtures/assets/datasets/file/file_text.txt.cid"
         with open(file_path, "r") as file:
-            cid = file.read().rstrip()
+            cid = CID(file.read().rstrip())
         cid
 
         computation = Computation.new().set_computation_path(test_path)
@@ -48,7 +48,7 @@ class TestComputationCompute(unittest.TestCase):
 
         file_path = "tests/fixtures/assets/datasets/file/file_text.txt.cid"
         with open(file_path, "r") as file:
-            cid = file.read().rstrip()
+            cid = CID(file.read().rstrip())
         cid
 
         computation = Computation.new().set_computation_path(test_path)
@@ -57,7 +57,7 @@ class TestComputationCompute(unittest.TestCase):
 
     def test_obj(self):
         test_obj = "hello world"
-        cid = "bafkr4igxjga67jykbseaxdmmdgc5a5o3zp3htom2l6mrjznk7fvyggu6eq"
+        cid = CID("bafkr4igxjga67jykbseaxdmmdgc5a5o3zp3htom2l6mrjznk7fvyggu6eq")
         computation = Computation.new().set_computation_object(test_obj)
         self.assertIsNotNone(computation._computation_cid)
         self.assertEqual(computation._computation_cid, cid)

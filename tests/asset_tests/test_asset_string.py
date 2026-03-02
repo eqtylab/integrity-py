@@ -1,7 +1,7 @@
 import asyncio
 import unittest
 
-from eqty_sdk import Custom, Dataset
+from eqty_sdk import CID, Custom, Dataset
 from tests import setup_sdk
 
 
@@ -19,8 +19,7 @@ class AssetStringObject(unittest.TestCase):
         setup_sdk()
         cls.test_object = "This is a string value."
         # This is computed based on the string value above via eqty-cli.
-        # correct_cid = "bafkr4idrf264dtnpujsdkxsr7f4llrrsok6lvt7l7lj4xujrlvuscr7kw4"
-        cls.correct_cid = "bafkr4ibltkzdd4hsopruaikgkc425wf6tgluh3js5wsv2bxr7cgkoy2bmq"
+        cls.correct_cid = CID("bafkr4ibltkzdd4hsopruaikgkc425wf6tgluh3js5wsv2bxr7cgkoy2bmq")
 
         cls.asset = Custom.from_object(cls.test_object, name="Test string")
 

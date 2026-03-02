@@ -5,6 +5,7 @@ import os
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from eqty_sdk._rust import (
+    CID,
     Graph as Context,
     get_cid_for_bytes,
     statements,
@@ -164,8 +165,8 @@ class Compute:
                 logger.debug(f"Adding list of assets to inputs array. {[item.cid for item in arg]}")
                 inputs.extend(arg)
             elif hasattr(arg, "to_eqty_asset"):
-                # special fn to allow users to create a custom fn defining how to convert from their type to an asset
-                inputs.append(arg.to_eqty_asset())
+                # special fn to allow users to define a custom conversion fn from their type to an asset
+                inputs.append(cast(Any, arg).to_eqty_asset())
             elif arg is not None:
                 asset = Custom.from_object(
                     arg,
@@ -189,7 +190,7 @@ class Compute:
         result = self.__create_asset__(output_type, result)
         return result
 
-    async def __call_async_gen__(self, input_cids, *args: Any, **kwargs: Any) -> Any:
+    async def __call_async_gen__(self, input_cids: List[CID], *args: Any, **kwargs: Any) -> Any:
         stream = self._func(*args, **kwargs)
 
         stream_uuid = await eqty_core_stream.create(input_cids, None, None, None)
@@ -277,10 +278,10 @@ class Compute:
             logger.debug(f"'{self.name}' is standard function")
             return self.__call_sync__(input_cids, *args, **kwargs)
 
-    def __finalize__(self, input_cids, result: Any) -> List[str]:
+    def __finalize__(self, input_cids, result: Any) -> List[CID]:
         """Finalize the computation by adding the computation statement and metadata statements."""
 
-        def extract_cids(asset) -> List[str]:
+        def extract_cids(asset) -> List[CID]:
             """Recursively extract cids from asset, which can be a tuple, list, or an Asset."""
             cids = []
             if isinstance(asset, tuple) or isinstance(asset, list):

@@ -8,7 +8,7 @@ use pyo3::{pyfunction, PyResult, Python};
 use serde_json::Value;
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph,
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph, CID,
 };
 
 #[pyfunction]
@@ -19,7 +19,7 @@ pub fn add_metadata_statement(
     metadata: String,
     skip_proof: Option<bool>,
     graph: Option<Graph>,
-) -> PyResult<Vec<String>> {
+) -> PyResult<Vec<CID>> {
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);
 
@@ -47,7 +47,7 @@ pub fn add_metadata_statement(
             .register_statement(&statement, &graph_id)
             .await?;
 
-        let id = statement.get_id();
+        let id = CID::new(statement.get_id());
         let mut statement_ids = vec![id.clone()];
 
         log::debug!("Saving metadata json to blob store. {metadata_json}");
