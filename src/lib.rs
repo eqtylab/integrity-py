@@ -64,10 +64,12 @@ pub mod signer;
 pub mod statements;
 /// Streaming computation support for real-time data processing.
 pub mod stream;
+/// UUID type for urn:uuid identifiers.
+pub mod uuid;
 
 use pyo3::{prelude::*, wrap_pymodule};
 
-use crate::indexer::Graph;
+use crate::{indexer::Graph, uuid::UUID};
 
 /// SDK rust module
 ///
@@ -83,6 +85,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(stream::stream))?;
 
     m.add_class::<cid::CID>()?;
+    m.add_class::<UUID>()?;
     m.add_class::<Graph>()?;
     m.add_class::<indexer::GraphFactory>()?;
     m.add_class::<Config>()?;
