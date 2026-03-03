@@ -19,6 +19,9 @@ pub struct DID {
     /// Graph/context where the DID statement was registered.
     #[pyo3(get)]
     pub ctx: Graph,
+    /// DID string used for registration.
+    #[pyo3(get)]
+    pub did: String,
     /// IDs of statements created for this DID.
     #[pyo3(get)]
     pub statement_ids: Vec<CID>,
@@ -168,14 +171,18 @@ fn build_did(
 
     let mut metadata_ids = statements::metadata::add_metadata_statement(
         py,
-        did,
+        did.clone(),
         metadata_json,
         None,
         Some(ctx.clone()),
     )?;
     statement_ids.append(&mut metadata_ids);
 
-    Ok(DID { ctx, statement_ids })
+    Ok(DID {
+        ctx,
+        did,
+        statement_ids,
+    })
 }
 
 fn is_vcomp_signer(name: &str) -> Result<bool> {

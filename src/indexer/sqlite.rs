@@ -98,8 +98,19 @@ impl Sqlite {
                 statement TEXT NOT NULL,
                 registered_by TEXT NOT NULL,
                 subject TEXT NOT NULL,
-                association TEXT NOT NULL
+                association TEXT NOT NULL,
+                type TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS association_statement_items (
+                statement_id TEXT NOT NULL,
+                association_item TEXT NOT NULL,
+                PRIMARY KEY (statement_id, association_item),
+                FOREIGN KEY (statement_id) REFERENCES association_statements(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_association_statement_items_item
+                ON association_statement_items(association_item);
         "#;
         sqlx::query(association_table).execute(&self.pool).await?;
 
@@ -520,9 +531,10 @@ impl Sqlite {
             LEFT JOIN metadata_statements metadata ON sgl.statement_id = metadata.id
             LEFT JOIN storage_statements storage ON sgl.statement_id = storage.id
             LEFT JOIN association_statements association ON sgl.statement_id = association.id
+            LEFT JOIN association_statement_items asi ON association.id = asi.statement_id
             LEFT JOIN entity_statements entity ON sgl.statement_id = entity.id
             LEFT JOIN entity_statement_subjects ess ON entity.id = ess.statement_id
-            WHERE COALESCE(dss.subject, metadata.subject, storage.data, association.association, association.subject, ess.entity) IN {}
+            WHERE COALESCE(dss.subject, metadata.subject, storage.data, asi.association_item, association.subject, ess.entity) IN {}
             ORDER BY gh.level;
             "#,
             in_clause
@@ -604,36 +616,6 @@ impl Sqlite {
         self.init().await?;
         Ok(())
     }
-
-    // /// Returns metadata for all descendant graphs of the given parent.
-    // pub async fn get_child_graph_info(&self, parent_id: &Uuid) -> Result<Vec<Graph>> {
-    //     log::trace!("Retrieving child graph info for {parent_id:?}");
-    //
-    //     let rows: Vec<Graph> = sqlx::query_as(
-    //         r#"
-    //         WITH RECURSIVE descendants AS (
-    //             -- Base case: direct children
-    //             SELECT graph_id, name, parent_id
-    //             FROM graphs
-    //             WHERE parent_id = ?1
-    //
-    //             UNION ALL
-    //
-    //             -- Recursive case: children of children
-    //             SELECT g.graph_id, g.name, g.parent_id
-    //             FROM graphs g
-    //             INNER JOIN descendants d ON g.parent_id = d.graph_id
-    //         )
-    //         SELECT graph_id, name, parent_id
-    //         FROM descendants
-    //         "#,
-    //     )
-    //     .bind(parent_id.to_string())
-    //     .fetch_all(&self.pool)
-    //     .await?;
-    //
-    //     Ok(rows)
-    // }
 
     /// Used to register statements associtated with a specific graph_id (aka NON-Global)
     async fn register_graph_statement(&self, statement: &Statement, graph_id: &Uuid) -> Result<()> {
@@ -768,20 +750,44 @@ impl Sqlite {
                 let statement = serde_json::to_value(statement)?;
                 let id = s.get_id();
                 let statement_data = serde_json::to_string(&statement)?;
+                let association_data = serde_json::to_string(&s.association)?;
+                let association_type = match s.r#type {
+                    integrity::lineage::models::statements::AssociationType::Certifies => {
+                        "certifies"
+                    }
+                    integrity::lineage::models::statements::AssociationType::Includes => "includes",
+                    integrity::lineage::models::statements::AssociationType::IsInstanceOf => {
+                        "isInstanceOf"
+                    }
+                };
                 log::debug!("Registering association '{id}'");
                 sqlx::query(
                     r#"
                     INSERT OR IGNORE INTO association_statements
-                    (id, statement, registered_by, subject, association) VALUES (?1, ?2, ?3, ?4, ?5)
+                    (id, statement, registered_by, subject, association, type) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
                 "#,
                 )
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
                 .bind(&s.subject)
-                .bind(&s.association)
+                .bind(&association_data)
+                .bind(association_type)
                 .execute(&self.pool)
                 .await?;
+
+                for item in &s.association {
+                    sqlx::query(
+                        r#"
+                        INSERT OR IGNORE INTO association_statement_items
+                        (statement_id, association_item) VALUES (?1, ?2)
+                    "#,
+                    )
+                    .bind(&id)
+                    .bind(item)
+                    .execute(&self.pool)
+                    .await?;
+                }
 
                 self.associate_statement_to_graph(&id, graph_id).await
             }

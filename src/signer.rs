@@ -142,7 +142,7 @@ impl Signer {
 fn create_new_signer(py: Python, key_type: String, name: Option<&str>) -> PyResult<Py<Signer>> {
     signer_exists(name)?;
 
-    let key_type: KeyType = key_type.parse().context("Invalid key type")?;
+    let key_type = parse_key_type(&key_type).context("Invalid key type")?;
     create_new_signer_internal(py, key_type, name)
 }
 
@@ -189,7 +189,7 @@ fn create_signer_from_private_key(
 ) -> PyResult<Py<Signer>> {
     signer_exists(name)?;
 
-    let key_type: KeyType = key_type.parse().context("Invalid key type")?;
+    let key_type = parse_key_type(&key_type).context("Invalid key type")?;
     create_signer_from_private_key_internal(py, key_type, key, name)
 }
 
@@ -199,7 +199,7 @@ fn create_signer_from_private_key_internal(
     key: String,
     name: Option<&str>,
 ) -> PyResult<Py<Signer>> {
-    log::info!("Creating a signer of type '{key_type}'");
+    log::info!("Creating a signer of type '{:?}'", key_type);
 
     let secret_key = BASE64
         .decode(key.as_bytes())
@@ -369,7 +369,16 @@ fn signer_algorithm_from_py(obj: Option<&Bound<'_, PyAny>>) -> PyResult<KeyType>
         "ed25519".to_string()
     };
 
-    key_type
-        .parse()
-        .map_err(|e| PyErr::new::<PyValueError, _>(format!("{e}")))
+    parse_key_type(&key_type).map_err(|e| PyErr::new::<PyValueError, _>(format!("{e}")))
+}
+
+fn parse_key_type(value: &str) -> anyhow::Result<KeyType> {
+    match value.to_ascii_lowercase().as_str() {
+        "ed25519" => Ok(KeyType::ED25519),
+        "secp256k1" => Ok(KeyType::SECP256K1),
+        "secp256r1" | "p256" => Ok(KeyType::SECP256R1),
+        _ => Err(anyhow::anyhow!(
+            "Invalid key type. Expected one of: ed25519, secp256k1, secp256r1"
+        )),
+    }
 }

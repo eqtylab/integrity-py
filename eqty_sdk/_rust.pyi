@@ -32,9 +32,8 @@ class CID:
     """A simple wrapper around a content identifier (CID) string.  Provides a typed wrapper for CID strings with property access and string conversion."""
     @property
     def cid(self) -> str: ...
-    @staticmethod
-    def new(cid: str) -> CID:
-        """Creates a new CID, ensuring it is pr"""
+    def __init__(self, cid: str) -> None:
+        """Creates a new CID, ensuring it is prefixed with `urn:cid:`."""
         ...
 
     def __str__(self) -> str: ...
@@ -64,6 +63,11 @@ class DID:
     @property
     def ctx(self) -> Any:
         """Graph/context where the DID statement was registered."""
+        ...
+
+    @property
+    def did(self) -> str:
+        """DID string used for registration."""
         ...
 
     @property
@@ -139,17 +143,17 @@ class Entity:
     @property
     def uuid(self) -> str: ...
     def __init__(self, uuid: str) -> None:
-        """Create a new Entity w"""
+        """Create a new Entity with the given UUID string."""
         ...
 
     @staticmethod
     def generate() -> Entity:
-        """Create a new Entity with"""
+        """Create a new Entity with a randomly generated UUID."""
         ...
 
     @staticmethod
     def from_uuid(uuid: str) -> Entity:
-        """Create an"""
+        """Create an Entity from a UUID string."""
         ...
 
     def __str__(self) -> str: ...
@@ -174,27 +178,27 @@ class Graph:
 
     @staticmethod
     def new(name: str) -> Graph:
-        """Creates a new graph with the given name.  If the global config is initialized, the grap"""
+        """Creates a new graph with the given name.  If the global config is initialized, the graph is persisted to sqlite."""
         ...
 
     @staticmethod
     def from_parent(parent: Graph) -> GraphFactory:
-        """Returns a factory that creates graphs"""
+        """Returns a factory that creates graphs with the provided parent."""
         ...
 
     @staticmethod
     def from_uuid(project_id: uuid.UUID) -> GraphFactory:
-        """Returns a factory that creates graphs with the provide"""
+        """Returns a factory that creates graphs with the provided project UUID as parent."""
         ...
 
     def register(self, service: Service) -> None:
-        """Registers this graph, its ancestors, statements,"""
+        """Registers this graph, its ancestors, statements, and blobs with a service."""
         ...
 
     def delete_tree(self) -> None: ...
     def delete(self) -> None: ...
     def export(self, path: PathLike[str]) -> None:
-        """Exports this graph's statements and blobs"""
+        """Exports this graph's statements and blobs to a manifest JSON file."""
         ...
 
     def __str__(self) -> str: ...
@@ -202,7 +206,7 @@ class Graph:
 class GraphFactory:
     """Factory for creating graphs with an optional parent."""
     def new(self, name: str) -> Graph:
-        """Creates a new graph us"""
+        """Creates a new graph using the factory's parent if set."""
         ...
 
 class Manifest:
@@ -213,6 +217,11 @@ class Manifest:
     def import_manifest(self, manifest: Any) -> None: ...
     @staticmethod
     def merge(a: str, b: str) -> str: ...
+
+class PyAssociationType:
+    Certifies: PyAssociationType
+    Includes: PyAssociationType
+    IsInstanceOf: PyAssociationType
 
 class SIGNER_ALGORITHMS:
     """Supported signer algorithm identifiers."""
@@ -230,19 +239,19 @@ class Service:
 
     @staticmethod
     def new(url: str, api_key: Optional[str] = None) -> Service:
-        """Creates a service client using th"""
+        """Creates a service client using the provided URL and API key."""
         ...
 
 class Signer:
     """Python-exposed signer information.  Contains the name and DID key of a cryptographic signer."""
     @property
     def name(self) -> str:
-        """Returns the human-readable name of the signer.  # Returns *"""
+        """Returns the human-readable name of the signer.  # Returns * `&str` - The signer's name"""
         ...
 
     @property
     def did_key(self) -> str:
-        """Returns the DID key of the signer.  # Returns * `&str` - T"""
+        """Returns the DID key of the signer.  # Returns * `&str` - The signer's DID key string"""
         ...
 
     def __init__(self, name: str, did_key: str) -> None: ...
@@ -256,6 +265,21 @@ class Signer:
     def yubihsm2(auth_key_id: int, signing_key_id: int, password: str) -> Signer: ...
     @staticmethod
     def from_private_key(algorithm: Any, private_key: str) -> Signer: ...
+
+class UUID:
+    """A simple wrapper around a UUID string.  Provides a typed wrapper for UUID strings with property access and string conversion."""
+    @property
+    def uuid(self) -> str: ...
+    def __init__(self, uuid: str) -> None:
+        """Creates a new UUID, ensuring it is prefixed with `urn:uuid:`."""
+        ...
+
+    def __str__(self) -> str: ...
+    def __repr__(self) -> str: ...
+    def __len__(self) -> int: ...
+    def __getitem__(self, index: Any) -> str: ...
+    def startswith(self, prefix: str) -> bool: ...
+    def __eq__(self, other: Any) -> bool: ...
 
 # Entity module
 class entity:
@@ -332,10 +356,13 @@ class signer:
 
 # Statements module
 class statements:
+    PyAssociationType: type[PyAssociationType]
+
     @staticmethod
     def add_association_statement(
         subject: str,
-        association: str,
+        association: List[str],
+        association_type: eqty_sdk._rust.PyAssociationType,
         *,
         skip_proof: Optional[bool] = None,
         graph: Optional[eqty_sdk._rust.Graph] = None,

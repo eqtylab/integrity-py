@@ -1,7 +1,9 @@
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use integrity::lineage::models::statements::{DataStatement, Statement};
+    use integrity::lineage::models::statements::{
+        AssociationStatement, AssociationType, DataStatement, Statement, StatementTrait,
+    };
     use sqlx::Row;
     use uuid::Uuid;
 
@@ -179,6 +181,71 @@ mod tests {
 
         db.purge().await?;
         assert_eq!(graph_count(&db).await?, 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_association_statement_links_items() -> Result<()> {
+        let db = setup_db().await?;
+        let graph = Graph {
+            id: Uuid::new_v4(),
+            name: "assoc-graph".to_string(),
+            parent: None,
+        };
+        db.create_graph(&graph).await?;
+
+        let association = vec![
+            "urn:cid:item1".to_string(),
+            "urn:cid:item2".to_string(),
+            "urn:cid:item3".to_string(),
+        ];
+        let statement = AssociationStatement::create(
+            "urn:cid:subject".to_string(),
+            association.clone(),
+            AssociationType::Includes,
+            "did:key:tester".to_string(),
+            None,
+        )
+        .await?;
+        let statement = Statement::AssociationRegistration(statement);
+        db.register_statement(&statement, &graph.id).await?;
+
+        let row = sqlx::query("SELECT COUNT(*) as count FROM association_statements")
+            .fetch_one(db.pool())
+            .await?;
+        let count = row.get::<i64, _>("count");
+        assert_eq!(count, 1);
+
+        let row = sqlx::query(
+            "SELECT COUNT(*) as count FROM association_statement_items WHERE statement_id = ?1",
+        )
+        .bind(statement.get_id())
+        .fetch_one(db.pool())
+        .await?;
+        let item_count = row.get::<i64, _>("count");
+        assert_eq!(item_count, association.len() as i64);
+
+        let mut rows = sqlx::query(
+            r#"
+            SELECT association_item
+            FROM association_statement_items
+            WHERE statement_id = ?1
+            ORDER BY association_item
+            "#,
+        )
+        .bind(statement.get_id())
+        .fetch_all(db.pool())
+        .await?;
+
+        let mut items: Vec<String> = rows
+            .drain(..)
+            .map(|row| row.get::<String, _>("association_item"))
+            .collect();
+        items.sort();
+        let mut expected = association;
+        expected.sort();
+        assert_eq!(items, expected);
 
         Ok(())
     }

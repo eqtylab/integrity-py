@@ -5,6 +5,7 @@ from eqty_sdk._rust import (
     CID,
     DID,
     SIGNER_ALGORITHMS,
+    UUID,
     Config as _Config,
     Declaration,
     Entity,
@@ -99,4 +100,5 @@ __all__ = [
     "Signer",
     "set_active_signer",
     "Entity",
+    "UUID",
 ]
