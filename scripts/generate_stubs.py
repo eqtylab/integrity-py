@@ -280,6 +280,7 @@ class RustStubParser:
 
             func_pattern = (
                 r"(?P<attrs>(?:\s*#\[[^\]]+\]\s*)*)\s*"
+                r"(?:\s*///[^\n]*\s*)*"
                 r"(?:pub\s+)?fn\s+(?P<name>\w+)(?:<[^>]*>)?\s*"
                 r"\((?P<params>.*?)\)\s*(?:->\s*(?P<return>[^{]+))?\s*\{"
             )
@@ -300,7 +301,7 @@ class RustStubParser:
                 method_name = py_name_override or rust_method_name
 
                 params = self._parse_parameters(func_match.group("params"))
-                doc = self._extract_docstring(content, match.start() + func_match.start())
+                doc = self._extract_docstring(content, match.start() + func_match.start("name"))
 
                 if is_getter:
                     prop_type = RustTypeMapper.map_type(return_type, self.class_name_map)

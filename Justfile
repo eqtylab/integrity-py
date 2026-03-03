@@ -67,6 +67,7 @@ test-rs:
 # Generate type stubs from Rust code
 generate-stubs:
   poetry run python ./scripts/generate_stubs.py
+  just fmt
 
 # Update README.md with auto-generated content (Justfile commands, etc.)
 readme-update:
