@@ -33,7 +33,7 @@ class CID:
     @property
     def cid(self) -> str: ...
     def __init__(self, cid: str) -> None:
-        """Creates a new CID, ensuring it is prefixed with"""
+        """Creates a new CID, ensuring it is prefixed with `urn:cid:`."""
         ...
 
     def __str__(self) -> str: ...
@@ -138,7 +138,7 @@ class Entity:
     @property
     def uuid(self) -> str: ...
     def __init__(self, uuid: str) -> None:
-        """Create a new Entity with the given UUID"""
+        """Create a new Entity with the given UUID string."""
         ...
 
     @staticmethod
@@ -173,27 +173,27 @@ class Graph:
 
     @staticmethod
     def new(name: str) -> Graph:
-        """Creates a new graph with the given name.  If the global config is initialized, the graph is persist"""
+        """Creates a new graph with the given name.  If the global config is initialized, the graph is persisted to sqlite."""
         ...
 
     @staticmethod
     def from_parent(parent: Graph) -> GraphFactory:
-        """Returns a factory that creates graphs with the pro"""
+        """Returns a factory that creates graphs with the provided parent."""
         ...
 
     @staticmethod
     def from_uuid(project_id: uuid.UUID) -> GraphFactory:
-        """Returns a factory that creates graphs with the provided project UU"""
+        """Returns a factory that creates graphs with the provided project UUID as parent."""
         ...
 
     def register(self, service: Service) -> None:
-        """Registers this graph, its ancestors, statements, and blobs wi"""
+        """Registers this graph, its ancestors, statements, and blobs with a service."""
         ...
 
     def delete_tree(self) -> None: ...
     def delete(self) -> None: ...
     def export(self, path: PathLike[str]) -> None:
-        """Exports this graph's statements and blobs to a manife"""
+        """Exports this graph's statements and blobs to a manifest JSON file."""
         ...
 
     def __str__(self) -> str: ...
@@ -201,7 +201,7 @@ class Graph:
 class GraphFactory:
     """Factory for creating graphs with an optional parent."""
     def new(self, name: str) -> Graph:
-        """Creates a new graph using the fact"""
+        """Creates a new graph using the factory's parent if set."""
         ...
 
 class Manifest:
@@ -234,7 +234,7 @@ class Service:
 
     @staticmethod
     def new(url: str, api_key: Optional[str] = None) -> Service:
-        """Creates a service client using the provided U"""
+        """Creates a service client using the provided URL and API key."""
         ...
 
 class Signer:

@@ -177,6 +177,7 @@ class RustStubParser:
     def _extract_classes(self, content: str):
         class_pattern = (
             r"#\[pyclass(?P<attrs>[^\]]*)\](?:\s*#\[[^\]]+\])*\s*"
+            r"(?:\s*///[^\n]*\s*)*"
             r"(?:pub\s+)?(?P<kind>struct|enum)\s+(?P<name>\w+)"
         )
         for match in re.finditer(class_pattern, content):
@@ -200,7 +201,7 @@ class RustStubParser:
             if doc and not class_info.get("doc"):
                 class_info["doc"] = doc
 
-            block, _ = self._extract_block(content, match.end())
+            block, _, _ = self._extract_block(content, match.end())
             if block:
                 if match.group("kind") == "enum":
                     variants = self._parse_enum_variants(block)
@@ -268,7 +269,7 @@ class RustStubParser:
             if not class_info:
                 continue
 
-            block, _ = self._extract_block(content, match.end() - 1)
+            block, block_start, _ = self._extract_block(content, match.end() - 1)
             if not block:
                 continue
 
@@ -301,7 +302,9 @@ class RustStubParser:
                 method_name = py_name_override or rust_method_name
 
                 params = self._parse_parameters(func_match.group("params"))
-                doc = self._extract_docstring(content, match.start() + func_match.start("name"))
+                name_start = func_match.start("name")
+                line_start = block.rfind("\n", 0, name_start) + 1
+                doc = self._extract_docstring(content, block_start + line_start)
 
                 if is_getter:
                     prop_type = RustTypeMapper.map_type(return_type, self.class_name_map)
@@ -366,7 +369,7 @@ class RustStubParser:
                 module_name, {"functions": [], "classes": [], "submodules": []}
             )
 
-            block, _ = self._extract_block(content, match.end())
+            block, _, _ = self._extract_block(content, match.end())
             if not block:
                 continue
 
@@ -497,10 +500,10 @@ class RustStubParser:
         return py_name, signature
 
     @staticmethod
-    def _extract_block(content: str, start_pos: int) -> Tuple[Optional[str], int]:
+    def _extract_block(content: str, start_pos: int) -> Tuple[Optional[str], int, int]:
         brace_pos = content.find("{", start_pos)
         if brace_pos == -1:
-            return None, -1
+            return None, -1, -1
         depth = 0
         for idx in range(brace_pos, len(content)):
             if content[idx] == "{":
@@ -508,8 +511,8 @@ class RustStubParser:
             elif content[idx] == "}":
                 depth -= 1
                 if depth == 0:
-                    return content[brace_pos + 1 : idx], idx
-        return None, -1
+                    return content[brace_pos + 1 : idx], brace_pos + 1, idx
+        return None, -1, -1
 
 
 class StubGenerator:
