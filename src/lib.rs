@@ -93,6 +93,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<entity::Entity>()?;
     m.add_class::<did::DidFactory>()?;
     m.add_class::<integrity_service::Service>()?;
+    m.add_class::<statements::PyAssociationType>()?;
 
     m.add_function(wrap_pyfunction!(init, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_bytes, m)?)?;

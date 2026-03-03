@@ -407,7 +407,7 @@ class statements:
     PyAssociationType: type[PyAssociationType]
 
     @staticmethod
-    def add_association_statement(subject: str, association: List[str], r#type: eqty_sdk._rust.PyAssociationType, *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> List[eqty_sdk._rust.CID]:
+    def add_association_statement(subject: str, association: List[str], association_type: eqty_sdk._rust.PyAssociationType, *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> List[eqty_sdk._rust.CID]:
         ...
 
     @staticmethod

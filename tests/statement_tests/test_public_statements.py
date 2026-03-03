@@ -2,19 +2,20 @@ import json
 import unittest
 
 from eqty_sdk import CID, SIGNER_ALGORITHMS, Signer, set_active_signer
-from eqty_sdk._rust import get_cid_for_path, statements
+from eqty_sdk._rust import get_cid_for_path, statements, PyAssociationType
 from tests import get_config_dir, setup_sdk
 
 
 class PublicStatementTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.cfg = setup_sdk()
+        setup_sdk()
 
     def test_add_association_statement(self):
         ids = statements.add_association_statement(
             "urn:cid:assoc-subject",
-            "urn:cid:assoc-target",
+            ["urn:cid:assoc-target"],
+            PyAssociationType.Certifies,
             skip_proof=True,
         )
         self.assertEqual(1, len(ids))
@@ -87,7 +88,7 @@ class PublicStatementTests(unittest.TestCase):
         self.assertIsInstance(statement_id, CID)
         self.assertTrue(statement_id.startswith("urn:cid:"))
 
-    @unittest.skip
+    @unittest.skip("Model signing interfered with directory ciding")
     def test_create_model_signing_statement(self):
         signer = Signer.new(SIGNER_ALGORITHMS.SECP256R1)
         set_active_signer(signer)

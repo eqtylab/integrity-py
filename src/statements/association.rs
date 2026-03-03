@@ -26,12 +26,12 @@ impl From<PyAssociationType> for AssociationType {
 }
 
 #[pyfunction]
-#[pyo3(signature = (subject, association, r#type, *, skip_proof=None, graph=None))]
+#[pyo3(signature = (subject, association, association_type, *, skip_proof=None, graph=None))]
 pub fn add_association_statement(
     py: Python,
     subject: String,
     association: Vec<String>,
-    r#type: PyAssociationType,
+    association_type: PyAssociationType,
     skip_proof: Option<bool>,
     graph: Option<Graph>,
 ) -> PyResult<Vec<CID>> {
@@ -41,7 +41,7 @@ pub fn add_association_statement(
     with_ctx!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph);
         let registered_by = ctx.clone().get_active_signer_did_key()?;
-        let ass_type = AssociationType::from(r#type);
+        let ass_type = AssociationType::from(association_type);
 
         let statement = Statement::AssociationRegistration(
             AssociationStatement::create(

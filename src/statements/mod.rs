@@ -14,6 +14,7 @@ pub(crate) mod model_signing;
 /// Storage statement creation for referencing external data stores.
 pub mod storage;
 mod vc;
+pub use association::PyAssociationType;
 
 /// `statements` submodule to create lineage statements
 #[pymodule]
