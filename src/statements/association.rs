@@ -9,9 +9,13 @@ use crate::{
 
 #[pyclass]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Association types exposed to Python.
 pub enum PyAssociationType {
+    /// Indicates the subject certifies the association target.
     Certifies,
+    /// Indicates the subject includes the association target.
     Includes,
+    /// Indicates the subject is an instance of the association target.
     IsInstanceOf,
 }
 

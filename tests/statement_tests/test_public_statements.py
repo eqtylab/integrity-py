@@ -2,7 +2,7 @@ import json
 import unittest
 
 from eqty_sdk import CID, SIGNER_ALGORITHMS, Signer, set_active_signer
-from eqty_sdk._rust import get_cid_for_path, statements, PyAssociationType
+from eqty_sdk._rust import PyAssociationType, get_cid_for_path, statements
 from tests import get_config_dir, setup_sdk
 
 
