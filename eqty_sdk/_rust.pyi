@@ -1,14 +1,11 @@
 """Type stubs for the eqty_sdk._rust module."""
-
 import eqty_sdk
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 import uuid
 from os import PathLike
 
-def init(
-    custom_dir: Optional[PathLike[str]] = None, default_context: Optional[Graph] = None
-) -> Config:
+def init(custom_dir: Optional[PathLike[str]] = None, default_context: Optional[Graph] = None) -> Config:
     """Initializes the sdk config. Must be called before setting individual config values"""
     ...
 
@@ -31,33 +28,50 @@ def purge_blob_store() -> None:
 class CID:
     """A simple wrapper around a content identifier (CID) string.  Provides a typed wrapper for CID strings with property access and string conversion."""
     @property
-    def cid(self) -> str: ...
+    def cid(self) -> str:
+        ...
+
     @staticmethod
     def new(cid: str) -> CID:
         """Creates a new CID, ensuring it is pr"""
         ...
 
-    def __str__(self) -> str: ...
-    def __repr__(self) -> str: ...
-    def __len__(self) -> int: ...
-    def __getitem__(self, index: Any) -> str: ...
-    def startswith(self, prefix: str) -> bool: ...
-    def __eq__(self, other: Any) -> bool: ...
+    def __str__(self) -> str:
+        ...
+
+    def __repr__(self) -> str:
+        ...
+
+    def __len__(self) -> int:
+        ...
+
+    def __getitem__(self, index: Any) -> str:
+        ...
+
+    def startswith(self, prefix: str) -> bool:
+        ...
+
+    def __eq__(self, other: Any) -> bool:
+        ...
+
 
 class Config:
     """Global application config containing configuration and state.  The config stores application-wide settings including storage directories, hashing preferences, and file filtering rules."""
-    def set_hashing_config(
-        self, multithread: Optional[bool] = None, memory_map: Optional[bool] = None
-    ) -> Config: ...
-    def set_cid_ignore_rules(
-        self,
-        include_hidden_files: Optional[bool] = None,
-        gitignore: Optional[bool] = None,
-        include_symlinks: Optional[bool] = None,
-    ) -> Config: ...
-    def set_generate_model_signing_signatures(self, enable: bool) -> Config: ...
-    def set_store_all_blobs(self, value: bool) -> Config: ...
-    def get_default_context(self) -> Graph: ...
+    def set_hashing_config(self, multithread: Optional[bool] = None, memory_map: Optional[bool] = None) -> Config:
+        ...
+
+    def set_cid_ignore_rules(self, include_hidden_files: Optional[bool] = None, gitignore: Optional[bool] = None, include_symlinks: Optional[bool] = None) -> Config:
+        ...
+
+    def set_generate_model_signing_signatures(self, enable: bool) -> Config:
+        ...
+
+    def set_store_all_blobs(self, value: bool) -> Config:
+        ...
+
+    def get_default_context(self) -> Graph:
+        ...
+
 
 class DID:
     """A DID statement result bound to a context."""
@@ -71,15 +85,21 @@ class DID:
         """IDs of statements created for this DID."""
         ...
 
-    def __init__(
-        self, ctx: Graph, did: str, signer: Optional[Signer] = None, **kwargs: Any
-    ) -> None: ...
+    def __init__(self, ctx: Graph, did: str, signer: Optional[Signer] = None, **kwargs: Any) -> None:
+        ...
+
     @staticmethod
-    def from_signer(signer: Signer, **kwargs: Any) -> DID: ...
+    def from_signer(signer: Signer, **kwargs: Any) -> DID:
+        ...
+
     @staticmethod
-    def from_did_string(did: str, **kwargs: Any) -> DID: ...
+    def from_did_string(did: str, **kwargs: Any) -> DID:
+        ...
+
     @staticmethod
-    def with_context(ctx: Graph) -> DidFactory: ...
+    def with_context(ctx: Graph) -> DidFactory:
+        ...
+
 
 class Declaration:
     """A governance declaration describing a subject and related metadata."""
@@ -118,26 +138,50 @@ class Declaration:
         """Additional key/value metadata for the declaration."""
         ...
 
-    def __init__(self, subject_line: str, statement: str) -> None: ...
+    def __init__(self, subject_line: str, statement: str) -> None:
+        ...
+
     @staticmethod
-    def new(subject_line: str, statement: str) -> Declaration: ...
-    def add_attachment_cid(self, cid: str) -> Declaration: ...
-    def add_control_cid(self, cid: str) -> Declaration: ...
-    def add_extra(self, key: str, val: str) -> Declaration: ...
-    def finalize(self) -> Declaration: ...
-    def cid(self) -> str: ...
-    def to_dict(self) -> Any: ...
-    def to_json(self) -> str: ...
+    def new(subject_line: str, statement: str) -> Declaration:
+        ...
+
+    def add_attachment_cid(self, cid: str) -> Declaration:
+        ...
+
+    def add_control_cid(self, cid: str) -> Declaration:
+        ...
+
+    def add_extra(self, key: str, val: str) -> Declaration:
+        ...
+
+    def finalize(self) -> Declaration:
+        ...
+
+    def cid(self) -> str:
+        ...
+
+    def to_dict(self) -> Any:
+        ...
+
+    def to_json(self) -> str:
+        ...
+
 
 class DidFactory:
     """Builder for DID statements in a specific context."""
-    def build_from_signer(self, signer: Signer, **kwargs: Any) -> DID: ...
-    def build_from_did_string(self, did: str, **kwargs: Any) -> DID: ...
+    def build_from_signer(self, signer: Signer, **kwargs: Any) -> DID:
+        ...
+
+    def build_from_did_string(self, did: str, **kwargs: Any) -> DID:
+        ...
+
 
 class Entity:
     """Represents an unhashed entity with a UUID identifier.  Entities are used to represent objects that don't have a content-based identifier (CID) but need a unique identifier for tracking purposes."""
     @property
-    def uuid(self) -> str: ...
+    def uuid(self) -> str:
+        ...
+
     def __init__(self, uuid: str) -> None:
         """Create a new Entity w"""
         ...
@@ -152,8 +196,12 @@ class Entity:
         """Create an"""
         ...
 
-    def __str__(self) -> str: ...
-    def __repr__(self) -> str: ...
+    def __str__(self) -> str:
+        ...
+
+    def __repr__(self) -> str:
+        ...
+
 
 class Graph:
     """A graph structure for organizing related statements hierarchically.  Graphs group statements together with optional parent-child relationships, enabling versioning and organizational structure for lineage data."""
@@ -191,13 +239,19 @@ class Graph:
         """Registers this graph, its ancestors, statements,"""
         ...
 
-    def delete_tree(self) -> None: ...
-    def delete(self) -> None: ...
+    def delete_tree(self) -> None:
+        ...
+
+    def delete(self) -> None:
+        ...
+
     def export(self, path: PathLike[str]) -> None:
         """Exports this graph's statements and blobs"""
         ...
 
-    def __str__(self) -> str: ...
+    def __str__(self) -> str:
+        ...
+
 
 class GraphFactory:
     """Factory for creating graphs with an optional parent."""
@@ -205,21 +259,38 @@ class GraphFactory:
         """Creates a new graph us"""
         ...
 
+
 class Manifest:
     @property
-    def manifest_str(self) -> str: ...
-    def __init__(self, manifest: str) -> None: ...
-    def export(self, file: PathLike[str]) -> None: ...
-    def import_manifest(self, manifest: Any) -> None: ...
+    def manifest_str(self) -> str:
+        ...
+
+    def __init__(self, manifest: str) -> None:
+        ...
+
+    def export(self, file: PathLike[str]) -> None:
+        ...
+
+    def import_manifest(self, manifest: Any) -> None:
+        ...
+
     @staticmethod
-    def merge(a: str, b: str) -> str: ...
+    def merge(a: str, b: str) -> str:
+        ...
+
+
+class PyAssociationType:
+    Certifies: PyAssociationType
+    Includes: PyAssociationType
+    IsInstanceOf: PyAssociationType
+
 
 class SIGNER_ALGORITHMS:
     """Supported signer algorithm identifiers."""
-
     ED25519: str
     SECP256K1: str
     SECP256R1: str
+
 
 class Service:
     """Service for connecting to the Integrity Service API."""
@@ -233,6 +304,7 @@ class Service:
         """Creates a service client using th"""
         ...
 
+
 class Signer:
     """Python-exposed signer information.  Contains the name and DID key of a cryptographic signer."""
     @property
@@ -245,42 +317,44 @@ class Signer:
         """Returns the DID key of the signer.  # Returns * `&str` - T"""
         ...
 
-    def __init__(self, name: str, did_key: str) -> None: ...
+    def __init__(self, name: str, did_key: str) -> None:
+        ...
+
     @staticmethod
-    def new(algorithm: Optional[Any] = None) -> Signer: ...
+    def new(algorithm: Optional[Any] = None) -> Signer:
+        ...
+
     @staticmethod
-    def vcomp_notary(url: Optional[str] = None) -> Signer: ...
+    def vcomp_notary(url: Optional[str] = None) -> Signer:
+        ...
+
     @staticmethod
-    def auth_service(url: str) -> Signer: ...
+    def auth_service(url: str) -> Signer:
+        ...
+
     @staticmethod
-    def yubihsm2(auth_key_id: int, signing_key_id: int, password: str) -> Signer: ...
+    def yubihsm2(auth_key_id: int, signing_key_id: int, password: str) -> Signer:
+        ...
+
     @staticmethod
-    def from_private_key(algorithm: Any, private_key: str) -> Signer: ...
+    def from_private_key(algorithm: Any, private_key: str) -> Signer:
+        ...
+
 
 # Entity module
 class entity:
     Entity: type[Entity]
 
     @staticmethod
-    def create_entity(
-        metadata_json: str,
-        skip_proof: Optional[bool] = None,
-        timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> Tuple[eqty_sdk._rust.Entity, Any]:
-        """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+    def create_entity(metadata_json: str, skip_proof: Optional[bool] = None, timestamp: Optional[str] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> Tuple[eqty_sdk._rust.Entity, Any]:
+        """ # Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
     @staticmethod
-    def create_entity_from_uuid(
-        uuid: str,
-        metadata_json: str,
-        skip_proof: Optional[bool] = None,
-        timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> Tuple[eqty_sdk._rust.Entity, Any]:
+    def create_entity_from_uuid(uuid: str, metadata_json: str, skip_proof: Optional[bool] = None, timestamp: Optional[str] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> Tuple[eqty_sdk._rust.Entity, Any]:
         """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
+
 
 # Manifest module
 class manifest:
@@ -290,6 +364,7 @@ class manifest:
     def merge(a: str, b: str) -> str:
         """Merges the manifests `a` and `b` and returns the merged manifest."""
         ...
+
 
 # Signer module
 class signer:
@@ -302,21 +377,17 @@ class signer:
         ...
 
     @staticmethod
-    def create_signer_from_private_key(
-        key: str, key_type: str, name: Optional[str] = None
-    ) -> eqty_sdk._rust.Signer:
+    def create_signer_from_private_key(key: str, key_type: str, name: Optional[str] = None) -> eqty_sdk._rust.Signer:
         """Creates a signer from an existing base64-encoded private key.  # Arguments * `key` - Base64-encoded private key bytes * `key_type` - Type of cryptographic key (SECP256K1, SECP256R1, ED25519) * `name` - Optional name for the signer (uses DID key if not provided)"""
         ...
 
     @staticmethod
     def create_vcomp_signer(url: str, pub_key: Optional[str] = None) -> eqty_sdk._rust.Signer:
-        """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `key_type` - Type of key (currently only SECP256R1 is supported) * `pub_key` - Optional public key for the signer"""
+        """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `key_type` - Type of key (currently only SECP256R1 is supported) * `pub_key` - Optional public key for the signer """
         ...
 
     @staticmethod
-    def create_yubihsm2_signer(
-        auth_key_id: int, signing_key_id: int, password: str
-    ) -> eqty_sdk._rust.Signer:
+    def create_yubihsm2_signer(auth_key_id: int, signing_key_id: int, password: str) -> eqty_sdk._rust.Signer:
         """Creates and configures a YubiHSM2 hardware security module signer.  # Arguments * `name` - Name to assign to the signer * `auth_key_id` - Authentication key ID for YubiHSM2 * `signing_key_id` - Signing key ID for YubiHSM2 * `password` - Password for YubiHSM2 authentication"""
         ...
 
@@ -330,77 +401,45 @@ class signer:
         """Sets the active signer by name or signer instance.  # Arguments * `signer` - Signer name string or Signer instance"""
         ...
 
+
 # Statements module
 class statements:
+    PyAssociationType: type[PyAssociationType]
+
     @staticmethod
-    def add_association_statement(
-        subject: str,
-        association: str,
-        *,
-        skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+    def add_association_statement(subject: str, association: List[str], r#type: eqty_sdk._rust.PyAssociationType, *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> List[eqty_sdk._rust.CID]:
+        ...
+
     @staticmethod
-    def add_computation_statement(
-        inputs: List[eqty_sdk._rust.CID],
-        outputs: List[eqty_sdk._rust.CID],
-        computation: Optional[eqty_sdk._rust.CID] = None,
-        *,
-        operated_by: Optional[str] = None,
-        executed_on: Optional[str] = None,
-        skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+    def add_computation_statement(inputs: List[eqty_sdk._rust.CID], outputs: List[eqty_sdk._rust.CID], computation: Optional[eqty_sdk._rust.CID] = None, *, operated_by: Optional[str] = None, executed_on: Optional[str] = None, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> List[eqty_sdk._rust.CID]:
+        ...
+
     @staticmethod
-    def add_data_statement(
-        data: List[eqty_sdk._rust.CID],
-        *,
-        skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+    def add_data_statement(data: List[eqty_sdk._rust.CID], *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> List[eqty_sdk._rust.CID]:
+        ...
+
     @staticmethod
-    def add_did_statement(
-        did: str, *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None
-    ) -> List[eqty_sdk._rust.CID]: ...
+    def add_did_statement(did: str, *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> List[eqty_sdk._rust.CID]:
+        ...
+
     @staticmethod
-    def add_entity_statement(
-        entity: str,
-        *,
-        skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+    def add_entity_statement(entity: str, *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> List[eqty_sdk._rust.CID]:
+        ...
+
     @staticmethod
-    def add_governance_statement(
-        subject: str,
-        document: str,
-        *,
-        skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+    def add_governance_statement(subject: str, document: str, *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> List[eqty_sdk._rust.CID]:
+        ...
+
     @staticmethod
-    def add_metadata_statement(
-        subject: str,
-        metadata: str,
-        *,
-        skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+    def add_metadata_statement(subject: str, metadata: str, *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> List[eqty_sdk._rust.CID]:
+        ...
+
     @staticmethod
-    def add_vc_statement(
-        subject: str,
-        *,
-        timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> eqty_sdk._rust.CID: ...
+    def add_vc_statement(subject: str, *, timestamp: Optional[str] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> eqty_sdk._rust.CID:
+        ...
+
     @staticmethod
-    def add_storage_statement(
-        data: str,
-        stored_on: str,
-        *,
-        operated_by: Optional[str] = None,
-        skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> List[eqty_sdk._rust.CID]:
+    def add_storage_statement(data: str, stored_on: str, *, operated_by: Optional[str] = None, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> List[eqty_sdk._rust.CID]:
         """Adds a storage statement linking data to a storage location."""
         ...
 
@@ -410,26 +449,14 @@ class statements:
         ...
 
     @staticmethod
-    def create_model_signing_statement(
-        collection_cid: str,
-        blobs_dir: PathLike[str],
-        model_signing_name: str,
-        allow_symlinks: bool,
-        ignore_paths: List[str],
-        *,
-        timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> eqty_sdk._rust.CID: ...
+    def create_model_signing_statement(collection_cid: str, blobs_dir: PathLike[str], model_signing_name: str, allow_symlinks: bool, ignore_paths: List[str], *, timestamp: Optional[str] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> eqty_sdk._rust.CID:
+        ...
+
 
 # Stream module
 class stream:
     @staticmethod
-    def create(
-        input_cids: List[eqty_sdk._rust.CID],
-        operated_by: Optional[str] = None,
-        executed_on: Optional[str] = None,
-        timestamp: Optional[str] = None,
-    ) -> Any:
+    def create(input_cids: List[eqty_sdk._rust.CID], operated_by: Optional[str] = None, executed_on: Optional[str] = None, timestamp: Optional[str] = None) -> Any:
         """creates a new computation stream"""
         ...
 
@@ -439,10 +466,7 @@ class stream:
         ...
 
     @staticmethod
-    def finalize(
-        id: str,
-        static_output_cids: Optional[List[str]] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
-    ) -> Any:
+    def finalize(id: str, static_output_cids: Optional[List[str]] = None, graph: Optional[eqty_sdk._rust.Graph] = None) -> Any:
         """Finalizes the computation stream and creates the ComputationStatement and (optionally) the VC and VCStatement returns the CID of the computation statement"""
         ...
+

@@ -18,6 +18,7 @@ mod vc;
 /// `statements` submodule to create lineage statements
 #[pymodule]
 pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<association::PyAssociationType>()?;
     m.add_function(wrap_pyfunction!(association::add_association_statement, m)?)?;
     m.add_function(wrap_pyfunction!(computation::add_computation_statement, m)?)?;
     m.add_function(wrap_pyfunction!(data::add_data_statement, m)?)?;

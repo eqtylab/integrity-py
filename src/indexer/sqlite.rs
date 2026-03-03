@@ -98,7 +98,8 @@ impl Sqlite {
                 statement TEXT NOT NULL,
                 registered_by TEXT NOT NULL,
                 subject TEXT NOT NULL,
-                association TEXT NOT NULL
+                association TEXT NOT NULL,
+                type TEXT NOT NULL
             );
         "#;
         sqlx::query(association_table).execute(&self.pool).await?;
@@ -764,26 +765,27 @@ impl Sqlite {
 
                 Ok(())
             }
-            Statement::AssociationRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering association '{id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO association_statements
-                    (id, statement, registered_by, subject, association) VALUES (?1, ?2, ?3, ?4, ?5)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .bind(&s.subject)
-                .bind(&s.association)
-                .execute(&self.pool)
-                .await?;
-
-                self.associate_statement_to_graph(&id, graph_id).await
+            Statement::AssociationRegistration(_s) => {
+                todo!()
+                // let statement = serde_json::to_value(statement)?;
+                // let id = s.get_id();
+                // let statement_data = serde_json::to_string(&statement)?;
+                // log::debug!("Registering association '{id}'");
+                // sqlx::query(
+                //     r#"
+                //     INSERT OR IGNORE INTO association_statements
+                //     (id, statement, registered_by, subject, association) VALUES (?1, ?2, ?3, ?4, ?5)
+                // "#,
+                // )
+                // .bind(&id)
+                // .bind(&statement_data)
+                // .bind(&s.registered_by)
+                // .bind(&s.subject)
+                // .bind(&s.association)
+                // .execute(&self.pool)
+                // .await?;
+                //
+                // self.associate_statement_to_graph(&id, graph_id).await
             }
             Statement::GovernanceRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
