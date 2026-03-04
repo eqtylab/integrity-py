@@ -4,7 +4,7 @@ mod sqlite_tests;
 
 use std::{collections::HashMap, env, fmt, fs::File, path::PathBuf, sync::Arc};
 
-use anyhow::{Context, Result};
+use anyhow::{Context as AnyhowContext, Result};
 use integrity::lineage::models::{
     manifest::{generate_manifest, resolve_blobs},
     statements::{Statement, StatementTrait},
