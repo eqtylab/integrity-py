@@ -83,15 +83,6 @@ def get_asset_name(asset_type: Union[AssetType, str], cid: CID) -> str:
         return f"{asset_type}-{cid_suffix}"
 
 
-def _should_skip_proof(**kwargs):
-    """Checks if skip_proof is set in kwargs, then checks the env var, finally defaults to False."""
-    skip = kwargs.pop("skip_proof", None)
-    if skip is not None:
-        return skip
-    else:
-        return os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
-
-
 class TypedAsset:
     """Base class for typed assets. Subclasses just need to set _asset_type class variable."""
 
@@ -131,7 +122,7 @@ class Asset:
         self._ctx = custom_ctx
 
         self._value: Any = obj
-        self._skip_proof = _should_skip_proof(**kwargs)
+        self._skip_proof = kwargs.pop("skip_proof", None)
 
         self._cid = cid
         self._is_dir = is_dir

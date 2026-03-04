@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from eqty_sdk._rust import CID
 
@@ -43,7 +43,7 @@ class Metadata:
     def to_json_str(self) -> str:
         return json.dumps(self, indent=4, cls=MetadataJSONEncoder)
 
-    def create_statement(self, subject_cid: CID, skip_proof: bool) -> List[CID]:
+    def create_statement(self, subject_cid: CID, skip_proof: Optional[bool]) -> List[CID]:
         metadata_json = self.to_json_str()
         return add_metadata_statement(str(subject_cid), metadata_json, skip_proof=skip_proof)
 

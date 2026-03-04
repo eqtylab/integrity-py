@@ -1,4 +1,3 @@
-import os
 from typing import List, Optional
 
 from eqty_sdk._rust import (
@@ -58,11 +57,7 @@ class Association:
         self._subject = _normalize_association_ref(subject)
         self._association_type = association_type
         self._predicates: List[str] = []
-
-        if skip_proof is not None:
-            self._skip_proof = skip_proof
-        else:
-            self._skip_proof = os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
+        self._skip_proof = skip_proof
 
     @classmethod
     def new(

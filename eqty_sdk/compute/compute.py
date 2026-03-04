@@ -1,7 +1,6 @@
 import inspect
 import json
 import logging
-import os
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from eqty_sdk._rust import (
@@ -70,11 +69,7 @@ class Compute:
 
         self.metadata = Metadata(**metadata)
 
-        skip = kwargs.pop("skip_proof", None)
-        if skip is not None:
-            self._skip_proof = skip
-        else:
-            self._skip_proof = os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
+        self._skip_proof = kwargs.pop("skip_proof", None)
 
         # pointer to the wrapped fn so we can call it later
         self._func = func

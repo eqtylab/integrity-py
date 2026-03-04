@@ -1,5 +1,4 @@
 import logging
-import os
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
@@ -43,11 +42,7 @@ class Computation:
         self._input_cids: List[CID] = []
         self._output_cids: List[CID] = []
         self._computation_cid: Union[CID, None] = None
-
-        if skip_proof is not None:
-            self._skip_proof = skip_proof
-        else:
-            self._skip_proof = os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
+        self._skip_proof = skip_proof
 
     @classmethod
     def new(cls, **kwargs) -> "Computation":
