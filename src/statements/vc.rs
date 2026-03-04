@@ -8,15 +8,15 @@ use pyo3::{pyfunction, PyResult, Python};
 use crate::{with_cfg, Context, CID};
 
 #[pyfunction]
-#[pyo3(signature = (subject, *, timestamp=None, graph=None))]
+#[pyo3(signature = (subject, *, timestamp=None, context=None))]
 pub fn add_vc_statement(
     py: Python,
     subject: String,
     timestamp: Option<String>,
-    graph: Option<Context>,
+    context: Option<Context>,
 ) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph);
+        let graph_id = ctx.resolve_graph_id(context);
         let signer = ctx
             .active_signer
             .ok_or_else(|| anyhow!("No active signer available"))?;

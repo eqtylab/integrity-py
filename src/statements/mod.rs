@@ -40,16 +40,16 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
-/// Register a statement from JSON string to the default graph.
+/// Register a statement from JSON string to the default context.
 #[pyfunction]
 #[pyo3(signature = (statement_json))]
 pub fn register_statement(py: Python, statement_json: String) -> PyResult<()> {
     with_cfg!(py, |ctx| {
         let statement: Statement = serde_json::from_str(&statement_json)
-            .map_err(|e| anyhow::anyhow!("Failed to parse statement JSON: {}", e))?;
-        let graph_id = ctx.default_graph.id;
+            .map_err(|e| anyhow::anyhow!("Failed to parse statement JSON: {e}"))?;
+        let context_id = ctx.default_context.id;
         ctx.sql_lite
-            .register_statement(&statement, &graph_id)
+            .register_statement(&statement, &context_id)
             .await?;
         Ok::<_, anyhow::Error>(())
     })?;

@@ -206,8 +206,8 @@ pub struct Config {
     pub generate_model_signing_signatures: bool,
     /// Whether to store all blobs when computing CIDs
     pub store_all_blobs: bool,
-    /// Default graph used when no graph/context is supplied.
-    pub default_graph: Context,
+    /// Default context used when no context is supplied.
+    pub default_context: Context,
     /// Blob store used for persisted binary data.
     pub blob_store: LocalFs,
 }
@@ -251,8 +251,8 @@ impl Config {
     }
 
     fn get_default_context(&self) -> Context {
-        log::debug!("Returning default graph {}", self.default_graph);
-        self.default_graph.clone()
+        log::debug!("Returning default context {}", self.default_context);
+        self.default_context.clone()
     }
 }
 
@@ -262,10 +262,11 @@ impl Config {
     ///
     /// # Arguments
     /// * `app_dir` - Base directory for storing application data
+    /// * `default_context` - A default context to register all statements under
     ///
     /// # Returns
     /// * `Result<Config>` - Initialized config, or error if initialization fails
-    pub async fn init(app_dir: PathBuf, default_graph: Option<Context>) -> Result<Config> {
+    pub async fn init(app_dir: PathBuf, default_context: Option<Context>) -> Result<Config> {
         // Check if already initialized
         {
             let ctx_lock = CFG.read().await;
@@ -294,9 +295,9 @@ impl Config {
             sqlite.init().await?;
         }
 
-        let default_graph = default_graph.unwrap_or_default();
-        log::debug!("Initializing default graph: {default_graph}");
-        sqlite.create_graph(&default_graph).await?;
+        let default_context = default_context.unwrap_or_default();
+        log::debug!("Initializing default graph: {default_context}");
+        sqlite.create_graph(&default_context).await?;
 
         // Load persisted settings if config.toml exists
         let persisted = Self::load_config(&app_dir);
@@ -318,7 +319,7 @@ impl Config {
                 .as_ref()
                 .map(|p| p.store_all_blobs)
                 .unwrap_or(false),
-            default_graph,
+            default_context,
             blob_store,
         };
 
@@ -400,19 +401,19 @@ impl Config {
     /// Resolves the Optional graph id, or the default graph id
     ///
     /// # Arguments
-    /// * `Option<Context>` - Optional graph object
+    /// * `Option<Context>` - Optional context object
     ///
     /// # Returns
-    /// * `Result<Uuid>` - The opional graph id converted to a UUID, or the default graph id
-    pub fn resolve_graph_id(&self, graph: Option<Context>) -> Uuid {
-        match graph {
+    /// * `Result<Uuid>` - The explict or default context id
+    pub fn resolve_graph_id(&self, context: Option<Context>) -> Uuid {
+        match context {
             Some(g) => g.id,
             None => {
                 log::trace!(
-                    "Context was not provided. Using default graph {:}",
-                    self.default_graph.id
+                    "Context was not provided. Using default context {:}",
+                    self.default_context.id
                 );
-                self.default_graph.id
+                self.default_context.id
             }
         }
     }

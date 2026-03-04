@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[pyfunction]
-#[pyo3(signature = (inputs, outputs, computation=None, *, operated_by=None, executed_on=None, skip_proof=None, graph=None))]
+#[pyo3(signature = (inputs, outputs, computation=None, *, operated_by=None, executed_on=None, skip_proof=None, context=None))]
 pub fn add_computation_statement(
     py: Python,
     inputs: Vec<CID>,
@@ -19,13 +19,13 @@ pub fn add_computation_statement(
     operated_by: Option<String>,
     executed_on: Option<String>,
     skip_proof: Option<bool>,
-    graph: Option<Context>,
+    context: Option<Context>,
 ) -> PyResult<Vec<CID>> {
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);
 
     with_cfg!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph);
+        let graph_id = ctx.resolve_graph_id(context);
         let signer = ctx
             .clone()
             .active_signer

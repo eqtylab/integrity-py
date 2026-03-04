@@ -172,16 +172,16 @@ pub struct ContextFactory {
 impl ContextFactory {
     #[allow(clippy::new_ret_no_self)]
     #[pyo3(signature = (name))]
-    /// Creates a new graph using the factory's parent if set.
+    /// Creates a new context using the factory's parent if set.
     pub fn new(&self, py: Python<'_>, name: String) -> Context {
-        let graph = Context {
+        let context = Context {
             id: Uuid::new_v4(),
             name,
             parent: self.parent,
         };
-        log::debug!("Creating new graph: {:?}", graph.__str__());
-        maybe_create_graph_in_db(py, &graph);
-        graph
+        log::debug!("Creating new context: {:?}", context.__str__());
+        maybe_create_graph_in_db(py, &context);
+        context
     }
 }
 
@@ -303,12 +303,12 @@ pub(crate) fn rows_to_statements(rows: Vec<SqliteRow>) -> Result<HashMap<String,
     Ok(statements)
 }
 
-// GraphFactor::new may be called before sdk initalization
+// ContextFactory::new may be called before sdk initalization
 // If we are initalized, save the graph to the db, otherwise .init() will save the graph
-fn maybe_create_graph_in_db(py: Python<'_>, graph: &Context) {
+fn maybe_create_graph_in_db(py: Python<'_>, context: &Context) {
     if let Ok(ctx) = crate::config::cfg_blocking() {
         let _ = py.detach(|| {
-            pyo3_async_runtimes::tokio::get_runtime().block_on(ctx.sql_lite.create_graph(graph))
+            pyo3_async_runtimes::tokio::get_runtime().block_on(ctx.sql_lite.create_graph(context))
         });
     }
 }
