@@ -27,6 +27,7 @@ logger = logging.getLogger("eqty.sdk.Asset")
 # These are the 'known' types, but actual value can be anything
 class AssetType(Enum):
     ATTRIBUTION = "Attribution"
+    AGENT = "Agent"
     BENCHMARK = "Benchmark"
     BENCHMARK_RESULT = "Benchmark_Result"
     CERTIFICATE = "Certificate"

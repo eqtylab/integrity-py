@@ -17,6 +17,7 @@ from eqty_sdk._rust import (
     signer,
 )
 from eqty_sdk.asset import (
+    Agent,
     Asset,
     AssetType,
     Attribution,
@@ -58,6 +59,7 @@ __all__ = [
     "purge_statement_store",
     "Config",
     # Assets
+    "Agent",
     "Asset",
     "AssetType",
     "Attribution",
