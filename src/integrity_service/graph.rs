@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 
 use super::Service;
-use crate::indexer::Graph;
+use crate::indexer::Context;
 
 /// Request body for registering a graph with the Integrity Service.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
@@ -30,7 +30,7 @@ impl GraphRegistrationRequest {
 }
 
 /// Creates or updates a graph record via the Integrity Service API.
-pub async fn create_graph_record(service: &Service, graph: Graph) -> Result<()> {
+pub async fn create_graph_record(service: &Service, graph: Context) -> Result<()> {
     let mut body = GraphRegistrationRequest::new(graph.id.to_string(), graph.name);
     if graph.parent.is_some() {
         body.parent_id = Some(graph.parent.map(|id| id.to_string()));

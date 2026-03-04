@@ -20,7 +20,7 @@ use tokio::{sync::RwLock, task_local};
 use uuid::Uuid;
 
 use crate::{
-    indexer::{Graph, Sqlite},
+    indexer::{Context, Sqlite},
     CID,
 };
 
@@ -207,7 +207,7 @@ pub struct Config {
     /// Whether to store all blobs when computing CIDs
     pub store_all_blobs: bool,
     /// Default graph used when no graph/context is supplied.
-    pub default_graph: Graph,
+    pub default_graph: Context,
     /// Blob store used for persisted binary data.
     pub blob_store: LocalFs,
 }
@@ -250,7 +250,7 @@ impl Config {
         Ok(self.clone())
     }
 
-    fn get_default_context(&self) -> Graph {
+    fn get_default_context(&self) -> Context {
         log::debug!("Returning default graph {}", self.default_graph);
         self.default_graph.clone()
     }
@@ -265,7 +265,7 @@ impl Config {
     ///
     /// # Returns
     /// * `Result<Config>` - Initialized config, or error if initialization fails
-    pub async fn init(app_dir: PathBuf, default_graph: Option<Graph>) -> Result<Config> {
+    pub async fn init(app_dir: PathBuf, default_graph: Option<Context>) -> Result<Config> {
         // Check if already initialized
         {
             let ctx_lock = CFG.read().await;
@@ -400,16 +400,16 @@ impl Config {
     /// Resolves the Optional graph id, or the default graph id
     ///
     /// # Arguments
-    /// * `Option<Graph>` - Optional graph object
+    /// * `Option<Context>` - Optional graph object
     ///
     /// # Returns
     /// * `Result<Uuid>` - The opional graph id converted to a UUID, or the default graph id
-    pub fn resolve_graph_id(&self, graph: Option<Graph>) -> Uuid {
+    pub fn resolve_graph_id(&self, graph: Option<Context>) -> Uuid {
         match graph {
             Some(g) => g.id,
             None => {
                 log::trace!(
-                    "GraphID was not provided. Using default graph {:}",
+                    "Context was not provided. Using default graph {:}",
                     self.default_graph.id
                 );
                 self.default_graph.id

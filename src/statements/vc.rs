@@ -5,7 +5,7 @@ use integrity::{
 };
 use pyo3::{pyfunction, PyResult, Python};
 
-use crate::{with_cfg, Graph, CID};
+use crate::{with_cfg, Context, CID};
 
 #[pyfunction]
 #[pyo3(signature = (subject, *, timestamp=None, graph=None))]
@@ -13,7 +13,7 @@ pub fn add_vc_statement(
     py: Python,
     subject: String,
     timestamp: Option<String>,
-    graph: Option<Graph>,
+    graph: Option<Context>,
 ) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph);

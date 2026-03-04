@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, cast
 
 from eqty_sdk._rust import (
     CID,
-    Graph as Context,
+    Context,
     get_cid_for_bytes,
     statements,
     stream as eqty_core_stream,

@@ -8,8 +8,8 @@ from typing import Any, Optional, Union, cast
 
 from eqty_sdk._rust import (
     CID,
+    Context,
     Declaration,
-    Graph as Context,
     get_cid_for_bytes,
     get_cid_for_path,
 )

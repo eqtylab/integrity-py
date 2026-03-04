@@ -7,7 +7,7 @@ import uuid
 from os import PathLike
 
 def init(
-    custom_dir: Optional[PathLike[str]] = None, default_context: Optional[Graph] = None
+    custom_dir: Optional[PathLike[str]] = None, default_context: Optional[Context] = None
 ) -> Config:
     """Initializes the sdk config. Must be called before setting individual config values"""
     ...
@@ -56,13 +56,63 @@ class Config:
     ) -> Config: ...
     def set_generate_model_signing_signatures(self, enable: bool) -> Config: ...
     def set_store_all_blobs(self, value: bool) -> Config: ...
-    def get_default_context(self) -> Graph: ...
+    def get_default_context(self) -> Context: ...
+
+class Context:
+    """A graph structure for organizing related statements hierarchically.  Graphs group statements together with optional parent-child relationships, enabling versioning and organizational structure for lineage data."""
+    @property
+    def id(self) -> uuid.UUID:
+        """Unique identifier for this graph"""
+        ...
+
+    @property
+    def name(self) -> str:
+        """Human-readable name for this graph"""
+        ...
+
+    @property
+    def parent(self) -> Optional[uuid.UUID]:
+        """Optional parent graph ID for hierarchical organization"""
+        ...
+
+    @staticmethod
+    def new(name: str) -> Context:
+        """Creates a new graph with the given name.  If the global config is initialized, the graph is persisted to sqlite."""
+        ...
+
+    @staticmethod
+    def from_parent(parent: Context) -> ContextFactory:
+        """Returns a factory that creates graphs with the provided parent."""
+        ...
+
+    @staticmethod
+    def from_uuid(project_id: uuid.UUID) -> ContextFactory:
+        """Returns a factory that creates graphs with the provided project UUID as parent."""
+        ...
+
+    def register(self, service: Service) -> None:
+        """Registers this graph, its ancestors, statements, and blobs with a service."""
+        ...
+
+    def delete_tree(self) -> None: ...
+    def delete(self) -> None: ...
+    def export(self, path: PathLike[str]) -> None:
+        """Exports this graph's statements and blobs to a manifest JSON file."""
+        ...
+
+    def __str__(self) -> str: ...
+
+class ContextFactory:
+    """Factory for creating graphs with an optional parent."""
+    def new(self, name: str) -> Context:
+        """Creates a new graph using the factory's parent if set."""
+        ...
 
 class DID:
     """A DID statement result bound to a context."""
     @property
     def ctx(self) -> Any:
-        """Graph/context where the DID statement was registered."""
+        """Context where the DID statement was registered."""
         ...
 
     @property
@@ -76,14 +126,14 @@ class DID:
         ...
 
     def __init__(
-        self, ctx: Graph, did: str, signer: Optional[Signer] = None, **kwargs: Any
+        self, ctx: Context, did: str, signer: Optional[Signer] = None, **kwargs: Any
     ) -> None: ...
     @staticmethod
     def from_signer(signer: Signer, **kwargs: Any) -> DID: ...
     @staticmethod
     def from_did_string(did: str, **kwargs: Any) -> DID: ...
     @staticmethod
-    def with_context(ctx: Graph) -> DidFactory: ...
+    def with_context(ctx: Context) -> DidFactory: ...
 
 class Declaration:
     """A governance declaration describing a subject and related metadata."""
@@ -159,65 +209,6 @@ class Entity:
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
 
-class Graph:
-    """A graph structure for organizing related statements hierarchically.  Graphs group statements together with optional parent-child relationships, enabling versioning and organizational structure for lineage data."""
-    @property
-    def id(self) -> uuid.UUID:
-        """Unique identifier for this graph"""
-        ...
-
-    @property
-    def name(self) -> str:
-        """Human-readable name for this graph"""
-        ...
-
-    @property
-    def parent(self) -> Optional[uuid.UUID]:
-        """Optional parent graph ID for hierarchical organization"""
-        ...
-
-    @staticmethod
-    def new(name: str) -> Graph:
-        """Creates a new graph with the given name.  If the global config is initialized, the graph is persisted to sqlite."""
-        ...
-
-    @staticmethod
-    def from_parent(parent: Graph) -> GraphFactory:
-        """Returns a factory that creates graphs with the provided parent."""
-        ...
-
-    @staticmethod
-    def from_uuid(project_id: uuid.UUID) -> GraphFactory:
-        """Returns a factory that creates graphs with the provided project UUID as parent."""
-        ...
-
-    def register(self, service: Service) -> None:
-        """Registers this graph, its ancestors, statements, and blobs with a service."""
-        ...
-
-    def delete_tree(self) -> None: ...
-    def delete(self) -> None: ...
-    def export(self, path: PathLike[str]) -> None:
-        """Exports this graph's statements and blobs to a manifest JSON file."""
-        ...
-
-    def __str__(self) -> str: ...
-
-class GraphFactory:
-    """Factory for creating graphs with an optional parent."""
-    def new(self, name: str) -> Graph:
-        """Creates a new graph using the factory's parent if set."""
-        ...
-
-class Manifest:
-    @property
-    def manifest_str(self) -> str: ...
-    def __init__(self, manifest: str) -> None: ...
-    def export(self, file: PathLike[str]) -> None: ...
-    def import_manifest(self, manifest: Any) -> None: ...
-    @staticmethod
-    def merge(a: str, b: str) -> str: ...
-
 class PyAssociationType:
     Certifies: PyAssociationType
     Includes: PyAssociationType
@@ -290,7 +281,7 @@ class entity:
         metadata_json: str,
         skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> Tuple[eqty_sdk._rust.Entity, Any]:
         """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
@@ -301,18 +292,9 @@ class entity:
         metadata_json: str,
         skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> Tuple[eqty_sdk._rust.Entity, Any]:
         """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
-        ...
-
-# Manifest module
-class manifest:
-    Manifest: type[Manifest]
-
-    @staticmethod
-    def merge(a: str, b: str) -> str:
-        """Merges the manifests `a` and `b` and returns the merged manifest."""
         ...
 
 # Signer module
@@ -365,7 +347,7 @@ class statements:
         association_type: eqty_sdk._rust.PyAssociationType,
         *,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_computation_statement(
@@ -376,25 +358,28 @@ class statements:
         operated_by: Optional[str] = None,
         executed_on: Optional[str] = None,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_data_statement(
         data: List[eqty_sdk._rust.CID],
         *,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_did_statement(
-        did: str, *, skip_proof: Optional[bool] = None, graph: Optional[eqty_sdk._rust.Graph] = None
+        did: str,
+        *,
+        skip_proof: Optional[bool] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_entity_statement(
         entity: str,
         *,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_governance_statement(
@@ -402,7 +387,7 @@ class statements:
         document: str,
         *,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_metadata_statement(
@@ -410,14 +395,14 @@ class statements:
         metadata: str,
         *,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_vc_statement(
         subject: str,
         *,
         timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> eqty_sdk._rust.CID: ...
     @staticmethod
     def add_storage_statement(
@@ -426,7 +411,7 @@ class statements:
         *,
         operated_by: Optional[str] = None,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]:
         """Adds a storage statement linking data to a storage location."""
         ...
@@ -445,7 +430,7 @@ class statements:
         ignore_paths: List[str],
         *,
         timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> eqty_sdk._rust.CID: ...
 
 # Stream module
@@ -469,7 +454,7 @@ class stream:
     def finalize(
         id: str,
         static_output_cids: Optional[List[str]] = None,
-        graph: Optional[eqty_sdk._rust.Graph] = None,
+        graph: Optional[eqty_sdk._rust.Context] = None,
     ) -> Any:
         """Finalizes the computation stream and creates the ComputationStatement and (optionally) the VC and VCStatement returns the CID of the computation statement"""
         ...

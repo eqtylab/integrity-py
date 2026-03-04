@@ -2,7 +2,7 @@ use integrity::lineage::models::statements::{DataStatement, Statement, Statement
 use pyo3::{pyfunction, PyResult, Python};
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Graph, CID,
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Context, CID,
 };
 
 #[pyfunction]
@@ -11,7 +11,7 @@ pub fn add_data_statement(
     py: Python,
     data: Vec<CID>,
     skip_proof: Option<bool>,
-    graph: Option<Graph>,
+    graph: Option<Context>,
 ) -> PyResult<Vec<CID>> {
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);
