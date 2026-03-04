@@ -20,7 +20,7 @@ use tokio::{sync::RwLock, task_local};
 use uuid::Uuid;
 
 use crate::{
-    indexer::{Graph, Sqlite},
+    indexer::{Context, Sqlite},
     CID,
 };
 
@@ -69,28 +69,28 @@ impl From<CidIgnoreSettings> for CidIgnoreConfig {
     }
 }
 
-static CTX: Lazy<RwLock<Option<Config>>> = Lazy::new(|| RwLock::new(None));
+static CFG: Lazy<RwLock<Option<Config>>> = Lazy::new(|| RwLock::new(None));
 task_local! {
-    static IN_WITH_CTX: bool;
+    static IN_WITH_CFG: bool;
 }
 
 /// Macro to reduce boilerplate for async config operations in pyfunctions.
 ///
 /// Usage:
 /// ```rust
-/// with_ctx!(py, |ctx| {
-///     let graph_id = ctx.resolve_graph_id(graph_id)?;
+/// with_cfg!(py, |cfg| {
+///     let graph_id = cfg.resolve_graph_id(graph_id)?;
 ///     // ... async operations ...
 ///     Ok(result)
 /// })
 /// ```
 #[macro_export]
-macro_rules! with_ctx {
-    ($py:expr, |$ctx:ident| $body:expr) => {
+macro_rules! with_cfg {
+    ($py:expr, |$cfg:ident| $body:expr) => {
         $py.detach(|| {
             pyo3_async_runtimes::tokio::get_runtime().block_on(async {
-                $crate::config::with_ctx_guard(async {
-                    let $ctx = $crate::config::ctx_async().await;
+                $crate::config::with_cfg_guard(async {
+                    let $cfg = $crate::config::cfg_async().await;
                     $body
                 })
                 .await
@@ -106,42 +106,42 @@ macro_rules! with_ctx {
 ///
 /// # Panics
 /// Panics if the global config has not been initialized via `Config::init()`.
-pub async fn ctx_async() -> Config {
-    CTX.read()
+pub async fn cfg_async() -> Config {
+    CFG.read()
         .await
         .as_ref()
         .expect("Config not initialized")
         .clone()
 }
 
-/// Runs a future while marking `with_ctx` as active for this task.
+/// Runs a future while marking `with_cfg` as active for this task.
 ///
-/// This prevents calling blocking context helpers within a `with_ctx` scope.
-pub async fn with_ctx_guard<F, T>(f: F) -> T
+/// This prevents calling blocking context helpers within a `with_cfg` scope.
+pub async fn with_cfg_guard<F, T>(f: F) -> T
 where
     F: Future<Output = T>,
 {
-    IN_WITH_CTX.scope(true, f).await
+    IN_WITH_CFG.scope(true, f).await
 }
 
 /// Gets a clone of the global application config (blocking version).
 ///
 /// # Returns
 /// * `Result<Config>` - Clone of the initialized global config or an error if unset
-pub fn ctx_blocking() -> Result<Config> {
-    if IN_WITH_CTX
-        .try_with(|in_with_ctx| *in_with_ctx)
+pub fn cfg_blocking() -> Result<Config> {
+    if IN_WITH_CFG
+        .try_with(|in_with_cfg| *in_with_cfg)
         .unwrap_or(false)
     {
         return Err(anyhow!(
-            "ctx_blocking() cannot be called from within with_ctx"
+            "cfg_blocking() cannot be called from within with_cfg"
         ));
     }
-    let ctx_lock = CTX.blocking_read();
-    let ctx = ctx_lock
+    let cfg_lock = CFG.blocking_read();
+    let cfg = cfg_lock
         .as_ref()
         .ok_or_else(|| anyhow!("Config not initialized"))?;
-    Ok(ctx.clone())
+    Ok(cfg.clone())
 }
 
 fn set_hashing_config_inner(multithread: Option<bool>, memory_map: Option<bool>) -> Result<()> {
@@ -207,7 +207,7 @@ pub struct Config {
     /// Whether to store all blobs when computing CIDs
     pub store_all_blobs: bool,
     /// Default graph used when no graph/context is supplied.
-    pub default_graph: Graph,
+    pub default_graph: Context,
     /// Blob store used for persisted binary data.
     pub blob_store: LocalFs,
 }
@@ -250,7 +250,7 @@ impl Config {
         Ok(self.clone())
     }
 
-    fn get_default_context(&self) -> Graph {
+    fn get_default_context(&self) -> Context {
         log::debug!("Returning default graph {}", self.default_graph);
         self.default_graph.clone()
     }
@@ -265,10 +265,10 @@ impl Config {
     ///
     /// # Returns
     /// * `Result<Config>` - Initialized config, or error if initialization fails
-    pub async fn init(app_dir: PathBuf, default_graph: Option<Graph>) -> Result<Config> {
+    pub async fn init(app_dir: PathBuf, default_graph: Option<Context>) -> Result<Config> {
         // Check if already initialized
         {
-            let ctx_lock = CTX.read().await;
+            let ctx_lock = CFG.read().await;
             if ctx_lock.is_some() {
                 log::warn!("Config already initialized. App directory was not set");
                 return Ok(ctx_lock.clone().unwrap());
@@ -333,14 +333,14 @@ impl Config {
         }
 
         // Acquire write lock to set the config
-        let mut ctx_lock = CTX.write().await;
+        let mut ctx_lock = CFG.write().await;
         *ctx_lock = Some(ctx.clone());
         Ok(ctx)
     }
 
     /// Resets the global config, allowing it to be reinitialized (internal async version)
     pub async fn reset_internal() -> Result<()> {
-        let mut ctx_lock = CTX.write().await;
+        let mut ctx_lock = CFG.write().await;
         *ctx_lock = None;
         Ok(())
     }
@@ -350,7 +350,7 @@ impl Config {
     where
         F: FnOnce(&mut Config),
     {
-        let mut ctx_lock = CTX.blocking_write();
+        let mut ctx_lock = CFG.blocking_write();
 
         if let Some(ctx) = ctx_lock.as_mut() {
             updater(ctx);
@@ -365,7 +365,7 @@ impl Config {
     where
         F: FnOnce(&mut Config),
     {
-        let mut ctx_lock = CTX.write().await;
+        let mut ctx_lock = CFG.write().await;
 
         if let Some(ctx) = ctx_lock.as_mut() {
             updater(ctx);
@@ -400,16 +400,16 @@ impl Config {
     /// Resolves the Optional graph id, or the default graph id
     ///
     /// # Arguments
-    /// * `Option<Graph>` - Optional graph object
+    /// * `Option<Context>` - Optional graph object
     ///
     /// # Returns
     /// * `Result<Uuid>` - The opional graph id converted to a UUID, or the default graph id
-    pub fn resolve_graph_id(&self, graph: Option<Graph>) -> Uuid {
+    pub fn resolve_graph_id(&self, graph: Option<Context>) -> Uuid {
         match graph {
             Some(g) => g.id,
             None => {
                 log::trace!(
-                    "GraphID was not provided. Using default graph {:}",
+                    "Context was not provided. Using default graph {:}",
                     self.default_graph.id
                 );
                 self.default_graph.id
@@ -449,7 +449,7 @@ impl Config {
 
     /// Saves current config settings to config.toml
     fn save_config() -> Result<()> {
-        let ctx_lock = CTX.blocking_read();
+        let ctx_lock = CFG.blocking_read();
         let ctx = ctx_lock
             .as_ref()
             .ok_or_else(|| anyhow!("Config not initialized"))?;

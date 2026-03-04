@@ -5,7 +5,7 @@ use integrity::{
 };
 use pyo3::{pyfunction, PyResult, Python};
 
-use crate::{with_ctx, Graph, CID};
+use crate::{with_cfg, Context, CID};
 
 #[pyfunction]
 #[pyo3(signature = (subject, *, timestamp=None, graph=None))]
@@ -13,9 +13,9 @@ pub fn add_vc_statement(
     py: Python,
     subject: String,
     timestamp: Option<String>,
-    graph: Option<Graph>,
+    graph: Option<Context>,
 ) -> PyResult<CID> {
-    with_ctx!(py, |ctx| {
+    with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph);
         let signer = ctx
             .active_signer
@@ -47,7 +47,7 @@ mod tests {
     use ssi::vc::Credential;
     use tempfile::tempdir;
 
-    use crate::config::{ctx_async, Config};
+    use crate::config::{cfg_async, Config};
 
     /// Creates a minimal valid W3C VC for testing
     fn create_test_credential() -> Credential {
@@ -195,7 +195,7 @@ mod tests {
             Config::set_active_signer_async(signer_type).await.unwrap();
 
             // Verify signer was set
-            let ctx = ctx_async().await;
+            let ctx = cfg_async().await;
             assert!(ctx.active_signer.is_some());
             assert_eq!(ctx.active_signer.unwrap().get_did_doc().id, expected_did);
         });

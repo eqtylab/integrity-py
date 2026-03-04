@@ -5,7 +5,7 @@ from eqty_sdk._rust import (
     CID,
     DID,
     UUID,
-    Graph as Context,
+    Context,
     PyAssociationType,
     statements as eqty_core_statements,
 )

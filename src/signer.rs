@@ -15,7 +15,7 @@ use pyo3::{
 };
 use serde::Serialize;
 
-use crate::{config::ctx_blocking, with_ctx, Config};
+use crate::{config::cfg_blocking, with_cfg, Config};
 
 /// `signer` submodule.
 #[pymodule]
@@ -306,7 +306,7 @@ fn set_active_signer(py: Python, signer: &Bound<'_, PyAny>) -> PyResult<()> {
             "signer must be a signer name string or a Signer instance",
         ));
     };
-    with_ctx!(py, |ctx| {
+    with_cfg!(py, |ctx| {
         log::debug!("Setting '{name}' as the active");
         let signer_file = ctx.app_dir.join(SIGNER_DIR).join(&name);
         if !signer_file.exists() {
@@ -329,7 +329,7 @@ fn signer_exists(name: Option<&str>) -> PyResult<()> {
         return Ok(());
     }
 
-    let signer_dir = ctx_blocking()?.app_dir.join(SIGNER_DIR);
+    let signer_dir = cfg_blocking()?.app_dir.join(SIGNER_DIR);
     let name = name.unwrap();
     log::debug!("Adding Signer. Args= {name}");
 
@@ -345,7 +345,7 @@ fn signer_exists(name: Option<&str>) -> PyResult<()> {
 fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<Signer> {
     let did_key = signer.get_did_doc().id;
     let name = name.unwrap_or(&did_key);
-    let signer_dir = ctx_blocking()?.app_dir.join(SIGNER_DIR);
+    let signer_dir = cfg_blocking()?.app_dir.join(SIGNER_DIR);
     fs::create_dir_all(signer_dir.clone())?;
     utils_save_signer(signer, signer_dir, name)?;
     Ok(Signer {

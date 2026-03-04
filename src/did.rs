@@ -7,18 +7,18 @@ use integrity::{
 use pyo3::{prelude::*, types::PyDict, Bound};
 
 use crate::{
-    config::ctx_blocking,
-    indexer::Graph,
+    config::cfg_blocking,
+    indexer::Context,
     signer::{Signer, SIGNER_DIR},
-    statements, with_ctx, CID,
+    statements, with_cfg, CID,
 };
 
 /// A DID statement result bound to a context.
 #[pyclass]
 pub struct DID {
-    /// Graph/context where the DID statement was registered.
+    /// Context where the DID statement was registered.
     #[pyo3(get)]
-    pub ctx: Graph,
+    pub ctx: Context,
     /// DID string used for registration.
     #[pyo3(get)]
     pub did: String,
@@ -30,7 +30,7 @@ pub struct DID {
 /// Builder for DID statements in a specific context.
 #[pyclass]
 pub struct DidFactory {
-    ctx: Graph,
+    ctx: Context,
 }
 
 #[pymethods]
@@ -39,7 +39,7 @@ impl DID {
     #[pyo3(signature = (ctx, did, signer=None, **kwargs))]
     fn new(
         py: Python,
-        ctx: Graph,
+        ctx: Context,
         did: String,
         signer: Option<Py<Signer>>,
         kwargs: Option<&Bound<'_, PyDict>>,
@@ -54,7 +54,7 @@ impl DID {
         signer: Py<Signer>,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        let default_graph = ctx_blocking()?.default_graph.clone();
+        let default_graph = cfg_blocking()?.default_graph.clone();
         let did_key = signer.bind(py).borrow().did_key.clone();
         build_did(py, default_graph, did_key, Some(signer), kwargs)
     }
@@ -66,12 +66,12 @@ impl DID {
         did: String,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        let default_graph = ctx_blocking()?.default_graph.clone();
+        let default_graph = cfg_blocking()?.default_graph.clone();
         build_did(py, default_graph, did, None, kwargs)
     }
 
     #[staticmethod]
-    fn with_context(ctx: Graph) -> DidFactory {
+    fn with_context(ctx: Context) -> DidFactory {
         DidFactory { ctx }
     }
 }
@@ -102,7 +102,7 @@ impl DidFactory {
 
 fn build_did(
     py: Python,
-    ctx: Graph,
+    ctx: Context,
     did: String,
     signer: Option<Py<Signer>>,
     kwargs: Option<&Bound<'_, PyDict>>,
@@ -132,7 +132,7 @@ fn build_did(
             .map(|s| s.bind(py).borrow().name.clone())
             .unwrap_or_default();
 
-        let mut vcomp_statement_ids = with_ctx!(py, |cfg| {
+        let mut vcomp_statement_ids = with_cfg!(py, |cfg| {
             let signer_file = cfg.app_dir.join(SIGNER_DIR).join(&signer_name);
             if !signer_file.exists() {
                 return Err(anyhow!("No Signer named '{signer_name}' found"));
@@ -187,7 +187,7 @@ fn build_did(
 
 fn is_vcomp_signer(name: &str) -> Result<bool> {
     log::trace!("Checking if {name} is a known vcomp signer");
-    let cfg = ctx_blocking()?;
+    let cfg = cfg_blocking()?;
     let signer_file = cfg.app_dir.join(SIGNER_DIR).join(name);
     if !signer_file.exists() {
         log::trace!("{name} is not vcomp");

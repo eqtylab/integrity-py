@@ -4,7 +4,7 @@ mod sqlite_tests;
 
 use std::{collections::HashMap, env, fmt, fs::File, path::PathBuf, sync::Arc};
 
-use anyhow::{Context, Result};
+use anyhow::{Context as AnyhowContext, Result};
 use integrity::lineage::models::{
     manifest::{generate_manifest, resolve_blobs},
     statements::{Statement, StatementTrait},
@@ -16,7 +16,7 @@ pub use sqlite::Sqlite;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use uuid::Uuid;
 
-use crate::{integrity_service::Service, with_ctx};
+use crate::{integrity_service::Service, with_cfg};
 
 // ============================================================================
 // Graph
@@ -28,7 +28,7 @@ use crate::{integrity_service::Service, with_ctx};
 /// enabling versioning and organizational structure for lineage data.
 #[pyclass]
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Graph {
+pub struct Context {
     /// Unique identifier for this graph
     #[pyo3(get)]
     pub id: Uuid,
@@ -42,14 +42,14 @@ pub struct Graph {
 }
 
 #[pymethods]
-impl Graph {
+impl Context {
     #[staticmethod]
     #[allow(clippy::new_ret_no_self)]
     /// Creates a new graph with the given name.
     ///
     /// If the global config is initialized, the graph is persisted to sqlite.
     pub fn new(py: Python<'_>, name: String) -> Self {
-        let graph = Graph {
+        let graph = Context {
             id: Uuid::new_v4(),
             name,
             parent: None,
@@ -60,16 +60,16 @@ impl Graph {
 
     #[staticmethod]
     /// Returns a factory that creates graphs with the provided parent.
-    pub fn from_parent(parent: Graph) -> GraphFactory {
-        GraphFactory {
+    pub fn from_parent(parent: Context) -> ContextFactory {
+        ContextFactory {
             parent: Some(parent.id),
         }
     }
 
     #[staticmethod]
     /// Returns a factory that creates graphs with the provided project UUID as parent.
-    pub fn from_uuid(project_id: Uuid) -> GraphFactory {
-        GraphFactory {
+    pub fn from_uuid(project_id: Uuid) -> ContextFactory {
+        ContextFactory {
             parent: Some(project_id),
         }
     }
@@ -78,7 +78,7 @@ impl Graph {
     /// Registers this graph, its ancestors, statements, and blobs with a service.
     pub fn register(&self, py: Python, service: Service) -> PyResult<()> {
         log::info!("Registering graph {}", self.id);
-        with_ctx!(py, |ctx| {
+        with_cfg!(py, |ctx| {
             let graph_id = self.id;
             let sql_client = ctx.sql_lite;
 
@@ -104,7 +104,7 @@ impl Graph {
     }
 
     fn delete_tree(&self, py: Python<'_>) -> PyResult<()> {
-        with_ctx!(py, |ctx| {
+        with_cfg!(py, |ctx| {
             ctx.sql_lite.delete_graph_tree(&self.id).await?;
             Ok::<_, anyhow::Error>(())
         })?;
@@ -112,7 +112,7 @@ impl Graph {
     }
 
     fn delete(&self, py: Python<'_>) -> PyResult<()> {
-        with_ctx!(py, |ctx| {
+        with_cfg!(py, |ctx| {
             ctx.sql_lite.delete_graph_no_children(&self.id).await?;
             Ok::<_, anyhow::Error>(())
         })?;
@@ -123,7 +123,7 @@ impl Graph {
     /// Exports this graph's statements and blobs to a manifest JSON file.
     pub fn export(&self, py: Python, path: PathBuf) -> PyResult<()> {
         log::info!("Exporting {}", self.id);
-        with_ctx!(py, |ctx| {
+        with_cfg!(py, |ctx| {
             let graph_id = self.id;
             let sql_client = ctx.sql_lite;
 
@@ -164,17 +164,17 @@ impl Graph {
 
 /// Factory for creating graphs with an optional parent.
 #[pyclass]
-pub struct GraphFactory {
+pub struct ContextFactory {
     parent: Option<Uuid>,
 }
 
 #[pymethods]
-impl GraphFactory {
+impl ContextFactory {
     #[allow(clippy::new_ret_no_self)]
     #[pyo3(signature = (name))]
     /// Creates a new graph using the factory's parent if set.
-    pub fn new(&self, py: Python<'_>, name: String) -> Graph {
-        let graph = Graph {
+    pub fn new(&self, py: Python<'_>, name: String) -> Context {
+        let graph = Context {
             id: Uuid::new_v4(),
             name,
             parent: self.parent,
@@ -185,10 +185,10 @@ impl GraphFactory {
     }
 }
 
-impl Default for Graph {
+impl Default for Context {
     fn default() -> Self {
         let id = Uuid::new_v4();
-        Graph {
+        Context {
             id,
             name: id.into(),
             parent: None,
@@ -196,13 +196,13 @@ impl Default for Graph {
     }
 }
 
-impl<'r> FromRow<'r, SqliteRow> for Graph {
+impl<'r> FromRow<'r, SqliteRow> for Context {
     fn from_row(row: &'r SqliteRow) -> std::result::Result<Self, sqlx::Error> {
         let graph_id: String = row.try_get("graph_id")?;
         let name: String = row.try_get("name")?;
         let parent_id: Option<String> = row.try_get("parent_id")?;
 
-        Ok(Graph {
+        Ok(Context {
             id: Uuid::parse_str(&graph_id).map_err(|e| sqlx::Error::Decode(Box::new(e)))?,
             name,
             parent: parent_id
@@ -213,7 +213,7 @@ impl<'r> FromRow<'r, SqliteRow> for Graph {
     }
 }
 
-impl fmt::Display for Graph {
+impl fmt::Display for Context {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.__str__())
     }
@@ -303,8 +303,8 @@ pub(crate) fn rows_to_statements(rows: Vec<SqliteRow>) -> Result<HashMap<String,
 
 // GraphFactor::new may be called before sdk initalization
 // If we are initalized, save the graph to the db, otherwise .init() will save the graph
-fn maybe_create_graph_in_db(py: Python<'_>, graph: &Graph) {
-    if let Ok(ctx) = crate::config::ctx_blocking() {
+fn maybe_create_graph_in_db(py: Python<'_>, graph: &Context) {
+    if let Ok(ctx) = crate::config::cfg_blocking() {
         let _ = py.detach(|| {
             pyo3_async_runtimes::tokio::get_runtime().block_on(ctx.sql_lite.create_graph(graph))
         });

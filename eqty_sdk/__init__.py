@@ -1,20 +1,17 @@
-from pathlib import Path
-from typing import Optional, cast
-
 from eqty_sdk._rust import (
     CID,
     DID,
     SIGNER_ALGORITHMS,
     UUID,
-    Config as _Config,
+    Config,
+    Context,
     Declaration,
     Entity,
-    Graph as Context,
     Service,
     Signer,
     get_cid_for_bytes,
     get_cid_for_path,
-    init as _init,
+    init,
     purge_blob_store,
     purge_statement_store,
     signer,
@@ -47,14 +44,9 @@ from eqty_sdk.errors import (
     UnsupportedError,
     UsageError,
 )
+from eqty_sdk.statements import ASSOCIATION_TYPES, Association
 
 set_active_signer = signer.set_active_signer
-
-
-def init(app_dir: Optional[Path] = None) -> _Config:
-    """Initialize the SDK and return the config instance."""
-    cfg = _init(app_dir)
-    return cast(_Config, cfg)
 
 
 __all__ = [
@@ -64,6 +56,7 @@ __all__ = [
     "get_cid_for_path",
     "purge_blob_store",
     "purge_statement_store",
+    "Config",
     # Assets
     "Asset",
     "AssetType",
@@ -83,6 +76,9 @@ __all__ = [
     "compute",
     "Compute",
     "Computation",
+    # Statements
+    "Association",
+    "ASSOCIATION_TYPES",
     # Context
     "Context",
     "Service",

@@ -1,7 +1,7 @@
 use integrity::lineage::models::statements::Statement;
 use pyo3::prelude::*;
 
-use crate::with_ctx;
+use crate::with_cfg;
 
 mod association;
 mod computation;
@@ -44,7 +44,7 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
 #[pyfunction]
 #[pyo3(signature = (statement_json))]
 pub fn register_statement(py: Python, statement_json: String) -> PyResult<()> {
-    with_ctx!(py, |ctx| {
+    with_cfg!(py, |ctx| {
         let statement: Statement = serde_json::from_str(&statement_json)
             .map_err(|e| anyhow::anyhow!("Failed to parse statement JSON: {}", e))?;
         let graph_id = ctx.default_graph.id;

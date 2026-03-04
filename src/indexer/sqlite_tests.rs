@@ -7,7 +7,7 @@ mod tests {
     use sqlx::Row;
     use uuid::Uuid;
 
-    use crate::indexer::{Graph, Sqlite};
+    use crate::indexer::{Context, Sqlite};
 
     async fn setup_db() -> Result<Sqlite> {
         let db = Sqlite::new("sqlite::memory:").await?;
@@ -33,7 +33,7 @@ mod tests {
     async fn test_create_graph_inserts_parent() -> Result<()> {
         let db = setup_db().await?;
         let parent_id = Uuid::new_v4();
-        let graph = Graph {
+        let graph = Context {
             id: Uuid::new_v4(),
             name: "child".to_string(),
             parent: Some(parent_id),
@@ -54,21 +54,21 @@ mod tests {
     #[tokio::test]
     async fn test_get_graph_ancestors_order() -> Result<()> {
         let db = setup_db().await?;
-        let root = Graph {
+        let root = Context {
             id: Uuid::new_v4(),
             name: "root".to_string(),
             parent: None,
         };
         db.create_graph(&root).await?;
 
-        let child = Graph {
+        let child = Context {
             id: Uuid::new_v4(),
             name: "child".to_string(),
             parent: Some(root.id),
         };
         db.create_graph(&child).await?;
 
-        let grandchild = Graph {
+        let grandchild = Context {
             id: Uuid::new_v4(),
             name: "grandchild".to_string(),
             parent: Some(child.id),
@@ -90,7 +90,7 @@ mod tests {
     #[tokio::test]
     async fn test_delete_graph_no_children() -> Result<()> {
         let db = setup_db().await?;
-        let graph = Graph {
+        let graph = Context {
             id: Uuid::new_v4(),
             name: "solo".to_string(),
             parent: None,
@@ -117,14 +117,14 @@ mod tests {
     #[tokio::test]
     async fn test_delete_graph_no_children_errors_on_child() -> Result<()> {
         let db = setup_db().await?;
-        let root = Graph {
+        let root = Context {
             id: Uuid::new_v4(),
             name: "root".to_string(),
             parent: None,
         };
         db.create_graph(&root).await?;
 
-        let child = Graph {
+        let child = Context {
             id: Uuid::new_v4(),
             name: "child".to_string(),
             parent: Some(root.id),
@@ -141,21 +141,21 @@ mod tests {
     #[tokio::test]
     async fn test_delete_graph_tree() -> Result<()> {
         let db = setup_db().await?;
-        let root = Graph {
+        let root = Context {
             id: Uuid::new_v4(),
             name: "root".to_string(),
             parent: None,
         };
         db.create_graph(&root).await?;
 
-        let child = Graph {
+        let child = Context {
             id: Uuid::new_v4(),
             name: "child".to_string(),
             parent: Some(root.id),
         };
         db.create_graph(&child).await?;
 
-        let grandchild = Graph {
+        let grandchild = Context {
             id: Uuid::new_v4(),
             name: "grandchild".to_string(),
             parent: Some(child.id),
@@ -171,7 +171,7 @@ mod tests {
     #[tokio::test]
     async fn test_purge_reinitializes_schema() -> Result<()> {
         let db = setup_db().await?;
-        let graph = Graph {
+        let graph = Context {
             id: Uuid::new_v4(),
             name: "graph".to_string(),
             parent: None,
@@ -188,7 +188,7 @@ mod tests {
     #[tokio::test]
     async fn test_association_statement_links_items() -> Result<()> {
         let db = setup_db().await?;
-        let graph = Graph {
+        let graph = Context {
             id: Uuid::new_v4(),
             name: "assoc-graph".to_string(),
             parent: None,

@@ -3,7 +3,7 @@ from typing import Any, Optional, Union
 
 from eqty_sdk._rust import (
     CID,
-    Graph as Context,
+    Context,
 )
 
 from .asset import Asset, AssetType
