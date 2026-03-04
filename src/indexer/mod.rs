@@ -16,7 +16,7 @@ pub use sqlite::Sqlite;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use uuid::Uuid;
 
-use crate::{integrity_service::Service, with_ctx};
+use crate::{integrity_service::Service, with_cfg};
 
 // ============================================================================
 // Graph
@@ -78,7 +78,7 @@ impl Graph {
     /// Registers this graph, its ancestors, statements, and blobs with a service.
     pub fn register(&self, py: Python, service: Service) -> PyResult<()> {
         log::info!("Registering graph {}", self.id);
-        with_ctx!(py, |ctx| {
+        with_cfg!(py, |ctx| {
             let graph_id = self.id;
             let sql_client = ctx.sql_lite;
 
@@ -104,7 +104,7 @@ impl Graph {
     }
 
     fn delete_tree(&self, py: Python<'_>) -> PyResult<()> {
-        with_ctx!(py, |ctx| {
+        with_cfg!(py, |ctx| {
             ctx.sql_lite.delete_graph_tree(&self.id).await?;
             Ok::<_, anyhow::Error>(())
         })?;
@@ -112,7 +112,7 @@ impl Graph {
     }
 
     fn delete(&self, py: Python<'_>) -> PyResult<()> {
-        with_ctx!(py, |ctx| {
+        with_cfg!(py, |ctx| {
             ctx.sql_lite.delete_graph_no_children(&self.id).await?;
             Ok::<_, anyhow::Error>(())
         })?;
@@ -123,7 +123,7 @@ impl Graph {
     /// Exports this graph's statements and blobs to a manifest JSON file.
     pub fn export(&self, py: Python, path: PathBuf) -> PyResult<()> {
         log::info!("Exporting {}", self.id);
-        with_ctx!(py, |ctx| {
+        with_cfg!(py, |ctx| {
             let graph_id = self.id;
             let sql_client = ctx.sql_lite;
 
@@ -304,7 +304,7 @@ pub(crate) fn rows_to_statements(rows: Vec<SqliteRow>) -> Result<HashMap<String,
 // GraphFactor::new may be called before sdk initalization
 // If we are initalized, save the graph to the db, otherwise .init() will save the graph
 fn maybe_create_graph_in_db(py: Python<'_>, graph: &Graph) {
-    if let Ok(ctx) = crate::config::ctx_blocking() {
+    if let Ok(ctx) = crate::config::cfg_blocking() {
         let _ = py.detach(|| {
             pyo3_async_runtimes::tokio::get_runtime().block_on(ctx.sql_lite.create_graph(graph))
         });

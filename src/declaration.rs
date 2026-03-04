@@ -9,7 +9,7 @@ use pyo3::{
 use pyo3_async_runtimes::tokio::get_runtime;
 use serde_json::{Map, Value};
 
-use crate::config::ctx_blocking;
+use crate::config::cfg_blocking;
 
 /// A governance declaration describing a subject and related metadata.
 #[pyclass]
@@ -76,7 +76,7 @@ impl Declaration {
 
     fn finalize(&mut self) -> PyResult<Self> {
         let submitted_at = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
-        let submitted_by = ctx_blocking()
+        let submitted_by = cfg_blocking()
             .and_then(|ctx| ctx.get_active_signer_did_key())
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
 
@@ -85,7 +85,7 @@ impl Declaration {
 
         let declaration_json = self.to_json()?;
 
-        let blob_store = ctx_blocking()
+        let blob_store = cfg_blocking()
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?
             .blob_store
             .clone();

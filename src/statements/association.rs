@@ -4,7 +4,7 @@ use integrity::lineage::models::statements::{
 use pyo3::prelude::*;
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph, CID,
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Graph, CID,
 };
 
 #[pyclass]
@@ -42,7 +42,7 @@ pub fn add_association_statement(
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);
 
-    with_ctx!(py, |ctx| {
+    with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph);
         let registered_by = ctx.clone().get_active_signer_did_key()?;
         let ass_type = AssociationType::from(association_type);

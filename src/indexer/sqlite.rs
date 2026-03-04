@@ -937,8 +937,7 @@ impl Sqlite {
         &self,
         statements: &mut HashMap<String, Statement>,
     ) -> Result<()> {
-        log::error!("get_global_statements fn is not fully implemented");
-        // TODO: Get the Credential, CredDsse, CredSigStore, DID Statements
+        // Get the Credential, CredDsse, CredSigStore, DID Statements
         // for ALL the previously fetched statements regardless of project
         let mut dids = HashSet::new();
         let mut credential_subjects = HashSet::new();
