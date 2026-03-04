@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from eqty_sdk._rust import (
     CID,
@@ -65,7 +65,9 @@ class Association:
             self._skip_proof = os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
 
     @classmethod
-    def new(cls, subject: object, association_type: PyAssociationType, **kwargs) -> "Association":
+    def new(
+        cls, subject: CID | DID | UUID, association_type: PyAssociationType, **kwargs
+    ) -> "Association":
         skip_proof = kwargs.pop("skip_proof", None)
         instance = object.__new__(cls)
         instance.__init_internal__(None, subject, association_type, skip_proof)
@@ -84,7 +86,9 @@ class Association:
 
         return _Factory()
 
-    def add_predicate(self, predicate: Union[object, List[object]]) -> "Association":
+    def add_predicate(
+        self, predicate: CID | List[CID] | DID | List[DID] | UUID | List[UUID]
+    ) -> "Association":
         if isinstance(predicate, list):
             self._predicates.extend(_normalize_association_ref(item) for item in predicate)
         else:
