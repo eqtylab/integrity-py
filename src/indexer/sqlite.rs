@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
 use integrity::lineage::models::statements::{Statement, StatementTrait};
-use sqlx::{sqlite::SqliteRow, Row, SqlitePool};
+use sqlx::{Row, SqlitePool};
 use uuid::Uuid;
 
 use super::{rows_to_statements, Context};
@@ -21,10 +21,6 @@ impl Sqlite {
 }
 
 impl Sqlite {
-    fn parse_statement_rows(rows: Vec<SqliteRow>) -> Result<HashMap<String, Statement>> {
-        rows_to_statements(rows)
-    }
-
     /// Initializes the database schema by creating all necessary tables and indexes.
     pub async fn init(&self) -> Result<()> {
         let comp_tables = r#"
@@ -488,7 +484,7 @@ impl Sqlite {
         let mut subjects: Vec<String> = Vec::new();
 
         log::debug!("Found '{}' compute statements", compute_rows.len());
-        let mut statements = Self::parse_statement_rows(compute_rows)?;
+        let mut statements = rows_to_statements(compute_rows)?;
         for statement in statements.values() {
             if let Statement::ComputationRegistration(s) = statement {
                 subjects.extend(s.input.to_vec_string());
@@ -548,7 +544,7 @@ impl Sqlite {
 
         let rows = sql_query.fetch_all(&self.pool).await?;
         log::debug!("Found '{}' related statements", rows.len());
-        statements.extend(Self::parse_statement_rows(rows)?);
+        statements.extend(rows_to_statements(rows)?);
 
         self.get_global_statements(&mut statements).await?;
 
@@ -966,7 +962,7 @@ impl Sqlite {
         let vc_rows = sql_query.fetch_all(&self.pool).await?;
         log::debug!("Found '{}' credential statements", vc_rows.len());
 
-        let vc_statements = Self::parse_statement_rows(vc_rows)?;
+        let vc_statements = rows_to_statements(vc_rows)?;
         statements.extend(vc_statements);
 
         if !dids.is_empty() {
@@ -978,6 +974,7 @@ impl Sqlite {
                   did.statement as statement
                   ,meta.statement as metadata
                   ,vc.statement as vc
+                  ,NULL as did
                 FROM did_statements did
                 LEFT JOIN metadata_statements meta ON did.did = meta.subject
                 LEFT JOIN credential_statements vc ON did.id = vc.credential_subject
@@ -993,7 +990,7 @@ impl Sqlite {
             let did_rows = sql_query.fetch_all(&self.pool).await?;
             log::debug!("Found '{}' did statements", did_rows.len());
 
-            let did_statements = Self::parse_statement_rows(did_rows)?;
+            let did_statements = rows_to_statements(did_rows)?;
             statements.extend(did_statements);
         }
 
