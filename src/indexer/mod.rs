@@ -260,7 +260,7 @@ impl<'r> FromRow<'r, SqliteRow> for StatementRow {
 /// Parses SQLite rows into statements
 pub(crate) fn rows_to_statements(rows: Vec<SqliteRow>) -> Result<HashMap<String, Statement>> {
     let mut statements = HashMap::new();
-    log::trace!("Parsing {} rows to statements", rows.len());
+    log::debug!("Parsing {} rows to statements", rows.len());
 
     for row in rows {
         let statement_row = StatementRow::from_row(&row)?;
@@ -273,7 +273,7 @@ pub(crate) fn rows_to_statements(rows: Vec<SqliteRow>) -> Result<HashMap<String,
         // Parse metadata if present
         if let Some(metadata_value) = statement_row.metadata {
             if !metadata_value.is_null() {
-                log::trace!("Parsing metadata");
+                log::debug!("Parsing metadata");
                 let metadata_statement: Statement = serde_json::from_value(metadata_value)?;
                 let id = metadata_statement.get_id();
                 statements.insert(id, metadata_statement);
@@ -283,6 +283,7 @@ pub(crate) fn rows_to_statements(rows: Vec<SqliteRow>) -> Result<HashMap<String,
         // Parse vc if present
         if let Some(vc_value) = statement_row.vc {
             if !vc_value.is_null() {
+                log::debug!("Parsing VC");
                 let vc_statement: Statement = serde_json::from_value(vc_value)?;
                 let id = vc_statement.get_id();
                 statements.insert(id, vc_statement);
@@ -292,6 +293,7 @@ pub(crate) fn rows_to_statements(rows: Vec<SqliteRow>) -> Result<HashMap<String,
         // Parse did if present
         if let Some(did_value) = statement_row.did {
             if !did_value.is_null() {
+                log::debug!("Parsing did");
                 let did_statement: Statement = serde_json::from_value(did_value)?;
                 let id = did_statement.get_id();
                 statements.insert(id, did_statement);
