@@ -13,7 +13,7 @@ use pyo3_async_runtimes::tokio::future_into_py;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{config::cfg_async, Graph, CID};
+use crate::{config::cfg_async, Context, CID};
 
 /// Result of finalizing a stream computation.
 ///
@@ -77,7 +77,7 @@ fn finalize(
     py: Python<'_>,
     id: String,
     static_output_cids: Option<Vec<String>>,
-    graph: Option<Graph>,
+    graph: Option<Context>,
 ) -> PyResult<Bound<'_, PyAny>> {
     let id = Uuid::parse_str(&id).context("Invalid stream ID")?;
 

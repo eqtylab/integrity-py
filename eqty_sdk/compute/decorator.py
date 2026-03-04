@@ -2,7 +2,7 @@ import logging
 from functools import wraps
 from typing import Any, Callable, Dict, Optional
 
-from eqty_sdk._rust import Graph as Context
+from eqty_sdk._rust import Context
 
 from . import Compute
 

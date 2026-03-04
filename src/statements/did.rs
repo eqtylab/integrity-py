@@ -4,7 +4,7 @@ use integrity::lineage::models::statements::{
 use pyo3::{pyfunction, PyResult, Python};
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Graph, CID,
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Context, CID,
 };
 
 #[pyfunction]
@@ -13,7 +13,7 @@ pub fn add_did_statement(
     py: Python,
     did: String,
     skip_proof: Option<bool>,
-    graph: Option<Graph>,
+    graph: Option<Context>,
 ) -> PyResult<Vec<CID>> {
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);

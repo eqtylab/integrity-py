@@ -8,7 +8,7 @@ use pyo3::{prelude::*, types::PyDict, Bound};
 
 use crate::{
     config::cfg_blocking,
-    indexer::Graph,
+    indexer::Context,
     signer::{Signer, SIGNER_DIR},
     statements, with_cfg, CID,
 };
@@ -16,9 +16,9 @@ use crate::{
 /// A DID statement result bound to a context.
 #[pyclass]
 pub struct DID {
-    /// Graph/context where the DID statement was registered.
+    /// Context where the DID statement was registered.
     #[pyo3(get)]
-    pub ctx: Graph,
+    pub ctx: Context,
     /// DID string used for registration.
     #[pyo3(get)]
     pub did: String,
@@ -30,7 +30,7 @@ pub struct DID {
 /// Builder for DID statements in a specific context.
 #[pyclass]
 pub struct DidFactory {
-    ctx: Graph,
+    ctx: Context,
 }
 
 #[pymethods]
@@ -39,7 +39,7 @@ impl DID {
     #[pyo3(signature = (ctx, did, signer=None, **kwargs))]
     fn new(
         py: Python,
-        ctx: Graph,
+        ctx: Context,
         did: String,
         signer: Option<Py<Signer>>,
         kwargs: Option<&Bound<'_, PyDict>>,
@@ -71,7 +71,7 @@ impl DID {
     }
 
     #[staticmethod]
-    fn with_context(ctx: Graph) -> DidFactory {
+    fn with_context(ctx: Context) -> DidFactory {
         DidFactory { ctx }
     }
 }
@@ -102,7 +102,7 @@ impl DidFactory {
 
 fn build_did(
     py: Python,
-    ctx: Graph,
+    ctx: Context,
     did: String,
     signer: Option<Py<Signer>>,
     kwargs: Option<&Bound<'_, PyDict>>,

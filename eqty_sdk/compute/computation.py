@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Union, cast
 
 from eqty_sdk._rust import (
     CID,
-    Graph as Context,
+    Context,
     get_cid_for_bytes,
     get_cid_for_path,
 )

@@ -5,7 +5,7 @@ use integrity::lineage::models::statements::{Statement, StatementTrait};
 use sqlx::{sqlite::SqliteRow, Row, SqlitePool};
 use uuid::Uuid;
 
-use super::{rows_to_statements, Graph};
+use super::{rows_to_statements, Context};
 
 /// Provides persistent storage for statements organized in graphs
 /// with support for hierarchical relationships and queries.
@@ -195,7 +195,7 @@ impl Sqlite {
     }
 
     /// Creates a record in the "graphs" table
-    pub async fn create_graph(&self, graph: &Graph) -> Result<()> {
+    pub async fn create_graph(&self, graph: &Context) -> Result<()> {
         if let Some(parent_id) = graph.parent {
             sqlx::query(
                 r#"
@@ -556,10 +556,10 @@ impl Sqlite {
     }
 
     /// Returns the graph ancestry ordered from root to the provided graph.
-    pub async fn get_graph_ancestors(&self, graph_id: &Uuid) -> Result<Vec<Graph>> {
+    pub async fn get_graph_ancestors(&self, graph_id: &Uuid) -> Result<Vec<Context>> {
         log::info!("Getting ancestors of graph {graph_id}");
 
-        let rows: Vec<Graph> = sqlx::query_as(
+        let rows: Vec<Context> = sqlx::query_as(
             r#"
             WITH RECURSIVE ancestors AS (
                 SELECT graph_id, name, parent_id, 0 as depth

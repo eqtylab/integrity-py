@@ -15,12 +15,12 @@ use crate::{
         graph::create_graph_record,
         statements::create_statement,
     },
-    Graph,
+    Context,
 };
 
 /// Blob storage operations for the Integrity Service.
 pub mod blobs;
-/// Graph creation operations for the Integrity Service.
+/// Context creation operations for the Integrity Service.
 pub mod graph;
 /// Statement creation operations for the Integrity Service.
 pub mod statements;
@@ -95,7 +95,7 @@ impl Service {
     }
 
     /// Registers a list of graphs with the Integrity Service.
-    pub async fn register_graphs(&self, graphs: Vec<Graph>) -> Result<()> {
+    pub async fn register_graphs(&self, graphs: Vec<Context>) -> Result<()> {
         log::info!("Registering graph tree");
         for graph in graphs {
             log::debug!("Registering graph {}", graph.id);

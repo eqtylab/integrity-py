@@ -9,7 +9,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Graph, CID,
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Context, CID,
 };
 
 /// Represents an unhashed entity with a UUID identifier.
@@ -71,7 +71,7 @@ pub fn create_entity(
     metadata_json: String,
     skip_proof: Option<bool>,
     timestamp: Option<String>,
-    graph: Option<Graph>,
+    graph: Option<Context>,
 ) -> PyResult<(Entity, Py<PyList>)> {
     let entity = Entity::generate();
     let statement_ids = create_entity_statements(
@@ -104,7 +104,7 @@ pub fn create_entity_from_uuid(
     metadata_json: String,
     skip_proof: Option<bool>,
     timestamp: Option<String>,
-    graph: Option<Graph>,
+    graph: Option<Context>,
 ) -> PyResult<(Entity, Py<PyList>)> {
     let entity = Entity::from_uuid(uuid);
     let statement_ids = create_entity_statements(
@@ -125,7 +125,7 @@ fn create_entity_statements(
     metadata_json: String,
     skip_proof: Option<bool>,
     timestamp: Option<String>,
-    graph: Option<Graph>,
+    graph: Option<Context>,
 ) -> PyResult<Py<PyList>> {
     let mut statement_ids: Vec<CID> = Vec::new();
     let timestamp = resolve_timestamp(timestamp);
