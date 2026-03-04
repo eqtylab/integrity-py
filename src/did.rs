@@ -7,10 +7,10 @@ use integrity::{
 use pyo3::{prelude::*, types::PyDict, Bound};
 
 use crate::{
-    config::ctx_blocking,
+    config::cfg_blocking,
     indexer::Graph,
     signer::{Signer, SIGNER_DIR},
-    statements, with_ctx, CID,
+    statements, with_cfg, CID,
 };
 
 /// A DID statement result bound to a context.
@@ -54,7 +54,7 @@ impl DID {
         signer: Py<Signer>,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        let default_graph = ctx_blocking()?.default_graph.clone();
+        let default_graph = cfg_blocking()?.default_graph.clone();
         let did_key = signer.bind(py).borrow().did_key.clone();
         build_did(py, default_graph, did_key, Some(signer), kwargs)
     }
@@ -66,7 +66,7 @@ impl DID {
         did: String,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        let default_graph = ctx_blocking()?.default_graph.clone();
+        let default_graph = cfg_blocking()?.default_graph.clone();
         build_did(py, default_graph, did, None, kwargs)
     }
 
@@ -132,7 +132,7 @@ fn build_did(
             .map(|s| s.bind(py).borrow().name.clone())
             .unwrap_or_default();
 
-        let mut vcomp_statement_ids = with_ctx!(py, |cfg| {
+        let mut vcomp_statement_ids = with_cfg!(py, |cfg| {
             let signer_file = cfg.app_dir.join(SIGNER_DIR).join(&signer_name);
             if !signer_file.exists() {
                 return Err(anyhow!("No Signer named '{signer_name}' found"));
@@ -187,7 +187,7 @@ fn build_did(
 
 fn is_vcomp_signer(name: &str) -> Result<bool> {
     log::trace!("Checking if {name} is a known vcomp signer");
-    let cfg = ctx_blocking()?;
+    let cfg = cfg_blocking()?;
     let signer_file = cfg.app_dir.join(SIGNER_DIR).join(name);
     if !signer_file.exists() {
         log::trace!("{name} is not vcomp");

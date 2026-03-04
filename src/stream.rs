@@ -13,7 +13,7 @@ use pyo3_async_runtimes::tokio::future_into_py;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{config::ctx_async, Graph, CID};
+use crate::{config::cfg_async, Graph, CID};
 
 /// Result of finalizing a stream computation.
 ///
@@ -84,7 +84,7 @@ fn finalize(
     log::debug!("Finalizing stream computation with ID: {id:?}");
 
     let fut = async move {
-        let ctx = ctx_async().await;
+        let ctx = cfg_async().await;
         let graph_id = ctx.resolve_graph_id(graph);
         let (compute_id, stream) = finalize_stream(id, static_output_cids, &graph_id).await?;
 
@@ -227,7 +227,7 @@ async fn create_statement_from_stream(
         ..
     } = stream_computation.clone();
 
-    let ctx = ctx_async().await;
+    let ctx = cfg_async().await;
     let signer = ctx
         .active_signer
         .ok_or_else(|| anyhow!("No active signer available"))?;

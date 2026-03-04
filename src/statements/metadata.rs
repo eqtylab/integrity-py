@@ -8,7 +8,7 @@ use pyo3::{pyfunction, PyResult, Python};
 use serde_json::Value;
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph, CID,
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Graph, CID,
 };
 
 #[pyfunction]
@@ -23,7 +23,7 @@ pub fn add_metadata_statement(
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);
 
-    with_ctx!(py, |ctx| {
+    with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph);
         let metadata_json: Value =
             serde_json::from_str(&metadata).context("Invalid metadata JSON")?;

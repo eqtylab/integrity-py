@@ -4,7 +4,7 @@ use integrity::lineage::models::statements::{
 use pyo3::{pyfunction, PyResult, Python};
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_ctx, Graph, CID,
+    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Graph, CID,
 };
 
 #[pyfunction]
@@ -18,7 +18,7 @@ pub fn add_did_statement(
     let timestamp = resolve_timestamp(None);
     let skip_proof = resolve_skip_proof(skip_proof);
 
-    with_ctx!(py, |ctx| {
+    with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph);
 
         let registered_by = ctx.clone().get_active_signer_did_key()?;

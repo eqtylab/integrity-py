@@ -131,7 +131,7 @@ fn init(
 #[pyfunction]
 #[pyo3(signature = (data, store=None))]
 fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResult<CID> {
-    with_ctx!(py, |ctx| {
+    with_cfg!(py, |ctx| {
         let cid = blake3_cid_raw_binary(data)?;
         let store_flag = store.unwrap_or(ctx.store_all_blobs);
 
@@ -150,7 +150,7 @@ fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResu
 #[pyfunction]
 #[pyo3(signature = (path, store=None))]
 fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyResult<CID> {
-    with_ctx!(py, |ctx| {
+    with_cfg!(py, |ctx| {
         let store_flag = store.unwrap_or(ctx.store_all_blobs);
 
         if path.is_file() {
@@ -211,7 +211,7 @@ fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyRes
 #[pyfunction]
 #[pyo3(signature = ())]
 fn purge_statement_store(py: Python<'_>) -> PyResult<()> {
-    with_ctx!(py, |ctx| {
+    with_cfg!(py, |ctx| {
         ctx.sql_lite.purge().await?;
         Ok::<_, anyhow::Error>(())
     })?;
@@ -222,7 +222,7 @@ fn purge_statement_store(py: Python<'_>) -> PyResult<()> {
 #[pyfunction]
 #[pyo3(signature = ())]
 fn purge_blob_store(py: Python<'_>) -> PyResult<()> {
-    with_ctx!(py, |ctx| {
+    with_cfg!(py, |ctx| {
         let blob_dir = ctx.app_dir.join("blobs");
         if blob_dir.exists() {
             tokio::fs::remove_dir_all(&blob_dir).await?;
