@@ -1,3 +1,4 @@
+from .agent import Agent
 from .asset import Asset, AssetType, serialize_for_hashing
 from .attribution import Attribution
 from .benchmark import Benchmark, BenchmarkResult
@@ -12,6 +13,7 @@ from .model import Model
 from .token import Token
 
 __all__ = [
+    "Agent",
     "Asset",
     "AssetType",
     "Attribution",

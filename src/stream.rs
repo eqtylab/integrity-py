@@ -77,7 +77,7 @@ fn finalize(
     py: Python<'_>,
     id: String,
     static_output_cids: Option<Vec<String>>,
-    graph: Option<Context>,
+    context: Option<Context>,
 ) -> PyResult<Bound<'_, PyAny>> {
     let id = Uuid::parse_str(&id).context("Invalid stream ID")?;
 
@@ -85,8 +85,8 @@ fn finalize(
 
     let fut = async move {
         let ctx = cfg_async().await;
-        let graph_id = ctx.resolve_graph_id(graph);
-        let (compute_id, stream) = finalize_stream(id, static_output_cids, &graph_id).await?;
+        let context_id = ctx.resolve_graph_id(context);
+        let (compute_id, stream) = finalize_stream(id, static_output_cids, &context_id).await?;
 
         Ok(StreamCIDs { compute_id, stream })
     };

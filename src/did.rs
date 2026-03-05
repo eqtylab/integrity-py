@@ -54,9 +54,9 @@ impl DID {
         signer: Py<Signer>,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        let default_graph = cfg_blocking()?.default_graph.clone();
+        let default_context = cfg_blocking()?.default_context.clone();
         let did_key = signer.bind(py).borrow().did_key.clone();
-        build_did(py, default_graph, did_key, Some(signer), kwargs)
+        build_did(py, default_context, did_key, Some(signer), kwargs)
     }
 
     #[staticmethod]
@@ -66,8 +66,8 @@ impl DID {
         did: String,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        let default_graph = cfg_blocking()?.default_graph.clone();
-        build_did(py, default_graph, did, None, kwargs)
+        let default_context = cfg_blocking()?.default_context.clone();
+        build_did(py, default_context, did, None, kwargs)
     }
 
     #[staticmethod]

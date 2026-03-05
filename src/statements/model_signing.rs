@@ -12,7 +12,7 @@ use serde_json::Value;
 use crate::{with_cfg, Context, CID};
 
 #[pyfunction]
-#[pyo3(signature = (collection_cid, blobs_dir, model_signing_name, allow_symlinks, ignore_paths, *, timestamp=None, graph=None))]
+#[pyo3(signature = (collection_cid, blobs_dir, model_signing_name, allow_symlinks, ignore_paths, *, timestamp=None, context=None))]
 pub fn create_model_signing_statement(
     py: Python,
     collection_cid: String,
@@ -21,10 +21,10 @@ pub fn create_model_signing_statement(
     allow_symlinks: bool,
     ignore_paths: Vec<String>,
     timestamp: Option<String>,
-    graph: Option<Context>,
+    context: Option<Context>,
 ) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
-        let graph_id = ctx.resolve_graph_id(graph);
+        let graph_id = ctx.resolve_graph_id(context);
 
         let blob_store = Arc::new(blob_store::local_fs::LocalFs::new(blobs_dir));
 

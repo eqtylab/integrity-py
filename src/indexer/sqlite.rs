@@ -191,8 +191,8 @@ impl Sqlite {
     }
 
     /// Creates a record in the "graphs" table
-    pub async fn create_graph(&self, graph: &Context) -> Result<()> {
-        if let Some(parent_id) = graph.parent {
+    pub async fn create_graph(&self, context: &Context) -> Result<()> {
+        if let Some(parent_id) = context.parent {
             sqlx::query(
                 r#"
                 INSERT OR IGNORE INTO graphs
@@ -213,9 +213,9 @@ impl Sqlite {
             ON CONFLICT (graph_id) DO NOTHING
             "#,
         )
-        .bind(graph.id.to_string())
-        .bind(graph.name.clone())
-        .bind(graph.parent.map(|id| id.to_string()))
+        .bind(context.id.to_string())
+        .bind(context.name.clone())
+        .bind(context.parent.map(|id| id.to_string()))
         .execute(&self.pool)
         .await?;
 

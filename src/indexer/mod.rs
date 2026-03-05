@@ -45,21 +45,21 @@ pub struct Context {
 impl Context {
     #[staticmethod]
     #[allow(clippy::new_ret_no_self)]
-    /// Creates a new graph with the given name.
+    /// Creates a new context with the given name.
     ///
-    /// If the global config is initialized, the graph is persisted to sqlite.
+    /// If the global config is initialized, the context is persisted to sqlite.
     pub fn new(py: Python<'_>, name: String) -> Self {
-        let graph = Context {
+        let context = Context {
             id: Uuid::new_v4(),
             name,
             parent: None,
         };
-        maybe_create_graph_in_db(py, &graph);
-        graph
+        maybe_create_graph_in_db(py, &context);
+        context
     }
 
     #[staticmethod]
-    /// Returns a factory that creates graphs with the provided parent.
+    /// Returns a factory that creates contexts with the provided parent.
     pub fn from_parent(parent: Context) -> ContextFactory {
         ContextFactory {
             parent: Some(parent.id),
@@ -67,7 +67,7 @@ impl Context {
     }
 
     #[staticmethod]
-    /// Returns a factory that creates graphs with the provided project UUID as parent.
+    /// Returns a factory that creates contexts with the provided project UUID as parent.
     pub fn from_uuid(project_id: Uuid) -> ContextFactory {
         ContextFactory {
             parent: Some(project_id),
@@ -75,9 +75,9 @@ impl Context {
     }
 
     #[pyo3(signature = (service))]
-    /// Registers this graph, its ancestors, statements, and blobs with a service.
+    /// Registers this context, its ancestors, statements, and blobs with a service.
     pub fn register(&self, py: Python, service: Service) -> PyResult<()> {
-        log::info!("Registering graph {}", self.id);
+        log::info!("Registering context {}", self.id);
         with_cfg!(py, |ctx| {
             let graph_id = self.id;
             let sql_client = ctx.sql_lite;
@@ -120,7 +120,7 @@ impl Context {
     }
 
     #[pyo3(signature = (path))]
-    /// Exports this graph's statements and blobs to a manifest JSON file.
+    /// Exports this context's statements and blobs to a manifest JSON file.
     pub fn export(&self, py: Python, path: PathBuf) -> PyResult<()> {
         log::info!("Exporting {}", self.id);
         with_cfg!(py, |ctx| {
@@ -162,7 +162,7 @@ impl Context {
     }
 }
 
-/// Factory for creating graphs with an optional parent.
+/// Factory for creating contexts with an optional parent.
 #[pyclass]
 pub struct ContextFactory {
     parent: Option<Uuid>,
@@ -172,16 +172,16 @@ pub struct ContextFactory {
 impl ContextFactory {
     #[allow(clippy::new_ret_no_self)]
     #[pyo3(signature = (name))]
-    /// Creates a new graph using the factory's parent if set.
+    /// Creates a new context using the factory's parent if set.
     pub fn new(&self, py: Python<'_>, name: String) -> Context {
-        let graph = Context {
+        let context = Context {
             id: Uuid::new_v4(),
             name,
             parent: self.parent,
         };
-        log::debug!("Creating new graph: {:?}", graph.__str__());
-        maybe_create_graph_in_db(py, &graph);
-        graph
+        log::debug!("Creating new context: {:?}", context.__str__());
+        maybe_create_graph_in_db(py, &context);
+        context
     }
 }
 
@@ -303,12 +303,12 @@ pub(crate) fn rows_to_statements(rows: Vec<SqliteRow>) -> Result<HashMap<String,
     Ok(statements)
 }
 
-// GraphFactor::new may be called before sdk initalization
+// ContextFactory::new may be called before sdk initalization
 // If we are initalized, save the graph to the db, otherwise .init() will save the graph
-fn maybe_create_graph_in_db(py: Python<'_>, graph: &Context) {
+fn maybe_create_graph_in_db(py: Python<'_>, context: &Context) {
     if let Ok(ctx) = crate::config::cfg_blocking() {
         let _ = py.detach(|| {
-            pyo3_async_runtimes::tokio::get_runtime().block_on(ctx.sql_lite.create_graph(graph))
+            pyo3_async_runtimes::tokio::get_runtime().block_on(ctx.sql_lite.create_graph(context))
         });
     }
 }

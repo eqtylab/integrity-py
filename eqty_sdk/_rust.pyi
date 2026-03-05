@@ -77,35 +77,35 @@ class Context:
 
     @staticmethod
     def new(name: str) -> Context:
-        """Creates a new graph with the given name.  If the global config is initialized, the graph is persisted to sqlite."""
+        """Creates a new context with the given name.  If the global config is initialized, the context is persisted to sqlite."""
         ...
 
     @staticmethod
     def from_parent(parent: Context) -> ContextFactory:
-        """Returns a factory that creates graphs with the provided parent."""
+        """Returns a factory that creates contexts with the provided parent."""
         ...
 
     @staticmethod
     def from_uuid(project_id: uuid.UUID) -> ContextFactory:
-        """Returns a factory that creates graphs with the provided project UUID as parent."""
+        """Returns a factory that creates contexts with the provided project UUID as parent."""
         ...
 
     def register(self, service: Service) -> None:
-        """Registers this graph, its ancestors, statements, and blobs with a service."""
+        """Registers this context, its ancestors, statements, and blobs with a service."""
         ...
 
     def delete_tree(self) -> None: ...
     def delete(self) -> None: ...
     def export(self, path: PathLike[str]) -> None:
-        """Exports this graph's statements and blobs to a manifest JSON file."""
+        """Exports this context's statements and blobs to a manifest JSON file."""
         ...
 
     def __str__(self) -> str: ...
 
 class ContextFactory:
-    """Factory for creating graphs with an optional parent."""
+    """Factory for creating contexts with an optional parent."""
     def new(self, name: str) -> Context:
-        """Creates a new graph using the factory's parent if set."""
+        """Creates a new context using the factory's parent if set."""
         ...
 
 class DID:
@@ -281,9 +281,9 @@ class entity:
         metadata_json: str,
         skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> Tuple[eqty_sdk._rust.Entity, Any]:
-        """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph_id` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+        """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
     @staticmethod
@@ -292,9 +292,9 @@ class entity:
         metadata_json: str,
         skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> Tuple[eqty_sdk._rust.Entity, Any]:
-        """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `graph` - Optional graph ID to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+        """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
 # Signer module
@@ -347,7 +347,7 @@ class statements:
         association_type: eqty_sdk._rust.PyAssociationType,
         *,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_computation_statement(
@@ -358,28 +358,28 @@ class statements:
         operated_by: Optional[str] = None,
         executed_on: Optional[str] = None,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_data_statement(
         data: List[eqty_sdk._rust.CID],
         *,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_did_statement(
         did: str,
         *,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_entity_statement(
         entity: str,
         *,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_governance_statement(
@@ -387,7 +387,7 @@ class statements:
         document: str,
         *,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_metadata_statement(
@@ -395,14 +395,14 @@ class statements:
         metadata: str,
         *,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]: ...
     @staticmethod
     def add_vc_statement(
         subject: str,
         *,
         timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> eqty_sdk._rust.CID: ...
     @staticmethod
     def add_storage_statement(
@@ -411,14 +411,14 @@ class statements:
         *,
         operated_by: Optional[str] = None,
         skip_proof: Optional[bool] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> List[eqty_sdk._rust.CID]:
         """Adds a storage statement linking data to a storage location."""
         ...
 
     @staticmethod
     def register_statement(statement_json: str) -> None:
-        """Register a statement from JSON string to the default graph."""
+        """Register a statement from JSON string to the default context."""
         ...
 
     @staticmethod
@@ -430,7 +430,7 @@ class statements:
         ignore_paths: List[str],
         *,
         timestamp: Optional[str] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> eqty_sdk._rust.CID: ...
 
 # Stream module
@@ -454,7 +454,7 @@ class stream:
     def finalize(
         id: str,
         static_output_cids: Optional[List[str]] = None,
-        graph: Optional[eqty_sdk._rust.Context] = None,
+        context: Optional[eqty_sdk._rust.Context] = None,
     ) -> Any:
         """Finalizes the computation stream and creates the ComputationStatement and (optionally) the VC and VCStatement returns the CID of the computation statement"""
         ...

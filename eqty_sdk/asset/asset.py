@@ -13,6 +13,7 @@ from eqty_sdk._rust import (
     get_cid_for_bytes,
     get_cid_for_path,
 )
+from eqty_sdk.context import get_active_context
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import (
     add_data_statement,
@@ -27,6 +28,7 @@ logger = logging.getLogger("eqty.sdk.Asset")
 # These are the 'known' types, but actual value can be anything
 class AssetType(Enum):
     ATTRIBUTION = "Attribution"
+    AGENT = "Agent"
     BENCHMARK = "Benchmark"
     BENCHMARK_RESULT = "Benchmark_Result"
     CERTIFICATE = "Certificate"
@@ -82,15 +84,6 @@ def get_asset_name(asset_type: Union[AssetType, str], cid: CID) -> str:
         return f"{asset_type}-{cid_suffix}"
 
 
-def _should_skip_proof(**kwargs):
-    """Checks if skip_proof is set in kwargs, then checks the env var, finally defaults to False."""
-    skip = kwargs.pop("skip_proof", None)
-    if skip is not None:
-        return skip
-    else:
-        return os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
-
-
 class TypedAsset:
     """Base class for typed assets. Subclasses just need to set _asset_type class variable."""
 
@@ -130,7 +123,7 @@ class Asset:
         self._ctx = custom_ctx
 
         self._value: Any = obj
-        self._skip_proof = _should_skip_proof(**kwargs)
+        self._skip_proof = kwargs.pop("skip_proof", None)
 
         self._cid = cid
         self._is_dir = is_dir
@@ -159,6 +152,7 @@ class Asset:
         store: Optional[bool] = None,
         **kwargs,
     ) -> "Asset":
+        ctx = ctx or get_active_context()
         serialized_bytes = serialize_for_hashing(obj)
         cid = get_cid_for_bytes(serialized_bytes, store)
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
@@ -174,6 +168,7 @@ class Asset:
         store: Optional[bool] = None,
         **kwargs,
     ) -> "Asset":
+        ctx = ctx or get_active_context()
         resolved_path = _init_path_input(path)
         cid = get_cid_for_path(resolved_path, store)
         is_dir = resolved_path.is_dir()
@@ -186,6 +181,7 @@ class Asset:
     def _from_cid(
         cid: CID, asset_type: Union[AssetType, str], ctx: Optional[Context] = None, **kwargs
     ) -> "Asset":
+        ctx = ctx or get_active_context()
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
         asset = Asset(cid, asset_type, cid, is_dir=False, custom_ctx=ctx, **kwargs)
@@ -228,7 +224,7 @@ class Asset:
     def add_declaration(self, declaration: Declaration) -> "Asset":
         document_cid = declaration.cid()
         ids = add_governance_statement(
-            str(self.cid), document_cid, skip_proof=self._skip_proof, graph=self._ctx
+            str(self.cid), document_cid, skip_proof=self._skip_proof, context=self._ctx
         )
         self.statement_ids.extend(ids)
         return self
@@ -236,14 +232,14 @@ class Asset:
     def _create_eqty_statements(self) -> None:
         """Creates DataStatement, MetadataStatement, and VcStatement."""
         self.statement_ids.extend(
-            add_data_statement([self.cid], skip_proof=self._skip_proof, graph=self._ctx)
+            add_data_statement([self.cid], skip_proof=self._skip_proof, context=self._ctx)
         )
         self.statement_ids.extend(
             add_metadata_statement(
                 str(self.cid),
                 self._metadata.to_json_str(),
                 skip_proof=self._skip_proof,
-                graph=self._ctx,
+                context=self._ctx,
             )
         )
 

@@ -73,16 +73,6 @@ class ComputeIssueVC(unittest.TestCase):
         decorator_no_vc(5)
         self.assertEqual(self._vc_delta(), 0, "There should not be any new VCs")
 
-    def test_compute_env_var(self):
-        """Check the case sensitivity of the env var."""
-        os.environ["EQTY_SKIP_PROOF"] = "TrUE"
-        compute = Compute(dummy_func)
-        compute(5)
-        self.assertTrue(compute._skip_proof, "Compute env var disable skip_proof failed")
-
-        decorator_default(5)
-        self.assertEqual(self._vc_delta(), 0, "There should not be any new VCs")
-
     def test_compute_env_var_with_forced_vc(self):
         """Check that the parameter overrides the env var."""
         os.environ["EQTY_SKIP_PROOF"] = "True"

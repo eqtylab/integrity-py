@@ -1,5 +1,4 @@
 import logging
-import os
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
@@ -10,6 +9,7 @@ from eqty_sdk._rust import (
     get_cid_for_path,
 )
 from eqty_sdk.asset import serialize_for_hashing
+from eqty_sdk.context import get_active_context
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement
@@ -43,19 +43,16 @@ class Computation:
         self._input_cids: List[CID] = []
         self._output_cids: List[CID] = []
         self._computation_cid: Union[CID, None] = None
-
-        if skip_proof is not None:
-            self._skip_proof = skip_proof
-        else:
-            self._skip_proof = os.getenv("EQTY_SKIP_PROOF", "").lower() == "true"
+        self._skip_proof = skip_proof
 
     @classmethod
     def new(cls, **kwargs) -> "Computation":
         skip_proof = kwargs.pop("skip_proof", None)
+        ctx = get_active_context()
 
         metadata = Metadata(**kwargs)
         instance = object.__new__(cls)
-        instance.__init_internal__(None, metadata, skip_proof)
+        instance.__init_internal__(ctx, metadata, skip_proof)
         return instance
 
     @staticmethod
@@ -178,9 +175,9 @@ class Computation:
             outputs=self._output_cids,
             computation=self._computation_cid,
             skip_proof=self._skip_proof,
-            graph=self._ctx,
+            context=self._ctx,
         )
 
-        self._metadata.create_statement(statement_ids[0], self._skip_proof)
+        self._metadata.create_statement(statement_ids[0], self._skip_proof, context=self._ctx)
 
         return self

@@ -60,18 +60,18 @@ impl Entity {
 /// * `metadata_json` - JSON string containing metadata to associate with the entity
 /// * `skip_proof` - If true, skip creating a VC statement
 /// * `timestamp` - Optional timestamp for statements
-/// * `graph_id` - Optional graph ID to register statements to
+/// * `context` - Optional Context to register statements to
 ///
 /// # Returns
 /// Tuple of (Entity, list of statement IDs)
 #[pyfunction]
-#[pyo3(signature = (metadata_json, skip_proof=None, timestamp=None, graph=None))]
+#[pyo3(signature = (metadata_json, skip_proof=None, timestamp=None, context=None))]
 pub fn create_entity(
     py: Python,
     metadata_json: String,
     skip_proof: Option<bool>,
     timestamp: Option<String>,
-    graph: Option<Context>,
+    context: Option<Context>,
 ) -> PyResult<(Entity, Py<PyList>)> {
     let entity = Entity::generate();
     let statement_ids = create_entity_statements(
@@ -80,7 +80,7 @@ pub fn create_entity(
         metadata_json,
         skip_proof,
         timestamp,
-        graph,
+        context,
     )?;
     Ok((entity, statement_ids))
 }
@@ -92,19 +92,19 @@ pub fn create_entity(
 /// * `metadata_json` - JSON string containing metadata to associate with the entity
 /// * `skip_proof` - If true, skip creating a VC statement
 /// * `timestamp` - Optional timestamp for statements
-/// * `graph` - Optional graph ID to register statements to
+/// * `context` - Optional Context to register statements to
 ///
 /// # Returns
 /// Tuple of (Entity, list of statement IDs)
 #[pyfunction]
-#[pyo3(signature = (uuid, metadata_json, skip_proof=None, timestamp=None, graph=None))]
+#[pyo3(signature = (uuid, metadata_json, skip_proof=None, timestamp=None, context=None))]
 pub fn create_entity_from_uuid(
     py: Python,
     uuid: String,
     metadata_json: String,
     skip_proof: Option<bool>,
     timestamp: Option<String>,
-    graph: Option<Context>,
+    context: Option<Context>,
 ) -> PyResult<(Entity, Py<PyList>)> {
     let entity = Entity::from_uuid(uuid);
     let statement_ids = create_entity_statements(
@@ -113,7 +113,7 @@ pub fn create_entity_from_uuid(
         metadata_json,
         skip_proof,
         timestamp,
-        graph,
+        context,
     )?;
     Ok((entity, statement_ids))
 }

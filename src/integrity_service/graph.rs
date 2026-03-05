@@ -30,10 +30,10 @@ impl GraphRegistrationRequest {
 }
 
 /// Creates or updates a graph record via the Integrity Service API.
-pub async fn create_graph_record(service: &Service, graph: Context) -> Result<()> {
-    let mut body = GraphRegistrationRequest::new(graph.id.to_string(), graph.name);
-    if graph.parent.is_some() {
-        body.parent_id = Some(graph.parent.map(|id| id.to_string()));
+pub async fn create_graph_record(service: &Service, context: Context) -> Result<()> {
+    let mut body = GraphRegistrationRequest::new(context.id.to_string(), context.name);
+    if context.parent.is_some() {
+        body.parent_id = Some(context.parent.map(|id| id.to_string()));
     }
     log::info!("Creating graph record. {body:?}");
 
@@ -52,11 +52,11 @@ pub async fn create_graph_record(service: &Service, graph: Context) -> Result<()
 
     match status {
         reqwest::StatusCode::OK | reqwest::StatusCode::CREATED => {
-            log::info!("Graph {} created successfully", graph.id);
+            log::info!("Graph {} created successfully", context.id);
             Ok(())
         }
         reqwest::StatusCode::CONFLICT => {
-            log::warn!("Graph {} is already registered", graph.id);
+            log::warn!("Graph {} is already registered", context.id);
             Ok(())
         }
         reqwest::StatusCode::BAD_REQUEST => {
@@ -64,9 +64,9 @@ pub async fn create_graph_record(service: &Service, graph: Context) -> Result<()
             let content = resp.text().await?;
             Err(anyhow!(
                 "Failed to register graph {}: HTTP {status} - {content}",
-                graph.id
+                context.id
             ))
         }
-        _ => Err(anyhow!("Failed to register graph {}: {resp:?}", graph.id)),
+        _ => Err(anyhow!("Failed to register graph {}: {resp:?}", context.id)),
     }
 }
