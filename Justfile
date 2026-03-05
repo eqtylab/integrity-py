@@ -9,7 +9,7 @@ _poetry-config:
 # Install all Python dependencies via poetry
 install: _poetry-config
   @echo "Installing dependencies"
-  poetry install
+  poetry install --with docs
 
 # Set up git hooks for prek
 init: install
@@ -37,6 +37,10 @@ lint:
 # Check that all public items have documentation
 lint-docs:
   cargo rustdoc --lib -- -D missing_docs -D rustdoc::broken_intra_doc_links
+
+# Builds HTML docs for the sdk
+build-docs:
+  poetry run sphinx-build -b html docs docs/_build/html
 
 # Auto-fix Rust clippy warnings
 fix:

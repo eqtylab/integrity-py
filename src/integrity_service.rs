@@ -29,7 +29,7 @@ pub mod statements;
 #[derive(Debug, Clone)]
 #[pyclass]
 pub struct Service {
-    /// Base URL path for the API (e.g., `https://api.example.com`).
+    /// Base URL path for the API (e.g., https://api.example.com).
     #[pyo3(get)]
     pub base_path: String,
     /// HTTP client for making requests.

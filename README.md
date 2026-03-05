@@ -103,6 +103,7 @@ Run `just` to see all available commands.
 ```present just --list
 Available recipes:
     build           # Build the Rust/Python wheel using maturin
+    build-docs      # Builds HTML docs for the sdk
     ci              # Run full CI pipeline: format check, lint, type check, build, and test
     fix             # Auto-fix Rust clippy warnings
     fmt             # Auto-format code (Rust + Python)
