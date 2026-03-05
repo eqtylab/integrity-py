@@ -214,7 +214,7 @@ class Compute:
             yield chunk
 
         # Finalizing the stream will add the computation statement
-        result = await eqty_core_stream.finalize(stream_uuid, [], graph=self._ctx)
+        result = await eqty_core_stream.finalize(stream_uuid, [], context=self._ctx)
         compute_cid = result.get("compute_id")
         stream = result.get("stream")
         logger.debug(f"Stream committed '{stream_uuid}'. Computation CID:'{compute_cid}'")
@@ -223,7 +223,7 @@ class Compute:
         if vc_id:
             self.statement_ids.append(vc_id)
 
-        ids = self.metadata.create_statement(compute_cid, self.skip_proof)
+        ids = self.metadata.create_statement(compute_cid, self.skip_proof, context=self._ctx)
         self.statement_ids.extend(ids)
 
         stream_cid = get_cid_for_bytes(stream, self._store)
@@ -295,10 +295,11 @@ class Compute:
             outputs=output_cids,
             computation=None,
             skip_proof=self.skip_proof,
+            context=self._ctx,
         )
         self.statement_ids.extend(statement_ids)
 
-        ids = self.metadata.create_statement(statement_ids[0], self.skip_proof)
+        ids = self.metadata.create_statement(statement_ids[0], self.skip_proof, context=self._ctx)
         self.statement_ids.extend(ids)
 
         return output_cids

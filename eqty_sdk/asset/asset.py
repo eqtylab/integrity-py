@@ -220,7 +220,7 @@ class Asset:
     def add_declaration(self, declaration: Declaration) -> "Asset":
         document_cid = declaration.cid()
         ids = add_governance_statement(
-            str(self.cid), document_cid, skip_proof=self._skip_proof, graph=self._ctx
+            str(self.cid), document_cid, skip_proof=self._skip_proof, context=self._ctx
         )
         self.statement_ids.extend(ids)
         return self
@@ -228,14 +228,14 @@ class Asset:
     def _create_eqty_statements(self) -> None:
         """Creates DataStatement, MetadataStatement, and VcStatement."""
         self.statement_ids.extend(
-            add_data_statement([self.cid], skip_proof=self._skip_proof, graph=self._ctx)
+            add_data_statement([self.cid], skip_proof=self._skip_proof, context=self._ctx)
         )
         self.statement_ids.extend(
             add_metadata_statement(
                 str(self.cid),
                 self._metadata.to_json_str(),
                 skip_proof=self._skip_proof,
-                graph=self._ctx,
+                context=self._ctx,
             )
         )
 

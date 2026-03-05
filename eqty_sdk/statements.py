@@ -96,7 +96,7 @@ class Association:
             self._predicates,
             self._association_type,
             skip_proof=self._skip_proof,
-            graph=self._ctx,
+            context=self._ctx,
         )
         return self
 

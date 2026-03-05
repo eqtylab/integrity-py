@@ -44,11 +44,11 @@ class Metadata:
         return json.dumps(self, indent=4, cls=MetadataJSONEncoder)
 
     def create_statement(
-        self, context: Context, subject_cid: CID, skip_proof: Optional[bool]
+        self, subject_cid: CID, skip_proof: Optional[bool], context: Optional[Context]
     ) -> List[CID]:
         metadata_json = self.to_json_str()
         return add_metadata_statement(
-            str(subject_cid), metadata_json, skip_proof=skip_proof, graph=context
+            str(subject_cid), metadata_json, skip_proof=skip_proof, context=context
         )
 
     def __iter__(self):

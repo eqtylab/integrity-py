@@ -9,6 +9,7 @@ from eqty_sdk._rust import (
     get_cid_for_path,
 )
 from eqty_sdk.asset import serialize_for_hashing
+from eqty_sdk.context import get_active_context
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement
@@ -47,10 +48,11 @@ class Computation:
     @classmethod
     def new(cls, **kwargs) -> "Computation":
         skip_proof = kwargs.pop("skip_proof", None)
+        ctx = get_active_context()
 
         metadata = Metadata(**kwargs)
         instance = object.__new__(cls)
-        instance.__init_internal__(None, metadata, skip_proof)
+        instance.__init_internal__(ctx, metadata, skip_proof)
         return instance
 
     @staticmethod
@@ -173,9 +175,9 @@ class Computation:
             outputs=self._output_cids,
             computation=self._computation_cid,
             skip_proof=self._skip_proof,
-            graph=self._ctx,
+            context=self._ctx,
         )
 
-        self._metadata.create_statement(statement_ids[0], self._skip_proof)
+        self._metadata.create_statement(statement_ids[0], self._skip_proof, context=self._ctx)
 
         return self
