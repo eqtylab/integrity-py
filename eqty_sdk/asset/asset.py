@@ -13,6 +13,7 @@ from eqty_sdk._rust import (
     get_cid_for_bytes,
     get_cid_for_path,
 )
+from eqty_sdk.context import get_active_context
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import (
     add_data_statement,
@@ -151,6 +152,7 @@ class Asset:
         store: Optional[bool] = None,
         **kwargs,
     ) -> "Asset":
+        ctx = ctx or get_active_context()
         serialized_bytes = serialize_for_hashing(obj)
         cid = get_cid_for_bytes(serialized_bytes, store)
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
@@ -166,6 +168,7 @@ class Asset:
         store: Optional[bool] = None,
         **kwargs,
     ) -> "Asset":
+        ctx = ctx or get_active_context()
         resolved_path = _init_path_input(path)
         cid = get_cid_for_path(resolved_path, store)
         is_dir = resolved_path.is_dir()
@@ -178,6 +181,7 @@ class Asset:
     def _from_cid(
         cid: CID, asset_type: Union[AssetType, str], ctx: Optional[Context] = None, **kwargs
     ) -> "Asset":
+        ctx = ctx or get_active_context()
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
         asset = Asset(cid, asset_type, cid, is_dir=False, custom_ctx=ctx, **kwargs)
