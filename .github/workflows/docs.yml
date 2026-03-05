@@ -18,27 +18,36 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install Nix
+        uses: eqtylab-actions/install-nix-action@v31
         with:
-          python-version: "3.11"
+          nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Cachix
+        uses: eqtylab-actions/cachix-action@v14
         with:
-          version: "1.8.3"
+          name: eqtylab
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          skipPush: true
+        continue-on-error: true
+
+      - name: Checkout Repo
+        uses: eqtylab-actions/checkout@v4
+
+      - name: Build nix shell
+        run: nix develop . -c true
+
+      - name: Rust Cache
+        uses: eqtylab-actions/rust-cache@v2
 
       - name: Install dependencies
-        run: poetry install --with docs
+        run: nix develop . -c just install
 
       - name: Build Rust extension
-        run: poetry run maturin develop
+        run: nix develop . -c just install-package
 
       - name: Build Sphinx docs
-        run: poetry run sphinx-build -b html docs docs/_build/html
+        run: nix develop . -c just build-docs
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
