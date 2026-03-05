@@ -246,7 +246,7 @@ class Asset:
 
         if self._asset_type == AssetType.MODEL and self._is_dir:
             add_model_signing_statement(
-                collection_cid=self.cid,
+                collection_cid=self._cid.cid,
                 model_signing_name=self._metadata.name,
             )
 

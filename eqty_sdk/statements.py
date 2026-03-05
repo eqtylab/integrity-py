@@ -18,6 +18,7 @@ add_metadata_statement = eqty_core_statements.add_metadata_statement
 add_storage_statement = eqty_core_statements.add_storage_statement
 add_governance_statement = eqty_core_statements.add_governance_statement
 add_vc_statement = eqty_core_statements.add_vc_statement
+add_model_signing_statement = eqty_core_statements.add_model_signing_statement
 
 
 class _AssociationTypes:
