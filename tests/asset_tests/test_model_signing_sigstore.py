@@ -12,14 +12,22 @@ class TestModelSigningSigstore(unittest.TestCase):
 
         before = get_statement_count_by_type("CredentialSigstoreBundleRegistration") or 0
 
-        signer = Signer.new(SIGNER_ALGORITHMS.SECP256R1)
-        set_active_signer(signer)
+        default_signer = Signer.from_private_key(
+            algorithm=SIGNER_ALGORITHMS.ED25519,
+            private_key="eHb22WNFvUXihogn8fubQjW7hHEqwY3fEKt745V4xXg=",
+        )
+        model_signer = Signer.new(SIGNER_ALGORITHMS.SECP256R1)
 
-        model_dir = get_config_dir() / f"model-signing-{uuid4().hex}"
-        model_dir.mkdir(parents=True, exist_ok=True)
-        (model_dir / "weights.txt").write_text("unit-test", encoding="utf-8")
+        try:
+            set_active_signer(model_signer)
 
-        Model.from_path(Path(model_dir), store=False, name="Model Dir", skip_proof=True)
+            model_dir = get_config_dir() / f"model-signing-{uuid4().hex}"
+            model_dir.mkdir(parents=True, exist_ok=True)
+            (model_dir / "weights.txt").write_text("unit-test", encoding="utf-8")
+
+            Model.from_path(Path(model_dir), store=False, name="Model Dir", skip_proof=True)
+        finally:
+            set_active_signer(default_signer)
 
         after = get_statement_count_by_type("CredentialSigstoreBundleRegistration") or 0
         self.assertEqual(
