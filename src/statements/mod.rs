@@ -33,7 +33,7 @@ pub fn statements(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(register_statement, m)?)?;
 
     m.add_function(wrap_pyfunction!(
-        model_signing::create_model_signing_statement,
+        model_signing::add_model_signing_statement,
         m
     )?)?;
 

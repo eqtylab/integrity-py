@@ -29,7 +29,6 @@ use crate::{
 struct PersistentSettings {
     store_all_blobs: bool,
     cid_ignore: CidIgnoreSettings,
-    generate_model_signing_signatures: bool,
 }
 
 impl From<Config> for PersistentSettings {
@@ -37,7 +36,6 @@ impl From<Config> for PersistentSettings {
         Self {
             store_all_blobs: config.store_all_blobs,
             cid_ignore: config.cid_ignore.clone().into(),
-            generate_model_signing_signatures: config.generate_model_signing_signatures,
         }
     }
 }
@@ -169,14 +167,6 @@ fn set_cid_ignore_rules_inner(
     Ok(())
 }
 
-fn set_generate_model_signing_signatures_inner(enable: bool) -> Result<()> {
-    Config::update_config(|ctx| {
-        ctx.generate_model_signing_signatures = enable;
-    })?;
-    Config::save_config()?;
-    Ok(())
-}
-
 fn set_store_all_blobs_inner(value: bool) -> Result<()> {
     Config::update_config(|ctx| {
         ctx.store_all_blobs = value;
@@ -202,8 +192,6 @@ pub struct Config {
     pub sql_lite: Arc<Sqlite>,
     /// Active signer only if it has been set during the session
     pub active_signer: Option<SignerType>,
-    /// Whether to generate model signing signatures when computing CIDs for directories
-    pub generate_model_signing_signatures: bool,
     /// Whether to store all blobs when computing CIDs
     pub store_all_blobs: bool,
     /// Default context used when no context is supplied.
@@ -235,12 +223,6 @@ impl Config {
         include_symlinks: Option<bool>,
     ) -> PyResult<Self> {
         set_cid_ignore_rules_inner(include_hidden_files, gitignore, include_symlinks)?;
-        Ok(self.clone())
-    }
-
-    #[pyo3(signature = (enable))]
-    fn set_generate_model_signing_signatures(&self, enable: bool) -> PyResult<Self> {
-        set_generate_model_signing_signatures_inner(enable)?;
         Ok(self.clone())
     }
 
@@ -311,10 +293,6 @@ impl Config {
                 .map(|p| p.cid_ignore.clone().into())
                 .unwrap_or_default(),
             active_signer: None,
-            generate_model_signing_signatures: persisted
-                .as_ref()
-                .map(|p| p.generate_model_signing_signatures)
-                .unwrap_or(false),
             store_all_blobs: persisted
                 .as_ref()
                 .map(|p| p.store_all_blobs)
@@ -458,7 +436,6 @@ impl Config {
         let settings = PersistentSettings {
             store_all_blobs: ctx.store_all_blobs,
             cid_ignore: ctx.cid_ignore.clone().into(),
-            generate_model_signing_signatures: ctx.generate_model_signing_signatures,
         };
 
         let config_path = ctx.app_dir.join("config.toml");

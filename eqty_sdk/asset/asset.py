@@ -19,6 +19,7 @@ from eqty_sdk.statements import (
     add_data_statement,
     add_governance_statement,
     add_metadata_statement,
+    add_model_signing_statement,
 )
 
 logger = logging.getLogger("eqty.sdk.Asset")
@@ -243,16 +244,11 @@ class Asset:
             )
         )
 
-        # if config.get_generate_model_signing_signatures() and self._is_dir:
-        #     _, _, include_symlinks = config.get_cid_ignore_rules()
-        #     eqty_core_statements.create_model_signing_statement(
-        #         collection_cid=self.cid,
-        #         blobs_dir=config.blob_dir(),
-        #         model_signing_name=self._metadata.name or "Unnamed Asset",
-        #         allow_symlinks=include_symlinks,
-        #         ignore_paths=[],  # TODO: populate this, ok for now, just makes recreation require more out-of-band info
-        #         timestamp=None,
-        #     )
+        if self._asset_type == AssetType.MODEL and self._is_dir:
+            add_model_signing_statement(
+                collection_cid=self.cid,
+                model_signing_name=self._metadata.name,
+            )
 
     def __repr__(self) -> str:
         return f"Asset({self._value!r})"
