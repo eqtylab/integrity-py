@@ -54,7 +54,6 @@ class Config:
         gitignore: Optional[bool] = None,
         include_symlinks: Optional[bool] = None,
     ) -> Config: ...
-    def set_generate_model_signing_signatures(self, enable: bool) -> Config: ...
     def set_store_all_blobs(self, value: bool) -> Config: ...
     def get_default_context(self) -> Context: ...
 
@@ -422,14 +421,10 @@ class statements:
         ...
 
     @staticmethod
-    def create_model_signing_statement(
+    def add_model_signing_statement(
         collection_cid: str,
-        blobs_dir: PathLike[str],
         model_signing_name: str,
-        allow_symlinks: bool,
-        ignore_paths: List[str],
         *,
-        timestamp: Optional[str] = None,
         context: Optional[eqty_sdk._rust.Context] = None,
     ) -> eqty_sdk._rust.CID: ...
 

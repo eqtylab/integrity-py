@@ -92,27 +92,6 @@ class TestConfig(unittest.TestCase):
             if os.path.lexists(symlink_dst):
                 symlink_dst.unlink()
 
-    def test_06_generate_model_signing_signatures(self):
-        cfg = init(get_config_dir())
-        cfg.set_generate_model_signing_signatures(True)
-
-        with open(config_path, "r") as f:
-            data = toml.load(f)
-        self.assertEqual(
-            data["generate_model_signing_signatures"],
-            True,
-            "Failed to save generate_model_signing_signatures to settings file",
-        )
-
-        cfg.set_generate_model_signing_signatures(False)
-        with open(config_path, "r") as f:
-            data = toml.load(f)
-        self.assertEqual(
-            data["generate_model_signing_signatures"],
-            False,
-            "Failed to save generate_model_signing_signatures to settings file",
-        )
-
 
 if __name__ == "__main__":
     unittest.main()

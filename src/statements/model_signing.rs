@@ -1,38 +1,40 @@
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
 use anyhow::{anyhow, Context as AnyhowContext};
 use integrity::{
-    blob_store,
+    intoto_attestation::sign_intoto_attestation,
     lineage::models::statements::{SigstoreBundleStatement, Statement, StatementTrait},
-    model_signing::DirectoryInfo,
+    model_signing::{
+        create_model_signing_intoto_statement, create_model_signing_sigstore_bundle, DirectoryInfo,
+    },
 };
 use pyo3::{pyfunction, PyResult, Python};
 use serde_json::Value;
 
-use crate::{with_cfg, Context, CID};
+use crate::{resolve_timestamp, with_cfg, Context, CID};
 
 #[pyfunction]
-#[pyo3(signature = (collection_cid, blobs_dir, model_signing_name, allow_symlinks, ignore_paths, *, timestamp=None, context=None))]
-pub fn create_model_signing_statement(
+#[pyo3(signature = (collection_cid, model_signing_name, *, context=None))]
+pub fn add_model_signing_statement(
     py: Python,
     collection_cid: String,
-    blobs_dir: PathBuf,
     model_signing_name: String,
-    allow_symlinks: bool,
-    ignore_paths: Vec<String>,
-    timestamp: Option<String>,
+    // ignore_paths: Vec<String>,
     context: Option<Context>,
 ) -> PyResult<CID> {
+    let timestamp = resolve_timestamp(None);
+    let collection_cid = collection_cid.trim_start_matches("urn:cid:").to_string();
     with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(context);
 
-        let blob_store = Arc::new(blob_store::local_fs::LocalFs::new(blobs_dir));
+        let blob_store = Arc::new(ctx.blob_store);
+        let allow_symlinks = ctx.cid_ignore.include_symlinks;
 
-        let intoto_statement = integrity::model_signing::create_model_signing_intoto_statement(
+        let intoto_statement = create_model_signing_intoto_statement(
             model_signing_name,
             DirectoryInfo::IrohCollectionCidAndBlobStore(collection_cid.clone(), blob_store),
             allow_symlinks,
-            ignore_paths,
+            vec![], // ignore_paths,
         )
         .await?;
 
@@ -40,17 +42,10 @@ pub fn create_model_signing_statement(
             anyhow!("No active signer available to sign the model signing intoto statement")
         })?);
 
-        let dsse = integrity::intoto_attestation::sign_intoto_attestation(
-            intoto_statement,
-            signer.clone(),
-        )
-        .await?;
+        let dsse = sign_intoto_attestation(intoto_statement, signer.clone()).await?;
         let dsse = serde_json::from_str::<Value>(&dsse).context("Failed to parse DSSE")?;
 
-        let sigstore_bundle = integrity::model_signing::create_model_signing_sigstore_bundle(
-            dsse,
-            &signer.get_did_doc().id,
-        )?;
+        let sigstore_bundle = create_model_signing_sigstore_bundle(dsse, &signer.get_did_doc().id)?;
 
         let sigstore_bundle_statement = {
             let subject = format!("urn:cid:{collection_cid}");
