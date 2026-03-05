@@ -16,13 +16,14 @@ def _count_governance(db_path: str) -> int:
 class TestAssetAddDeclaration(unittest.TestCase):
     def test_add_declaration_creates_governance_statement(self):
         setup_sdk()
+        db_path = f"{get_config_dir()}/graphs.db"
+        before = _count_governance(db_path)
 
         asset = Dataset.from_object("data", store=False, name="decl")
         declaration = Declaration.new("subject", "statement")
         asset.add_declaration(declaration)
 
-        db_path = f"{get_config_dir()}/graphs.db"
-        self.assertEqual(_count_governance(db_path), 1)
+        self.assertEqual(_count_governance(db_path), before + 1)
 
 
 if __name__ == "__main__":

@@ -244,10 +244,12 @@ class Asset:
             )
         )
 
-        if self._asset_type == AssetType.MODEL and self._is_dir:
+        if self.asset_type == AssetType.MODEL.value and self._is_dir:
+            collection_cid = self._cid.cid
             add_model_signing_statement(
-                collection_cid=self._cid.cid,
+                collection_cid=collection_cid,
                 model_signing_name=self._metadata.name,
+                context=self._ctx,
             )
 
     def __repr__(self) -> str:

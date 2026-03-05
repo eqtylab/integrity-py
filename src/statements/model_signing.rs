@@ -23,6 +23,7 @@ pub fn add_model_signing_statement(
     context: Option<Context>,
 ) -> PyResult<CID> {
     let timestamp = resolve_timestamp(None);
+    let collection_cid = collection_cid.trim_start_matches("urn:cid:").to_string();
     with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(context);
 
