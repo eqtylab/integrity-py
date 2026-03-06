@@ -39,10 +39,7 @@ from eqty_sdk.compute import (
     compute,
 )
 from eqty_sdk.errors import (
-    AuthenticationError,
     Error,
-    ExternalError,
-    UnsupportedError,
     UsageError,
 )
 from eqty_sdk.statements import ASSOCIATION_TYPES, Association
@@ -85,11 +82,8 @@ __all__ = [
     "Context",
     "Service",
     # Errors
-    "AuthenticationError",
     "Error",
-    "ExternalError",
     "UsageError",
-    "UnsupportedError",
     # Types
     "Declaration",
     "DID",
