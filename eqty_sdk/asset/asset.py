@@ -9,11 +9,11 @@ from typing import Any, Optional, Union, cast
 from eqty_sdk._rust import (
     CID,
     Context,
-    Declaration,
     get_cid_for_bytes,
     get_cid_for_path,
 )
 from eqty_sdk.context import get_active_context
+from eqty_sdk.declaration import Declaration
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import (
     add_data_statement,

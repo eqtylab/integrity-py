@@ -16,6 +16,10 @@ def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> CID:
     """Calculates and returns the CID for the provided bytes."""
     ...
 
+def get_cid_for_json(json: str, store: Optional[bool] = None) -> CID:
+    """Calculates and returns the JCS CID for the provided JSON string."""
+    ...
+
 def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> CID:
     """Resolves the provided path and reads the file or directory to calculate the CID. The path is saved to the blob store if the store flag is set"""
     ...
@@ -58,20 +62,20 @@ class Config:
     def get_default_context(self) -> Context: ...
 
 class Context:
-    """A graph structure for organizing related statements hierarchically.  Graphs group statements together with optional parent-child relationships, enabling versioning and organizational structure for lineage data."""
+    """A structure for organizing related statements hierarchically in the database.  Graph context groups statements together with optional parent-child relationships, enabling organizational structure for lineage graphs."""
     @property
     def id(self) -> uuid.UUID:
-        """Unique identifier for this graph"""
+        """Unique identifier"""
         ...
 
     @property
     def name(self) -> str:
-        """Human-readable name for this graph"""
+        """Human-readable name"""
         ...
 
     @property
     def parent(self) -> Optional[uuid.UUID]:
-        """Optional parent graph ID for hierarchical organization"""
+        """Optional parent ID for hierarchical organization"""
         ...
 
     @staticmethod
@@ -133,54 +137,6 @@ class DID:
     def from_did_string(did: str, **kwargs: Any) -> DID: ...
     @staticmethod
     def with_context(ctx: Context) -> DidFactory: ...
-
-class Declaration:
-    """A governance declaration describing a subject and related metadata."""
-    @property
-    def subject_line(self) -> str:
-        """Human-readable declaration subject line."""
-        ...
-
-    @property
-    def statement(self) -> str:
-        """Declaration statement text."""
-        ...
-
-    @property
-    def submitted_at(self) -> Optional[str]:
-        """ISO-8601 timestamp when the declaration was submitted."""
-        ...
-
-    @property
-    def submitted_by(self) -> Optional[str]:
-        """DID key of the signer who submitted the declaration."""
-        ...
-
-    @property
-    def control_cid(self) -> List[str]:
-        """CIDs that are under the declarant's control."""
-        ...
-
-    @property
-    def attachment_cid(self) -> List[str]:
-        """CIDs attached to this declaration."""
-        ...
-
-    @property
-    def extra(self) -> Any:
-        """Additional key/value metadata for the declaration."""
-        ...
-
-    def __init__(self, subject_line: str, statement: str) -> None: ...
-    @staticmethod
-    def new(subject_line: str, statement: str) -> Declaration: ...
-    def add_attachment_cid(self, cid: str) -> Declaration: ...
-    def add_control_cid(self, cid: str) -> Declaration: ...
-    def add_extra(self, key: str, val: str) -> Declaration: ...
-    def finalize(self) -> Declaration: ...
-    def cid(self) -> str: ...
-    def to_dict(self) -> Any: ...
-    def to_json(self) -> str: ...
 
 class DidFactory:
     """Builder for DID statements in a specific context."""
@@ -333,6 +289,11 @@ class signer:
     @staticmethod
     def set_active_signer(signer: Any) -> None:
         """Sets the active signer by name or signer instance.  # Arguments * `signer` - Signer name string or Signer instance"""
+        ...
+
+    @staticmethod
+    def get_active_signer_did_key() -> str:
+        """Returns the DID key of the currently active signer."""
         ...
 
 # Statements module

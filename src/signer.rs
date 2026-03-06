@@ -28,6 +28,7 @@ pub fn signer(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(create_yubihsm2_signer, m)?)?;
     m.add_function(wrap_pyfunction!(create_auth_service_signer, m)?)?;
     m.add_function(wrap_pyfunction!(set_active_signer, m)?)?;
+    m.add_function(wrap_pyfunction!(get_active_signer_did_key, m)?)?;
 
     Ok(())
 }
@@ -318,6 +319,14 @@ fn set_active_signer(py: Python, signer: &Bound<'_, PyAny>) -> PyResult<()> {
         Ok::<_, anyhow::Error>(())
     })?;
     Ok(())
+}
+
+/// Returns the DID key of the currently active signer.
+#[pyfunction]
+fn get_active_signer_did_key() -> PyResult<String> {
+    cfg_blocking()
+        .and_then(|ctx| ctx.get_active_signer_did_key())
+        .map_err(|e| PyRuntimeError::new_err(e.to_string()))
 }
 
 /// Subdirectory name for storing signer key files.
