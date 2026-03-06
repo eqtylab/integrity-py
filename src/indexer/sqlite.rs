@@ -94,7 +94,6 @@ impl Sqlite {
                 statement TEXT NOT NULL,
                 registered_by TEXT NOT NULL,
                 subject TEXT NOT NULL,
-                association TEXT NOT NULL,
                 type TEXT NOT NULL
             );
 
