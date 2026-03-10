@@ -225,7 +225,10 @@ class Asset:
     def add_declaration(self, declaration: Declaration) -> "Asset":
         document_cid = declaration.cid()
         ids = add_governance_statement(
-            str(self.cid), document_cid, skip_proof=self._skip_proof, context=self._ctx
+            str(self.cid),
+            str(document_cid),
+            skip_proof=self._skip_proof,
+            context=self._ctx,
         )
         self.statement_ids.extend(ids)
         return self

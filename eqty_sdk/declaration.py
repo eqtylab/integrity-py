@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from eqty_sdk._rust import get_cid_for_json, signer
+from eqty_sdk._rust import CID, get_cid_for_json, signer
 
 logger = logging.getLogger("eqty.sdk.declaration")
 
@@ -19,6 +19,7 @@ class Declaration:
     control_cid: List[str] = field(default_factory=list)
     attachment_cid: List[str] = field(default_factory=list)
     extra: Dict[str, str] = field(default_factory=dict)
+    _cid: Optional[CID] = field(default=None, init=False, repr=False)
 
     def __init__(self, subject_line: str, statement: str):
         self.subject_line = subject_line
@@ -59,13 +60,10 @@ class Declaration:
         logger.info(f"Declaration CID: {self._cid}")
         return self
 
-    def cid(self) -> str:
-        if self._cid:
+    def cid(self) -> CID:
+        if self._cid is not None:
             return self._cid
-        else:
-            raise RuntimeError(
-                "you must call .finalize() before you can access the declarations cid."
-            )
+        raise RuntimeError("you must call .finalize() before you can access the declarations cid.")
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary, omitting empty/None values."""
