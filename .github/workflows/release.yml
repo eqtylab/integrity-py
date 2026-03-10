@@ -1,0 +1,112 @@
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+name: Publish new release
+
+on:
+  push:
+    tags:
+      - v*.*.*
+  workflow_dispatch:
+
+jobs:
+  build_and_publish:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest-large, macos-15-large, macos-15-xlarge, ubuntu-aarch64]
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Install Nix
+        if: runner.os != 'Windows'
+        uses: eqtylab-actions/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Cachix
+        if: runner.os != 'Windows'
+        uses: eqtylab-actions/cachix-action@v14
+        with:
+          name: eqtylab
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
+        continue-on-error: true
+
+      - name: Setup SSH
+        if: runner.os != 'Windows'
+        uses: eqtylab-actions/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.EQTYLAB_SSH_KEY }}
+
+      - name: Checkout Repo
+        uses: eqtylab-actions/checkout@v4
+
+      - name: Set Commit Hash in Description (linux/windows)
+        if: runner.os != 'macOS'
+        shell: bash
+        run: sed -i 's/description = ".*"/description = "'"$(git rev-parse --short=7 HEAD)"'"/' Cargo.toml
+
+      - name: Set Commit Hash in Description (macos)
+        if: runner.os == 'macOS'
+        run: sed -i '' 's/description = ".*"/description = "'"$(git rev-parse --short=7 HEAD)"'"/' Cargo.toml
+
+      - name: Set Version (linux/windows)
+        if: runner.os != 'macOS' && startsWith(github.event_name, 'push') && startsWith(github.ref, 'refs/tags/eqty-sdk-py-v')
+        shell: bash
+        run: sed -i 's/^version = ".*"/version = "'"$(echo ${{ github.event.ref }} | sed -E 's/.*v([[:digit:]]+(\.[[:digit:]]+)+).*/\1/')"'"/' Cargo.toml
+
+      - name: Set Version (macos)
+        if: runner.os == 'macOS' && startsWith(github.event_name, 'push') && startsWith(github.ref, 'refs/tags/eqty-sdk-py-v')
+        run: sed -i '' 's/^version = ".*"/version = "'"$(echo ${{ github.event.ref }} | sed -E 's/.*v([[:digit:]]+(\.[[:digit:]]+)+).*/\1/')"'"/' Cargo.toml
+
+      # - name: Publish Linux glibc 2.17 Package
+      #   if: runner.os == 'Linux'
+      #   env:
+      #     MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
+      #   run: nix develop .#py-glibc-2_17 -c maturin publish -m Cargo.toml --zig --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
+      #
+      - name: Publish Linux Package
+        if: runner.os == 'Linux'
+        env:
+          MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
+        run: nix develop -c maturin publish --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
+
+      - name: Publish Windows Package
+        if: runner.os == 'Windows'
+        env:
+          MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
+        run: |
+          pipx install maturin
+          maturin publish --manifest-path Cargo.toml --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
+      - name: Publish Mac Package
+        if: runner.os == 'macOS'
+        env:
+          MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
+        run: nix develop -c maturin publish --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
+
+      - name: Update GitHub release with PyPI link
+        if: matrix.platform == 'ubuntu-latest-large' && startsWith(github.ref, 'refs/tags/')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            const version = tag.replace(/^v/, '');
+            const packageName = 'eqty-sdk';
+            const pypiUrl = `https://pypi.eqtylab.io/project/${packageName}/${version}/`;
+            const release = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag,
+            });
+            const marker = 'PyPI package:';
+            const line = `${marker} ${pypiUrl}`;
+            const body = release.data.body || '';
+            const nextBody = body.includes(marker) ? body : `${body}\n\n${line}`.trim();
+            if (nextBody !== body) {
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.data.id,
+                body: nextBody,
+              });
+            }
