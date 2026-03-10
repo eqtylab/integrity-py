@@ -745,7 +745,6 @@ impl Sqlite {
                 let statement = serde_json::to_value(statement)?;
                 let id = s.get_id();
                 let statement_data = serde_json::to_string(&statement)?;
-                let association_data = serde_json::to_string(&s.association)?;
                 let association_type = match s.r#type {
                     integrity::lineage::models::statements::AssociationType::Certifies => {
                         "certifies"
@@ -759,14 +758,13 @@ impl Sqlite {
                 sqlx::query(
                     r#"
                     INSERT OR IGNORE INTO association_statements
-                    (id, statement, registered_by, subject, association, type) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                    (id, statement, registered_by, subject, type) VALUES (?1, ?2, ?3, ?4, ?5)
                 "#,
                 )
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
                 .bind(&s.subject)
-                .bind(&association_data)
                 .bind(association_type)
                 .execute(&self.pool)
                 .await?;
