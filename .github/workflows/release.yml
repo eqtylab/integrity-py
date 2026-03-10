@@ -63,13 +63,13 @@ jobs:
       #   if: runner.os == 'Linux'
       #   env:
       #     MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
-      #   run: nix develop .#py-glibc-2_17 -c maturin publish -m Cargo.toml --zig --skip-existing --repository-url="http://eqty-pypi.westus2.cloudapp.azure.com/" --username="ci_runner"
+      #   run: nix develop .#py-glibc-2_17 -c maturin publish -m Cargo.toml --zig --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
       #
       - name: Publish Linux Package
         if: runner.os == 'Linux'
         env:
           MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
-        run: nix develop -c maturin publish --skip-existing --repository-url="http://eqty-pypi.westus2.cloudapp.azure.com/" --username="ci_runner"
+        run: nix develop -c maturin publish --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
 
       - name: Publish Windows Package
         if: runner.os == 'Windows'
@@ -77,10 +77,10 @@ jobs:
           MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
         run: |
           pipx install maturin
-          maturin publish --manifest-path Cargo.toml --skip-existing --repository-url="http://eqty-pypi.westus2.cloudapp.azure.com/" --username="ci_runner"
+          maturin publish --manifest-path Cargo.toml --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
       - name: Publish Mac Package
         if: runner.os == 'macOS'
         env:
           MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
-        run: nix develop -c maturin publish --skip-existing --repository-url="http://eqty-pypi.westus2.cloudapp.azure.com/" --username="ci_runner"
+        run: nix develop -c maturin publish --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
 
