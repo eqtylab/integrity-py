@@ -16,6 +16,10 @@ def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> CID:
     """Calculates and returns the CID for the provided bytes."""
     ...
 
+def get_cid_for_json(json: str, store: Optional[bool] = None) -> CID:
+    """Calculates and returns the JCS CID for the provided JSON string."""
+    ...
+
 def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> CID:
     """Resolves the provided path and reads the file or directory to calculate the CID. The path is saved to the blob store if the store flag is set"""
     ...
@@ -58,20 +62,20 @@ class Config:
     def get_default_context(self) -> Context: ...
 
 class Context:
-    """A graph structure for organizing related statements hierarchically.  Graphs group statements together with optional parent-child relationships, enabling versioning and organizational structure for lineage data."""
+    """A structure for organizing related statements hierarchically in the database.  Graph context groups statements together with optional parent-child relationships, enabling organizational structure for lineage graphs."""
     @property
     def id(self) -> uuid.UUID:
-        """Unique identifier for this graph"""
+        """Unique identifier"""
         ...
 
     @property
     def name(self) -> str:
-        """Human-readable name for this graph"""
+        """Human-readable name"""
         ...
 
     @property
     def parent(self) -> Optional[uuid.UUID]:
-        """Optional parent graph ID for hierarchical organization"""
+        """Optional parent ID for hierarchical organization"""
         ...
 
     @staticmethod
@@ -134,54 +138,6 @@ class DID:
     @staticmethod
     def with_context(ctx: Context) -> DidFactory: ...
 
-class Declaration:
-    """A governance declaration describing a subject and related metadata."""
-    @property
-    def subject_line(self) -> str:
-        """Human-readable declaration subject line."""
-        ...
-
-    @property
-    def statement(self) -> str:
-        """Declaration statement text."""
-        ...
-
-    @property
-    def submitted_at(self) -> Optional[str]:
-        """ISO-8601 timestamp when the declaration was submitted."""
-        ...
-
-    @property
-    def submitted_by(self) -> Optional[str]:
-        """DID key of the signer who submitted the declaration."""
-        ...
-
-    @property
-    def control_cid(self) -> List[str]:
-        """CIDs that are under the declarant's control."""
-        ...
-
-    @property
-    def attachment_cid(self) -> List[str]:
-        """CIDs attached to this declaration."""
-        ...
-
-    @property
-    def extra(self) -> Any:
-        """Additional key/value metadata for the declaration."""
-        ...
-
-    def __init__(self, subject_line: str, statement: str) -> None: ...
-    @staticmethod
-    def new(subject_line: str, statement: str) -> Declaration: ...
-    def add_attachment_cid(self, cid: str) -> Declaration: ...
-    def add_control_cid(self, cid: str) -> Declaration: ...
-    def add_extra(self, key: str, val: str) -> Declaration: ...
-    def finalize(self) -> Declaration: ...
-    def cid(self) -> str: ...
-    def to_dict(self) -> Any: ...
-    def to_json(self) -> str: ...
-
 class DidFactory:
     """Builder for DID statements in a specific context."""
     def build_from_signer(self, signer: Signer, **kwargs: Any) -> DID: ...
@@ -216,15 +172,15 @@ class PyAssociationType:
 class SIGNER_ALGORITHMS:
     """Supported signer algorithm identifiers."""
 
-    ED25519: str
-    SECP256K1: str
-    SECP256R1: str
+    ED25519: SIGNER_ALGORITHMS
+    SECP256K1: SIGNER_ALGORITHMS
+    SECP256R1: SIGNER_ALGORITHMS
 
 class Service:
     """Service for connecting to the Integrity Service API."""
     @property
     def base_path(self) -> str:
-        """Base URL path for the API (e.g., https://api.example.com)."""
+        """Base URL path for the API (e.g., <https://api.example.com>)."""
         ...
 
     @staticmethod
@@ -246,7 +202,7 @@ class Signer:
 
     def __init__(self, name: str, did_key: str) -> None: ...
     @staticmethod
-    def new(algorithm: Optional[Any] = None) -> Signer: ...
+    def new(algorithm: Optional[SIGNER_ALGORITHMS] = None) -> Signer: ...
     @staticmethod
     def vcomp_notary(url: Optional[str] = None) -> Signer: ...
     @staticmethod
@@ -254,7 +210,7 @@ class Signer:
     @staticmethod
     def yubihsm2(auth_key_id: int, signing_key_id: int, password: str) -> Signer: ...
     @staticmethod
-    def from_private_key(algorithm: Any, private_key: str) -> Signer: ...
+    def from_private_key(algorithm: SIGNER_ALGORITHMS, private_key: str) -> Signer: ...
 
 class UUID:
     """A simple wrapper around a UUID string.  Provides a typed wrapper for UUID strings with property access and string conversion."""
@@ -302,20 +258,22 @@ class signer:
     SIGNER_ALGORITHMS: type[SIGNER_ALGORITHMS]
 
     @staticmethod
-    def create_new_signer(key_type: str, name: Optional[str] = None) -> eqty_sdk._rust.Signer:
+    def create_new_signer(
+        key_type: eqty_sdk._rust.SIGNER_ALGORITHMS, name: Optional[str] = None
+    ) -> eqty_sdk._rust.Signer:
         """Creates a new local signer with a randomly generated key.  # Arguments * `name` - Optional name for the signer (uses DID key if not provided) * `key_type` - Type of cryptographic key to generate (SECP256K1, SECP256R1, ED25519)"""
         ...
 
     @staticmethod
     def create_signer_from_private_key(
-        key: str, key_type: str, name: Optional[str] = None
+        key: str, key_type: eqty_sdk._rust.SIGNER_ALGORITHMS, name: Optional[str] = None
     ) -> eqty_sdk._rust.Signer:
         """Creates a signer from an existing base64-encoded private key.  # Arguments * `key` - Base64-encoded private key bytes * `key_type` - Type of cryptographic key (SECP256K1, SECP256R1, ED25519) * `name` - Optional name for the signer (uses DID key if not provided)"""
         ...
 
     @staticmethod
     def create_vcomp_signer(url: str, pub_key: Optional[str] = None) -> eqty_sdk._rust.Signer:
-        """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `key_type` - Type of key (currently only SECP256R1 is supported) * `pub_key` - Optional public key for the signer"""
+        """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `pub_key` - Optional public key for the signer"""
         ...
 
     @staticmethod
@@ -333,6 +291,11 @@ class signer:
     @staticmethod
     def set_active_signer(signer: Any) -> None:
         """Sets the active signer by name or signer instance.  # Arguments * `signer` - Signer name string or Signer instance"""
+        ...
+
+    @staticmethod
+    def get_active_signer_did_key() -> str:
+        """Returns the DID key of the currently active signer."""
         ...
 
 # Statements module

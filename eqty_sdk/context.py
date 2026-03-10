@@ -13,6 +13,17 @@ def get_active_context() -> Optional[Context]:
 
 @contextmanager
 def graph_context(ctx: Context) -> Iterator[None]:
+    """Temporarily set the active graph context for SDK calls in this block.
+
+    Example:
+        from eqty_sdk import Context, Dataset
+        from eqty_sdk.context import graph_context
+
+        ctx = Context.new("my-graph")
+        with graph_context(ctx):
+            Dataset.from_object("hello", name="greeting")
+
+    """
     token = _active_ctx.set(ctx)
     try:
         yield

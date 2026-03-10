@@ -12,11 +12,13 @@ use integrity::{
         blake3::blake3_cid_raw_binary,
         get_multicodec,
         iroh::{compute_dir_cid, compute_file_cid},
+        jcs::compute_jcs_cid,
         multicodec,
     },
 };
 use pyo3::exceptions::PyRuntimeError;
 use pyo3_async_runtimes::tokio::get_runtime;
+use serde_json::Value;
 use tokio::fs;
 
 use crate::cid::CID;
@@ -48,8 +50,6 @@ pub fn resolve_timestamp(timestamp: Option<String>) -> Option<String> {
 pub mod cid;
 /// Global application configuration management.
 pub mod config;
-/// Declaration model for governance statements.
-pub mod declaration;
 /// DID type for registering DID statements and metadata.
 pub mod did;
 /// Entity type for unhashed objects with UUID identifiers.
@@ -89,7 +89,6 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Context>()?;
     m.add_class::<indexer::ContextFactory>()?;
     m.add_class::<Config>()?;
-    m.add_class::<declaration::Declaration>()?;
     m.add_class::<did::DID>()?;
     m.add_class::<signer::Signer>()?;
     m.add_class::<signer::SignerAlgorithms>()?;
@@ -100,6 +99,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     m.add_function(wrap_pyfunction!(init, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(get_cid_for_json, m)?)?;
     m.add_function(wrap_pyfunction!(get_cid_for_path, m)?)?;
     m.add_function(wrap_pyfunction!(purge_statement_store, m)?)?;
     m.add_function(wrap_pyfunction!(purge_blob_store, m)?)?;
@@ -138,6 +138,26 @@ fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResu
         if store_flag {
             ctx.blob_store
                 .put(data.to_vec(), multicodec::RAW_BINARY, Some(&cid))
+                .await?;
+        }
+
+        Ok(CID::new(cid))
+    })
+}
+
+/// Calculates and returns the JCS CID for the provided JSON string.
+#[pyfunction]
+#[pyo3(signature = (json, store=None))]
+fn get_cid_for_json(py: Python<'_>, json: String, store: Option<bool>) -> PyResult<CID> {
+    with_cfg!(py, |ctx| {
+        let json_value: Value = serde_json::from_str(&json)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        let (cid, data) = compute_jcs_cid(&json_value)?;
+        let store_flag = store.unwrap_or(ctx.store_all_blobs);
+
+        if store_flag {
+            ctx.blob_store
+                .put(data.to_vec(), multicodec::JSON_JCS, Some(&cid))
                 .await?;
         }
 

@@ -62,7 +62,6 @@ class Compute:
         logger.debug("Initalizing Compute")
 
         self._ctx = ctx
-        self.statement_ids = []
 
         if metadata is None:
             metadata = {}
@@ -77,10 +76,6 @@ class Compute:
         self._source_code = inspect.getsource(self._func)
         func_bytes = self._source_code.encode("utf-8")
         self._cid = get_cid_for_bytes(func_bytes)
-
-        # holds list of statement ids (inputs, outputs, metadata, vc, etc) that are created during the computation so
-        # that attributes can be applied to all statements associated with this computation
-        self.statement_ids = [self._cid]
 
         # local flag to track if any hashed data should be stored as a blob
         self._store = store
@@ -154,7 +149,6 @@ class Compute:
         for param_name, arg in zip(param_names, args):
             if isinstance(arg, Asset):
                 logger.debug(f"Adding asset to inputs array. {arg.cid}")
-                self.statement_ids.extend(arg.statement_ids)
                 inputs.append(arg)
             elif isinstance(arg, list) and all(isinstance(item, Asset) for item in arg):
                 logger.debug(f"Adding list of assets to inputs array. {[item.cid for item in arg]}")
@@ -171,7 +165,6 @@ class Compute:
                     skip_proof=self.skip_proof,
                 )
                 inputs.append(asset)
-                self.statement_ids.extend(asset.statement_ids)
 
         return inputs
 
@@ -218,13 +211,9 @@ class Compute:
         compute_cid = result.get("compute_id")
         stream = result.get("stream")
         logger.debug(f"Stream committed '{stream_uuid}'. Computation CID:'{compute_cid}'")
-        self.statement_ids.append(compute_cid)
-        vc_id = statements.add_vc_statement(compute_cid)
-        if vc_id:
-            self.statement_ids.append(vc_id)
+        statements.add_vc_statement(compute_cid)
 
-        ids = self.metadata.create_statement(compute_cid, self.skip_proof, context=self._ctx)
-        self.statement_ids.extend(ids)
+        self.metadata.create_statement(compute_cid, self.skip_proof, context=self._ctx)
 
         stream_cid = get_cid_for_bytes(stream, self._store)
         Custom.from_cid(
@@ -257,8 +246,6 @@ class Compute:
         logger.debug("Prepping func inputs")
 
         inputs = self.__args_to_assets__(args)
-        for i in inputs:
-            self.statement_ids.extend(i.statement_ids)
         input_cids = [i.cid for i in inputs]
 
         if inspect.iscoroutinefunction(self._func):
@@ -283,23 +270,20 @@ class Compute:
                 for item in asset:
                     cids.extend(extract_cids(item))
             elif asset is not None:
-                self.statement_ids.extend(asset.statement_ids)
                 cids.append(asset.cid)
             return cids
 
         result_asset = self.__results_to_assets__(result)
         output_cids = extract_cids(result_asset)
 
-        statement_ids = add_computation_statement(
+        compute_statement_ids = add_computation_statement(
             inputs=input_cids,
             outputs=output_cids,
             computation=None,
             skip_proof=self.skip_proof,
             context=self._ctx,
         )
-        self.statement_ids.extend(statement_ids)
 
-        ids = self.metadata.create_statement(statement_ids[0], self.skip_proof, context=self._ctx)
-        self.statement_ids.extend(ids)
+        self.metadata.create_statement(compute_statement_ids[0], self.skip_proof, context=self._ctx)
 
         return output_cids

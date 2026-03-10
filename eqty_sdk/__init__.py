@@ -5,11 +5,11 @@ from eqty_sdk._rust import (
     UUID,
     Config,
     Context,
-    Declaration,
     Entity,
     Service,
     Signer,
     get_cid_for_bytes,
+    get_cid_for_json,
     get_cid_for_path,
     init,
     purge_blob_store,
@@ -38,11 +38,9 @@ from eqty_sdk.compute import (
     Compute,
     compute,
 )
+from eqty_sdk.declaration import Declaration
 from eqty_sdk.errors import (
-    AuthenticationError,
     Error,
-    ExternalError,
-    UnsupportedError,
     UsageError,
 )
 from eqty_sdk.statements import ASSOCIATION_TYPES, Association
@@ -54,6 +52,7 @@ __all__ = [
     # Core
     "init",
     "get_cid_for_bytes",
+    "get_cid_for_json",
     "get_cid_for_path",
     "purge_blob_store",
     "purge_statement_store",
@@ -85,11 +84,8 @@ __all__ = [
     "Context",
     "Service",
     # Errors
-    "AuthenticationError",
     "Error",
-    "ExternalError",
     "UsageError",
-    "UnsupportedError",
     # Types
     "Declaration",
     "DID",

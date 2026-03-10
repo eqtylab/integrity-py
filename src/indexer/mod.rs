@@ -19,23 +19,23 @@ use uuid::Uuid;
 use crate::{integrity_service::Service, with_cfg};
 
 // ============================================================================
-// Graph
+// Graph Context
 // ============================================================================
 
-/// A graph structure for organizing related statements hierarchically.
+/// A structure for organizing related statements hierarchically in the database.
 ///
-/// Graphs group statements together with optional parent-child relationships,
-/// enabling versioning and organizational structure for lineage data.
+/// Graph context groups statements together with optional parent-child relationships,
+/// enabling organizational structure for lineage graphs.
 #[pyclass]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Context {
-    /// Unique identifier for this graph
+    /// Unique identifier
     #[pyo3(get)]
     pub id: Uuid,
-    /// Human-readable name for this graph
+    /// Human-readable name
     #[pyo3(get)]
     pub name: String,
-    /// Optional parent graph ID for hierarchical organization
+    /// Optional parent ID for hierarchical organization
     #[pyo3(get)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent: Option<Uuid>,

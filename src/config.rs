@@ -204,7 +204,6 @@ pub struct Config {
 // Python exported impl functions
 impl Config {
     // Setters
-
     #[pyo3(signature = (multithread=None, memory_map=None))]
     fn set_hashing_config(
         &self,
