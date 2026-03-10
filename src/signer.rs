@@ -48,7 +48,10 @@ pub struct Signer {
 
 /// Supported signer algorithm identifiers.
 #[pyclass(name = "SIGNER_ALGORITHMS")]
-pub struct SignerAlgorithms;
+#[derive(Clone)]
+pub struct SignerAlgorithms {
+    key_type: KeyType,
+}
 
 #[pymethods]
 impl SignerAlgorithms {
@@ -58,6 +61,12 @@ impl SignerAlgorithms {
     const SECP256K1: &'static str = "secp256k1";
     #[classattr]
     const SECP256R1: &'static str = "secp256r1";
+}
+
+impl From<SignerAlgorithms> for KeyType {
+    fn from(value: SignerAlgorithms) -> Self {
+        value.key_type
+    }
 }
 
 #[pymethods]
@@ -87,9 +96,12 @@ impl Signer {
 
     #[staticmethod]
     #[pyo3(name = "new", signature = (algorithm=None))]
-    fn new_signer(py: Python, algorithm: Option<&Bound<'_, PyAny>>) -> PyResult<Py<Signer>> {
-        let key_type = signer_algorithm_from_py(algorithm)?;
-        create_new_signer_internal(py, key_type, None)
+    fn new_signer(py: Python, algorithm: Option<SignerAlgorithms>) -> PyResult<Py<Signer>> {
+        if let Some(algo) = algorithm {
+            create_new_signer_internal(py, algo.into(), None)
+        } else {
+            create_new_signer_internal(py, KeyType::ED25519, None)
+        }
     }
 
     #[staticmethod]
