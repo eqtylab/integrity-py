@@ -10,3 +10,7 @@ if [ -f /etc/os-release ] && grep -q "alpine" /etc/os-release; then
     apk add --no-cache py3-pip
 fi
 
+# Fedora
+if [ -f /etc/os-release ] && grep -q "fedora" /etc/os-release; then
+    dnf install -y python pip
+fi
