@@ -4,6 +4,24 @@ use serde_json::{self, Value};
 
 use super::Service;
 
+/// Blob entry for batch upload.
+#[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PutBlobBatchEntry {
+    /// Base64-encoded blob contents.
+    pub blob: String,
+    /// Content identifier for the blob.
+    pub cid: String,
+    /// Multicodec identifier for the blob's format.
+    pub multicodec_code: u64,
+}
+
+/// Request body for batch blob uploads.
+#[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PutBlobBatchRequestBody {
+    /// Blobs to upload.
+    pub blobs: Vec<PutBlobBatchEntry>,
+}
+
 /// Response from the blob store PUT APIs containing the computed CID.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PutResponse {
@@ -91,6 +109,41 @@ pub async fn put_blob(service: &Service, blob: Vec<u8>, multicodec: u64) -> Resu
     } else {
         Err(anyhow!(
             "Put Blob request failed with status {status}: {content}"
+        ))
+    }
+}
+
+/// Stores blobs in the blob store using the batch API.
+pub async fn put_blob_batch(service: &Service, blobs: Vec<(String, String, u64)>) -> Result<()> {
+    let uri_str = format!("{}/store/v1/blob/batch", service.base_path);
+    let mut req_builder = service.client.request(reqwest::Method::PUT, &uri_str);
+
+    if let Some(ref token) = service.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let entries = blobs
+        .into_iter()
+        .map(|(cid, blob, multicodec_code)| PutBlobBatchEntry {
+            blob,
+            cid,
+            multicodec_code,
+        })
+        .collect();
+
+    let body = PutBlobBatchRequestBody { blobs: entries };
+    req_builder = req_builder.json(&body);
+
+    let req = req_builder.build()?;
+    let resp = service.client.execute(req).await?;
+    let status = resp.status();
+    let content = resp.text().await?;
+
+    if status.is_success() {
+        Ok(())
+    } else {
+        Err(anyhow!(
+            "Put Blob batch request failed with status {status}: {content}"
         ))
     }
 }

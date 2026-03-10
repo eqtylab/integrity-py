@@ -7,13 +7,14 @@ use integrity::{
     lineage::models::statements::{Statement, StatementTrait},
 };
 use pyo3::prelude::*;
+use serde_json;
 use uuid::Uuid;
 
 use crate::{
     integrity_service::{
-        blobs::{put_blob, put_jcs},
+        blobs::{put_blob, put_blob_batch, put_jcs},
         graph::create_graph_record,
-        statements::create_statement,
+        statements::{create_statement, create_statement_batch},
     },
     Context,
 };
@@ -76,11 +77,16 @@ impl Service {
             self.base_path
         );
 
+        if use_batch_register() {
+            create_statement_batch(self, graph_id, statements).await?;
+            return Ok(());
+        }
+
         for statement in statements {
             let statement_id = statement.get_id();
             log::debug!("Registering statement: {statement_id:?}");
 
-            match create_statement(self, statement, graph_id).await {
+            match create_statement(self, graph_id, statement).await {
                 Ok(result) => {
                     log::info!("Registered {statement_id:?} JCS CID {:?}", result.jcs_cid);
                 }
@@ -106,6 +112,16 @@ impl Service {
 
     /// Registers blobs (by CID) with the Integrity Service.
     pub async fn register_blobs(&self, blob_map: HashMap<String, String>) -> Result<()> {
+        if use_batch_register() {
+            let mut batch = Vec::with_capacity(blob_map.len());
+            for (cid, blob) in blob_map {
+                let multicodec = get_multicodec(&cid)?;
+                batch.push((cid, blob, multicodec));
+            }
+            put_blob_batch(self, batch).await?;
+            return Ok(());
+        }
+
         for (cid, blob) in blob_map {
             let multicodec = get_multicodec(&cid)?;
 
@@ -135,5 +151,15 @@ impl Default for Service {
             client: reqwest::Client::new(),
             bearer_access_token: None,
         }
+    }
+}
+
+fn use_batch_register() -> bool {
+    match std::env::var("EQTY_BATCH_REGISTER") {
+        Ok(val) => matches!(
+            val.trim().to_ascii_lowercase().as_str(),
+            "1" | "true" | "yes" | "on"
+        ),
+        Err(_) => false,
     }
 }

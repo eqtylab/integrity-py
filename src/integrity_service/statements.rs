@@ -49,6 +49,31 @@ pub struct CreateStatementResponse {
     pub rdfc_cid: String,
 }
 
+/// Request body for creating statements in a batch via the Integrity Service API.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateStatementBatchRequestBody {
+    /// Whether to auto-generate an ID for the statement.
+    pub generate_id: Option<bool>,
+    /// Context identifier for statement association.
+    pub graph_id: Option<Uuid>,
+    /// Whether to issue a verifiable credential for the statement.
+    pub issue_vc: Option<bool>,
+    /// The statements payloads as JSON values.
+    pub statements: Vec<Value>,
+}
+
+impl CreateStatementBatchRequestBody {
+    /// Creates a new request body for the batch create statements API.
+    pub fn new(graph_id: Uuid, statements: Vec<Value>) -> CreateStatementBatchRequestBody {
+        CreateStatementBatchRequestBody {
+            generate_id: Some(false),
+            graph_id: Some(graph_id),
+            issue_vc: Some(false),
+            statements,
+        }
+    }
+}
+
 impl CreateStatementResponse {
     /// Creates a new response with the provided CIDs.
     ///
@@ -73,8 +98,8 @@ impl CreateStatementResponse {
 /// * `Result<CreateStatementResponse>` - The computed CIDs on success, or an error on failure
 pub async fn create_statement(
     service: &Service,
-    statement: Statement,
     graph_id: Uuid,
+    statement: Statement,
     // statements_create_request_body: CreateStatementRequestBody,
 ) -> Result<CreateStatementResponse> {
     let statement_str = serde_json::to_value(&statement)?;
@@ -99,6 +124,45 @@ pub async fn create_statement(
     } else {
         Err(anyhow!(
             "Create Statement request failed with status {status}: {content}"
+        ))
+    }
+}
+
+/// Creates statements via the Integrity Service batch API.
+///
+/// # Arguments
+/// * `service` - API configuration containing base path and authentication
+/// * `graph_id` - Context identifier for statement association
+/// * `statements` - Statement vector
+pub async fn create_statement_batch(
+    service: &Service,
+    graph_id: Uuid,
+    statements: Vec<Statement>,
+) -> Result<()> {
+    let statements_json = statements
+        .into_iter()
+        .map(|statement| serde_json::to_value(&statement))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let body = CreateStatementBatchRequestBody::new(graph_id, statements_json);
+    let uri_str = format!("{}/statements/v1/batch", service.base_path);
+    let mut req_builder = service.client.request(reqwest::Method::PUT, &uri_str);
+
+    if let Some(ref token) = service.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&body);
+
+    let req = req_builder.build()?;
+    let resp = service.client.execute(req).await?;
+    let status = resp.status();
+    let content = resp.text().await?;
+
+    if status.is_success() {
+        Ok(())
+    } else {
+        Err(anyhow!(
+            "Create Statement batch request failed with status {status}: {content}"
         ))
     }
 }
