@@ -50,8 +50,11 @@ pub struct Signer {
 #[pyclass(name = "SIGNER_ALGORITHMS")]
 #[derive(Clone)]
 pub enum SignerAlgorithms {
+    /// Ed25519 signature algorithm.
     ED25519,
+    /// Secp256k1 signature algorithm.
     SECP256K1,
+    /// Secp256r1 (P-256) signature algorithm.
     SECP256R1,
 }
 

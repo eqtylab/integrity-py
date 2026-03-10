@@ -180,7 +180,7 @@ class Service:
     """Service for connecting to the Integrity Service API."""
     @property
     def base_path(self) -> str:
-        """Base URL path for the API (e.g., https://api.example.com)."""
+        """Base URL path for the API (e.g., <https://api.example.com>)."""
         ...
 
     @staticmethod
