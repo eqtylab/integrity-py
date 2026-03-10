@@ -172,9 +172,9 @@ class PyAssociationType:
 class SIGNER_ALGORITHMS:
     """Supported signer algorithm identifiers."""
 
-    ED25519: str
-    SECP256K1: str
-    SECP256R1: str
+    ED25519: SIGNER_ALGORITHMS
+    SECP256K1: SIGNER_ALGORITHMS
+    SECP256R1: SIGNER_ALGORITHMS
 
 class Service:
     """Service for connecting to the Integrity Service API."""
@@ -210,7 +210,7 @@ class Signer:
     @staticmethod
     def yubihsm2(auth_key_id: int, signing_key_id: int, password: str) -> Signer: ...
     @staticmethod
-    def from_private_key(algorithm: Any, private_key: str) -> Signer: ...
+    def from_private_key(algorithm: SIGNER_ALGORITHMS, private_key: str) -> Signer: ...
 
 class UUID:
     """A simple wrapper around a UUID string.  Provides a typed wrapper for UUID strings with property access and string conversion."""
@@ -258,20 +258,22 @@ class signer:
     SIGNER_ALGORITHMS: type[SIGNER_ALGORITHMS]
 
     @staticmethod
-    def create_new_signer(key_type: str, name: Optional[str] = None) -> eqty_sdk._rust.Signer:
+    def create_new_signer(
+        key_type: eqty_sdk._rust.SIGNER_ALGORITHMS, name: Optional[str] = None
+    ) -> eqty_sdk._rust.Signer:
         """Creates a new local signer with a randomly generated key.  # Arguments * `name` - Optional name for the signer (uses DID key if not provided) * `key_type` - Type of cryptographic key to generate (SECP256K1, SECP256R1, ED25519)"""
         ...
 
     @staticmethod
     def create_signer_from_private_key(
-        key: str, key_type: str, name: Optional[str] = None
+        key: str, key_type: eqty_sdk._rust.SIGNER_ALGORITHMS, name: Optional[str] = None
     ) -> eqty_sdk._rust.Signer:
         """Creates a signer from an existing base64-encoded private key.  # Arguments * `key` - Base64-encoded private key bytes * `key_type` - Type of cryptographic key (SECP256K1, SECP256R1, ED25519) * `name` - Optional name for the signer (uses DID key if not provided)"""
         ...
 
     @staticmethod
     def create_vcomp_signer(url: str, pub_key: Optional[str] = None) -> eqty_sdk._rust.Signer:
-        """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `key_type` - Type of key (currently only SECP256R1 is supported) * `pub_key` - Optional public key for the signer"""
+        """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `pub_key` - Optional public key for the signer"""
         ...
 
     @staticmethod

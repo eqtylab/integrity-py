@@ -49,23 +49,29 @@ pub struct Signer {
 /// Supported signer algorithm identifiers.
 #[pyclass(name = "SIGNER_ALGORITHMS")]
 #[derive(Clone)]
-pub struct SignerAlgorithms {
-    key_type: KeyType,
-}
-
-#[pymethods]
-impl SignerAlgorithms {
-    #[classattr]
-    const ED25519: &'static str = "ed25519";
-    #[classattr]
-    const SECP256K1: &'static str = "secp256k1";
-    #[classattr]
-    const SECP256R1: &'static str = "secp256r1";
+pub enum SignerAlgorithms {
+    ED25519,
+    SECP256K1,
+    SECP256R1,
 }
 
 impl From<SignerAlgorithms> for KeyType {
     fn from(value: SignerAlgorithms) -> Self {
-        value.key_type
+        match value {
+            SignerAlgorithms::ED25519 => KeyType::ED25519,
+            SignerAlgorithms::SECP256K1 => KeyType::SECP256K1,
+            SignerAlgorithms::SECP256R1 => KeyType::SECP256R1,
+        }
+    }
+}
+
+impl From<KeyType> for SignerAlgorithms {
+    fn from(value: KeyType) -> Self {
+        match value {
+            KeyType::ED25519 => SignerAlgorithms::ED25519,
+            KeyType::SECP256K1 => SignerAlgorithms::SECP256K1,
+            KeyType::SECP256R1 => SignerAlgorithms::SECP256R1,
+        }
     }
 }
 
@@ -137,11 +143,10 @@ impl Signer {
     #[pyo3(signature = (algorithm, private_key))]
     fn from_private_key(
         py: Python,
-        algorithm: &Bound<'_, PyAny>,
+        algorithm: SignerAlgorithms,
         private_key: String,
     ) -> PyResult<Py<Signer>> {
-        let key_type = signer_algorithm_from_py(Some(algorithm))?;
-        create_signer_from_private_key_internal(py, key_type, private_key, None)
+        create_signer_from_private_key_internal(py, algorithm.into(), private_key, None)
     }
 }
 
@@ -152,11 +157,14 @@ impl Signer {
 /// * `key_type` - Type of cryptographic key to generate (SECP256K1, SECP256R1, ED25519)
 #[pyfunction]
 #[pyo3(signature = (key_type, name=None))]
-fn create_new_signer(py: Python, key_type: String, name: Option<&str>) -> PyResult<Py<Signer>> {
+fn create_new_signer(
+    py: Python,
+    key_type: SignerAlgorithms,
+    name: Option<&str>,
+) -> PyResult<Py<Signer>> {
     signer_exists(name)?;
 
-    let key_type = parse_key_type(&key_type).context("Invalid key type")?;
-    create_new_signer_internal(py, key_type, name)
+    create_new_signer_internal(py, key_type.into(), name)
 }
 
 fn create_new_signer_internal(
@@ -197,13 +205,12 @@ fn create_new_signer_internal(
 fn create_signer_from_private_key(
     py: Python,
     key: String,
-    key_type: String,
+    key_type: SignerAlgorithms,
     name: Option<&str>,
 ) -> PyResult<Py<Signer>> {
     signer_exists(name)?;
 
-    let key_type = parse_key_type(&key_type).context("Invalid key type")?;
-    create_signer_from_private_key_internal(py, key_type, key, name)
+    create_signer_from_private_key_internal(py, key_type.into(), key, name)
 }
 
 fn create_signer_from_private_key_internal(
@@ -244,7 +251,6 @@ fn create_signer_from_private_key_internal(
 /// # Arguments
 /// * `name` - Name to assign to the signer
 /// * `url` - VComp notary service URL
-/// * `key_type` - Type of key (currently only SECP256R1 is supported)
 /// * `pub_key` - Optional public key for the signer
 ///
 #[pyfunction]
@@ -373,33 +379,4 @@ fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<Signer> {
         name: name.to_owned(),
         did_key,
     })
-}
-
-fn signer_algorithm_from_py(obj: Option<&Bound<'_, PyAny>>) -> PyResult<KeyType> {
-    let key_type = if let Some(obj) = obj {
-        if let Ok(s) = obj.extract::<String>() {
-            s
-        } else if let Ok(value) = obj.getattr("value") {
-            value.extract::<String>()?
-        } else {
-            return Err(PyErr::new::<PyTypeError, _>(
-                "algorithm must be a string or enum with a 'value' attribute",
-            ));
-        }
-    } else {
-        "ed25519".to_string()
-    };
-
-    parse_key_type(&key_type).map_err(|e| PyErr::new::<PyValueError, _>(format!("{e}")))
-}
-
-fn parse_key_type(value: &str) -> anyhow::Result<KeyType> {
-    match value.to_ascii_lowercase().as_str() {
-        "ed25519" => Ok(KeyType::ED25519),
-        "secp256k1" => Ok(KeyType::SECP256K1),
-        "secp256r1" | "p256" => Ok(KeyType::SECP256R1),
-        _ => Err(anyhow::anyhow!(
-            "Invalid key type. Expected one of: ed25519, secp256k1, secp256r1"
-        )),
-    }
 }
