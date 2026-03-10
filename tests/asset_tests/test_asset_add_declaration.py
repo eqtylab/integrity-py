@@ -20,7 +20,7 @@ class TestAssetAddDeclaration(unittest.TestCase):
         before = _count_governance(db_path)
 
         asset = Dataset.from_object("data", store=False, name="decl")
-        declaration = Declaration.new("subject", "statement")
+        declaration = Declaration.new("subject", "statement").finalize()
         asset.add_declaration(declaration)
 
         self.assertEqual(_count_governance(db_path), before + 1)
