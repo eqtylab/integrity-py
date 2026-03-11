@@ -125,14 +125,24 @@ Available recipes:
 ### Project Structure
 
 ```
-├── eqty_sdk/           # Python SDK source
-│   ├── asset/          # Asset type definitions
-│   ├── compute/        # Computation tracking
-│   ├── config/         # Configuration management
-│   ├── statements/     # Provenance statement types
-│   └── types/          # Core type definitions
-├── src/                # Rust source (PyO3 bindings)
-│   └── statements/     # Rust statement implementations
-├── tests/              # Python unit tests
-└── examples/           # Usage examples
+├── eqty_sdk/              # Python package exports and pure-Python helpers
+│   ├── asset/             # Asset classes
+│   └── compute/           # Compute decorators and helpers
+├── src/                   # Rust implementation and PyO3 bindings
+│   ├── indexer/           # SQLite-backed graph and statement indexing
+│   ├── integrity_service/ # Integrity service client helpers
+│   └── statements/        # Statement creation and registration bindings
+├── tests/                 # Python unit tests
+│   ├── 01_config_tests/
+│   ├── asset_tests/
+│   ├── computation_tests/
+│   ├── context_tests/
+│   ├── core_tests/
+│   ├── indexer_tests/
+│   ├── signer_tests/
+│   └── statement_tests/
+├── integration-tests/     # Integration test assets
+├── examples/              # Usage examples
+├── scripts/               # Development utilities
+└── docs/                  # Sphinx documentation
 ```

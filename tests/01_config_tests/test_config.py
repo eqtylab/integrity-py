@@ -6,7 +6,7 @@ from pathlib import Path
 import toml
 
 from eqty_sdk import init
-from tests import get_config_dir, setup_sdk
+from tests import get_config_dir
 
 config_path = Path(get_config_dir(), "config.toml")
 
@@ -19,17 +19,17 @@ class TestConfig(unittest.TestCase):
             shutil.rmtree(get_config_dir())
         self.assertFalse(os.path.exists(get_config_dir()), "Config directory already exists.")
 
-        setup_sdk()
+        init(custom_dir=get_config_dir())
         self.assertTrue(os.path.exists(get_config_dir()), "Failed to create config directory.")
         # Config file is created on first setter call, not on init
         # Check that the directory exists
 
     def test_02_hashing_config(self):
-        cfg = init(get_config_dir())
+        cfg = init(custom_dir=get_config_dir())
         self.assertIsNotNone(cfg.set_hashing_config(multithread=True, memory_map=True))
 
     def test_03_store_all_blobs(self):
-        cfg = init(get_config_dir())
+        cfg = init(custom_dir=get_config_dir())
         cfg.set_store_all_blobs(True)
 
         with open(config_path, "r") as f:
@@ -49,7 +49,7 @@ class TestConfig(unittest.TestCase):
         )
 
     def test_04_cid_ignore(self):
-        cfg = init(get_config_dir())
+        cfg = init(custom_dir=get_config_dir())
         cfg.set_cid_ignore_rules(True, False, False)
 
         with open(config_path, "r") as f:
@@ -70,7 +70,7 @@ class TestConfig(unittest.TestCase):
         )
 
     def test_05_cid_ignore_symlink_behavior(self):
-        cfg = init(get_config_dir())
+        cfg = init(custom_dir=get_config_dir())
         cfg.set_cid_ignore_rules(include_symlinks=True)
 
         test_dir = Path("./tests/fixtures/iroh/collection").resolve()

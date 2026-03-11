@@ -108,11 +108,11 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 /// Initializes the sdk config. Must be called before setting individual config values
 #[pyfunction]
-#[pyo3(signature = (custom_dir=None, default_context=None))]
+#[pyo3(signature = (default_context=None, *, custom_dir=None))]
 fn init(
     py: Python<'_>,
-    custom_dir: Option<PathBuf>,
     default_context: Option<Context>,
+    custom_dir: Option<PathBuf>,
 ) -> PyResult<Config> {
     // `None` → use the Python caller’s CWD (the same as the process CWD)
     let app_dir = custom_dir.unwrap_or_else(|| {
@@ -251,4 +251,103 @@ fn purge_blob_store(py: Python<'_>) -> PyResult<()> {
         Ok::<_, anyhow::Error>(())
     })?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use pyo3::{
+        exceptions::PyTypeError,
+        types::{PyAnyMethods, PyDict, PyDictMethods, PyModuleMethods},
+        wrap_pyfunction, Py, PyErr, Python,
+    };
+    use tempfile::tempdir;
+    use uuid::Uuid;
+
+    use crate::{config::Config, indexer::Context};
+
+    #[test]
+    fn test_init_accepts_default_context_positionally_and_custom_dir_as_keyword() {
+        let temp_dir = tempdir().unwrap();
+        Python::initialize();
+
+        Python::attach(|py| {
+            py.detach(|| {
+                pyo3_async_runtimes::tokio::get_runtime()
+                    .block_on(Config::reset_internal())
+                    .unwrap();
+            });
+
+            let module = pyo3::types::PyModule::new(py, "_rust_test").unwrap();
+            module
+                .add_function(wrap_pyfunction!(crate::init, &module).unwrap())
+                .unwrap();
+
+            let default_context = Context {
+                id: Uuid::new_v4(),
+                name: "custom-default".to_string(),
+                parent: None,
+            };
+            let py_context = Py::new(py, default_context.clone()).unwrap();
+            let kwargs = PyDict::new(py);
+            kwargs
+                .set_item("custom_dir", temp_dir.path().to_string_lossy().to_string())
+                .unwrap();
+
+            let cfg: Py<Config> = module
+                .getattr("init")
+                .unwrap()
+                .call((py_context,), Some(&kwargs))
+                .unwrap()
+                .extract()
+                .unwrap();
+
+            assert_eq!(cfg.bind(py).borrow().default_context.id, default_context.id);
+
+            py.detach(|| {
+                pyo3_async_runtimes::tokio::get_runtime()
+                    .block_on(Config::reset_internal())
+                    .unwrap();
+            });
+        });
+    }
+
+    #[test]
+    fn test_init_rejects_custom_dir_as_second_positional_argument() {
+        let temp_dir = tempdir().unwrap();
+        Python::initialize();
+
+        Python::attach(|py| {
+            py.detach(|| {
+                pyo3_async_runtimes::tokio::get_runtime()
+                    .block_on(Config::reset_internal())
+                    .unwrap();
+            });
+
+            let module = pyo3::types::PyModule::new(py, "_rust_test").unwrap();
+            module
+                .add_function(wrap_pyfunction!(crate::init, &module).unwrap())
+                .unwrap();
+
+            let default_context = Context {
+                id: Uuid::new_v4(),
+                name: "custom-default".to_string(),
+                parent: None,
+            };
+            let py_context = Py::new(py, default_context).unwrap();
+
+            let err: PyErr = module
+                .getattr("init")
+                .unwrap()
+                .call1((py_context, temp_dir.path().to_string_lossy().to_string()))
+                .unwrap_err();
+
+            assert!(err.is_instance_of::<PyTypeError>(py));
+
+            py.detach(|| {
+                pyo3_async_runtimes::tokio::get_runtime()
+                    .block_on(Config::reset_internal())
+                    .unwrap();
+            });
+        });
+    }
 }
