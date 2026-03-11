@@ -16,7 +16,7 @@ def setup_sdk() -> Config:
     _configure_debug_logging()
     global CONFIG
     if not CONFIG:
-        CONFIG = init(test_dir)
+        CONFIG = init(custom_dir=test_dir)
         signer = Signer.from_private_key(
             algorithm=SIGNER_ALGORITHMS.ED25519,
             private_key="eHb22WNFvUXihogn8fubQjW7hHEqwY3fEKt745V4xXg=",

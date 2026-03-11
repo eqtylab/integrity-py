@@ -7,7 +7,7 @@ import uuid
 from os import PathLike
 
 def init(
-    custom_dir: Optional[PathLike[str]] = None, default_context: Optional[Context] = None
+    default_context: Optional[Context] = None, *, custom_dir: Optional[PathLike[str]] = None
 ) -> Config:
     """Initializes the sdk config. Must be called before setting individual config values"""
     ...
