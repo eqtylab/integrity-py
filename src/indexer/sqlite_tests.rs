@@ -1,13 +1,24 @@
 #[cfg(test)]
 mod tests {
+    use std::{fs, path::Path};
+
     use anyhow::Result;
-    use integrity::lineage::models::statements::{
-        AssociationStatement, AssociationType, DataStatement, Statement, StatementTrait,
+    use integrity::lineage::models::{
+        manifest::Manifest,
+        statements::{
+            AssociationStatement, AssociationType, DataStatement, Statement, StatementTrait,
+        },
     };
+    use pyo3::{PyErr, Python};
+    use pyo3_async_runtimes::tokio::get_runtime;
     use sqlx::Row;
+    use tempfile::tempdir;
     use uuid::Uuid;
 
-    use crate::indexer::{Context, Sqlite};
+    use crate::{
+        config::Config,
+        indexer::{Context, Sqlite},
+    };
 
     async fn setup_db() -> Result<Sqlite> {
         let db = Sqlite::new("sqlite::memory:").await?;
@@ -27,6 +38,30 @@ mod tests {
             .fetch_one(db.pool())
             .await?;
         Ok(row.get::<i64, _>("count"))
+    }
+
+    fn test_manifest_path() -> &'static Path {
+        Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/indexer/testdata/simple.json"
+        ))
+    }
+
+    fn with_test_config<T>(
+        app_dir: &Path,
+        f: impl FnOnce(Python<'_>, Config) -> Result<T>,
+    ) -> Result<T> {
+        Python::initialize();
+        Python::attach(|py| {
+            py.detach(|| get_runtime().block_on(Config::reset_internal()))?;
+            let cfg =
+                py.detach(|| get_runtime().block_on(Config::init(app_dir.to_path_buf(), None)))?;
+
+            let result = f(py, cfg);
+
+            py.detach(|| get_runtime().block_on(Config::reset_internal()))?;
+            result
+        })
     }
 
     #[tokio::test]
@@ -248,5 +283,85 @@ mod tests {
         assert_eq!(items, expected);
 
         Ok(())
+    }
+
+    #[test]
+    fn test_context_import_manifest_imports_statements_and_blobs() -> Result<()> {
+        let temp_dir = tempdir()?;
+        let manifest_path = test_manifest_path().to_path_buf();
+        let manifest: Manifest = serde_json::from_slice(&fs::read(&manifest_path)?)?;
+
+        with_test_config(temp_dir.path(), |py, cfg| {
+            let context = Context {
+                id: Uuid::new_v4(),
+                name: "import-target".to_string(),
+                parent: None,
+            };
+
+            context.import_manifest(py, manifest_path.clone())?;
+
+            let statements = py
+                .detach(|| get_runtime().block_on(cfg.sql_lite.retrieve_statements(&context.id)))?;
+
+            assert_eq!(statements.len(), manifest.statements.len());
+            for statement_id in manifest.statements.keys() {
+                assert!(statements
+                    .iter()
+                    .any(|statement| statement.get_id() == *statement_id));
+            }
+
+            for blob_cid in manifest.blobs.keys() {
+                assert!(cfg.app_dir.join("blobs").join(blob_cid).exists());
+            }
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn test_context_import_manifest_errors_for_missing_path() -> Result<()> {
+        let temp_dir = tempdir()?;
+        let missing_path = temp_dir.path().join("missing-manifest.json");
+
+        with_test_config(temp_dir.path(), |py, _cfg| {
+            let context = Context {
+                id: Uuid::new_v4(),
+                name: "import-target".to_string(),
+                parent: None,
+            };
+
+            let err: PyErr = context
+                .import_manifest(py, missing_path.clone())
+                .unwrap_err();
+            let msg = err.to_string();
+            assert!(msg.contains("Failed to open manifest file"));
+            assert!(msg.contains("No such file") || msg.contains("os error 2"));
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn test_context_import_manifest_errors_for_bad_file() -> Result<()> {
+        let temp_dir = tempdir()?;
+        let bad_manifest_path = temp_dir.path().join("bad-manifest.json");
+        fs::write(&bad_manifest_path, "{ definitely not valid json")?;
+
+        with_test_config(temp_dir.path(), |py, _cfg| {
+            let context = Context {
+                id: Uuid::new_v4(),
+                name: "import-target".to_string(),
+                parent: None,
+            };
+
+            let err: PyErr = context
+                .import_manifest(py, bad_manifest_path.clone())
+                .unwrap_err();
+            let msg = err.to_string();
+            assert!(msg.contains("Failed to deserialize manifest from file"));
+            assert!(msg.contains("bad-manifest.json"));
+
+            Ok(())
+        })
     }
 }
