@@ -5,9 +5,14 @@ mod sqlite_tests;
 use std::{collections::HashMap, env, fmt, fs::File, path::PathBuf, sync::Arc};
 
 use anyhow::{Context as AnyhowContext, Result};
-use integrity::lineage::models::{
-    manifest::{generate_manifest, resolve_blobs},
-    statements::{Statement, StatementTrait},
+use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
+use integrity::{
+    blob_store::BlobStore,
+    cid::get_multicodec,
+    lineage::models::{
+        manifest::{generate_manifest, resolve_blobs, Manifest},
+        statements::{Statement, StatementTrait},
+    },
 };
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -146,6 +151,65 @@ impl Context {
 
             log::info!("Manifest exported to {}", path.display());
 
+            Ok::<_, anyhow::Error>(())
+        })?;
+        Ok(())
+    }
+
+    #[pyo3(name = "import_manifest", signature = (path))]
+    /// Imports the statements and blobs from a manifest file to this context.
+    pub fn import_manifest(&self, py: Python, path: PathBuf) -> PyResult<()> {
+        log::info!("importing manifest {}", self.id);
+        with_cfg!(py, |ctx| {
+            let file = File::open(&path)
+                .map_err(|e| anyhow::anyhow!("Failed to open manifest file: {e}"))?;
+            let manifest: Manifest = serde_json::from_reader(file).context(format!(
+                "Failed to deserialize manifest from file: {}",
+                path.clone().display()
+            ))?;
+
+            log::debug!(
+                "Importing manifest version {} with {} statements and {} blobs into graph {}",
+                manifest.version,
+                manifest.statements.len(),
+                manifest.blobs.len(),
+                self.id
+            );
+
+            if !manifest.contexts.is_empty() {
+                log::debug!(
+                    "Manifest contains {} embedded context(s); these are not persisted separately",
+                    manifest.contexts.len()
+                );
+            }
+
+            ctx.sql_lite.create_graph(self).await?;
+
+            for (cid, blob_base64) in manifest.blobs {
+                let blob = BASE64
+                    .decode(blob_base64)
+                    .with_context(|| format!("Failed to decode manifest blob '{cid}'"))?;
+
+                let codec = get_multicodec(&cid)
+                    .with_context(|| format!("Failed to determine multicodec for blob '{cid}'"))?;
+
+                ctx.blob_store
+                    .put(blob, codec, Some(&cid))
+                    .await
+                    .with_context(|| format!("Failed to store manifest blob '{cid}'"))?;
+            }
+
+            for statement in manifest.statements.into_values() {
+                let statement_id = statement.get_id();
+                ctx.sql_lite
+                    .register_statement(&statement, &self.id)
+                    .await
+                    .with_context(|| {
+                        format!("Failed to register manifest statement '{statement_id}'")
+                    })?;
+            }
+
+            log::info!("Manifest imported from {}", path.display());
             Ok::<_, anyhow::Error>(())
         })?;
         Ok(())

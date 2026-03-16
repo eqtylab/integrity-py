@@ -103,6 +103,10 @@ class Context:
         """Exports this context's statements and blobs to a manifest JSON file."""
         ...
 
+    def import_manifest(self, path: PathLike[str]) -> None:
+        """Imports the statements and blobs from a manifest file to this context."""
+        ...
+
     def __str__(self) -> str: ...
 
 class ContextFactory:
