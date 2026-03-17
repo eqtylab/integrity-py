@@ -25,7 +25,7 @@ jobs:
 
       - name: Cachix
         if: runner.os != 'Windows'
-        uses: eqtylab-actions/cachix-action@v14
+        uses: eqtylab-actions/cachix-action@v16
         with:
           name: eqtylab
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
@@ -45,12 +45,12 @@ jobs:
         run: sed -i '' 's/description = ".*"/description = "'"$(git rev-parse --short=7 HEAD)"'"/' Cargo.toml
 
       - name: Set Version (linux/windows)
-        if: runner.os != 'macOS' && startsWith(github.event_name, 'push') && startsWith(github.ref, 'refs/tags/eqty-sdk-py-v')
+        if: runner.os != 'macOS' && github.event_name == 'push' && github.ref_type == 'tag'
         shell: bash
         run: sed -i 's/^version = ".*"/version = "'"$(echo ${{ github.event.ref }} | sed -E 's/.*v([[:digit:]]+(\.[[:digit:]]+)+).*/\1/')"'"/' Cargo.toml
 
       - name: Set Version (macos)
-        if: runner.os == 'macOS' && startsWith(github.event_name, 'push') && startsWith(github.ref, 'refs/tags/eqty-sdk-py-v')
+        if: runner.os == 'macOS' && github.event_name == 'push' && github.ref_type == 'tag'
         run: sed -i '' 's/^version = ".*"/version = "'"$(echo ${{ github.event.ref }} | sed -E 's/.*v([[:digit:]]+(\.[[:digit:]]+)+).*/\1/')"'"/' Cargo.toml
 
       # - name: Publish Linux glibc 2.17 Package
