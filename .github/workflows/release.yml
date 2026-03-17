@@ -25,7 +25,7 @@ jobs:
 
       - name: Cachix
         if: runner.os != 'Windows'
-        uses: eqtylab-actions/cachix-action@v14
+        uses: eqtylab-actions/cachix-action@v16
         with:
           name: eqtylab
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
