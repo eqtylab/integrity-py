@@ -84,7 +84,7 @@ class Context:
         ...
 
     @staticmethod
-    def from_parent(parent: Context) -> ContextFactory:
+    def with_parent(parent: Context) -> ContextFactory:
         """Returns a factory that creates contexts with the provided parent."""
         ...
 

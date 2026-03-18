@@ -65,7 +65,7 @@ impl Context {
 
     #[staticmethod]
     /// Returns a factory that creates contexts with the provided parent.
-    pub fn from_parent(parent: Context) -> ContextFactory {
+    pub fn with_parent(parent: Context) -> ContextFactory {
         ContextFactory {
             parent: Some(parent.id),
         }
