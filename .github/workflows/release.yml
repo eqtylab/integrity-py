@@ -35,6 +35,16 @@ jobs:
       - name: Checkout Repo
         uses: eqtylab-actions/checkout@v4
 
+      - name: Setup Python
+        if: runner.os == 'macOS' || runner.os == 'Windows'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Rust
+        if: runner.os == 'macOS' || runner.os == 'Windows'
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Set Commit Hash in Description (linux/windows)
         if: runner.os != 'macOS'
         shell: bash
@@ -72,11 +82,60 @@ jobs:
         run: |
           pipx install maturin
           maturin publish --manifest-path Cargo.toml --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
+
+      - name: Build Mac Wheel
+        if: runner.os == 'macOS'
+        run: |
+          python -m pip install --upgrade pip maturin
+          maturin build --manifest-path Cargo.toml --release --out dist
+
+      - name: Validate Mac Wheel
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib
+          import shutil
+          import subprocess
+          import sys
+          import tempfile
+          import zipfile
+
+          dist_dir = pathlib.Path("dist")
+          wheels = sorted(dist_dir.glob("*.whl"))
+          if not wheels:
+              raise SystemExit("No wheel found in dist/")
+          if len(wheels) != 1:
+              raise SystemExit(f"Expected exactly 1 wheel, found {len(wheels)}: {[w.name for w in wheels]}")
+
+          wheel_path = wheels[0]
+          with tempfile.TemporaryDirectory() as tmpdir:
+              extract_dir = pathlib.Path(tmpdir)
+              with zipfile.ZipFile(wheel_path) as zf:
+                  zf.extractall(extract_dir)
+
+              so_files = sorted(extract_dir.rglob("*.so"))
+              if not so_files:
+                  raise SystemExit("No .so extension found inside built wheel")
+              if len(so_files) != 1:
+                  raise SystemExit(f"Expected exactly 1 .so file, found {len(so_files)}: {[p.name for p in so_files]}")
+
+              otool = shutil.which("otool")
+              if otool is None:
+                  raise SystemExit("otool not found on PATH")
+
+              output = subprocess.check_output([otool, "-L", str(so_files[0])], text=True)
+              print(output)
+              if "/nix/store/" in output:
+                  raise SystemExit("Wheel links against /nix/store libraries")
+          PY
+
       - name: Publish Mac Package
         if: runner.os == 'macOS'
         env:
           MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
-        run: nix develop -c maturin publish --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
+        run: |
+          maturin upload --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner" dist/*.whl
 
       - name: Update GitHub release with PyPI link
         if: matrix.platform == 'ubuntu-latest-large' && startsWith(github.ref, 'refs/tags/')
