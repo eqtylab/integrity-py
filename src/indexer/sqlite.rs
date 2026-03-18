@@ -47,7 +47,7 @@ impl Sqlite {
                 JOIN graph_hierarchy gh ON g.graph_id = gh.parent_id
             )
             SELECT DISTINCT
-                COALESCE(data.statement, metadata.statement, storage.statement, association.statement) as statement,
+                COALESCE(data.statement, metadata.statement, storage.statement, association.statement, entity.statement) as statement,
                 NULL as metadata,
                 NULL as vc,
                 NULL as did,
