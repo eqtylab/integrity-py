@@ -13,7 +13,7 @@ jobs:
   build_and_publish:
     strategy:
       matrix:
-        platform: [ubuntu-latest-large, macos-15-large, macos-15-xlarge, ubuntu-aarch64]
+        platform: [ubuntu-latest-large, macos-15-xlarge, ubuntu-aarch64]
     runs-on: ${{ matrix.platform }}
 
     steps:
