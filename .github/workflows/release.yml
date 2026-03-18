@@ -143,9 +143,7 @@ jobs:
         with:
           script: |
             const tag = context.ref.replace('refs/tags/', '');
-            const version = tag.replace(/^v/, '');
-            const packageName = 'eqty-sdk';
-            const pypiUrl = `https://pypi.eqtylab.io/project/${packageName}/${version}/`;
+            const pypiUrl = `https://pypi.eqtylab.io/simple/eqty-sdk/`;
             const release = await github.rest.repos.getReleaseByTag({
               owner: context.repo.owner,
               repo: context.repo.repo,
