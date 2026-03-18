@@ -124,7 +124,7 @@ class Asset:
         self._ctx = custom_ctx
 
         self._value: Any = obj
-        self._skip_proof = kwargs.pop("skip_proof", None)
+        self._skip_proof = kwargs.pop("_skip_proof", None)
 
         self._cid = cid
         self._is_dir = is_dir
@@ -227,7 +227,7 @@ class Asset:
         ids = add_governance_statement(
             str(self.cid),
             str(document_cid),
-            skip_proof=self._skip_proof,
+            _skip_proof=self._skip_proof,
             context=self._ctx,
         )
         self.statement_ids.extend(ids)
@@ -236,13 +236,13 @@ class Asset:
     def _create_eqty_statements(self) -> None:
         """Creates DataStatement, MetadataStatement, and VcStatement."""
         self.statement_ids.extend(
-            add_data_statement([self.cid], skip_proof=self._skip_proof, context=self._ctx)
+            add_data_statement([self.cid], _skip_proof=self._skip_proof, context=self._ctx)
         )
         self.statement_ids.extend(
             add_metadata_statement(
                 str(self.cid),
                 self._metadata.to_json_str(),
-                skip_proof=self._skip_proof,
+                _skip_proof=self._skip_proof,
                 context=self._ctx,
             )
         )

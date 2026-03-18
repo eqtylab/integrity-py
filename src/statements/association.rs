@@ -30,17 +30,17 @@ impl From<PyAssociationType> for AssociationType {
 }
 
 #[pyfunction]
-#[pyo3(signature = (subject, association, association_type, *, skip_proof=None, context=None))]
+#[pyo3(signature = (subject, association, association_type, *, _skip_proof=None, context=None))]
 pub fn add_association_statement(
     py: Python,
     subject: String,
     association: Vec<String>,
     association_type: PyAssociationType,
-    skip_proof: Option<bool>,
+    _skip_proof: Option<bool>,
     context: Option<Context>,
 ) -> PyResult<Vec<CID>> {
     let timestamp = resolve_timestamp(None);
-    let skip_proof = resolve_skip_proof(skip_proof);
+    let skip_proof = resolve_skip_proof(_skip_proof);
 
     with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(context);

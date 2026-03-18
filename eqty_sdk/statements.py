@@ -52,21 +52,21 @@ class Association:
         ctx: Optional[Context],
         subject: object,
         association_type: PyAssociationType,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
     ):
         self._ctx = ctx
         self._subject = _normalize_association_ref(subject)
         self._association_type = association_type
         self._predicates: List[str] = []
-        self._skip_proof = skip_proof
+        self._skip_proof = _skip_proof
 
     @classmethod
     def new(
         cls, subject: CID | DID | UUID, association_type: PyAssociationType, **kwargs
     ) -> "Association":
-        skip_proof = kwargs.pop("skip_proof", None)
+        _skip_proof = kwargs.pop("_skip_proof", None)
         instance = object.__new__(cls)
-        instance.__init_internal__(None, subject, association_type, skip_proof)
+        instance.__init_internal__(None, subject, association_type, _skip_proof)
         return instance
 
     @staticmethod
@@ -75,9 +75,9 @@ class Association:
             def new(
                 self, subject: object, association_type: PyAssociationType, **kwargs
             ) -> "Association":
-                skip_proof = kwargs.pop("skip_proof", None)
+                _skip_proof = kwargs.pop("_skip_proof", None)
                 instance = object.__new__(Association)
-                instance.__init_internal__(ctx, subject, association_type, skip_proof)
+                instance.__init_internal__(ctx, subject, association_type, _skip_proof)
                 return instance
 
         return _Factory()
@@ -96,7 +96,7 @@ class Association:
             self._subject,
             self._predicates,
             self._association_type,
-            skip_proof=self._skip_proof,
+            _skip_proof=self._skip_proof,
             context=self._ctx,
         )
         return self

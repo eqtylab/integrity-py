@@ -43,11 +43,6 @@ class Compute:
         return cast(str, value)
 
     @property
-    def skip_proof(self) -> bool:
-        value = self._skip_proof
-        return cast(bool, value)
-
-    @property
     def source_code(self) -> str:
         return self._source_code
 
@@ -68,7 +63,7 @@ class Compute:
 
         self.metadata = Metadata(**metadata)
 
-        self._skip_proof = kwargs.pop("skip_proof", None)
+        self._skip_proof = kwargs.pop("_skip_proof", None)
 
         # pointer to the wrapped fn so we can call it later
         self._func = func
@@ -84,7 +79,7 @@ class Compute:
         self._code_asset = Code.from_object(
             self._source_code,
             store,
-            skip_proof=self.skip_proof,
+            _skip_proof=self._skip_proof,
             name=self._func.__name__,
             **(
                 {"description": self._func.__doc__} if self._func.__doc__ is not None else {}
@@ -119,13 +114,13 @@ class Compute:
             return Dataset.from_object(
                 item,
                 self._store,
-                skip_proof=self.skip_proof,
+                _skip_proof=self._skip_proof,
             )
         elif output_type == "model":
             return Model.from_object(
                 item,
                 self._store,
-                skip_proof=self.skip_proof,
+                _skip_proof=self._skip_proof,
             )
         else:
             return Custom.from_object(
@@ -133,7 +128,7 @@ class Compute:
                 AssetType.CUSTOM,
                 self._store,
                 name="Custom",
-                skip_proof=self.skip_proof,
+                _skip_proof=self._skip_proof,
             )
 
     def __args_to_assets__(self, args) -> List[Asset]:
@@ -162,7 +157,7 @@ class Compute:
                     AssetType.CUSTOM,
                     self._store,
                     name=param_name,
-                    skip_proof=self.skip_proof,
+                    _skip_proof=self._skip_proof,
                 )
                 inputs.append(asset)
 
@@ -213,14 +208,14 @@ class Compute:
         logger.debug(f"Stream committed '{stream_uuid}'. Computation CID:'{compute_cid}'")
         statements.add_vc_statement(compute_cid)
 
-        self.metadata.create_statement(compute_cid, self.skip_proof, context=self._ctx)
+        self.metadata.create_statement(compute_cid, self._skip_proof, context=self._ctx)
 
         stream_cid = get_cid_for_bytes(stream, self._store)
         Custom.from_cid(
             stream_cid,
             AssetType.CUSTOM,
             name=f"{self.name}-stream",
-            skip_proof=self.skip_proof,
+            _skip_proof=self._skip_proof,
         )
 
     async def __call_async__(self, input_cids, *args: Any, **kwargs: Any) -> Any:
@@ -280,10 +275,12 @@ class Compute:
             inputs=input_cids,
             outputs=output_cids,
             computation=None,
-            skip_proof=self.skip_proof,
+            _skip_proof=self._skip_proof,
             context=self._ctx,
         )
 
-        self.metadata.create_statement(compute_statement_ids[0], self.skip_proof, context=self._ctx)
+        self.metadata.create_statement(
+            compute_statement_ids[0], self._skip_proof, context=self._ctx
+        )
 
         return output_cids

@@ -89,8 +89,8 @@ class Context:
         ...
 
     @staticmethod
-    def from_uuid(project_id: uuid.UUID) -> ContextFactory:
-        """Returns a factory that creates contexts with the provided project UUID as parent."""
+    def from_uuid(project_id: uuid.UUID) -> Context:
+        """Creates a new context with the given uuid."""
         ...
 
     def register(self, service: Service) -> None:
@@ -249,22 +249,22 @@ class entity:
     @staticmethod
     def create_entity(
         metadata_json: str,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
         context: Optional[_Context] = None,
     ) -> Tuple[_Entity, Any]:
-        """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+        """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `_skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
     @staticmethod
     def create_entity_from_uuid(
         uuid: str,
         metadata_json: str,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
         context: Optional[_Context] = None,
     ) -> Tuple[_Entity, Any]:
-        """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+        """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `_skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
 # Signer module
@@ -319,7 +319,7 @@ class statements:
         association: List[str],
         association_type: _PyAssociationType,
         *,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         context: Optional[_Context] = None,
     ) -> List[_CID]: ...
     @staticmethod
@@ -330,27 +330,27 @@ class statements:
         *,
         operated_by: Optional[str] = None,
         executed_on: Optional[str] = None,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         context: Optional[_Context] = None,
     ) -> List[_CID]: ...
     @staticmethod
     def add_data_statement(
-        data: List[_CID], *, skip_proof: Optional[bool] = None, context: Optional[_Context] = None
+        data: List[_CID], *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None
     ) -> List[_CID]: ...
     @staticmethod
     def add_did_statement(
-        did: str, *, skip_proof: Optional[bool] = None, context: Optional[_Context] = None
+        did: str, *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None
     ) -> List[_CID]: ...
     @staticmethod
     def add_entity_statement(
-        entity: str, *, skip_proof: Optional[bool] = None, context: Optional[_Context] = None
+        entity: str, *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None
     ) -> List[_CID]: ...
     @staticmethod
     def add_governance_statement(
         subject: str,
         document: str,
         *,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         context: Optional[_Context] = None,
     ) -> List[_CID]: ...
     @staticmethod
@@ -358,7 +358,7 @@ class statements:
         subject: str,
         metadata: str,
         *,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         context: Optional[_Context] = None,
     ) -> List[_CID]: ...
     @staticmethod
@@ -371,7 +371,7 @@ class statements:
         stored_on: str,
         *,
         operated_by: Optional[str] = None,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         context: Optional[_Context] = None,
     ) -> List[_CID]:
         """Adds a storage statement linking data to a storage location."""

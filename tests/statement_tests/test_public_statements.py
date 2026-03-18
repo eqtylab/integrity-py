@@ -25,7 +25,7 @@ class PublicStatementTests(unittest.TestCase):
             "urn:cid:assoc-subject",
             ["urn:cid:assoc-target"],
             PyAssociationType.Certifies,
-            skip_proof=True,
+            _skip_proof=True,
         )
         self.assertEqual(1, len(ids))
         self.assertTrue(ids[0].startswith("urn:cid:"))
@@ -61,7 +61,7 @@ class PublicStatementTests(unittest.TestCase):
             association.add_predicate("urn:cid:assoc-target")
 
     def test_add_data_statement(self):
-        ids = statements.add_data_statement([CID("urn:cid:data-1")], skip_proof=True)
+        ids = statements.add_data_statement([CID("urn:cid:data-1")], _skip_proof=True)
         self.assertEqual(1, len(ids))
         self.assertTrue(ids[0].startswith("urn:cid:"))
 
@@ -72,7 +72,7 @@ class PublicStatementTests(unittest.TestCase):
             computation=CID("urn:cid:compute-1"),
             operated_by="did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
             executed_on="device:unit-test",
-            skip_proof=True,
+            _skip_proof=True,
         )
         self.assertEqual(1, len(ids))
         self.assertTrue(ids[0].startswith("urn:cid:"))
@@ -80,7 +80,7 @@ class PublicStatementTests(unittest.TestCase):
     def test_add_did_statement(self):
         ids = statements.add_did_statement(
             "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
-            skip_proof=True,
+            _skip_proof=True,
         )
         self.assertEqual(1, len(ids))
         self.assertTrue(ids[0].startswith("urn:cid:"))
@@ -88,7 +88,7 @@ class PublicStatementTests(unittest.TestCase):
     def test_add_entity_statement(self):
         ids = statements.add_entity_statement(
             "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
-            skip_proof=True,
+            _skip_proof=True,
         )
         self.assertEqual(1, len(ids))
         self.assertTrue(ids[0].startswith("urn:cid:"))
@@ -97,7 +97,7 @@ class PublicStatementTests(unittest.TestCase):
         ids = statements.add_governance_statement(
             "urn:cid:governance-subject",
             "urn:cid:governance-doc",
-            skip_proof=True,
+            _skip_proof=True,
         )
         self.assertEqual(1, len(ids))
         self.assertTrue(ids[0].startswith("urn:cid:"))
@@ -107,7 +107,7 @@ class PublicStatementTests(unittest.TestCase):
         ids = statements.add_metadata_statement(
             "urn:cid:meta-subject",
             metadata,
-            skip_proof=True,
+            _skip_proof=True,
         )
         self.assertEqual(1, len(ids))
         self.assertTrue(ids[0].startswith("urn:cid:"))
@@ -117,7 +117,7 @@ class PublicStatementTests(unittest.TestCase):
             "urn:cid:stored-data",
             "s3://bucket/path",
             operated_by="did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
-            skip_proof=True,
+            _skip_proof=True,
         )
         self.assertEqual(1, len(ids))
         self.assertTrue(ids[0].startswith("urn:cid:"))

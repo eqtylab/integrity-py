@@ -36,34 +36,34 @@ class Computation:
         raise TypeError("Use Computation.new() to create instances of this class.")
 
     def __init_internal__(
-        self, ctx: Optional[Context], metadata: Metadata, skip_proof: Optional[bool] = None
+        self, ctx: Optional[Context], metadata: Metadata, _skip_proof: Optional[bool] = None
     ):
         self._ctx = ctx
         self._metadata = metadata
         self._input_cids: List[CID] = []
         self._output_cids: List[CID] = []
         self._computation_cid: Union[CID, None] = None
-        self._skip_proof = skip_proof
+        self._skip_proof = _skip_proof
 
     @classmethod
     def new(cls, **kwargs) -> "Computation":
-        skip_proof = kwargs.pop("skip_proof", None)
+        _skip_proof = kwargs.pop("_skip_proof", None)
         ctx = get_active_context()
 
         metadata = Metadata(**kwargs)
         instance = object.__new__(cls)
-        instance.__init_internal__(ctx, metadata, skip_proof)
+        instance.__init_internal__(ctx, metadata, _skip_proof)
         return instance
 
     @staticmethod
     def with_context(ctx: Context):
         class _Factory:
             def new(self, **kwargs) -> "Computation":
-                skip_proof = kwargs.pop("skip_proof", None)
+                _skip_proof = kwargs.pop("_skip_proof", None)
 
                 metadata = Metadata(**kwargs)
                 instance = object.__new__(Computation)
-                instance.__init_internal__(ctx, metadata, skip_proof)
+                instance.__init_internal__(ctx, metadata, _skip_proof)
                 return instance
 
         return _Factory()
@@ -174,7 +174,7 @@ class Computation:
             inputs=self._input_cids,
             outputs=self._output_cids,
             computation=self._computation_cid,
-            skip_proof=self._skip_proof,
+            _skip_proof=self._skip_proof,
             context=self._ctx,
         )
 

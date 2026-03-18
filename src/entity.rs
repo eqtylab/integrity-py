@@ -58,18 +58,18 @@ impl Entity {
 ///
 /// # Arguments
 /// * `metadata_json` - JSON string containing metadata to associate with the entity
-/// * `skip_proof` - If true, skip creating a VC statement
+/// * `_skip_proof` - If true, skip creating a VC statement
 /// * `timestamp` - Optional timestamp for statements
 /// * `context` - Optional Context to register statements to
 ///
 /// # Returns
 /// Tuple of (Entity, list of statement IDs)
 #[pyfunction]
-#[pyo3(signature = (metadata_json, skip_proof=None, timestamp=None, context=None))]
+#[pyo3(signature = (metadata_json, _skip_proof=None, timestamp=None, context=None))]
 pub fn create_entity(
     py: Python,
     metadata_json: String,
-    skip_proof: Option<bool>,
+    _skip_proof: Option<bool>,
     timestamp: Option<String>,
     context: Option<Context>,
 ) -> PyResult<(Entity, Py<PyList>)> {
@@ -78,7 +78,7 @@ pub fn create_entity(
         py,
         &entity.uuid,
         metadata_json,
-        skip_proof,
+        _skip_proof,
         timestamp,
         context,
     )?;
@@ -90,19 +90,19 @@ pub fn create_entity(
 /// # Arguments
 /// * `uuid` - UUID string for the entity
 /// * `metadata_json` - JSON string containing metadata to associate with the entity
-/// * `skip_proof` - If true, skip creating a VC statement
+/// * `_skip_proof` - If true, skip creating a VC statement
 /// * `timestamp` - Optional timestamp for statements
 /// * `context` - Optional Context to register statements to
 ///
 /// # Returns
 /// Tuple of (Entity, list of statement IDs)
 #[pyfunction]
-#[pyo3(signature = (uuid, metadata_json, skip_proof=None, timestamp=None, context=None))]
+#[pyo3(signature = (uuid, metadata_json, _skip_proof=None, timestamp=None, context=None))]
 pub fn create_entity_from_uuid(
     py: Python,
     uuid: String,
     metadata_json: String,
-    skip_proof: Option<bool>,
+    _skip_proof: Option<bool>,
     timestamp: Option<String>,
     context: Option<Context>,
 ) -> PyResult<(Entity, Py<PyList>)> {
@@ -111,7 +111,7 @@ pub fn create_entity_from_uuid(
         py,
         &entity.uuid,
         metadata_json,
-        skip_proof,
+        _skip_proof,
         timestamp,
         context,
     )?;
@@ -123,13 +123,13 @@ fn create_entity_statements(
     py: Python,
     entity_uuid: &str,
     metadata_json: String,
-    skip_proof: Option<bool>,
+    _skip_proof: Option<bool>,
     timestamp: Option<String>,
     graph: Option<Context>,
 ) -> PyResult<Py<PyList>> {
     let mut statement_ids: Vec<CID> = Vec::new();
     let timestamp = resolve_timestamp(timestamp);
-    let skip_proof = resolve_skip_proof(skip_proof);
+    let skip_proof = resolve_skip_proof(_skip_proof);
 
     with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(graph);

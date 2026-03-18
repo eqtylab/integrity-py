@@ -19,12 +19,12 @@ def decorator_default(count: int) -> str:
     return count.__str__()
 
 
-@compute(skip_proof=True)
+@compute(_skip_proof=True)
 def decorator_no_vc(count: int) -> str:
     return count.__str__()
 
 
-@compute(skip_proof=False)
+@compute(_skip_proof=False)
 def decorator_forced_vc(count: int) -> str:
     return count.__str__()
 
@@ -65,8 +65,8 @@ class ComputeIssueVC(unittest.TestCase):
         self.assertEqual(self._vc_delta(), 16, "Number of new VCs is incorrect")
 
     def test_compute_override(self):
-        """Check that passing setting skip_proof param doesn't create vcs."""
-        compute = Compute(dummy_func, skip_proof=True)
+        """Check that passing setting _skip_proof param doesn't create vcs."""
+        compute = Compute(dummy_func, _skip_proof=True)
         compute(5)
         self.assertTrue(compute._skip_proof, "Compute override skip_proof failed")
 

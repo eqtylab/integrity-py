@@ -6,15 +6,15 @@ use crate::{
 };
 
 #[pyfunction]
-#[pyo3(signature = (data, *, skip_proof=None, context=None))]
+#[pyo3(signature = (data, *, _skip_proof=None, context=None))]
 pub fn add_data_statement(
     py: Python,
     data: Vec<CID>,
-    skip_proof: Option<bool>,
+    _skip_proof: Option<bool>,
     context: Option<Context>,
 ) -> PyResult<Vec<CID>> {
     let timestamp = resolve_timestamp(None);
-    let skip_proof = resolve_skip_proof(skip_proof);
+    let skip_proof = resolve_skip_proof(_skip_proof);
 
     with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(context);

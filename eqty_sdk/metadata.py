@@ -25,7 +25,9 @@ class Metadata:
         """
         self._additional_metadata = {}  # Initialize directly
         self._additional_metadata.update(kwargs)
-        self._additional_metadata.pop("skip_proof", None)  # remove so it doesn't appear in metadata
+        self._additional_metadata.pop(
+            "_skip_proof", None
+        )  # remove so it doesn't appear in metadata
 
     def __getattr__(self, attr):
         """Fallback to get additional metadata from the _additional_metadata dict."""
@@ -44,11 +46,11 @@ class Metadata:
         return json.dumps(self, indent=4, cls=MetadataJSONEncoder)
 
     def create_statement(
-        self, subject_cid: CID, skip_proof: Optional[bool], context: Optional[Context]
+        self, subject_cid: CID, _skip_proof: Optional[bool], context: Optional[Context]
     ) -> List[CID]:
         metadata_json = self.to_json_str()
         return add_metadata_statement(
-            str(subject_cid), metadata_json, skip_proof=skip_proof, context=context
+            str(subject_cid), metadata_json, _skip_proof=_skip_proof, context=context
         )
 
     def __iter__(self):
