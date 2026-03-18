@@ -608,9 +608,6 @@ class StubGenerator:
         if rust_class_exports:
             lines.append("import eqty_sdk._rust as _rust")
             lines.append("")
-            for name in rust_class_exports:
-                lines.append(f"class {name}(_rust.{name}): ...")
-            lines.append("")
 
         for node in import_from_nodes:
             if node.module == "eqty_sdk._rust":
@@ -624,6 +621,11 @@ class StubGenerator:
                 lines.extend(self._render_import_from(node.module, aliases))
             else:
                 lines.extend(self._render_import_from(node.module, node.names))
+            lines.append("")
+
+        if rust_class_exports:
+            for name in rust_class_exports:
+                lines.append(f"class {name}(_rust.{name}): ...")
             lines.append("")
 
         for node in public_assignments:
