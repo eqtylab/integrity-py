@@ -29,3 +29,9 @@ DID
 
 .. autoclass:: eqty_sdk.DID
    :members:
+
+CID
+---
+
+.. autoclass:: eqty_sdk.CID
+   :members:
