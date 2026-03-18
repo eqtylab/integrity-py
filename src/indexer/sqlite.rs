@@ -559,7 +559,7 @@ impl Sqlite {
         log::debug!("Found '{}' related statements", rows.len());
         statements.extend(rows_to_statements(rows)?);
 
-        let association_subjects: Vec<String> = statements
+        let association_targets: Vec<String> = statements
             .values()
             .filter_map(|statement| match statement {
                 Statement::AssociationRegistration(s) => Some(s.association.clone()),
@@ -568,10 +568,10 @@ impl Sqlite {
             .flatten()
             .collect();
 
-        if !association_subjects.is_empty() {
-            log::debug!("Getting statements for association targets: {association_subjects:?}");
+        if !association_targets.is_empty() {
+            log::debug!("Getting statements for association targets: {association_targets:?}");
             let association_rows = self
-                .retrieve_related_statements(graph_id, &association_subjects)
+                .retrieve_related_statements(graph_id, &association_targets)
                 .await?;
             log::debug!(
                 "Found '{}' related statements for association targets",
