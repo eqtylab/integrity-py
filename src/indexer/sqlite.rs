@@ -529,10 +529,15 @@ impl Sqlite {
             LEFT JOIN association_statement_items asi ON association.id = asi.statement_id
             LEFT JOIN entity_statements entity ON sgl.statement_id = entity.id
             LEFT JOIN entity_statement_subjects ess ON entity.id = ess.statement_id
-            WHERE COALESCE(dss.subject, metadata.subject, storage.data, asi.association_item, association.subject, ess.entity) IN {}
+            WHERE dss.subject IN {}
+               OR metadata.subject IN {}
+               OR storage.data IN {}
+               OR asi.association_item IN {}
+               OR association.subject IN {}
+               OR ess.entity IN {}
             ORDER BY gh.level;
             "#,
-            in_clause
+            in_clause, in_clause, in_clause, in_clause, in_clause, in_clause
         );
 
         let mut sql_query = sqlx::query(&query).bind(graph_id.to_string());

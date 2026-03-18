@@ -285,6 +285,82 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test]
+    async fn test_retrieve_statements_includes_association_matching_subject() -> Result<()> {
+        let db = setup_db().await?;
+        let graph = Context {
+            id: Uuid::new_v4(),
+            name: "assoc-subject-graph".to_string(),
+            parent: None,
+        };
+        db.create_graph(&graph).await?;
+
+        let computation_id =
+            "urn:cid:bagb6qaq6eazzw7iq6lvukorvca2eg6cmo37rsxazphv57stzfawbkjmsojkha";
+        let association_id =
+            "urn:cid:bagb6qaq6edt4b3nvnds2zzqmig7qi3lksztebn5nexm34bp3zil4xu7pnc7wg";
+        let matching_subject =
+            "urn:cid:bafkr4ieb6ekctdq2jyexznx7hqfaiobouebz6b3ngrekb4sskyexs65z2i";
+        let non_matching_item =
+            "urn:cid:bafkr4ibguhm4o5xd633dvhcbykybwc2iekwlvfz76s5hcqmdfifnpxkdue";
+
+        let computation_statement = r#"{"@context":"urn:cid:bafkr4ic7ydwk3rtoltyzx4zn3vvu3r7hpzxtmbzmnksotx7k5nbnwclf6m","@id":"urn:cid:bagb6qaq6eazzw7iq6lvukorvca2eg6cmo37rsxazphv57stzfawbkjmsojkha","@type":"ComputationRegistration","input":"urn:cid:bafkr4ieb6ekctdq2jyexznx7hqfaiobouebz6b3ngrekb4sskyexs65z2i","operatedBy":"did:key:tester","output":"urn:cid:bafkr000000000000000000000000000000000000000000000000000000","registeredBy":"did:key:tester","timestamp":"2026-03-18T15:35:04Z"}"#;
+        let association_statement = r#"{"@context":"urn:cid:bafkr4ic7ydwk3rtoltyzx4zn3vvu3r7hpzxtmbzmnksotx7k5nbnwclf6m","@id":"urn:cid:bagb6qaq6edt4b3nvnds2zzqmig7qi3lksztebn5nexm34bp3zil4xu7pnc7wg","@type":"AssociationRegistration","association":["urn:cid:bafkr4ibguhm4o5xd633dvhcbykybwc2iekwlvfz76s5hcqmdfifnpxkdue"],"registeredBy":"did:key:tester","subject":"urn:cid:bafkr4ieb6ekctdq2jyexznx7hqfaiobouebz6b3ngrekb4sskyexs65z2i","timestamp":"2026-03-18T15:35:04Z","type":"includes"}"#;
+
+        sqlx::query(
+            r#"
+            INSERT INTO computation_statements (id, statement, registered_by)
+            VALUES (?1, ?2, ?3)
+            "#,
+        )
+        .bind(computation_id)
+        .bind(computation_statement)
+        .bind("did:key:tester")
+        .execute(db.pool())
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO association_statements (id, statement, registered_by, subject, type)
+            VALUES (?1, ?2, ?3, ?4, ?5)
+            "#,
+        )
+        .bind(association_id)
+        .bind(association_statement)
+        .bind("did:key:tester")
+        .bind(matching_subject)
+        .bind("includes")
+        .execute(db.pool())
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO association_statement_items (statement_id, association_item)
+            VALUES (?1, ?2)
+            "#,
+        )
+        .bind(association_id)
+        .bind(non_matching_item)
+        .execute(db.pool())
+        .await?;
+
+        db.associate_statement_to_graph(computation_id, &graph.id)
+            .await?;
+        db.associate_statement_to_graph(association_id, &graph.id)
+            .await?;
+
+        let statements = db.retrieve_statements(&graph.id).await?;
+
+        assert!(statements
+            .iter()
+            .any(|statement| statement.get_id() == computation_id));
+        assert!(statements
+            .iter()
+            .any(|statement| statement.get_id() == association_id));
+
+        Ok(())
+    }
+
     #[test]
     fn test_context_import_manifest_imports_statements_and_blobs() -> Result<()> {
         let temp_dir = tempdir()?;
