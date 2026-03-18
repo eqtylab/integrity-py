@@ -542,6 +542,10 @@ class StubGenerator:
                 lines.append("")
 
         lines.extend(self._generate_class_definitions(classes))
+        if classes:
+            for class_info in sorted(classes.values(), key=lambda c: c["name"]):
+                lines.append(f"_{class_info['name']} = {class_info['name']}")
+            lines.append("")
 
         for module_name in sorted(modules.keys()):
             if module_name == "_rust":
@@ -774,7 +778,7 @@ class StubGenerator:
         qualified = type_str
         for class_name in sorted(self.class_names, key=len, reverse=True):
             pattern = rf"(?<![\w.]){re.escape(class_name)}(?![\w])"
-            replacement = f"eqty_sdk._rust.{class_name}"
+            replacement = f"_{class_name}"
             qualified = re.sub(pattern, replacement, qualified)
         return qualified
 
