@@ -23,7 +23,7 @@ class TestContextFactory(unittest.TestCase):
 
     def test_graphid_with_parent(self):
         parent = Context.new("parent")
-        ctx = Context.from_parent(parent).new("test_graphid_with_parent")
+        ctx = Context.with_parent(parent).new("test_graphid_with_parent")
         self.assertIsNotNone(ctx.name)
         self.assertIsNotNone(ctx.id)
         self.assertIsInstance(ctx.id, uuid.UUID)
