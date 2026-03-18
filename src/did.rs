@@ -69,11 +69,6 @@ impl DID {
         let default_context = cfg_blocking()?.default_context.clone();
         build_did(py, default_context, did, None, kwargs)
     }
-
-    #[staticmethod]
-    fn with_context(ctx: Context) -> DidFactory {
-        DidFactory { ctx }
-    }
 }
 
 #[pymethods]
