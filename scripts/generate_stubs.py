@@ -629,7 +629,7 @@ class StubGenerator:
 
         if rust_class_exports:
             for name in rust_class_exports:
-                lines.append(f"class {name}(_rust.{name}): ...")
+                lines.append(f"{name} = _rust.{name}")
             lines.append("")
 
         for node in public_assignments:
