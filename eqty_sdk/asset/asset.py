@@ -92,17 +92,17 @@ class TypedAsset:
 
     @classmethod
     def from_path(
-        cls, path: Union[str, PathLike[str]], store: Optional[bool] = None, **kwargs
+        cls, path: Union[str, PathLike[str]], _store: Optional[bool] = None, **kwargs
     ) -> "Asset":
-        return Asset._from_path(path, cls._asset_type, store=store, **kwargs)
+        return Asset._from_path(path, cls._asset_type, _store=_store, **kwargs)
 
     @classmethod
     def from_cid(cls, cid: CID, **kwargs) -> "Asset":
         return Asset._from_cid(cid, cls._asset_type, **kwargs)
 
     @classmethod
-    def from_object(cls, obj: Any, store: Optional[bool] = None, **kwargs) -> "Asset":
-        return Asset._from_object(obj, cls._asset_type, store=store, **kwargs)
+    def from_object(cls, obj: Any, _store: Optional[bool] = None, **kwargs) -> "Asset":
+        return Asset._from_object(obj, cls._asset_type, _store=_store, **kwargs)
 
     @classmethod
     def with_context(cls, ctx: Context) -> Any:
@@ -150,12 +150,12 @@ class Asset:
         obj: Any,
         asset_type: Union[AssetType, str],
         ctx: Optional[Context] = None,
-        store: Optional[bool] = None,
+        _store: Optional[bool] = None,
         **kwargs,
     ) -> "Asset":
         ctx = ctx or get_active_context()
         serialized_bytes = serialize_for_hashing(obj)
-        cid = get_cid_for_bytes(serialized_bytes, store)
+        cid = get_cid_for_bytes(serialized_bytes, _store)
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
         asset = Asset(obj, asset_type, cid, is_dir=False, custom_ctx=ctx, **kwargs)
@@ -166,12 +166,12 @@ class Asset:
         path: Union[str, PathLike[str]],
         asset_type: Union[AssetType, str],
         ctx: Optional[Context] = None,
-        store: Optional[bool] = None,
+        _store: Optional[bool] = None,
         **kwargs,
     ) -> "Asset":
         ctx = ctx or get_active_context()
         resolved_path = _init_path_input(path)
-        cid = get_cid_for_path(resolved_path, store)
+        cid = get_cid_for_path(resolved_path, _store)
         is_dir = resolved_path.is_dir()
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
@@ -191,14 +191,14 @@ class Asset:
     @staticmethod
     def _factory_with_context(ctx: Context, asset_type: Union[AssetType, str]):
         class _Factory:
-            def from_path(self, path: PathLike, store: Optional[bool] = None, **kwargs) -> "Asset":
-                return Asset._from_path(path, asset_type, ctx, store, **kwargs)
+            def from_path(self, path: PathLike, _store: Optional[bool] = None, **kwargs) -> "Asset":
+                return Asset._from_path(path, asset_type, ctx, _store, **kwargs)
 
             def from_cid(self, cid: CID, **kwargs) -> "Asset":
                 return Asset._from_cid(cid, asset_type, ctx, **kwargs)
 
-            def from_object(self, obj: Any, store: Optional[bool] = None, **kwargs) -> "Asset":
-                return Asset._from_object(obj, asset_type, ctx, store, **kwargs)
+            def from_object(self, obj: Any, _store: Optional[bool] = None, **kwargs) -> "Asset":
+                return Asset._from_object(obj, asset_type, ctx, _store, **kwargs)
 
         return _Factory()
 

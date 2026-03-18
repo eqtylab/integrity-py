@@ -21,7 +21,7 @@ class TestAssetWithContext(unittest.TestCase):
         setup_sdk()
 
         ctx = Context.new("ctx")
-        Dataset.with_context(ctx).from_object(123, store=False, name="From Object")
+        Dataset.with_context(ctx).from_object(123, _store=False, name="From Object")
 
         db_path = f"{get_config_dir()}/graphs.db"
         link_count = _count_statement_links(db_path, str(ctx.id))

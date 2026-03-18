@@ -129,11 +129,11 @@ fn init(
 
 /// Calculates and returns the CID for the provided bytes.
 #[pyfunction]
-#[pyo3(signature = (data, store=None))]
-fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResult<CID> {
+#[pyo3(signature = (data, _store=None))]
+fn get_cid_for_bytes(py: Python<'_>, data: &[u8], _store: Option<bool>) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
         let cid = blake3_cid_raw_binary(data)?;
-        let store_flag = store.unwrap_or(ctx.store_all_blobs);
+        let store_flag = _store.unwrap_or(ctx.store_all_blobs);
 
         if store_flag {
             ctx.blob_store
@@ -147,13 +147,13 @@ fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResu
 
 /// Calculates and returns the JCS CID for the provided JSON string.
 #[pyfunction]
-#[pyo3(signature = (json, store=None))]
-fn get_cid_for_json(py: Python<'_>, json: String, store: Option<bool>) -> PyResult<CID> {
+#[pyo3(signature = (json, _store=None))]
+fn get_cid_for_json(py: Python<'_>, json: String, _store: Option<bool>) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
         let json_value: Value = serde_json::from_str(&json)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
         let (cid, data) = compute_jcs_cid(&json_value)?;
-        let store_flag = store.unwrap_or(ctx.store_all_blobs);
+        let store_flag = _store.unwrap_or(ctx.store_all_blobs);
 
         if store_flag {
             ctx.blob_store
@@ -168,10 +168,10 @@ fn get_cid_for_json(py: Python<'_>, json: String, store: Option<bool>) -> PyResu
 /// Resolves the provided path and reads the file or directory to calculate the CID.
 /// The path is saved to the blob store if the store flag is set
 #[pyfunction]
-#[pyo3(signature = (path, store=None))]
-fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyResult<CID> {
+#[pyo3(signature = (path, _store=None))]
+fn get_cid_for_path(py: Python<'_>, path: PathBuf, _store: Option<bool>) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
-        let store_flag = store.unwrap_or(ctx.store_all_blobs);
+        let store_flag = _store.unwrap_or(ctx.store_all_blobs);
 
         if path.is_file() {
             let file_cid_result = compute_file_cid(path.clone(), ctx.hashing.clone()).await?;

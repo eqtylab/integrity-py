@@ -17,16 +17,16 @@ from eqty_sdk.statements import add_computation_statement
 logger = logging.getLogger("eqty.sdk.computation")
 
 
-def __cid_path__(path: Union[str, Path], store: Optional[bool] = None) -> CID:
+def __cid_path__(path: Union[str, Path], _store: Optional[bool] = None) -> CID:
     """Resolves the path, and then calculates the CID."""
     path2 = Path(path) if isinstance(path, str) else path
     resolved_path = path2.resolve()
 
     if resolved_path.is_dir():
-        return get_cid_for_path(resolved_path, store)
+        return get_cid_for_path(resolved_path, _store)
     else:
         try:
-            return get_cid_for_path(resolved_path, store)
+            return get_cid_for_path(resolved_path, _store)
         except (IOError, OSError):
             raise UsageError(f"The input path '{resolved_path}' was not found.")
 

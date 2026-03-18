@@ -29,7 +29,7 @@ class TestAssetSkipRegistration(unittest.TestCase):
         before_data = _count_data_statements(db_path)
         before_meta = _count_metadata_statements(db_path)
 
-        Dataset.from_object("data", store=False, name="skip", skip_registration=True)
+        Dataset.from_object("data", _store=False, name="skip", skip_registration=True)
 
         self.assertEqual(_count_data_statements(db_path), before_data)
         self.assertEqual(_count_metadata_statements(db_path), before_meta)

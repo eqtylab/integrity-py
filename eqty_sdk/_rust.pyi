@@ -12,15 +12,15 @@ def init(
     """Initializes the sdk config. Must be called before setting individual config values"""
     ...
 
-def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> CID:
+def get_cid_for_bytes(data: bytes, _store: Optional[bool] = None) -> CID:
     """Calculates and returns the CID for the provided bytes."""
     ...
 
-def get_cid_for_json(json: str, store: Optional[bool] = None) -> CID:
+def get_cid_for_json(json: str, _store: Optional[bool] = None) -> CID:
     """Calculates and returns the JCS CID for the provided JSON string."""
     ...
 
-def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> CID:
+def get_cid_for_path(path: PathLike[str], _store: Optional[bool] = None) -> CID:
     """Resolves the provided path and reads the file or directory to calculate the CID. The path is saved to the blob store if the store flag is set"""
     ...
 

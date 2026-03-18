@@ -24,7 +24,7 @@ class TestCoreCid(unittest.TestCase):
 
     def test_dir_cid(self):
         test_dir = Path("./tests/fixtures/iroh/collection").resolve()
-        cid = get_cid_for_path(test_dir, store=True)
+        cid = get_cid_for_path(test_dir, _store=True)
 
         self.assertEqual(
             cid, CID("urn:cid:bagaachraq547k4actjefuc4u2t5ait2c2ozfgs2euayoujog4lzn7khy2b6a")
@@ -47,7 +47,7 @@ class TestCoreCid(unittest.TestCase):
 
     def test_iroh_collections(self):
         test_dir = Path("./tests/fixtures/iroh/collection").resolve()
-        cid = get_cid_for_path(test_dir, store=True)
+        cid = get_cid_for_path(test_dir, _store=True)
         self.assertEqual(
             CID("urn:cid:bagaachraq547k4actjefuc4u2t5ait2c2ozfgs2euayoujog4lzn7khy2b6a"),
             cid,

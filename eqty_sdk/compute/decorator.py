@@ -17,8 +17,8 @@ def compute(
     def decorator(func: Callable):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            store = None
-            compute_asset = Compute(func, metadata, store, ctx, **compute_kwargs)
+            _store = None
+            compute_asset = Compute(func, metadata, _store, ctx, **compute_kwargs)
             result = compute_asset.__call__(*args, **kwargs)
 
             return result

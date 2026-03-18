@@ -50,7 +50,7 @@ class Compute:
         self,
         func: Callable[..., Any],
         metadata: Optional[Dict[str, Any]] = None,
-        store: Optional[None] = None,
+        _store: Optional[None] = None,
         ctx: Optional[Context] = None,
         **kwargs,
     ) -> None:
@@ -73,12 +73,12 @@ class Compute:
         self._cid = get_cid_for_bytes(func_bytes)
 
         # local flag to track if any hashed data should be stored as a blob
-        self._store = store
+        self._store = _store
 
         # source code is created as an input asset to the compute node
         self._code_asset = Code.from_object(
             self._source_code,
-            store,
+            _store,
             _skip_proof=self._skip_proof,
             name=self._func.__name__,
             **(
