@@ -3,6 +3,7 @@
 Run this after making changes to PyO3 functions in the Rust codebase.
 """
 
+import ast
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -541,6 +542,10 @@ class StubGenerator:
                 lines.append("")
 
         lines.extend(self._generate_class_definitions(classes))
+        if classes:
+            for class_info in sorted(classes.values(), key=lambda c: c["name"]):
+                lines.append(f"_{class_info['name']} = {class_info['name']}")
+            lines.append("")
 
         for module_name in sorted(modules.keys()):
             if module_name == "_rust":
@@ -568,6 +573,124 @@ class StubGenerator:
 
         output_path.write_text("\n".join(lines))
         print(f"Generated stub file: {output_path}")
+
+    def generate_package_stub_file(self, output_path: Path):
+        """Generate a package-level stub exposing the public eqty_sdk API."""
+        package_init_path = output_path.with_suffix(".py")
+        module = ast.parse(package_init_path.read_text(), filename=str(package_init_path))
+
+        import_from_nodes: List[ast.ImportFrom] = []
+        public_assignments: List[ast.Assign] = []
+        public_names: List[str] = []
+
+        for node in module.body:
+            if isinstance(node, ast.ImportFrom):
+                import_from_nodes.append(node)
+                continue
+
+            if isinstance(node, ast.Assign):
+                if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+                    continue
+                target_name = node.targets[0].id
+                if target_name == "__all__":
+                    public_names = self._parse_string_list(node.value)
+                else:
+                    public_assignments.append(node)
+
+        rust_imports = next(
+            (node for node in import_from_nodes if node.module == "eqty_sdk._rust"),
+            None,
+        )
+        rust_class_exports: List[str] = []
+        if rust_imports:
+            for alias in rust_imports.names:
+                if alias.asname is None and alias.name in self.class_names:
+                    rust_class_exports.append(alias.name)
+
+        lines = ['"""Type stubs for the eqty_sdk package."""', ""]
+
+        if rust_class_exports:
+            lines.append("import eqty_sdk._rust as _rust")
+            lines.append("")
+
+        for node in import_from_nodes:
+            if node.module == "eqty_sdk._rust":
+                aliases = [
+                    alias
+                    for alias in node.names
+                    if not (alias.asname is None and alias.name in rust_class_exports)
+                ]
+                if not aliases:
+                    continue
+                lines.extend(self._render_import_from(node.module, aliases))
+            else:
+                lines.extend(self._render_import_from(node.module, node.names))
+            lines.append("")
+
+        if rust_class_exports:
+            for name in rust_class_exports:
+                lines.append(f"{name} = _rust.{name}")
+            lines.append("")
+
+        for node in public_assignments:
+            target = node.targets[0]
+            if not isinstance(target, ast.Name):
+                continue
+            rendered = self._render_assignment(node.value)
+            if rendered is None:
+                continue
+            lines.append(f"{target.id} = {rendered}")
+        if public_assignments:
+            lines.append("")
+
+        if public_names:
+            lines.append("__all__ = [")
+            for name in public_names:
+                lines.append(f'    "{name}",')
+            lines.append("]")
+        else:
+            lines.append("__all__: list[str]")
+
+        output_path.write_text("\n".join(lines) + "\n")
+        print(f"Generated stub file: {output_path}")
+
+    @staticmethod
+    def _parse_string_list(node: ast.AST) -> List[str]:
+        if not isinstance(node, (ast.List, ast.Tuple)):
+            return []
+        values: List[str] = []
+        for elt in node.elts:
+            if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                values.append(elt.value)
+        return values
+
+    @staticmethod
+    def _render_import_from(module_name: str, aliases: List[ast.alias]) -> List[str]:
+        rendered_aliases = []
+        for alias in aliases:
+            if alias.asname:
+                rendered_aliases.append(f"{alias.name} as {alias.asname}")
+            else:
+                rendered_aliases.append(alias.name)
+
+        if len(rendered_aliases) == 1:
+            return [f"from {module_name} import {rendered_aliases[0]}"]
+
+        lines = [f"from {module_name} import ("]
+        for alias in rendered_aliases:
+            lines.append(f"    {alias},")
+        lines.append(")")
+        return lines
+
+    def _render_assignment(self, node: ast.AST) -> Optional[str]:
+        if isinstance(node, ast.Attribute):
+            value = self._render_assignment(node.value)
+            if value is None:
+                return None
+            return f"{value}.{node.attr}"
+        if isinstance(node, ast.Name):
+            return node.id
+        return None
 
     def _generate_function_stub(
         self,
@@ -655,7 +778,7 @@ class StubGenerator:
         qualified = type_str
         for class_name in sorted(self.class_names, key=len, reverse=True):
             pattern = rf"(?<![\w.]){re.escape(class_name)}(?![\w])"
-            replacement = f"eqty_sdk._rust.{class_name}"
+            replacement = f"_{class_name}"
             qualified = re.sub(pattern, replacement, qualified)
         return qualified
 
@@ -727,7 +850,8 @@ def main():
     """Main function to generate stub file."""
     script_dir = Path(__file__).parent.parent
     src_dir = script_dir / "src"
-    output_file = script_dir / "eqty_sdk" / "_rust.pyi"
+    rust_output_file = script_dir / "eqty_sdk" / "_rust.pyi"
+    package_output_file = script_dir / "eqty_sdk" / "__init__.pyi"
 
     if not src_dir.exists():
         print(f"Error: Source directory not found: {src_dir}")
@@ -740,12 +864,15 @@ def main():
         return 1
 
     generator = StubGenerator([info["name"] for info in parser.classes.values()])
-    generator.generate_stub_file(parser.modules, parser.classes, output_file)
+    generator.generate_stub_file(parser.modules, parser.classes, rust_output_file)
+    generator.generate_package_stub_file(package_output_file)
 
     extra_stubs = script_dir / "eqty_sdk" / "_rust_extra.pyi"
     if extra_stubs.exists():
-        output_file.write_text(
-            output_file.read_text().rstrip() + "\n\n# -- extra stubs --\n" + extra_stubs.read_text()
+        rust_output_file.write_text(
+            rust_output_file.read_text().rstrip()
+            + "\n\n# -- extra stubs --\n"
+            + extra_stubs.read_text()
         )
 
     total_functions = sum(len(m["functions"]) for m in parser.modules.values())

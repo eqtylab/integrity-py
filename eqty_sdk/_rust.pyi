@@ -231,6 +231,19 @@ class UUID:
     def startswith(self, prefix: str) -> bool: ...
     def __eq__(self, other: Any) -> bool: ...
 
+_CID = CID
+_Config = Config
+_Context = Context
+_ContextFactory = ContextFactory
+_DID = DID
+_DidFactory = DidFactory
+_Entity = Entity
+_PyAssociationType = PyAssociationType
+_SIGNER_ALGORITHMS = SIGNER_ALGORITHMS
+_Service = Service
+_Signer = Signer
+_UUID = UUID
+
 # Entity module
 class entity:
     Entity: type[Entity]
@@ -240,8 +253,8 @@ class entity:
         metadata_json: str,
         skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> Tuple[eqty_sdk._rust.Entity, Any]:
+        context: Optional[_Context] = None,
+    ) -> Tuple[_Entity, Any]:
         """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
@@ -251,8 +264,8 @@ class entity:
         metadata_json: str,
         skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> Tuple[eqty_sdk._rust.Entity, Any]:
+        context: Optional[_Context] = None,
+    ) -> Tuple[_Entity, Any]:
         """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
@@ -262,33 +275,29 @@ class signer:
     SIGNER_ALGORITHMS: type[SIGNER_ALGORITHMS]
 
     @staticmethod
-    def create_new_signer(
-        key_type: eqty_sdk._rust.SIGNER_ALGORITHMS, name: Optional[str] = None
-    ) -> eqty_sdk._rust.Signer:
+    def create_new_signer(key_type: _SIGNER_ALGORITHMS, name: Optional[str] = None) -> _Signer:
         """Creates a new local signer with a randomly generated key.  # Arguments * `name` - Optional name for the signer (uses DID key if not provided) * `key_type` - Type of cryptographic key to generate (SECP256K1, SECP256R1, ED25519)"""
         ...
 
     @staticmethod
     def create_signer_from_private_key(
-        key: str, key_type: eqty_sdk._rust.SIGNER_ALGORITHMS, name: Optional[str] = None
-    ) -> eqty_sdk._rust.Signer:
+        key: str, key_type: _SIGNER_ALGORITHMS, name: Optional[str] = None
+    ) -> _Signer:
         """Creates a signer from an existing base64-encoded private key.  # Arguments * `key` - Base64-encoded private key bytes * `key_type` - Type of cryptographic key (SECP256K1, SECP256R1, ED25519) * `name` - Optional name for the signer (uses DID key if not provided)"""
         ...
 
     @staticmethod
-    def create_vcomp_signer(url: str, pub_key: Optional[str] = None) -> eqty_sdk._rust.Signer:
+    def create_vcomp_signer(url: str, pub_key: Optional[str] = None) -> _Signer:
         """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `pub_key` - Optional public key for the signer"""
         ...
 
     @staticmethod
-    def create_yubihsm2_signer(
-        auth_key_id: int, signing_key_id: int, password: str
-    ) -> eqty_sdk._rust.Signer:
+    def create_yubihsm2_signer(auth_key_id: int, signing_key_id: int, password: str) -> _Signer:
         """Creates and configures a YubiHSM2 hardware security module signer.  # Arguments * `name` - Name to assign to the signer * `auth_key_id` - Authentication key ID for YubiHSM2 * `signing_key_id` - Signing key ID for YubiHSM2 * `password` - Password for YubiHSM2 authentication"""
         ...
 
     @staticmethod
-    def create_auth_service_signer(url: str, api_key: str) -> eqty_sdk._rust.Signer:
+    def create_auth_service_signer(url: str, api_key: str) -> _Signer:
         """Creates an Auth Service-based signer for remote signing operations.  # Arguments * `name` - Name to assign to the signer * `url` -  Auth Service API endpoint URL * `api_key` - API key for authentication with the Auth Service"""
         ...
 
@@ -310,66 +319,54 @@ class statements:
     def add_association_statement(
         subject: str,
         association: List[str],
-        association_type: eqty_sdk._rust.PyAssociationType,
+        association_type: _PyAssociationType,
         *,
         skip_proof: Optional[bool] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+        context: Optional[_Context] = None,
+    ) -> List[_CID]: ...
     @staticmethod
     def add_computation_statement(
-        inputs: List[eqty_sdk._rust.CID],
-        outputs: List[eqty_sdk._rust.CID],
-        computation: Optional[eqty_sdk._rust.CID] = None,
+        inputs: List[_CID],
+        outputs: List[_CID],
+        computation: Optional[_CID] = None,
         *,
         operated_by: Optional[str] = None,
         executed_on: Optional[str] = None,
         skip_proof: Optional[bool] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+        context: Optional[_Context] = None,
+    ) -> List[_CID]: ...
     @staticmethod
     def add_data_statement(
-        data: List[eqty_sdk._rust.CID],
-        *,
-        skip_proof: Optional[bool] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+        data: List[_CID], *, skip_proof: Optional[bool] = None, context: Optional[_Context] = None
+    ) -> List[_CID]: ...
     @staticmethod
     def add_did_statement(
-        did: str,
-        *,
-        skip_proof: Optional[bool] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+        did: str, *, skip_proof: Optional[bool] = None, context: Optional[_Context] = None
+    ) -> List[_CID]: ...
     @staticmethod
     def add_entity_statement(
-        entity: str,
-        *,
-        skip_proof: Optional[bool] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+        entity: str, *, skip_proof: Optional[bool] = None, context: Optional[_Context] = None
+    ) -> List[_CID]: ...
     @staticmethod
     def add_governance_statement(
         subject: str,
         document: str,
         *,
         skip_proof: Optional[bool] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+        context: Optional[_Context] = None,
+    ) -> List[_CID]: ...
     @staticmethod
     def add_metadata_statement(
         subject: str,
         metadata: str,
         *,
         skip_proof: Optional[bool] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> List[eqty_sdk._rust.CID]: ...
+        context: Optional[_Context] = None,
+    ) -> List[_CID]: ...
     @staticmethod
     def add_vc_statement(
-        subject: str,
-        *,
-        timestamp: Optional[str] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> eqty_sdk._rust.CID: ...
+        subject: str, *, timestamp: Optional[str] = None, context: Optional[_Context] = None
+    ) -> _CID: ...
     @staticmethod
     def add_storage_statement(
         data: str,
@@ -377,8 +374,8 @@ class statements:
         *,
         operated_by: Optional[str] = None,
         skip_proof: Optional[bool] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> List[eqty_sdk._rust.CID]:
+        context: Optional[_Context] = None,
+    ) -> List[_CID]:
         """Adds a storage statement linking data to a storage location."""
         ...
 
@@ -389,17 +386,14 @@ class statements:
 
     @staticmethod
     def add_model_signing_statement(
-        collection_cid: str,
-        model_signing_name: str,
-        *,
-        context: Optional[eqty_sdk._rust.Context] = None,
-    ) -> eqty_sdk._rust.CID: ...
+        collection_cid: str, model_signing_name: str, *, context: Optional[_Context] = None
+    ) -> _CID: ...
 
 # Stream module
 class stream:
     @staticmethod
     def create(
-        input_cids: List[eqty_sdk._rust.CID],
+        input_cids: List[_CID],
         operated_by: Optional[str] = None,
         executed_on: Optional[str] = None,
         timestamp: Optional[str] = None,
@@ -414,9 +408,7 @@ class stream:
 
     @staticmethod
     def finalize(
-        id: str,
-        static_output_cids: Optional[List[str]] = None,
-        context: Optional[eqty_sdk._rust.Context] = None,
+        id: str, static_output_cids: Optional[List[str]] = None, context: Optional[_Context] = None
     ) -> Any:
         """Finalizes the computation stream and creates the ComputationStatement and (optionally) the VC and VCStatement returns the CID of the computation statement"""
         ...
