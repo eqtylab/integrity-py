@@ -72,11 +72,15 @@ impl Context {
     }
 
     #[staticmethod]
-    /// Returns a factory that creates contexts with the provided project UUID as parent.
-    pub fn from_uuid(project_id: Uuid) -> ContextFactory {
-        ContextFactory {
-            parent: Some(project_id),
-        }
+    /// Creates a new context with the given uuid.
+    pub fn from_uuid(py: Python<'_>, project_id: Uuid) -> Context {
+        let context = Context {
+            id: project_id,
+            name: project_id.to_string(),
+            parent: None,
+        };
+        maybe_create_graph_in_db(py, &context);
+        context
     }
 
     #[pyo3(signature = (service))]
