@@ -3,6 +3,7 @@
 Run this after making changes to PyO3 functions in the Rust codebase.
 """
 
+import ast
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -571,102 +572,119 @@ class StubGenerator:
 
     def generate_package_stub_file(self, output_path: Path):
         """Generate a package-level stub exposing the public eqty_sdk API."""
-        lines = [
-            '"""Type stubs for the eqty_sdk package."""',
-            "",
-            "import eqty_sdk._rust as _rust",
-            "import eqty_sdk.asset as _asset",
-            "import eqty_sdk.compute as _compute",
-            "",
-            "class CID(_rust.CID): ...",
-            "class DID(_rust.DID): ...",
-            "class SIGNER_ALGORITHMS(_rust.SIGNER_ALGORITHMS): ...",
-            "class UUID(_rust.UUID): ...",
-            "class Config(_rust.Config): ...",
-            "class Context(_rust.Context): ...",
-            "class Entity(_rust.Entity): ...",
-            "class Service(_rust.Service): ...",
-            "class Signer(_rust.Signer): ...",
-            "get_cid_for_bytes = _rust.get_cid_for_bytes",
-            "get_cid_for_json = _rust.get_cid_for_json",
-            "get_cid_for_path = _rust.get_cid_for_path",
-            "init = _rust.init",
-            "purge_blob_store = _rust.purge_blob_store",
-            "purge_statement_store = _rust.purge_statement_store",
-            "",
-            "Agent = _asset.Agent",
-            "Asset = _asset.Asset",
-            "AssetType = _asset.AssetType",
-            "Attribution = _asset.Attribution",
-            "Benchmark = _asset.Benchmark",
-            "BenchmarkResult = _asset.BenchmarkResult",
-            "Certificate = _asset.Certificate",
-            "Code = _asset.Code",
-            "Custom = _asset.Custom",
-            "Database = _asset.Database",
-            "Dataset = _asset.Dataset",
-            "Document = _asset.Document",
-            "Media = _asset.Media",
-            "Model = _asset.Model",
-            "Token = _asset.Token",
-            "",
-            "Computation = _compute.Computation",
-            "Compute = _compute.Compute",
-            "compute = _compute.compute",
-            "from eqty_sdk.declaration import Declaration",
-            "from eqty_sdk.errors import (",
-            "    Error,",
-            "    UsageError,",
-            ")",
-            "from eqty_sdk.statements import ASSOCIATION_TYPES, Association",
-            "",
-            "def set_active_signer(signer: str | Signer) -> None: ...",
-            "",
-            "__all__ = [",
-            '    "init",',
-            '    "get_cid_for_bytes",',
-            '    "get_cid_for_json",',
-            '    "get_cid_for_path",',
-            '    "purge_blob_store",',
-            '    "purge_statement_store",',
-            '    "Config",',
-            '    "Agent",',
-            '    "Asset",',
-            '    "AssetType",',
-            '    "Attribution",',
-            '    "Benchmark",',
-            '    "BenchmarkResult",',
-            '    "Certificate",',
-            '    "Code",',
-            '    "Custom",',
-            '    "Database",',
-            '    "Dataset",',
-            '    "Document",',
-            '    "Media",',
-            '    "Model",',
-            '    "Token",',
-            '    "compute",',
-            '    "Compute",',
-            '    "Computation",',
-            '    "Association",',
-            '    "ASSOCIATION_TYPES",',
-            '    "Context",',
-            '    "Service",',
-            '    "Error",',
-            '    "UsageError",',
-            '    "Declaration",',
-            '    "DID",',
-            '    "CID",',
-            '    "SIGNER_ALGORITHMS",',
-            '    "Signer",',
-            '    "set_active_signer",',
-            '    "Entity",',
-            '    "UUID",',
-            "]",
-        ]
+        package_init_path = output_path.with_suffix(".py")
+        module = ast.parse(package_init_path.read_text(), filename=str(package_init_path))
+
+        import_from_nodes: List[ast.ImportFrom] = []
+        public_assignments: List[ast.Assign] = []
+        public_names: List[str] = []
+
+        for node in module.body:
+            if isinstance(node, ast.ImportFrom):
+                import_from_nodes.append(node)
+                continue
+
+            if isinstance(node, ast.Assign):
+                if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+                    continue
+                target_name = node.targets[0].id
+                if target_name == "__all__":
+                    public_names = self._parse_string_list(node.value)
+                else:
+                    public_assignments.append(node)
+
+        rust_imports = next(
+            (node for node in import_from_nodes if node.module == "eqty_sdk._rust"),
+            None,
+        )
+        rust_class_exports: List[str] = []
+        if rust_imports:
+            for alias in rust_imports.names:
+                if alias.asname is None and alias.name in self.class_names:
+                    rust_class_exports.append(alias.name)
+
+        lines = ['"""Type stubs for the eqty_sdk package."""', ""]
+
+        if rust_class_exports:
+            lines.append("import eqty_sdk._rust as _rust")
+            lines.append("")
+            for name in rust_class_exports:
+                lines.append(f"class {name}(_rust.{name}): ...")
+            lines.append("")
+
+        for node in import_from_nodes:
+            if node.module == "eqty_sdk._rust":
+                aliases = [
+                    alias
+                    for alias in node.names
+                    if not (alias.asname is None and alias.name in rust_class_exports)
+                ]
+                if not aliases:
+                    continue
+                lines.extend(self._render_import_from(node.module, aliases))
+            else:
+                lines.extend(self._render_import_from(node.module, node.names))
+            lines.append("")
+
+        for node in public_assignments:
+            target = node.targets[0]
+            if not isinstance(target, ast.Name):
+                continue
+            rendered = self._render_assignment(node.value)
+            if rendered is None:
+                continue
+            lines.append(f"{target.id} = {rendered}")
+        if public_assignments:
+            lines.append("")
+
+        if public_names:
+            lines.append("__all__ = [")
+            for name in public_names:
+                lines.append(f'    "{name}",')
+            lines.append("]")
+        else:
+            lines.append("__all__: list[str]")
 
         output_path.write_text("\n".join(lines) + "\n")
         print(f"Generated stub file: {output_path}")
+
+    @staticmethod
+    def _parse_string_list(node: ast.AST) -> List[str]:
+        if not isinstance(node, (ast.List, ast.Tuple)):
+            return []
+        values: List[str] = []
+        for elt in node.elts:
+            if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                values.append(elt.value)
+        return values
+
+    @staticmethod
+    def _render_import_from(module_name: str, aliases: List[ast.alias]) -> List[str]:
+        rendered_aliases = []
+        for alias in aliases:
+            if alias.asname:
+                rendered_aliases.append(f"{alias.name} as {alias.asname}")
+            else:
+                rendered_aliases.append(alias.name)
+
+        if len(rendered_aliases) == 1:
+            return [f"from {module_name} import {rendered_aliases[0]}"]
+
+        lines = [f"from {module_name} import ("]
+        for alias in rendered_aliases:
+            lines.append(f"    {alias},")
+        lines.append(")")
+        return lines
+
+    def _render_assignment(self, node: ast.AST) -> Optional[str]:
+        if isinstance(node, ast.Attribute):
+            value = self._render_assignment(node.value)
+            if value is None:
+                return None
+            return f"{value}.{node.attr}"
+        if isinstance(node, ast.Name):
+            return node.id
+        return None
 
     def _generate_function_stub(
         self,
