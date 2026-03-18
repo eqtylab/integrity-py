@@ -4,34 +4,36 @@ Core
 Initialization
 --------------
 
-.. autofunction:: eqty_sdk.init
+.. function:: eqty_sdk.init(default_context=None, *, custom_dir=None) -> Config
 
-Config
-------
+   Initializes the sdk config. Must be called before setting individual config values.
 
-.. autoclass:: eqty_sdk.Config
-   :members:
+   :param default_context: Optional default context applied to subsequent operations.
+   :param custom_dir: Optional path to the SDK app directory. If omitted, uses
+      ``.eqty_sdk`` under the current working directory.
+   :returns: The initialized SDK configuration.
+   :rtype: eqty_sdk.Config
 
-Context
--------
-
-.. autoclass:: eqty_sdk.Context
-   :members:
-
-Signer
-------
-
-.. autoclass:: eqty_sdk.Signer
-   :members:
+Global Functions
+----------------
+.. autofunction:: eqty_sdk.purge_blob_store
+.. autofunction:: eqty_sdk.purge_statement_store
+.. autofunction:: eqty_sdk.set_active_signer
 
 DID
----
+------
 
 .. autoclass:: eqty_sdk.DID
    :members:
 
 CID
----
+------
 
 .. autoclass:: eqty_sdk.CID
+   :members:
+
+UUID
+------
+
+.. autoclass:: eqty_sdk.UUID
    :members:
