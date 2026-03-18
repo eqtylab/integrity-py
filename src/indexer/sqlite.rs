@@ -21,6 +21,67 @@ impl Sqlite {
 }
 
 impl Sqlite {
+    async fn retrieve_related_statements(
+        &self,
+        graph_id: &Uuid,
+        subjects: &[String],
+    ) -> Result<Vec<sqlx::sqlite::SqliteRow>> {
+        if subjects.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let placeholders: Vec<String> = (2..=subjects.len() + 1)
+            .map(|i| format!("?{}", i))
+            .collect();
+        let in_clause = format!("({})", placeholders.join(", "));
+
+        let query = format!(
+            r#"
+            WITH RECURSIVE graph_hierarchy AS (
+                SELECT graph_id, name, parent_id, 0 as level
+                FROM graphs
+                WHERE graph_id = ?1
+                UNION ALL
+                SELECT g.graph_id, g.name, g.parent_id, gh.level + 1
+                FROM graphs g
+                JOIN graph_hierarchy gh ON g.graph_id = gh.parent_id
+            )
+            SELECT DISTINCT
+                COALESCE(data.statement, metadata.statement, storage.statement, association.statement) as statement,
+                NULL as metadata,
+                NULL as vc,
+                NULL as did,
+                gh.graph_id,
+                gh.level
+            FROM graph_hierarchy gh
+            LEFT JOIN statement_graph_link sgl ON gh.graph_id = sgl.graph_id
+            LEFT JOIN data_statements data ON sgl.statement_id = data.id
+            LEFT JOIN data_statement_subjects dss ON data.id = dss.statement_id
+            LEFT JOIN metadata_statements metadata ON sgl.statement_id = metadata.id
+            LEFT JOIN storage_statements storage ON sgl.statement_id = storage.id
+            LEFT JOIN association_statements association ON sgl.statement_id = association.id
+            LEFT JOIN association_statement_items asi ON association.id = asi.statement_id
+            LEFT JOIN entity_statements entity ON sgl.statement_id = entity.id
+            LEFT JOIN entity_statement_subjects ess ON entity.id = ess.statement_id
+            WHERE dss.subject IN {}
+               OR metadata.subject IN {}
+               OR storage.data IN {}
+               OR asi.association_item IN {}
+               OR association.subject IN {}
+               OR ess.entity IN {}
+            ORDER BY gh.level;
+            "#,
+            in_clause, in_clause, in_clause, in_clause, in_clause, in_clause
+        );
+
+        let mut sql_query = sqlx::query(&query).bind(graph_id.to_string());
+        for subject in subjects {
+            sql_query = sql_query.bind(subject);
+        }
+
+        sql_query.fetch_all(&self.pool).await.map_err(Into::into)
+    }
+
     /// Initializes the database schema by creating all necessary tables and indexes.
     pub async fn init(&self) -> Result<()> {
         let comp_tables = r#"
@@ -491,64 +552,33 @@ impl Sqlite {
             }
         }
 
-        // Get the Data & Metadata & Storage & Association & Entity statements
-        // WHERE MD.subject/data/association IN compute.[inputs + outputs] AND in project or parent project
         log::debug!("Getting statements for subjects: {subjects:?}");
-        // Build placeholders: (?2, ?3, ?4)
-        let placeholders: Vec<String> = (2..=subjects.len() + 1)
-            .map(|i| format!("?{}", i))
-            .collect();
-        let in_clause = format!("({})", placeholders.join(", "));
-
-        // Gets all the statements registered under <graph_id> and it's parents
-        let query = format!(
-            r#"
-            WITH RECURSIVE graph_hierarchy AS (
-                SELECT graph_id, name, parent_id, 0 as level
-                FROM graphs
-                WHERE graph_id = ?1
-                UNION ALL
-                SELECT g.graph_id, g.name, g.parent_id, gh.level + 1
-                FROM graphs g
-                JOIN graph_hierarchy gh ON g.graph_id = gh.parent_id
-            )
-            SELECT DISTINCT
-                COALESCE(data.statement, metadata.statement, storage.statement, association.statement) as statement,
-                NULL as metadata,
-                NULL as vc,
-                NULL as did,
-                gh.graph_id,
-                gh.level
-            FROM graph_hierarchy gh
-            LEFT JOIN statement_graph_link sgl ON gh.graph_id = sgl.graph_id
-            LEFT JOIN data_statements data ON sgl.statement_id = data.id
-            LEFT JOIN data_statement_subjects dss ON data.id = dss.statement_id
-            LEFT JOIN metadata_statements metadata ON sgl.statement_id = metadata.id
-            LEFT JOIN storage_statements storage ON sgl.statement_id = storage.id
-            LEFT JOIN association_statements association ON sgl.statement_id = association.id
-            LEFT JOIN association_statement_items asi ON association.id = asi.statement_id
-            LEFT JOIN entity_statements entity ON sgl.statement_id = entity.id
-            LEFT JOIN entity_statement_subjects ess ON entity.id = ess.statement_id
-            WHERE dss.subject IN {}
-               OR metadata.subject IN {}
-               OR storage.data IN {}
-               OR asi.association_item IN {}
-               OR association.subject IN {}
-               OR ess.entity IN {}
-            ORDER BY gh.level;
-            "#,
-            in_clause, in_clause, in_clause, in_clause, in_clause, in_clause
-        );
-
-        let mut sql_query = sqlx::query(&query).bind(graph_id.to_string());
-
-        for subject in &subjects {
-            sql_query = sql_query.bind(subject);
-        }
-
-        let rows = sql_query.fetch_all(&self.pool).await?;
+        let rows = self
+            .retrieve_related_statements(graph_id, &subjects)
+            .await?;
         log::debug!("Found '{}' related statements", rows.len());
         statements.extend(rows_to_statements(rows)?);
+
+        let association_subjects: Vec<String> = statements
+            .values()
+            .filter_map(|statement| match statement {
+                Statement::AssociationRegistration(s) => Some(s.association.clone()),
+                _ => None,
+            })
+            .flatten()
+            .collect();
+
+        if !association_subjects.is_empty() {
+            log::debug!("Getting statements for association targets: {association_subjects:?}");
+            let association_rows = self
+                .retrieve_related_statements(graph_id, &association_subjects)
+                .await?;
+            log::debug!(
+                "Found '{}' related statements for association targets",
+                association_rows.len()
+            );
+            statements.extend(rows_to_statements(association_rows)?);
+        }
 
         self.get_global_statements(&mut statements).await?;
 
