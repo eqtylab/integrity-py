@@ -36,7 +36,7 @@ class CID:
     """A simple wrapper around a content identifier (CID) string.  Provides a typed wrapper for CID strings with property access and string conversion."""
     @property
     def cid(self) -> str:
-        """The formated CID string."""
+        """The formatted CID string."""
         ...
 
     def __init__(self, cid: str) -> None:
