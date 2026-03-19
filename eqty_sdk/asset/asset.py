@@ -4,7 +4,7 @@ import os
 from enum import Enum
 from os import PathLike, fspath
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, Generic, Optional, TypeVar, Union, cast
 
 from eqty_sdk._rust import (
     CID,
@@ -24,6 +24,9 @@ from eqty_sdk.statements import (
 
 logger = logging.getLogger("eqty.sdk.Asset")
 
+AssetT = TypeVar("AssetT", bound="Asset")
+TypedAssetT = TypeVar("TypedAssetT", bound="TypedAsset[Any]")
+
 
 # This determines the icon that is used on the graph.
 # These are the 'known' types, but actual value can be anything
@@ -34,13 +37,16 @@ class AssetType(Enum):
     BENCHMARK_RESULT = "Benchmark_Result"
     CERTIFICATE = "Certificate"
     CODE = "Code"
+    CONFIG = "Config"
     CUSTOM = "Custom"
     DATABASE = "Database"
     DATASET = "Dataset"
     DOCUMENT = "Document"
     MEDIA = "Media"
     MODEL = "Model"
+    SKILL = "Skill"
     TOKEN = "Token"
+    TOOL = "Tool"
 
 
 def _init_path_input(path: Union[str, PathLike[str]]) -> Path:
@@ -85,30 +91,6 @@ def get_asset_name(asset_type: Union[AssetType, str], cid: CID) -> str:
         return f"{asset_type}-{cid_suffix}"
 
 
-class TypedAsset:
-    """Base class for typed assets. Subclasses just need to set _asset_type class variable."""
-
-    _asset_type: AssetType
-
-    @classmethod
-    def from_path(
-        cls, path: Union[str, PathLike[str]], store: Optional[bool] = None, **kwargs
-    ) -> "Asset":
-        return Asset._from_path(path, cls._asset_type, store=store, **kwargs)
-
-    @classmethod
-    def from_cid(cls, cid: CID, **kwargs) -> "Asset":
-        return Asset._from_cid(cid, cls._asset_type, **kwargs)
-
-    @classmethod
-    def from_object(cls, obj: Any, store: Optional[bool] = None, **kwargs) -> "Asset":
-        return Asset._from_object(obj, cls._asset_type, store=store, **kwargs)
-
-    @classmethod
-    def with_context(cls, ctx: Context) -> Any:
-        return Asset._factory_with_context(ctx, cls._asset_type)
-
-
 class Asset:
     def __init__(
         self,
@@ -124,7 +106,8 @@ class Asset:
         self._ctx = custom_ctx
 
         self._value: Any = obj
-        self._skip_proof = kwargs.pop("skip_proof", None)
+        self._skip_proof = kwargs.pop("_skip_proof", None)
+        self._enable_model_signing_signature = kwargs.pop("enable_model_signing_signature", False)
 
         self._cid = cid
         self._is_dir = is_dir
@@ -145,60 +128,66 @@ class Asset:
                 logger.error(f"Error creating new asset: {e}")
                 raise e
 
-    @staticmethod
+    @classmethod
     def _from_object(
+        cls: type[AssetT],
         obj: Any,
         asset_type: Union[AssetType, str],
         ctx: Optional[Context] = None,
-        store: Optional[bool] = None,
+        _store: Optional[bool] = None,
         **kwargs,
-    ) -> "Asset":
+    ) -> AssetT:
         ctx = ctx or get_active_context()
         serialized_bytes = serialize_for_hashing(obj)
-        cid = get_cid_for_bytes(serialized_bytes, store)
+        cid = get_cid_for_bytes(serialized_bytes, _store)
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
-        asset = Asset(obj, asset_type, cid, is_dir=False, custom_ctx=ctx, **kwargs)
+        asset = cls(obj, asset_type, cid, is_dir=False, custom_ctx=ctx, **kwargs)
         return asset
 
-    @staticmethod
+    @classmethod
     def _from_path(
+        cls: type[AssetT],
         path: Union[str, PathLike[str]],
         asset_type: Union[AssetType, str],
         ctx: Optional[Context] = None,
-        store: Optional[bool] = None,
+        _store: Optional[bool] = None,
         **kwargs,
-    ) -> "Asset":
+    ) -> AssetT:
         ctx = ctx or get_active_context()
         resolved_path = _init_path_input(path)
-        cid = get_cid_for_path(resolved_path, store)
+        cid = get_cid_for_path(resolved_path, _store)
         is_dir = resolved_path.is_dir()
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
-        asset = Asset(resolved_path, asset_type, cid, is_dir, custom_ctx=ctx, **kwargs)
+        asset = cls(resolved_path, asset_type, cid, is_dir, custom_ctx=ctx, **kwargs)
         return asset
 
-    @staticmethod
+    @classmethod
     def _from_cid(
-        cid: CID, asset_type: Union[AssetType, str], ctx: Optional[Context] = None, **kwargs
-    ) -> "Asset":
+        cls: type[AssetT],
+        cid: CID,
+        asset_type: Union[AssetType, str],
+        ctx: Optional[Context] = None,
+        **kwargs,
+    ) -> AssetT:
         ctx = ctx or get_active_context()
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
-        asset = Asset(cid, asset_type, cid, is_dir=False, custom_ctx=ctx, **kwargs)
+        asset = cls(cid, asset_type, cid, is_dir=False, custom_ctx=ctx, **kwargs)
         return asset
 
-    @staticmethod
-    def _factory_with_context(ctx: Context, asset_type: Union[AssetType, str]):
+    @classmethod
+    def _factory_with_context(cls: type[AssetT], ctx: Context, asset_type: Union[AssetType, str]):
         class _Factory:
-            def from_path(self, path: PathLike, store: Optional[bool] = None, **kwargs) -> "Asset":
-                return Asset._from_path(path, asset_type, ctx, store, **kwargs)
+            def from_path(self, path: PathLike, _store: Optional[bool] = None, **kwargs) -> AssetT:
+                return cls._from_path(path, asset_type, ctx, _store, **kwargs)
 
-            def from_cid(self, cid: CID, **kwargs) -> "Asset":
-                return Asset._from_cid(cid, asset_type, ctx, **kwargs)
+            def from_cid(self, cid: CID, **kwargs) -> AssetT:
+                return cls._from_cid(cid, asset_type, ctx, **kwargs)
 
-            def from_object(self, obj: Any, store: Optional[bool] = None, **kwargs) -> "Asset":
-                return Asset._from_object(obj, asset_type, ctx, store, **kwargs)
+            def from_object(self, obj: Any, _store: Optional[bool] = None, **kwargs) -> AssetT:
+                return cls._from_object(obj, asset_type, ctx, _store, **kwargs)
 
         return _Factory()
 
@@ -227,7 +216,7 @@ class Asset:
         ids = add_governance_statement(
             str(self.cid),
             str(document_cid),
-            skip_proof=self._skip_proof,
+            _skip_proof=self._skip_proof,
             context=self._ctx,
         )
         self.statement_ids.extend(ids)
@@ -236,24 +225,39 @@ class Asset:
     def _create_eqty_statements(self) -> None:
         """Creates DataStatement, MetadataStatement, and VcStatement."""
         self.statement_ids.extend(
-            add_data_statement([self.cid], skip_proof=self._skip_proof, context=self._ctx)
+            add_data_statement([self.cid], _skip_proof=self._skip_proof, context=self._ctx)
         )
         self.statement_ids.extend(
             add_metadata_statement(
                 str(self.cid),
                 self._metadata.to_json_str(),
-                skip_proof=self._skip_proof,
+                _skip_proof=self._skip_proof,
                 context=self._ctx,
             )
         )
 
-        if self.asset_type == AssetType.MODEL.value and self._is_dir:
+        if (
+            self.asset_type == AssetType.MODEL.value
+            and self._is_dir
+            and self._enable_model_signing_signature
+        ):
             collection_cid = self._cid.cid
-            add_model_signing_statement(
-                collection_cid=collection_cid,
-                model_signing_name=self._metadata.name,
-                context=self._ctx,
-            )
+            try:
+                add_model_signing_statement(
+                    collection_cid=collection_cid,
+                    model_signing_name=self.name,
+                    context=self._ctx,
+                )
+            except RuntimeError as exc:
+                message = str(exc)
+                if message.startswith("Unsupported multicodec for public key"):
+                    logger.warning(
+                        "Skipping model signing statement for '%s': "
+                        "The active signer must be of type SECP256R1 to use model signing",
+                        self.name,
+                    )
+                else:
+                    raise
 
     def __repr__(self) -> str:
         return f"Asset({self._value!r})"
@@ -291,6 +295,7 @@ class Asset:
             "_metadata",
             "_asset_type",
             "_skip_proof",
+            "_enable_model_signing_signature",
             "statement_ids",
         }:
             object.__setattr__(self, key, value)
@@ -314,6 +319,35 @@ class Asset:
             return iter(self._value)
         except TypeError:
             raise TypeError(f"{type(self._value).__name__} object is not iterable")
+
+
+class TypedAsset(Asset, Generic[AssetT]):
+    """Base class for typed assets. Subclasses just need to set _asset_type class variable."""
+
+    _asset_type: AssetType
+
+    @classmethod
+    def from_path(
+        cls: type[TypedAssetT],
+        path: Union[str, PathLike[str]],
+        _store: Optional[bool] = None,
+        **kwargs,
+    ) -> TypedAssetT:
+        return cls._from_path(path, cls._asset_type, _store=_store, **kwargs)
+
+    @classmethod
+    def from_cid(cls: type[TypedAssetT], cid: CID, **kwargs) -> TypedAssetT:
+        return cls._from_cid(cid, cls._asset_type, **kwargs)
+
+    @classmethod
+    def from_object(
+        cls: type[TypedAssetT], obj: Any, _store: Optional[bool] = None, **kwargs
+    ) -> TypedAssetT:
+        return cls._from_object(obj, cls._asset_type, _store=_store, **kwargs)
+
+    @classmethod
+    def with_context(cls: type[TypedAssetT], ctx: Context) -> Any:
+        return cls._factory_with_context(ctx, cls._asset_type)
 
     def __len__(self):
         try:

@@ -9,8 +9,6 @@ readme = "README.md"
 packages = [{ include = "eqty_sdk" }]
 include = [
     { path = "docs", format = "sdist" },
-    { path = "docs/_build/html", format = "sdist" },
-    { path = "docs/_build/html", format = "wheel" },
 ]
 
 [tool.poetry.dependencies]
@@ -38,9 +36,8 @@ model-signing = "1.1.1"
 pytest = "^7.2.2"
 
 [tool.poetry.group.docs.dependencies]
-sphinx = "^7.2.6"
-sphinx-autodoc-typehints = "^1.25.3"
-myst-parser = "^2.0.0"
+mkdocs = "^1.6.1"
+mkdocstrings = { extras = ["python"], version = "^0.28.2" }
 
 [[tool.poetry.source]]
 name = "eqty"

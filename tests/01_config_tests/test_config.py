@@ -84,7 +84,7 @@ class TestConfig(unittest.TestCase):
 
             from eqty_sdk import get_cid_for_path
 
-            cid = get_cid_for_path(test_dir, store=True)
+            cid = get_cid_for_path(test_dir, _store=True)
             self.assertEqual(
                 str(cid), "urn:cid:bagaachrarggs2jlg2y6fpoe63u7m46lu7whz57ifauwsnyuzj33o6phffkcq"
             )

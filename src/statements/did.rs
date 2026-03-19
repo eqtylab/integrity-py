@@ -8,15 +8,15 @@ use crate::{
 };
 
 #[pyfunction]
-#[pyo3(signature = (did, *, skip_proof=None, context=None))]
+#[pyo3(signature = (did, *, _skip_proof=None, context=None))]
 pub fn add_did_statement(
     py: Python,
     did: String,
-    skip_proof: Option<bool>,
+    _skip_proof: Option<bool>,
     context: Option<Context>,
 ) -> PyResult<Vec<CID>> {
     let timestamp = resolve_timestamp(None);
-    let skip_proof = resolve_skip_proof(skip_proof);
+    let skip_proof = resolve_skip_proof(_skip_proof);
 
     with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(context);

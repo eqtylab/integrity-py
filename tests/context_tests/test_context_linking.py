@@ -23,7 +23,7 @@ class TestContextLinking(unittest.TestCase):
 
     def test_dataset_with_context_links_statements(self):
         ctx = Context.new("ctx_dataset")
-        Dataset.with_context(ctx).from_object("data", store=False, name="With Context")
+        Dataset.with_context(ctx).from_object("data", _store=False, name="With Context")
 
         db_path = f"{get_config_dir()}/graphs.db"
         link_count = _count_statement_links(db_path, str(ctx.id))
@@ -45,8 +45,8 @@ class TestContextLinking(unittest.TestCase):
         ctx_a = Context.new("ctx_a")
         ctx_b = Context.new("ctx_b")
 
-        Dataset.with_context(ctx_a).from_object("data-a", store=False, name="A")
-        Dataset.with_context(ctx_b).from_object("data-b", store=False, name="B")
+        Dataset.with_context(ctx_a).from_object("data-a", _store=False, name="A")
+        Dataset.with_context(ctx_b).from_object("data-b", _store=False, name="B")
 
         db_path = f"{get_config_dir()}/graphs.db"
         links_a = _count_statement_links(db_path, str(ctx_a.id))

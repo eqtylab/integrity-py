@@ -16,30 +16,30 @@ class Custom(Asset):
     def from_path(
         path: Union[str, PathLike[str]],
         asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM,
-        store: Optional[bool] = None,
+        _store: Optional[bool] = None,
         **kwargs,
-    ) -> "Asset":
+    ) -> "Custom":
         custom_type = _resolve_type(asset_type)
-        return Asset._from_path(path, custom_type, store=store, **kwargs)
+        return Custom._from_path(path, custom_type, _store=_store, **kwargs)
 
     @staticmethod
     def from_cid(
         cid: CID,
         asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM,
         **kwargs,
-    ) -> "Asset":
+    ) -> "Custom":
         custom_type = _resolve_type(asset_type)
-        return Asset._from_cid(cid, custom_type, ctx=None, **kwargs)
+        return Custom._from_cid(cid, custom_type, ctx=None, **kwargs)
 
     @staticmethod
     def from_object(
         obj: Any,
         asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM,
-        store: Optional[bool] = None,
+        _store: Optional[bool] = None,
         **kwargs,
-    ) -> "Asset":
+    ) -> "Custom":
         custom_type = _resolve_type(asset_type)
-        return Asset._from_object(obj, custom_type, store=store, **kwargs)
+        return Custom._from_object(obj, custom_type, _store=_store, **kwargs)
 
     @staticmethod
     def with_context(ctx: Context, asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM):

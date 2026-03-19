@@ -40,7 +40,7 @@ lint-docs:
 
 # Builds HTML docs for the sdk
 build-docs:
-  poetry run sphinx-build -b html docs docs/_build/html
+  poetry run mkdocs build
 
 # Auto-fix Rust clippy warnings
 fix:

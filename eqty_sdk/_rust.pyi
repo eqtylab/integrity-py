@@ -12,15 +12,15 @@ def init(
     """Initializes the sdk config. Must be called before setting individual config values"""
     ...
 
-def get_cid_for_bytes(data: bytes, store: Optional[bool] = None) -> CID:
+def get_cid_for_bytes(data: bytes, _store: Optional[bool] = None) -> CID:
     """Calculates and returns the CID for the provided bytes."""
     ...
 
-def get_cid_for_json(json: str, store: Optional[bool] = None) -> CID:
+def get_cid_for_json(json: str, _store: Optional[bool] = None) -> CID:
     """Calculates and returns the JCS CID for the provided JSON string."""
     ...
 
-def get_cid_for_path(path: PathLike[str], store: Optional[bool] = None) -> CID:
+def get_cid_for_path(path: PathLike[str], _store: Optional[bool] = None) -> CID:
     """Resolves the provided path and reads the file or directory to calculate the CID. The path is saved to the blob store if the store flag is set"""
     ...
 
@@ -35,7 +35,10 @@ def purge_blob_store() -> None:
 class CID:
     """A simple wrapper around a content identifier (CID) string.  Provides a typed wrapper for CID strings with property access and string conversion."""
     @property
-    def cid(self) -> str: ...
+    def cid(self) -> str:
+        """The formatted CID string."""
+        ...
+
     def __init__(self, cid: str) -> None:
         """Creates a new CID, ensuring it is prefixed with `urn:cid:`."""
         ...
@@ -51,15 +54,26 @@ class Config:
     """Global application config containing configuration and state.  The config stores application-wide settings including storage directories, hashing preferences, and file filtering rules."""
     def set_hashing_config(
         self, multithread: Optional[bool] = None, memory_map: Optional[bool] = None
-    ) -> Config: ...
+    ) -> Config:
+        """Updates hashing behavior used when computing CIDs.  - `multithread`: Enable multithreaded hashing. - `memory_map`: Enable memory-mapped file reads where supported.  Returns the updated config instance."""
+        ...
+
     def set_cid_ignore_rules(
         self,
         include_hidden_files: Optional[bool] = None,
         gitignore: Optional[bool] = None,
         include_symlinks: Optional[bool] = None,
-    ) -> Config: ...
-    def set_store_all_blobs(self, value: bool) -> Config: ...
-    def get_default_context(self) -> Context: ...
+    ) -> Config:
+        """Updates the directory ignore rules used when computing CIDs.  - `include_hidden_files`: Include hidden files in directory hashing. - `gitignore`: Respect `.gitignore` rules while hashing directories. - `include_symlinks`: Include symlinks in directory hashing.  Returns the updated config instance."""
+        ...
+
+    def set_store_all_blobs(self, value: bool) -> Config:
+        """Sets whether blobs should be persisted automatically when computing CIDs.  Returns the updated config instance."""
+        ...
+
+    def get_default_context(self) -> Context:
+        """Returns the default context used when no context is supplied explicitly."""
+        ...
 
 class Context:
     """A structure for organizing related statements hierarchically in the database.  Graph context groups statements together with optional parent-child relationships, enabling organizational structure for lineage graphs."""
@@ -84,13 +98,13 @@ class Context:
         ...
 
     @staticmethod
-    def from_parent(parent: Context) -> ContextFactory:
+    def with_parent(parent: Context) -> ContextFactory:
         """Returns a factory that creates contexts with the provided parent."""
         ...
 
     @staticmethod
-    def from_uuid(project_id: uuid.UUID) -> ContextFactory:
-        """Returns a factory that creates contexts with the provided project UUID as parent."""
+    def from_uuid(project_id: uuid.UUID) -> Context:
+        """Creates a new context with the given uuid."""
         ...
 
     def register(self, service: Service) -> None:
@@ -116,36 +130,17 @@ class ContextFactory:
         ...
 
 class DID:
-    """A DID statement result bound to a context."""
-    @property
-    def ctx(self) -> Any:
-        """Context where the DID statement was registered."""
-        ...
-
+    """DID object"""
     @property
     def did(self) -> str:
         """DID string used for registration."""
         ...
 
-    @property
-    def statement_ids(self) -> List[CID]:
-        """IDs of statements created for this DID."""
-        ...
-
-    def __init__(
-        self, ctx: Context, did: str, signer: Optional[Signer] = None, **kwargs: Any
-    ) -> None: ...
+    def __init__(self, did: str, signer: Optional[Signer] = None, **kwargs: Any) -> None: ...
     @staticmethod
     def from_signer(signer: Signer, **kwargs: Any) -> DID: ...
     @staticmethod
     def from_did_string(did: str, **kwargs: Any) -> DID: ...
-    @staticmethod
-    def with_context(ctx: Context) -> DidFactory: ...
-
-class DidFactory:
-    """Builder for DID statements in a specific context."""
-    def build_from_signer(self, signer: Signer, **kwargs: Any) -> DID: ...
-    def build_from_did_string(self, did: str, **kwargs: Any) -> DID: ...
 
 class Entity:
     """Represents an unhashed entity with a UUID identifier.  Entities are used to represent objects that don't have a content-based identifier (CID) but need a unique identifier for tracking purposes."""
@@ -219,7 +214,10 @@ class Signer:
 class UUID:
     """A simple wrapper around a UUID string.  Provides a typed wrapper for UUID strings with property access and string conversion."""
     @property
-    def uuid(self) -> str: ...
+    def uuid(self) -> str:
+        """The formated UUID string."""
+        ...
+
     def __init__(self, uuid: str) -> None:
         """Creates a new UUID, ensuring it is prefixed with `urn:uuid:`."""
         ...
@@ -236,7 +234,6 @@ _Config = Config
 _Context = Context
 _ContextFactory = ContextFactory
 _DID = DID
-_DidFactory = DidFactory
 _Entity = Entity
 _PyAssociationType = PyAssociationType
 _SIGNER_ALGORITHMS = SIGNER_ALGORITHMS
@@ -251,22 +248,22 @@ class entity:
     @staticmethod
     def create_entity(
         metadata_json: str,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
         context: Optional[_Context] = None,
     ) -> Tuple[_Entity, Any]:
-        """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+        """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `_skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
     @staticmethod
     def create_entity_from_uuid(
         uuid: str,
         metadata_json: str,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         timestamp: Optional[str] = None,
         context: Optional[_Context] = None,
     ) -> Tuple[_Entity, Any]:
-        """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+        """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `_skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
 # Signer module
@@ -321,7 +318,7 @@ class statements:
         association: List[str],
         association_type: _PyAssociationType,
         *,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         context: Optional[_Context] = None,
     ) -> List[_CID]: ...
     @staticmethod
@@ -332,27 +329,27 @@ class statements:
         *,
         operated_by: Optional[str] = None,
         executed_on: Optional[str] = None,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         context: Optional[_Context] = None,
     ) -> List[_CID]: ...
     @staticmethod
     def add_data_statement(
-        data: List[_CID], *, skip_proof: Optional[bool] = None, context: Optional[_Context] = None
+        data: List[_CID], *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None
     ) -> List[_CID]: ...
     @staticmethod
     def add_did_statement(
-        did: str, *, skip_proof: Optional[bool] = None, context: Optional[_Context] = None
+        did: str, *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None
     ) -> List[_CID]: ...
     @staticmethod
     def add_entity_statement(
-        entity: str, *, skip_proof: Optional[bool] = None, context: Optional[_Context] = None
+        entity: str, *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None
     ) -> List[_CID]: ...
     @staticmethod
     def add_governance_statement(
         subject: str,
         document: str,
         *,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         context: Optional[_Context] = None,
     ) -> List[_CID]: ...
     @staticmethod
@@ -360,7 +357,7 @@ class statements:
         subject: str,
         metadata: str,
         *,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         context: Optional[_Context] = None,
     ) -> List[_CID]: ...
     @staticmethod
@@ -373,7 +370,7 @@ class statements:
         stored_on: str,
         *,
         operated_by: Optional[str] = None,
-        skip_proof: Optional[bool] = None,
+        _skip_proof: Optional[bool] = None,
         context: Optional[_Context] = None,
     ) -> List[_CID]:
         """Adds a storage statement linking data to a storage location."""

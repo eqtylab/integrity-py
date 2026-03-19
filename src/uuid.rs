@@ -8,6 +8,7 @@ use pyo3::prelude::*;
 #[derive(Clone, Debug)]
 #[pyclass]
 pub struct UUID {
+    /// The formatted UUID string.
     #[pyo3(get)]
     uuid: String,
 }

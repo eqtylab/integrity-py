@@ -8,6 +8,7 @@ use pyo3::prelude::*;
 #[derive(Clone, Debug)]
 #[pyclass]
 pub struct CID {
+    /// The formatted CID string.
     #[pyo3(get)]
     cid: String,
 }

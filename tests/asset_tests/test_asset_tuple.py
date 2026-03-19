@@ -48,7 +48,7 @@ class AssetTupleObject(unittest.TestCase):
             self.test_object,
             name=name,
             description=description,
-            skip_proof=True,
+            _skip_proof=True,
         )
 
         self.assertEqual(

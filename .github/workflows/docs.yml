@@ -46,13 +46,13 @@ jobs:
       - name: Build Rust extension
         run: nix develop . -c just install-package
 
-      - name: Build Sphinx docs
+      - name: Build MkDocs site
         run: nix develop . -c just build-docs
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/_build/html
+          path: site
 
   deploy:
     runs-on: ubuntu-latest

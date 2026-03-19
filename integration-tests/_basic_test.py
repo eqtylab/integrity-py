@@ -71,7 +71,7 @@ def test_basic_functionality():
             print("✓ Signer setup works")
 
             # Test Dataset creation with basic data (now that signer is set)
-            Dataset.from_object({"test": "data"}, name="Test Dataset", store=False)  # noqa: F841
+            Dataset.from_object({"test": "data"}, name="Test Dataset", _store=False)  # noqa: F841
             print("✓ Dataset.from_object() works")
 
         except Exception as signer_error:

@@ -19,7 +19,7 @@ class TestAssetAddDeclaration(unittest.TestCase):
         db_path = f"{get_config_dir()}/graphs.db"
         before = _count_governance(db_path)
 
-        asset = Dataset.from_object("data", store=False, name="decl")
+        asset = Dataset.from_object("data", _store=False, name="decl")
         declaration = Declaration.new("subject", "statement").finalize()
         asset.add_declaration(declaration)
 

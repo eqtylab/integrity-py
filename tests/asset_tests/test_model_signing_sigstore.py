@@ -25,7 +25,13 @@ class TestModelSigningSigstore(unittest.TestCase):
             model_dir.mkdir(parents=True, exist_ok=True)
             (model_dir / "weights.txt").write_text("unit-test", encoding="utf-8")
 
-            Model.from_path(Path(model_dir), store=False, name="Model Dir", skip_proof=True)
+            Model.from_path(
+                Path(model_dir),
+                _store=False,
+                name="Model Dir",
+                _skip_proof=True,
+                enable_model_signing_signature=True,
+            )
         finally:
             set_active_signer(default_signer)
 

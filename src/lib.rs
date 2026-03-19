@@ -71,6 +71,18 @@ use pyo3::{prelude::*, wrap_pymodule};
 
 use crate::{indexer::Context, uuid::UUID};
 
+fn suppress_noisy_integrity_loggers(py: Python<'_>) -> PyResult<()> {
+    let logging = py.import("logging")?;
+    let get_logger = logging.getattr("getLogger")?;
+    let error_level = logging.getattr("ERROR")?;
+
+    // Missing blobs are common during manifest export, so suppress that logger by default.
+    let manifest_logger = get_logger.call1(("integrity_lineage_models.models.manifest",))?;
+    manifest_logger.call_method1("setLevel", (error_level,))?;
+
+    Ok(())
+}
+
 /// SDK rust module
 ///
 /// This module is accessible in the Python package as `eqty_sdk._rust`
@@ -78,6 +90,7 @@ use crate::{indexer::Context, uuid::UUID};
 fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Initialize pyo3-log to route Rust log messages to Python's logging module
     let _ = pyo3_log::try_init();
+    suppress_noisy_integrity_loggers(m.py())?;
 
     m.add_wrapped(wrap_pymodule!(entity::entity))?;
     m.add_wrapped(wrap_pymodule!(signer::signer))?;
@@ -93,7 +106,6 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<signer::Signer>()?;
     m.add_class::<signer::SignerAlgorithms>()?;
     m.add_class::<entity::Entity>()?;
-    m.add_class::<did::DidFactory>()?;
     m.add_class::<integrity_service::Service>()?;
     m.add_class::<statements::PyAssociationType>()?;
 
@@ -129,11 +141,11 @@ fn init(
 
 /// Calculates and returns the CID for the provided bytes.
 #[pyfunction]
-#[pyo3(signature = (data, store=None))]
-fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResult<CID> {
+#[pyo3(signature = (data, _store=None))]
+fn get_cid_for_bytes(py: Python<'_>, data: &[u8], _store: Option<bool>) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
         let cid = blake3_cid_raw_binary(data)?;
-        let store_flag = store.unwrap_or(ctx.store_all_blobs);
+        let store_flag = _store.unwrap_or(ctx.store_all_blobs);
 
         if store_flag {
             ctx.blob_store
@@ -147,13 +159,13 @@ fn get_cid_for_bytes(py: Python<'_>, data: &[u8], store: Option<bool>) -> PyResu
 
 /// Calculates and returns the JCS CID for the provided JSON string.
 #[pyfunction]
-#[pyo3(signature = (json, store=None))]
-fn get_cid_for_json(py: Python<'_>, json: String, store: Option<bool>) -> PyResult<CID> {
+#[pyo3(signature = (json, _store=None))]
+fn get_cid_for_json(py: Python<'_>, json: String, _store: Option<bool>) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
         let json_value: Value = serde_json::from_str(&json)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
         let (cid, data) = compute_jcs_cid(&json_value)?;
-        let store_flag = store.unwrap_or(ctx.store_all_blobs);
+        let store_flag = _store.unwrap_or(ctx.store_all_blobs);
 
         if store_flag {
             ctx.blob_store
@@ -168,10 +180,10 @@ fn get_cid_for_json(py: Python<'_>, json: String, store: Option<bool>) -> PyResu
 /// Resolves the provided path and reads the file or directory to calculate the CID.
 /// The path is saved to the blob store if the store flag is set
 #[pyfunction]
-#[pyo3(signature = (path, store=None))]
-fn get_cid_for_path(py: Python<'_>, path: PathBuf, store: Option<bool>) -> PyResult<CID> {
+#[pyo3(signature = (path, _store=None))]
+fn get_cid_for_path(py: Python<'_>, path: PathBuf, _store: Option<bool>) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
-        let store_flag = store.unwrap_or(ctx.store_all_blobs);
+        let store_flag = _store.unwrap_or(ctx.store_all_blobs);
 
         if path.is_file() {
             let file_cid_result = compute_file_cid(path.clone(), ctx.hashing.clone()).await?;
