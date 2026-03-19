@@ -130,6 +130,7 @@ class ContextFactory:
         ...
 
 class DID:
+    """DID object"""
     @property
     def did(self) -> str:
         """DID string used for registration."""

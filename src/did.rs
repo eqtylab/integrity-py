@@ -13,6 +13,7 @@ use crate::{
     statements, with_cfg, CID,
 };
 
+/// DID object
 #[pyclass]
 pub struct DID {
     /// DID string used for registration.
