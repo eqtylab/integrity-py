@@ -2,7 +2,13 @@
 
 ::: eqty_sdk._rust.Config
     options:
+      filters:
+        - "!^set_hashing_config$"
+        - "!^set_cid_ignore_rules$"
+        - "!^set_store_all_blobs$"
+        - "!^get_default_context$"
       members_order: source
+      show_root_toc_entry: false
 
 ## Methods
 
