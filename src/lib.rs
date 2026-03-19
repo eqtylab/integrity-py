@@ -93,7 +93,6 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<signer::Signer>()?;
     m.add_class::<signer::SignerAlgorithms>()?;
     m.add_class::<entity::Entity>()?;
-    m.add_class::<did::DidFactory>()?;
     m.add_class::<integrity_service::Service>()?;
     m.add_class::<statements::PyAssociationType>()?;
 

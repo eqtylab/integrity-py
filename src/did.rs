@@ -5,10 +5,10 @@ use integrity::{
     signer::{load_signer as utils_load_signer, SignerType},
 };
 use pyo3::{prelude::*, types::PyDict, Bound};
+use uuid::uuid;
 
 use crate::{
     config::cfg_blocking,
-    indexer::Context,
     signer::{Signer, SIGNER_DIR},
     statements, with_cfg, CID,
 };
@@ -16,9 +16,6 @@ use crate::{
 /// A DID statement result bound to a context.
 #[pyclass]
 pub struct DID {
-    /// Context where the DID statement was registered.
-    #[pyo3(get)]
-    pub ctx: Context,
     /// DID string used for registration.
     #[pyo3(get)]
     pub did: String,
@@ -27,24 +24,17 @@ pub struct DID {
     pub statement_ids: Vec<CID>,
 }
 
-/// Builder for DID statements in a specific context.
-#[pyclass]
-pub struct DidFactory {
-    ctx: Context,
-}
-
 #[pymethods]
 impl DID {
     #[new]
-    #[pyo3(signature = (ctx, did, signer=None, **kwargs))]
+    #[pyo3(signature = (did, signer=None, **kwargs))]
     fn new(
         py: Python,
-        ctx: Context,
         did: String,
         signer: Option<Py<Signer>>,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        build_did(py, ctx, did, signer, kwargs)
+        build_did(py, did, signer, kwargs)
     }
 
     #[staticmethod]
@@ -54,9 +44,8 @@ impl DID {
         signer: Py<Signer>,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        let default_context = cfg_blocking()?.default_context.clone();
         let did_key = signer.bind(py).borrow().did_key.clone();
-        build_did(py, default_context, did_key, Some(signer), kwargs)
+        build_did(py, did_key, Some(signer), kwargs)
     }
 
     #[staticmethod]
@@ -66,38 +55,12 @@ impl DID {
         did: String,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        let default_context = cfg_blocking()?.default_context.clone();
-        build_did(py, default_context, did, None, kwargs)
-    }
-}
-
-#[pymethods]
-impl DidFactory {
-    #[pyo3(signature = (signer, **kwargs))]
-    fn build_from_signer(
-        &self,
-        py: Python,
-        signer: Py<Signer>,
-        kwargs: Option<&Bound<'_, PyDict>>,
-    ) -> PyResult<DID> {
-        let did_key = signer.bind(py).borrow().did_key.clone();
-        build_did(py, self.ctx.clone(), did_key, Some(signer), kwargs)
-    }
-
-    #[pyo3(signature = (did, **kwargs))]
-    fn build_from_did_string(
-        &self,
-        py: Python,
-        did: String,
-        kwargs: Option<&Bound<'_, PyDict>>,
-    ) -> PyResult<DID> {
-        build_did(py, self.ctx.clone(), did, None, kwargs)
+        build_did(py, did, None, kwargs)
     }
 }
 
 fn build_did(
     py: Python,
-    ctx: Context,
     did: String,
     signer: Option<Py<Signer>>,
     kwargs: Option<&Bound<'_, PyDict>>,
@@ -142,7 +105,10 @@ fn build_did(
                         let statement: Statement =
                             serde_json::from_value(value.clone()).context("Invalid statement")?;
                         let id = CID::new(statement.get_id());
-                        cfg.sql_lite.register_statement(&statement, &ctx.id).await?;
+                        let dummy_ctx = uuid!("00000000000000000000000000000000");
+                        cfg.sql_lite
+                            .register_statement(&statement, &dummy_ctx)
+                            .await?;
                         ids.push(id);
                     }
                 }
@@ -159,25 +125,15 @@ fn build_did(
 
         statement_ids.append(&mut vcomp_statement_ids);
     } else {
-        let mut did_ids =
-            statements::did::add_did_statement(py, did.clone(), None, Some(ctx.clone()))?;
+        let mut did_ids = statements::did::add_did_statement(py, did.clone(), None, None)?;
         statement_ids.append(&mut did_ids);
     }
 
-    let mut metadata_ids = statements::metadata::add_metadata_statement(
-        py,
-        did.clone(),
-        metadata_json,
-        None,
-        Some(ctx.clone()),
-    )?;
+    let mut metadata_ids =
+        statements::metadata::add_metadata_statement(py, did.clone(), metadata_json, None, None)?;
     statement_ids.append(&mut metadata_ids);
 
-    Ok(DID {
-        ctx,
-        did,
-        statement_ids,
-    })
+    Ok(DID { did, statement_ids })
 }
 
 fn is_vcomp_signer(name: &str) -> Result<bool> {
