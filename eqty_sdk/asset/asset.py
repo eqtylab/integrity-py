@@ -34,13 +34,16 @@ class AssetType(Enum):
     BENCHMARK_RESULT = "Benchmark_Result"
     CERTIFICATE = "Certificate"
     CODE = "Code"
+    CONFIG = "Config"
     CUSTOM = "Custom"
     DATABASE = "Database"
     DATASET = "Dataset"
     DOCUMENT = "Document"
     MEDIA = "Media"
     MODEL = "Model"
+    SKILL = "Skill"
     TOKEN = "Token"
+    TOOL = "Tool"
 
 
 def _init_path_input(path: Union[str, PathLike[str]]) -> Path:
