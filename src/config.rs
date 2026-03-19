@@ -205,6 +205,12 @@ pub struct Config {
 impl Config {
     // Setters
     #[pyo3(signature = (multithread=None, memory_map=None))]
+    /// Updates hashing behavior used when computing CIDs.
+    ///
+    /// - `multithread`: Enable multithreaded hashing.
+    /// - `memory_map`: Enable memory-mapped file reads where supported.
+    ///
+    /// Returns the updated config instance.
     fn set_hashing_config(
         &self,
         multithread: Option<bool>,
@@ -215,6 +221,13 @@ impl Config {
     }
 
     #[pyo3(signature = (include_hidden_files=None, gitignore=None, include_symlinks=None))]
+    /// Updates the directory ignore rules used when computing CIDs.
+    ///
+    /// - `include_hidden_files`: Include hidden files in directory hashing.
+    /// - `gitignore`: Respect `.gitignore` rules while hashing directories.
+    /// - `include_symlinks`: Include symlinks in directory hashing.
+    ///
+    /// Returns the updated config instance.
     fn set_cid_ignore_rules(
         &self,
         include_hidden_files: Option<bool>,
@@ -226,11 +239,15 @@ impl Config {
     }
 
     #[pyo3(signature = (value))]
+    /// Sets whether blobs should be persisted automatically when computing CIDs.
+    ///
+    /// Returns the updated config instance.
     fn set_store_all_blobs(&self, value: bool) -> PyResult<Self> {
         set_store_all_blobs_inner(value)?;
         Ok(self.clone())
     }
 
+    /// Returns the default context used when no context is supplied explicitly.
     fn get_default_context(&self) -> Context {
         log::debug!("Returning default context {}", self.default_context);
         self.default_context.clone()
