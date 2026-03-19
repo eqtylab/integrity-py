@@ -1,5 +1,5 @@
 from .agent import Agent
-from .asset import Asset, AssetType
+from .asset import Asset, AssetType, serialize_for_hashing
 from .attribution import Attribution
 from .benchmark import Benchmark, BenchmarkResult
 from .certificate import Certificate
@@ -34,4 +34,5 @@ __all__ = [
     "Skill",
     "Token",
     "Tool",
+    "serialize_for_hashing",
 ]
