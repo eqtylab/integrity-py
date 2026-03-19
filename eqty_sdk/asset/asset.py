@@ -107,6 +107,7 @@ class Asset:
 
         self._value: Any = obj
         self._skip_proof = kwargs.pop("_skip_proof", None)
+        self._enable_model_signing_signature = kwargs.pop("enable_model_signing_signature", False)
 
         self._cid = cid
         self._is_dir = is_dir
@@ -235,13 +236,28 @@ class Asset:
             )
         )
 
-        if self.asset_type == AssetType.MODEL.value and self._is_dir:
+        if (
+            self.asset_type == AssetType.MODEL.value
+            and self._is_dir
+            and self._enable_model_signing_signature
+        ):
             collection_cid = self._cid.cid
-            add_model_signing_statement(
-                collection_cid=collection_cid,
-                model_signing_name=self.name,
-                context=self._ctx,
-            )
+            try:
+                add_model_signing_statement(
+                    collection_cid=collection_cid,
+                    model_signing_name=self.name,
+                    context=self._ctx,
+                )
+            except RuntimeError as exc:
+                message = str(exc)
+                if message.startswith("Unsupported multicodec for public key"):
+                    logger.warning(
+                        "Skipping model signing statement for '%s': "
+                        "The active signer must be of type SECP256R1 to use model signing",
+                        self.name,
+                    )
+                else:
+                    raise
 
     def __repr__(self) -> str:
         return f"Asset({self._value!r})"
@@ -279,6 +295,7 @@ class Asset:
             "_metadata",
             "_asset_type",
             "_skip_proof",
+            "_enable_model_signing_signature",
             "statement_ids",
         }:
             object.__setattr__(self, key, value)
