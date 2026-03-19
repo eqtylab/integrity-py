@@ -54,15 +54,26 @@ class Config:
     """Global application config containing configuration and state.  The config stores application-wide settings including storage directories, hashing preferences, and file filtering rules."""
     def set_hashing_config(
         self, multithread: Optional[bool] = None, memory_map: Optional[bool] = None
-    ) -> Config: ...
+    ) -> Config:
+        """Updates hashing behavior used when computing CIDs.  - `multithread`: Enable multithreaded hashing. - `memory_map`: Enable memory-mapped file reads where supported.  Returns the updated config instance."""
+        ...
+
     def set_cid_ignore_rules(
         self,
         include_hidden_files: Optional[bool] = None,
         gitignore: Optional[bool] = None,
         include_symlinks: Optional[bool] = None,
-    ) -> Config: ...
-    def set_store_all_blobs(self, value: bool) -> Config: ...
-    def get_default_context(self) -> Context: ...
+    ) -> Config:
+        """Updates the directory ignore rules used when computing CIDs.  - `include_hidden_files`: Include hidden files in directory hashing. - `gitignore`: Respect `.gitignore` rules while hashing directories. - `include_symlinks`: Include symlinks in directory hashing.  Returns the updated config instance."""
+        ...
+
+    def set_store_all_blobs(self, value: bool) -> Config:
+        """Sets whether blobs should be persisted automatically when computing CIDs.  Returns the updated config instance."""
+        ...
+
+    def get_default_context(self) -> Context:
+        """Returns the default context used when no context is supplied explicitly."""
+        ...
 
 class Context:
     """A structure for organizing related statements hierarchically in the database.  Graph context groups statements together with optional parent-child relationships, enabling organizational structure for lineage graphs."""

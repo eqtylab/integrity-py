@@ -71,6 +71,18 @@ use pyo3::{prelude::*, wrap_pymodule};
 
 use crate::{indexer::Context, uuid::UUID};
 
+fn suppress_noisy_integrity_loggers(py: Python<'_>) -> PyResult<()> {
+    let logging = py.import("logging")?;
+    let get_logger = logging.getattr("getLogger")?;
+    let error_level = logging.getattr("ERROR")?;
+
+    // Missing blobs are common during manifest export, so suppress that logger by default.
+    let manifest_logger = get_logger.call1(("integrity_lineage_models.models.manifest",))?;
+    manifest_logger.call_method1("setLevel", (error_level,))?;
+
+    Ok(())
+}
+
 /// SDK rust module
 ///
 /// This module is accessible in the Python package as `eqty_sdk._rust`
@@ -78,6 +90,7 @@ use crate::{indexer::Context, uuid::UUID};
 fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Initialize pyo3-log to route Rust log messages to Python's logging module
     let _ = pyo3_log::try_init();
+    suppress_noisy_integrity_loggers(m.py())?;
 
     m.add_wrapped(wrap_pymodule!(entity::entity))?;
     m.add_wrapped(wrap_pymodule!(signer::signer))?;
