@@ -35,7 +35,10 @@ def purge_blob_store() -> None:
 class CID:
     """A simple wrapper around a content identifier (CID) string.  Provides a typed wrapper for CID strings with property access and string conversion."""
     @property
-    def cid(self) -> str: ...
+    def cid(self) -> str:
+        """The formated CID string."""
+        ...
+
     def __init__(self, cid: str) -> None:
         """Creates a new CID, ensuring it is prefixed with `urn:cid:`."""
         ...
@@ -116,34 +119,16 @@ class ContextFactory:
         ...
 
 class DID:
-    """A DID statement result bound to a context."""
-    @property
-    def ctx(self) -> Any:
-        """Context where the DID statement was registered."""
-        ...
-
     @property
     def did(self) -> str:
         """DID string used for registration."""
         ...
 
-    @property
-    def statement_ids(self) -> List[CID]:
-        """IDs of statements created for this DID."""
-        ...
-
-    def __init__(
-        self, ctx: Context, did: str, signer: Optional[Signer] = None, **kwargs: Any
-    ) -> None: ...
+    def __init__(self, did: str, signer: Optional[Signer] = None, **kwargs: Any) -> None: ...
     @staticmethod
     def from_signer(signer: Signer, **kwargs: Any) -> DID: ...
     @staticmethod
     def from_did_string(did: str, **kwargs: Any) -> DID: ...
-
-class DidFactory:
-    """Builder for DID statements in a specific context."""
-    def build_from_signer(self, signer: Signer, **kwargs: Any) -> DID: ...
-    def build_from_did_string(self, did: str, **kwargs: Any) -> DID: ...
 
 class Entity:
     """Represents an unhashed entity with a UUID identifier.  Entities are used to represent objects that don't have a content-based identifier (CID) but need a unique identifier for tracking purposes."""
@@ -217,7 +202,10 @@ class Signer:
 class UUID:
     """A simple wrapper around a UUID string.  Provides a typed wrapper for UUID strings with property access and string conversion."""
     @property
-    def uuid(self) -> str: ...
+    def uuid(self) -> str:
+        """The formated UUID string."""
+        ...
+
     def __init__(self, uuid: str) -> None:
         """Creates a new UUID, ensuring it is prefixed with `urn:uuid:`."""
         ...
@@ -234,7 +222,6 @@ _Config = Config
 _Context = Context
 _ContextFactory = ContextFactory
 _DID = DID
-_DidFactory = DidFactory
 _Entity = Entity
 _PyAssociationType = PyAssociationType
 _SIGNER_ALGORITHMS = SIGNER_ALGORITHMS

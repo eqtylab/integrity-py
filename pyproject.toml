@@ -9,8 +9,6 @@ readme = "README.md"
 packages = [{ include = "eqty_sdk" }]
 include = [
     { path = "docs", format = "sdist" },
-    { path = "site", format = "sdist" },
-    { path = "site", format = "wheel" },
 ]
 
 [tool.poetry.dependencies]

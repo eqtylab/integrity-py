@@ -8,6 +8,10 @@ nav:
   - API Reference:
       - Overview: api/index.md
       - Core: api/core.md
+      - Global Functions: api/global-functions.md
+      - CID: api/cid.md
+      - DID: api/did.md
+      - UUID: api/uuid.md
       - Assets: api/assets.md
       - Compute: api/compute.md
       - Config: api/config.md

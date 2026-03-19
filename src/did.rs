@@ -13,15 +13,14 @@ use crate::{
     statements, with_cfg, CID,
 };
 
-/// A DID statement result bound to a context.
 #[pyclass]
 pub struct DID {
     /// DID string used for registration.
     #[pyo3(get)]
     pub did: String,
-    /// IDs of statements created for this DID.
-    #[pyo3(get)]
-    pub statement_ids: Vec<CID>,
+    // /// IDs of statements created for this DID.
+    // #[pyo3(get)]
+    // pub statement_ids: Vec<CID>,
 }
 
 #[pymethods]
@@ -133,7 +132,7 @@ fn build_did(
         statements::metadata::add_metadata_statement(py, did.clone(), metadata_json, None, None)?;
     statement_ids.append(&mut metadata_ids);
 
-    Ok(DID { did, statement_ids })
+    Ok(DID { did })
 }
 
 fn is_vcomp_signer(name: &str) -> Result<bool> {
