@@ -1,10 +1,3 @@
-# Async Compute
-
-The compute decorator works with both async functions and async generators.
-
-Source: `examples/async_compute.py`
-
-```python
 import asyncio
 from pathlib import Path
 
@@ -57,9 +50,3 @@ asyncio.run(main())
 
 ctx = cfg.get_default_context()
 ctx.export(Path("async-compute.json"))
-```
-
-The key distinction:
-
-- async functions finalize once they return a value
-- async generators stream chunks and finalize when the generator completes

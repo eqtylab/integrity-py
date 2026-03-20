@@ -4,7 +4,7 @@ This example shows the common path:
 
 1. Initialize the SDK.
 2. Create and activate a signer.
-> If a signer was created previously, that signer can be re-used on subsequent executions
+   - If a signer was created previously, that signer can be re-used on subsequent executions.
 3. Create input assets.
 4. Define a computation with the `@compute` decorator.
 5. Execute the computation with a few arguments.
@@ -37,11 +37,7 @@ set_active_signer(signer)
     }
 )
 def build_prompt(system_prompt: Dataset, user_prompt: str, temperature: float) -> str:
-    return (
-        f"{system_prompt}\n\n"
-        f"User: {user_prompt.value}\n"
-        f"Temperature: {temperature}"
-    )
+    return f"{system_prompt}\n\nUser: {user_prompt}\nTemperature: {temperature}"
 
 
 system_prompt = Dataset.from_object(
