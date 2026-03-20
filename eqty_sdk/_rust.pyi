@@ -215,7 +215,7 @@ class UUID:
     """A simple wrapper around a UUID string.  Provides a typed wrapper for UUID strings with property access and string conversion."""
     @property
     def uuid(self) -> str:
-        """The formated UUID string."""
+        """The formatted UUID string."""
         ...
 
     def __init__(self, uuid: str) -> None:

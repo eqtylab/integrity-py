@@ -2700,7 +2700,7 @@ dependencies = [
 [[package]]
 name = "integrity"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#42bc07e2ff9357280aee93a094687b22b27580c6"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.1#be3ac1a0dff14f8ee3a96db73b8697715570be33"
 dependencies = [
  "integrity-blob",
  "integrity-cid",
@@ -2717,7 +2717,7 @@ dependencies = [
 [[package]]
 name = "integrity-blob"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#42bc07e2ff9357280aee93a094687b22b27580c6"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.1#be3ac1a0dff14f8ee3a96db73b8697715570be33"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2730,7 +2730,7 @@ dependencies = [
 [[package]]
 name = "integrity-cid"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#42bc07e2ff9357280aee93a094687b22b27580c6"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.1#be3ac1a0dff14f8ee3a96db73b8697715570be33"
 dependencies = [
  "anyhow",
  "blake3",
@@ -2751,7 +2751,7 @@ dependencies = [
 [[package]]
 name = "integrity-dsse"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#42bc07e2ff9357280aee93a094687b22b27580c6"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.1#be3ac1a0dff14f8ee3a96db73b8697715570be33"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2763,7 +2763,7 @@ dependencies = [
 [[package]]
 name = "integrity-intoto-attestation"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#42bc07e2ff9357280aee93a094687b22b27580c6"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.1#be3ac1a0dff14f8ee3a96db73b8697715570be33"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2779,7 +2779,7 @@ dependencies = [
 [[package]]
 name = "integrity-jsonld"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#42bc07e2ff9357280aee93a094687b22b27580c6"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.1#be3ac1a0dff14f8ee3a96db73b8697715570be33"
 dependencies = [
  "anyhow",
  "blake3",
@@ -2800,7 +2800,7 @@ dependencies = [
 [[package]]
 name = "integrity-lineage-models"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#42bc07e2ff9357280aee93a094687b22b27580c6"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.1#be3ac1a0dff14f8ee3a96db73b8697715570be33"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2824,13 +2824,12 @@ dependencies = [
  "ssi",
  "ssi-json-ld",
  "utoipa",
- "uuid",
 ]
 
 [[package]]
 name = "integrity-model-signing"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#42bc07e2ff9357280aee93a094687b22b27580c6"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.1#be3ac1a0dff14f8ee3a96db73b8697715570be33"
 dependencies = [
  "anyhow",
  "bs58 0.5.1",
@@ -2850,7 +2849,7 @@ dependencies = [
 [[package]]
 name = "integrity-signer"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#42bc07e2ff9357280aee93a094687b22b27580c6"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.1#be3ac1a0dff14f8ee3a96db73b8697715570be33"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2864,6 +2863,7 @@ dependencies = [
  "hyper 1.8.1",
  "hyper-util",
  "log",
+ "p256 0.13.2",
  "reqwest 0.12.28",
  "serde",
  "serde_json",
@@ -2876,7 +2876,7 @@ dependencies = [
 [[package]]
 name = "integrity-sigstore"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#42bc07e2ff9357280aee93a094687b22b27580c6"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.1#be3ac1a0dff14f8ee3a96db73b8697715570be33"
 dependencies = [
  "serde",
  "serde_json",
@@ -2885,7 +2885,7 @@ dependencies = [
 [[package]]
 name = "integrity-vc"
 version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?branch=remove-attributes#42bc07e2ff9357280aee93a094687b22b27580c6"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.1#be3ac1a0dff14f8ee3a96db73b8697715570be33"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -6839,7 +6839,6 @@ dependencies = [
  "quote",
  "regex",
  "syn 2.0.117",
- "uuid",
 ]
 
 [[package]]
