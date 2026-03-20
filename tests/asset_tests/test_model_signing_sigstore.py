@@ -30,7 +30,7 @@ class TestModelSigningSigstore(unittest.TestCase):
                 _store=False,
                 name="Model Dir",
                 _skip_proof=True,
-                enable_model_signing_signature=True,
+                _enable_model_signing_signature=True,
             )
         finally:
             set_active_signer(default_signer)
