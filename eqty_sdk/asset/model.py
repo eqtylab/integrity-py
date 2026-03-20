@@ -15,13 +15,13 @@ class Model(TypedAsset):
         path: Union[str, PathLike[str]],
         _store: Optional[bool] = None,
         *,
-        enable_model_signing_signature: bool = False,
+        _enable_model_signing_signature: bool = False,
         **kwargs,
     ) -> "Model":
         return cls._from_path(
             path,
             cls._asset_type,
             _store=_store,
-            enable_model_signing_signature=enable_model_signing_signature,
+            _enable_model_signing_signature=_enable_model_signing_signature,
             **kwargs,
         )

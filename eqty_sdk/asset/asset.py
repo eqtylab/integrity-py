@@ -107,7 +107,7 @@ class Asset:
 
         self._value: Any = obj
         self._skip_proof = kwargs.pop("_skip_proof", None)
-        self._enable_model_signing_signature = kwargs.pop("enable_model_signing_signature", False)
+        self._enable_model_signing_signature = kwargs.pop("_enable_model_signing_signature", False)
 
         self._cid = cid
         self._is_dir = is_dir
