@@ -5,9 +5,16 @@ theme:
 
 nav:
   - Home: index.md
+  - Examples:
+      - Overview: examples/index.md
+      - Basic Workflow: examples/basic-workflow.md
+      - Async Compute: examples/async-compute.md
+      - Spark Parquet Input: examples/spark-parquet.md
+      - Model Signing: examples/model-signing.md
   - API Reference:
       - Overview: api/index.md
       - Core: api/core.md
+      - Init And Config: api/init-and-config.md
       - Global Functions: api/global-functions.md
       - CID: api/cid.md
       - DID: api/did.md

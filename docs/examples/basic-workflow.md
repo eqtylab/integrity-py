@@ -1,0 +1,55 @@
+# Basic Workflow
+
+This example shows the common path:
+
+1. Initialize the SDK.
+2. Create and activate a signer.
+   - If a signer was created previously, that signer can be re-used on subsequent executions.
+3. Create input assets.
+4. Define a computation with the `@compute` decorator.
+5. Execute the computation with a few arguments.
+6. Export a manifest json file.
+
+Source: `examples/basic-workflow.py`
+
+```python
+from pathlib import Path
+
+from eqty_sdk import (
+    Dataset,
+    Signer,
+    compute,
+    init,
+    set_active_signer,
+)
+
+cfg = init()
+
+signer = Signer.new()
+set_active_signer(signer)
+
+
+@compute(
+    metadata={
+        "name": "Prompt Formatter",
+        "description": "Combine prompt inputs and a temperature setting into a single output.",
+        "output_type": "dataset",
+    }
+)
+def build_prompt(system_prompt: Dataset, user_prompt: str, temperature: float) -> str:
+    return f"{system_prompt}\n\nUser: {user_prompt}\nTemperature: {temperature}"
+
+
+system_prompt = Dataset.from_object(
+    "You are a helpful assistant.",
+    name="System Prompt",
+    description="Base system prompt for the workflow",
+)
+user_prompt = "Summarize the last meeting in three bullets."
+
+result = build_prompt(system_prompt, user_prompt, 0.2)
+print(result)
+
+ctx = cfg.get_default_context()
+ctx.export(Path("basic-workflow.json"))
+```
