@@ -2,7 +2,7 @@
 
 For Spark customers, the recommended pattern is to track the parquet source as the input asset rather than hashing the in-memory Spark DataFrame object.
 
-Source: `examples/custom_serialize.py`
+Source: `examples/custom-serialize.py`
 
 ```python
 from dataclasses import dataclass

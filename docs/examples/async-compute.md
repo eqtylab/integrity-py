@@ -2,7 +2,7 @@
 
 The compute decorator works with both async functions and async generators.
 
-Source: `examples/async_compute.py`
+Source: `examples/async-compute.py`
 
 ```python
 import asyncio
