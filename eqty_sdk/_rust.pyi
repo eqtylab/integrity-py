@@ -202,8 +202,8 @@ class Signer:
     def __init__(self, name: str, did_key: str) -> None: ...
     @staticmethod
     def new(
-        name: Optional[str] = None,
         algorithm: Optional[SIGNER_ALGORITHMS] = None,
+        name: Optional[str] = None,
         _load_if_exists: Optional[bool] = None,
     ) -> Signer: ...
     @staticmethod

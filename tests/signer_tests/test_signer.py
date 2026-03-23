@@ -25,18 +25,18 @@ class SignerTests(unittest.TestCase):
 
     def test_signer_new_with_name_loads_existing_when_requested(self):
         name = f"signer-{uuid.uuid4()}"
-        signer = Signer.new(name)
-        loaded_signer = Signer.new(name, _load_if_exists=True)
+        signer = Signer.new(name=name)
+        loaded_signer = Signer.new(name=name, _load_if_exists=True)
 
         self.assertEqual(loaded_signer.name, name)
         self.assertEqual(loaded_signer.did_key, signer.did_key)
 
     def test_signer_new_with_name_raises_when_signer_exists(self):
         name = f"signer-{uuid.uuid4()}"
-        Signer.new(name)
+        Signer.new(name=name)
 
         with self.assertRaises(ValueError):
-            Signer.new(name)
+            Signer.new(name=name)
 
     def test_signer_new_load_if_exists_requires_name(self):
         with self.assertRaises(ValueError):

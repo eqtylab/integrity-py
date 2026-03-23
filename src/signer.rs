@@ -107,13 +107,13 @@ impl Signer {
     #[staticmethod]
     #[pyo3(
         name = "new",
-        signature = (name=None, algorithm=None, _load_if_exists=false),
-        text_signature = "(name=None, algorithm=None, _load_if_exists=False)"
+        signature = (algorithm=None, name=None, _load_if_exists=false),
+        text_signature = "(algorithm=None, name=None, _load_if_exists=False)"
     )]
     fn new_signer(
         py: Python,
-        name: Option<String>,
         algorithm: Option<SignerAlgorithms>,
+        name: Option<String>,
         _load_if_exists: bool,
     ) -> PyResult<Py<Signer>> {
         if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
