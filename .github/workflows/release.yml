@@ -39,7 +39,7 @@ jobs:
         if: runner.os == 'macOS' || runner.os == 'Windows'
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version-file: '.python-version'
 
       - name: Setup Rust
         if: runner.os == 'macOS' || runner.os == 'Windows'
@@ -67,6 +67,8 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          python_abi_tag="$(tr -d '.\n' < .python-version)"
+
           case "${{ matrix.platform }}" in
             ubuntu-latest-large)
               manylinux_image="quay.io/pypa/manylinux2014_x86_64"
@@ -81,6 +83,7 @@ jobs:
           esac
 
           docker run --rm \
+            -e PYTHON_ABI_TAG="${python_abi_tag}" \
             -v "${PWD}:/io" \
             -w /io \
             "${manylinux_image}" \
@@ -90,11 +93,12 @@ jobs:
               yum install -y curl
               curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
               source "$HOME/.cargo/env"
-              /opt/python/cp311-cp311/bin/python -m pip install --upgrade pip maturin
-              /opt/python/cp311-cp311/bin/maturin build \
+              pybin="/opt/python/cp${PYTHON_ABI_TAG}-cp${PYTHON_ABI_TAG}/bin/python"
+              "$pybin" -m pip install --upgrade pip maturin
+              "$pybin" -m maturin build \
                 --manifest-path Cargo.toml \
                 --release \
-                --interpreter /opt/python/cp311-cp311/bin/python \
+                --interpreter "$pybin" \
                 --compatibility manylinux2014 \
                 --out dist
             '
