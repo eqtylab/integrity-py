@@ -27,10 +27,8 @@ from eqty_sdk import Dataset, compute, init, Signer, set_active_signer, SIGNER_A
 init()
 
 # Set up a signer for cryptographic verification
-signer = Signer.from_private_key(
-    algorithm=SIGNER_ALGORITHMS.ED25519,
-    private_key="<your-base64-encoded-private-key>",
-)
+# Reuses the same signer on later runs if it already exists on disk.
+signer = Signer.new("Default Signer", _load_if_exists=True)
 set_active_signer(signer)
 
 # Create a tracked dataset

@@ -5,6 +5,7 @@ _:
 _poetry-config:
   @echo "Configuring poetry"
   poetry config virtualenvs.in-project true
+  poetry env use "python$(cat .python-version)"
 
 # Install all Python dependencies via poetry
 install: _poetry-config

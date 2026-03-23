@@ -16,6 +16,8 @@
 
       let
         pkgs = import inputs.nixpkgs { inherit system; };
+        pythonVersion = builtins.replaceStrings [ "." "\n" ] [ "" "" ] (builtins.readFile ./.python-version);
+        python = builtins.getAttr "python${pythonVersion}" pkgs;
 
         pkgs-rust = import inputs.nixpkgs-rust {
           inherit system;
@@ -42,7 +44,7 @@
             poetry
             prek
             present-cli
-            python312
+            python
             ruff
             rustfmt-nightly
             rust

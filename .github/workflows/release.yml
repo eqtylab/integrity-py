@@ -39,7 +39,7 @@ jobs:
         if: runner.os == 'macOS' || runner.os == 'Windows'
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version-file: '.python-version'
 
       - name: Setup Rust
         if: runner.os == 'macOS' || runner.os == 'Windows'
@@ -63,17 +63,63 @@ jobs:
         if: runner.os == 'macOS' && github.event_name == 'push' && github.ref_type == 'tag'
         run: sed -i '' 's/^version = ".*"/version = "'"$(echo ${{ github.event.ref }} | sed -E 's/.*v([[:digit:]]+(\.[[:digit:]]+)+).*/\1/')"'"/' Cargo.toml
 
-      # - name: Publish Linux glibc 2.17 Package
-      #   if: runner.os == 'Linux'
-      #   env:
-      #     MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
-      #   run: nix develop .#py-glibc-2_17 -c maturin publish -m Cargo.toml --zig --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
-      #
+      - name: Build Linux Wheel
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          python_abi_tag="$(
+            python3 - <<'PY'
+            from pathlib import Path
+
+            version = Path(".python-version").read_text().strip()
+            parts = version.split(".")
+            if len(parts) < 2:
+                raise SystemExit(f"Expected at least major.minor in .python-version, got: {version!r}")
+            print(f"{parts[0]}{parts[1]}")
+            PY
+          )"
+
+          case "${{ matrix.platform }}" in
+            ubuntu-latest-large)
+              manylinux_image="quay.io/pypa/manylinux2014_x86_64"
+              ;;
+            ubuntu-aarch64)
+              manylinux_image="quay.io/pypa/manylinux2014_aarch64"
+              ;;
+            *)
+              echo "Unsupported Linux runner: ${{ matrix.platform }}"
+              exit 1
+              ;;
+          esac
+
+          docker run --rm \
+            -e PYTHON_ABI_TAG="${python_abi_tag}" \
+            -v "${PWD}:/io" \
+            -w /io \
+            "${manylinux_image}" \
+            /bin/bash -lc '
+              set -euo pipefail
+
+              yum install -y curl
+              curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+              source "$HOME/.cargo/env"
+              pybin="/opt/python/cp${PYTHON_ABI_TAG}-cp${PYTHON_ABI_TAG}/bin/python"
+              "$pybin" -m pip install --upgrade pip maturin
+              "$pybin" -m maturin build \
+                --manifest-path Cargo.toml \
+                --release \
+                --interpreter "$pybin" \
+                --compatibility manylinux2014 \
+                --out dist
+            '
+
       - name: Publish Linux Package
         if: runner.os == 'Linux'
         env:
           MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
-        run: nix develop -c maturin publish --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
+        run: |
+          python3 -m pip install --user --upgrade maturin
+          python3 -m maturin upload --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner" dist/*.whl
 
       - name: Publish Windows Package
         if: runner.os == 'Windows'

@@ -12,7 +12,7 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 nest-asyncio = "^1.6.0"
 click = "^8.1.7"
 toml = "^0.10.2"
@@ -41,12 +41,12 @@ mkdocstrings = { extras = ["python"], version = "^0.28.2" }
 
 [[tool.poetry.source]]
 name = "eqty"
-url = "http://eqty-pypi.westus2.cloudapp.azure.com/simple/"
+url = "https://pypi.eqtylab.io/simple/"
 priority = "explicit"
 
 [[tool.poetry.source]]
 name = "eqty-publish"
-url = "http://eqty-pypi.westus2.cloudapp.azure.com/"
+url = "https://pypi.eqtylab.io/"
 priority = "explicit"
 
 [build-system]
@@ -56,7 +56,7 @@ build-backend = "maturin"
 [project]
 dynamic = ["version"] # synced to fields in Cargo.toml
 name = "eqty_sdk"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 # TODO: dedup this with uv dependencies
 dependencies = [
   "nest-asyncio>=1.6.0",

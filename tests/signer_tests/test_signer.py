@@ -1,5 +1,6 @@
 import os
 import unittest
+import uuid
 
 from eqty_sdk import SIGNER_ALGORITHMS, Signer, set_active_signer
 from tests import setup_sdk
@@ -22,6 +23,25 @@ class SignerTests(unittest.TestCase):
         self.assertTrue(signer.did_key.startswith("did:key:"))
         self.assertTrue(signer.name)
 
+    def test_signer_new_with_name_loads_existing_when_requested(self):
+        name = f"signer-{uuid.uuid4()}"
+        signer = Signer.new(name=name)
+        loaded_signer = Signer.new(name=name, _load_if_exists=True)
+
+        self.assertEqual(loaded_signer.name, name)
+        self.assertEqual(loaded_signer.did_key, signer.did_key)
+
+    def test_signer_new_with_name_raises_when_signer_exists(self):
+        name = f"signer-{uuid.uuid4()}"
+        Signer.new(name=name)
+
+        with self.assertRaises(ValueError):
+            Signer.new(name=name)
+
+    def test_signer_new_load_if_exists_requires_name(self):
+        with self.assertRaises(ValueError):
+            Signer.new(_load_if_exists=True)
+
     def test_signer_from_private_key(self):
         signer = Signer.from_private_key(
             algorithm=SIGNER_ALGORITHMS.ED25519,
@@ -29,6 +49,31 @@ class SignerTests(unittest.TestCase):
         )
         self.assertTrue(signer.name)
         self.assertTrue(signer.did_key.startswith("did:key:"))
+
+    def test_signer_from_private_key_loads_existing_named_signer(self):
+        name = f"signer-{uuid.uuid4()}"
+        signer = Signer.from_private_key(
+            algorithm=SIGNER_ALGORITHMS.ED25519,
+            private_key="eHb22WNFvUXihogn8fubQjW7hHEqwY3fEKt745V4xXg=",
+            name=name,
+        )
+        loaded_signer = Signer.from_private_key(
+            algorithm=SIGNER_ALGORITHMS.SECP256K1,
+            private_key="ignored-when-loading",
+            name=name,
+            _load_if_exists=True,
+        )
+
+        self.assertEqual(loaded_signer.name, name)
+        self.assertEqual(loaded_signer.did_key, signer.did_key)
+
+    def test_signer_from_private_key_load_if_exists_requires_name(self):
+        with self.assertRaises(ValueError):
+            Signer.from_private_key(
+                algorithm=SIGNER_ALGORITHMS.ED25519,
+                private_key="eHb22WNFvUXihogn8fubQjW7hHEqwY3fEKt745V4xXg=",
+                _load_if_exists=True,
+            )
 
     def test_set_active_signer_by_instance_and_name(self):
         signer = Signer.new(SIGNER_ALGORITHMS.ED25519)

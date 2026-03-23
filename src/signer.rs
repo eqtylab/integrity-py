@@ -22,11 +22,6 @@ use crate::{config::cfg_blocking, with_cfg, Config};
 pub fn signer(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Signer>()?;
     m.add_class::<SignerAlgorithms>()?;
-    m.add_function(wrap_pyfunction!(create_new_signer, m)?)?;
-    m.add_function(wrap_pyfunction!(create_signer_from_private_key, m)?)?;
-    m.add_function(wrap_pyfunction!(create_vcomp_signer, m)?)?;
-    m.add_function(wrap_pyfunction!(create_yubihsm2_signer, m)?)?;
-    m.add_function(wrap_pyfunction!(create_auth_service_signer, m)?)?;
     m.add_function(wrap_pyfunction!(set_active_signer, m)?)?;
     m.add_function(wrap_pyfunction!(get_active_signer_did_key, m)?)?;
 
@@ -103,213 +98,191 @@ impl Signer {
         &self.did_key
     }
 
+    /// Creates a local signer and persists it to disk.
+    ///
+    /// If `name` is provided, the signer is stored under that name. When
+    /// `_load_if_exists=True`, an existing signer with the same name is loaded
+    /// instead of creating a new key. If no algorithm is provided, Ed25519 is
+    /// used.
     #[staticmethod]
-    #[pyo3(name = "new", signature = (algorithm=None))]
-    fn new_signer(py: Python, algorithm: Option<SignerAlgorithms>) -> PyResult<Py<Signer>> {
-        if let Some(algo) = algorithm {
-            create_new_signer_internal(py, algo.into(), None)
-        } else {
-            create_new_signer_internal(py, KeyType::ED25519, None)
+    #[pyo3(
+        name = "new",
+        signature = (algorithm=None, name=None, _load_if_exists=false),
+        text_signature = "(algorithm=None, name=None, _load_if_exists=False)"
+    )]
+    fn new_signer(
+        py: Python,
+        algorithm: Option<SignerAlgorithms>,
+        name: Option<String>,
+        _load_if_exists: bool,
+    ) -> PyResult<Py<Signer>> {
+        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+            return Py::new(py, existing);
         }
+
+        let signer = match algorithm.unwrap_or(SignerAlgorithms::ED25519).into() {
+            KeyType::SECP256K1 => {
+                log::trace!("Generating a new secp256k1 signer");
+                let signer = Secp256k1Signer::create()?;
+                SignerType::SECP256K1(signer)
+            }
+            KeyType::SECP256R1 => {
+                log::trace!("Generating a new secp256r1 signer");
+                let signer = P256Signer::create()?;
+                SignerType::P256(signer)
+            }
+            KeyType::ED25519 => {
+                log::trace!("Generating a new ed25519 signer");
+                let signer = Ed25519Signer::create()?;
+                SignerType::ED25519(signer)
+            }
+        };
+
+        let signer = save_signer(&signer, name.as_deref())?;
+        Py::new(py, signer)
     }
 
+    /// Creates a VComp notary signer and persists it to disk.
+    ///
+    /// If `name` is provided, the signer is stored under that name. When
+    /// `_load_if_exists=True`, an existing signer with the same name is loaded
+    /// instead of creating a new remote signer configuration.
     #[staticmethod]
-    #[pyo3(signature = (url=None))]
-    fn vcomp_notary(py: Python, url: Option<String>) -> PyResult<Py<Signer>> {
+    #[pyo3(signature = (url=None, name=None, _load_if_exists=false))]
+    fn vcomp_notary(
+        py: Python,
+        url: Option<String>,
+        name: Option<String>,
+        _load_if_exists: bool,
+    ) -> PyResult<Py<Signer>> {
         let url = url.unwrap_or_else(|| "http://docker.eqtylab.internal:8066".to_string());
-        create_vcomp_signer(py, url, None)
+        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+            return Py::new(py, existing);
+        }
+
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+
+        let signer = rt.block_on(VCompNotarySigner::create(&url, None))?;
+
+        let signer_type = SignerType::VCompNotarySigner(signer);
+        let signer = save_signer(&signer_type, name.as_deref())?;
+        Py::new(py, signer)
     }
 
+    /// Creates an Auth Service signer and persists it to disk.
+    ///
+    /// Requires the `EQTY_API_KEY` environment variable to be set. If `name`
+    /// is provided, the signer is stored under that name. When
+    /// `_load_if_exists=True`, an existing signer with the same name is loaded
+    /// instead of creating a new remote signer configuration.
     #[staticmethod]
-    #[pyo3(signature = (url))]
-    fn auth_service(py: Python, url: String) -> PyResult<Py<Signer>> {
+    #[pyo3(signature = (url, name=None, _load_if_exists=false))]
+    fn auth_service(
+        py: Python,
+        url: String,
+        name: Option<String>,
+        _load_if_exists: bool,
+    ) -> PyResult<Py<Signer>> {
         let api_key = std::env::var("EQTY_API_KEY").map_err(|_| {
             PyRuntimeError::new_err(
                 "The env var 'EQTY_API_KEY' must be set to use Signer.auth_service()",
             )
         })?;
-        create_auth_service_signer(py, url, api_key)
+
+        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+            return Py::new(py, existing);
+        }
+
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+        log::debug!("Creating auth service signer {url:?}");
+
+        let signer = rt.block_on(AuthServiceSigner::create(api_key, url))?;
+
+        let signer_type = SignerType::AuthService(signer);
+        let signer = save_signer(&signer_type, name.as_deref())?;
+        Py::new(py, signer)
     }
 
+    /// Creates a YubiHSM2-backed signer and persists it to disk.
+    ///
+    /// If `name` is provided, the signer is stored under that name. When
+    /// `_load_if_exists=True`, an existing signer with the same name is loaded
+    /// instead of creating a new hardware-backed signer configuration.
     #[staticmethod]
-    #[pyo3(signature = (auth_key_id, signing_key_id, password))]
+    #[pyo3(signature = (auth_key_id, signing_key_id, password, name=None, _load_if_exists=false))]
     fn yubihsm2(
         py: Python,
         auth_key_id: u16,
         signing_key_id: u16,
         password: String,
+        name: Option<String>,
+        _load_if_exists: bool,
     ) -> PyResult<Py<Signer>> {
-        create_yubihsm2_signer(py, auth_key_id, signing_key_id, password)
+        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+            return Py::new(py, existing);
+        }
+
+        log::trace!("Importing a YubiHSM2 ed25519 signer");
+
+        let yubi_signer = YubiHsmSigner::create(auth_key_id, signing_key_id, password)?;
+
+        let signer_type = SignerType::YubiHsm2Signer(yubi_signer);
+        let signer = save_signer(&signer_type, name.as_deref())?;
+        Py::new(py, signer)
     }
 
+    /// Creates a signer from a base64-encoded private key and persists it.
+    ///
+    /// If `name` is provided, the signer is stored under that name. When
+    /// `_load_if_exists=True`, an existing signer with the same name is loaded
+    /// instead of importing the provided private key.
     #[staticmethod]
-    #[pyo3(signature = (algorithm, private_key))]
+    #[pyo3(
+        signature = (algorithm, private_key, name=None, _load_if_exists=false),
+        text_signature = "(algorithm, private_key, name=None, _load_if_exists=False)"
+    )]
     fn from_private_key(
         py: Python,
         algorithm: SignerAlgorithms,
         private_key: String,
+        name: Option<String>,
+        _load_if_exists: bool,
     ) -> PyResult<Py<Signer>> {
-        create_signer_from_private_key_internal(py, algorithm.into(), private_key, None)
+        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+            return Py::new(py, existing);
+        }
+
+        let key_type: KeyType = algorithm.into();
+        log::info!("Creating a signer of type '{:?}'", key_type);
+
+        let secret_key = BASE64
+            .decode(private_key.as_bytes())
+            .context("Invalid base64 key")?;
+
+        let signer = match key_type {
+            KeyType::SECP256R1 => {
+                log::trace!("Creating a P256 signer from a private key.");
+                let signer = P256Signer::import(&secret_key)?;
+                SignerType::P256(signer)
+            }
+            KeyType::SECP256K1 => {
+                log::trace!("Creating a SECP256K1 signer from a private key.");
+                let signer = Secp256k1Signer::import(&secret_key)?;
+                SignerType::SECP256K1(signer)
+            }
+            KeyType::ED25519 => {
+                log::trace!("Creating a ED25519 signer from a private key.");
+                let signer = Ed25519Signer::import(&secret_key)?;
+                SignerType::ED25519(signer)
+            }
+        };
+        let signer = save_signer(&signer, name.as_deref())?;
+        Py::new(py, signer)
     }
-}
-
-/// Creates a new local signer with a randomly generated key.
-///
-/// # Arguments
-/// * `name` - Optional name for the signer (uses DID key if not provided)
-/// * `key_type` - Type of cryptographic key to generate (SECP256K1, SECP256R1, ED25519)
-#[pyfunction]
-#[pyo3(signature = (key_type, name=None))]
-fn create_new_signer(
-    py: Python,
-    key_type: SignerAlgorithms,
-    name: Option<&str>,
-) -> PyResult<Py<Signer>> {
-    signer_exists(name)?;
-
-    create_new_signer_internal(py, key_type.into(), name)
-}
-
-fn create_new_signer_internal(
-    py: Python,
-    key_type: KeyType,
-    name: Option<&str>,
-) -> PyResult<Py<Signer>> {
-    let signer = match key_type {
-        KeyType::SECP256K1 => {
-            log::trace!("Generating a new secp256k1 signer");
-            let signer = Secp256k1Signer::create()?;
-            SignerType::SECP256K1(signer)
-        }
-        KeyType::SECP256R1 => {
-            log::trace!("Generating a new secp256r1 signer");
-            let signer = P256Signer::create()?;
-            SignerType::P256(signer)
-        }
-        KeyType::ED25519 => {
-            log::trace!("Generating a new ed25519 signer");
-            let signer = Ed25519Signer::create()?;
-            SignerType::ED25519(signer)
-        }
-    };
-
-    let signer = save_signer(&signer, name)?;
-    Py::new(py, signer)
-}
-
-/// Creates a signer from an existing base64-encoded private key.
-///
-/// # Arguments
-/// * `key` - Base64-encoded private key bytes
-/// * `key_type` - Type of cryptographic key (SECP256K1, SECP256R1, ED25519)
-/// * `name` - Optional name for the signer (uses DID key if not provided)
-#[pyfunction]
-#[pyo3(signature = (key, key_type, name=None))]
-fn create_signer_from_private_key(
-    py: Python,
-    key: String,
-    key_type: SignerAlgorithms,
-    name: Option<&str>,
-) -> PyResult<Py<Signer>> {
-    signer_exists(name)?;
-
-    create_signer_from_private_key_internal(py, key_type.into(), key, name)
-}
-
-fn create_signer_from_private_key_internal(
-    py: Python,
-    key_type: KeyType,
-    key: String,
-    name: Option<&str>,
-) -> PyResult<Py<Signer>> {
-    log::info!("Creating a signer of type '{:?}'", key_type);
-
-    let secret_key = BASE64
-        .decode(key.as_bytes())
-        .context("Invalid base64 key")?;
-
-    let signer = match key_type {
-        KeyType::SECP256R1 => {
-            log::trace!("Creating a P256 signer from a private key.");
-            let signer = P256Signer::import(&secret_key)?;
-            SignerType::P256(signer)
-        }
-        KeyType::SECP256K1 => {
-            log::trace!("Creating a SECP256K1 signer from a private key.");
-            let signer = Secp256k1Signer::import(&secret_key)?;
-            SignerType::SECP256K1(signer)
-        }
-        KeyType::ED25519 => {
-            log::trace!("Creating a ED25519 signer from a private key.");
-            let signer = Ed25519Signer::import(&secret_key)?;
-            SignerType::ED25519(signer)
-        }
-    };
-    let signer = save_signer(&signer, name)?;
-    Py::new(py, signer)
-}
-
-/// Creates a VComp notary signer for TEE-based remote signing.
-///
-/// # Arguments
-/// * `name` - Name to assign to the signer
-/// * `url` - VComp notary service URL
-/// * `pub_key` - Optional public key for the signer
-///
-#[pyfunction]
-fn create_vcomp_signer(py: Python, url: String, pub_key: Option<String>) -> PyResult<Py<Signer>> {
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
-
-    let signer = rt.block_on(VCompNotarySigner::create(&url, pub_key))?;
-
-    let signer_type = SignerType::VCompNotarySigner(signer);
-    let signer = save_signer(&signer_type, None)?;
-    Py::new(py, signer)
-}
-
-/// Creates an Auth Service-based signer for remote signing operations.
-///
-/// # Arguments
-/// * `name` - Name to assign to the signer
-/// * `url` -  Auth Service API endpoint URL
-/// * `api_key` - API key for authentication with the Auth Service
-#[pyfunction]
-fn create_auth_service_signer(py: Python, url: String, api_key: String) -> PyResult<Py<Signer>> {
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
-    log::debug!("Creating auth service signer {url:?}");
-
-    let signer = rt.block_on(AuthServiceSigner::create(api_key, url))?;
-
-    let signer_type = SignerType::AuthService(signer);
-    let signer = save_signer(&signer_type, None)?;
-    Py::new(py, signer)
-}
-
-/// Creates and configures a YubiHSM2 hardware security module signer.
-///
-/// # Arguments
-/// * `name` - Name to assign to the signer
-/// * `auth_key_id` - Authentication key ID for YubiHSM2
-/// * `signing_key_id` - Signing key ID for YubiHSM2
-/// * `password` - Password for YubiHSM2 authentication
-#[pyfunction]
-fn create_yubihsm2_signer(
-    py: Python,
-    auth_key_id: u16,
-    signing_key_id: u16,
-    password: String,
-) -> PyResult<Py<Signer>> {
-    log::trace!("Importing a YubiHSM2 ed25519 signer");
-
-    let yubi_signer = YubiHsmSigner::create(auth_key_id, signing_key_id, password)?;
-
-    let signer_type = SignerType::YubiHsm2Signer(yubi_signer);
-    let signer = save_signer(&signer_type, None)?;
-    Py::new(py, signer)
 }
 
 /// Sets the active signer by name or signer instance.
@@ -370,6 +343,30 @@ fn signer_exists(name: Option<&str>) -> PyResult<()> {
     }
 
     Ok(())
+}
+
+fn maybe_load_signer(name: Option<&str>, load_if_exists: bool) -> PyResult<Option<Signer>> {
+    if !load_if_exists {
+        signer_exists(name)?;
+        return Ok(None);
+    }
+
+    let Some(name) = name else {
+        return Err(PyErr::new::<PyValueError, _>(
+            "_load_if_exists=True requires a signer name",
+        ));
+    };
+
+    let signer_path = cfg_blocking()?.app_dir.join(SIGNER_DIR).join(name);
+    if !signer_path.exists() {
+        return Ok(None);
+    }
+
+    let signer = utils_load_signer(signer_path)?;
+    Ok(Some(Signer {
+        name: name.to_owned(),
+        did_key: signer.get_did_doc().id,
+    }))
 }
 
 fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<Signer> {
