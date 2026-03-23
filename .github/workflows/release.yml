@@ -95,7 +95,7 @@ jobs:
             /bin/bash -lc '
               set -euo pipefail
 
-              yum install -y curl
+              yum install -y curl openssl-devel pkgconfig
               curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
               source "$HOME/.cargo/env"
               pybin="/opt/python/cp${PYTHON_ABI_TAG}-cp${PYTHON_ABI_TAG}/bin/python"
