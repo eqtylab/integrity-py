@@ -201,7 +201,11 @@ class Signer:
 
     def __init__(self, name: str, did_key: str) -> None: ...
     @staticmethod
-    def new(algorithm: Optional[SIGNER_ALGORITHMS] = None) -> Signer: ...
+    def new(
+        name: Optional[Any] = None,
+        algorithm: Optional[SIGNER_ALGORITHMS] = None,
+        _load_if_exists: Optional[bool] = None,
+    ) -> Signer: ...
     @staticmethod
     def vcomp_notary(url: Optional[str] = None) -> Signer: ...
     @staticmethod
@@ -209,7 +213,12 @@ class Signer:
     @staticmethod
     def yubihsm2(auth_key_id: int, signing_key_id: int, password: str) -> Signer: ...
     @staticmethod
-    def from_private_key(algorithm: SIGNER_ALGORITHMS, private_key: str) -> Signer: ...
+    def from_private_key(
+        algorithm: SIGNER_ALGORITHMS,
+        private_key: str,
+        name: Optional[str] = None,
+        _load_if_exists: Optional[bool] = None,
+    ) -> Signer: ...
 
 class UUID:
     """A simple wrapper around a UUID string.  Provides a typed wrapper for UUID strings with property access and string conversion."""
@@ -270,33 +279,6 @@ class entity:
 class signer:
     Signer: type[Signer]
     SIGNER_ALGORITHMS: type[SIGNER_ALGORITHMS]
-
-    @staticmethod
-    def create_new_signer(key_type: _SIGNER_ALGORITHMS, name: Optional[str] = None) -> _Signer:
-        """Creates a new local signer with a randomly generated key.  # Arguments * `name` - Optional name for the signer (uses DID key if not provided) * `key_type` - Type of cryptographic key to generate (SECP256K1, SECP256R1, ED25519)"""
-        ...
-
-    @staticmethod
-    def create_signer_from_private_key(
-        key: str, key_type: _SIGNER_ALGORITHMS, name: Optional[str] = None
-    ) -> _Signer:
-        """Creates a signer from an existing base64-encoded private key.  # Arguments * `key` - Base64-encoded private key bytes * `key_type` - Type of cryptographic key (SECP256K1, SECP256R1, ED25519) * `name` - Optional name for the signer (uses DID key if not provided)"""
-        ...
-
-    @staticmethod
-    def create_vcomp_signer(url: str, pub_key: Optional[str] = None) -> _Signer:
-        """Creates a VComp notary signer for TEE-based remote signing.  # Arguments * `name` - Name to assign to the signer * `url` - VComp notary service URL * `pub_key` - Optional public key for the signer"""
-        ...
-
-    @staticmethod
-    def create_yubihsm2_signer(auth_key_id: int, signing_key_id: int, password: str) -> _Signer:
-        """Creates and configures a YubiHSM2 hardware security module signer.  # Arguments * `name` - Name to assign to the signer * `auth_key_id` - Authentication key ID for YubiHSM2 * `signing_key_id` - Signing key ID for YubiHSM2 * `password` - Password for YubiHSM2 authentication"""
-        ...
-
-    @staticmethod
-    def create_auth_service_signer(url: str, api_key: str) -> _Signer:
-        """Creates an Auth Service-based signer for remote signing operations.  # Arguments * `name` - Name to assign to the signer * `url` -  Auth Service API endpoint URL * `api_key` - API key for authentication with the Auth Service"""
-        ...
 
     @staticmethod
     def set_active_signer(signer: Any) -> None:
