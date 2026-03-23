@@ -67,17 +67,12 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          python_abi_tag="$(
-            python3 - <<'PY'
-            from pathlib import Path
-
-            version = Path(".python-version").read_text().strip()
-            parts = version.split(".")
-            if len(parts) < 2:
-                raise SystemExit(f"Expected at least major.minor in .python-version, got: {version!r}")
-            print(f"{parts[0]}{parts[1]}")
-            PY
-          )"
+          IFS='.' read -r python_major python_minor _ < .python-version
+          if [ -z "${python_major}" ] || [ -z "${python_minor}" ]; then
+            echo "Expected at least major.minor in .python-version"
+            exit 1
+          fi
+          python_abi_tag="${python_major}${python_minor}"
 
           case "${{ matrix.platform }}" in
             ubuntu-latest-large)
