@@ -63,17 +63,49 @@ jobs:
         if: runner.os == 'macOS' && github.event_name == 'push' && github.ref_type == 'tag'
         run: sed -i '' 's/^version = ".*"/version = "'"$(echo ${{ github.event.ref }} | sed -E 's/.*v([[:digit:]]+(\.[[:digit:]]+)+).*/\1/')"'"/' Cargo.toml
 
-      # - name: Publish Linux glibc 2.17 Package
-      #   if: runner.os == 'Linux'
-      #   env:
-      #     MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
-      #   run: nix develop .#py-glibc-2_17 -c maturin publish -m Cargo.toml --zig --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
-      #
+      - name: Build Linux Wheel
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          case "${{ matrix.platform }}" in
+            ubuntu-latest-large)
+              manylinux_image="quay.io/pypa/manylinux2014_x86_64"
+              ;;
+            ubuntu-aarch64)
+              manylinux_image="quay.io/pypa/manylinux2014_aarch64"
+              ;;
+            *)
+              echo "Unsupported Linux runner: ${{ matrix.platform }}"
+              exit 1
+              ;;
+          esac
+
+          docker run --rm \
+            -v "${PWD}:/io" \
+            -w /io \
+            "${manylinux_image}" \
+            /bin/bash -lc '
+              set -euo pipefail
+
+              yum install -y curl
+              curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+              source "$HOME/.cargo/env"
+              /opt/python/cp311-cp311/bin/python -m pip install --upgrade pip maturin
+              /opt/python/cp311-cp311/bin/maturin build \
+                --manifest-path Cargo.toml \
+                --release \
+                --interpreter /opt/python/cp311-cp311/bin/python \
+                --compatibility manylinux2014 \
+                --out dist
+            '
+
       - name: Publish Linux Package
         if: runner.os == 'Linux'
         env:
           MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
-        run: nix develop -c maturin publish --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner"
+        run: |
+          python3 -m pip install --user --upgrade maturin
+          python3 -m maturin upload --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner" dist/*.whl
 
       - name: Publish Windows Package
         if: runner.os == 'Windows'
