@@ -44,7 +44,9 @@ class AssetType(Enum):
     DOCUMENT = "Document"
     MEDIA = "Media"
     MODEL = "Model"
+    PROMPT = "Prompt"
     SKILL = "Skill"
+    SYSTEM_PROMPT = "System_Prompt"
     TOKEN = "Token"
     TOOL = "Tool"
 
