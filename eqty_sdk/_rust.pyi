@@ -202,36 +202,43 @@ class Signer:
     def __init__(self, name: str, did_key: str) -> None: ...
     @staticmethod
     def new(
-        name: Optional[str | SIGNER_ALGORITHMS] = None,
+        name: Optional[str] = None,
         algorithm: Optional[SIGNER_ALGORITHMS] = None,
-        _load_if_exists: bool = False,
+        _load_if_exists: Optional[bool] = None,
     ) -> Signer: ...
     @staticmethod
     def vcomp_notary(
         url: Optional[str] = None,
         name: Optional[str] = None,
-        _load_if_exists: bool = False,
-    ) -> Signer: ...
+        _load_if_exists: Optional[bool] = None,
+    ) -> Signer:
+        """Creates a VComp notary signer and persists it to disk.  If `name` is provided, the signer is stored under that name. When `_load_if_exists=True`, an existing signer with the same name is loaded instead of creating a new remote signer configuration."""
+        ...
+
     @staticmethod
     def auth_service(
-        url: str,
-        name: Optional[str] = None,
-        _load_if_exists: bool = False,
-    ) -> Signer: ...
+        url: str, name: Optional[str] = None, _load_if_exists: Optional[bool] = None
+    ) -> Signer:
+        """Creates an Auth Service signer and persists it to disk.  Requires the `EQTY_API_KEY` environment variable to be set. If `name` is provided, the signer is stored under that name. When `_load_if_exists=True`, an existing signer with the same name is loaded instead of creating a new remote signer configuration."""
+        ...
+
     @staticmethod
     def yubihsm2(
         auth_key_id: int,
         signing_key_id: int,
         password: str,
         name: Optional[str] = None,
-        _load_if_exists: bool = False,
-    ) -> Signer: ...
+        _load_if_exists: Optional[bool] = None,
+    ) -> Signer:
+        """Creates a YubiHSM2-backed signer and persists it to disk.  If `name` is provided, the signer is stored under that name. When `_load_if_exists=True`, an existing signer with the same name is loaded instead of creating a new hardware-backed signer configuration."""
+        ...
+
     @staticmethod
     def from_private_key(
         algorithm: SIGNER_ALGORITHMS,
         private_key: str,
         name: Optional[str] = None,
-        _load_if_exists: bool = False,
+        _load_if_exists: Optional[bool] = None,
     ) -> Signer: ...
 
 class UUID:
