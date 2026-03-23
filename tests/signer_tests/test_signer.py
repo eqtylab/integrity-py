@@ -38,6 +38,10 @@ class SignerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             Signer.new(name)
 
+    def test_signer_new_load_if_exists_requires_name(self):
+        with self.assertRaises(ValueError):
+            Signer.new(_load_if_exists=True)
+
     def test_signer_from_private_key(self):
         signer = Signer.from_private_key(
             algorithm=SIGNER_ALGORITHMS.ED25519,
@@ -62,6 +66,14 @@ class SignerTests(unittest.TestCase):
 
         self.assertEqual(loaded_signer.name, name)
         self.assertEqual(loaded_signer.did_key, signer.did_key)
+
+    def test_signer_from_private_key_load_if_exists_requires_name(self):
+        with self.assertRaises(ValueError):
+            Signer.from_private_key(
+                algorithm=SIGNER_ALGORITHMS.ED25519,
+                private_key="eHb22WNFvUXihogn8fubQjW7hHEqwY3fEKt745V4xXg=",
+                _load_if_exists=True,
+            )
 
     def test_set_active_signer_by_instance_and_name(self):
         signer = Signer.new(SIGNER_ALGORITHMS.ED25519)

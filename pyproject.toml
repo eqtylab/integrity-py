@@ -41,12 +41,12 @@ mkdocstrings = { extras = ["python"], version = "^0.28.2" }
 
 [[tool.poetry.source]]
 name = "eqty"
-url = "http://eqty-pypi.westus2.cloudapp.azure.com/simple/"
+url = "https://pypi.eqtylab.io/simple/"
 priority = "explicit"
 
 [[tool.poetry.source]]
 name = "eqty-publish"
-url = "http://eqty-pypi.westus2.cloudapp.azure.com/"
+url = "https://pypi.eqtylab.io/"
 priority = "explicit"
 
 [build-system]

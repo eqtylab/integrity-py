@@ -202,22 +202,36 @@ class Signer:
     def __init__(self, name: str, did_key: str) -> None: ...
     @staticmethod
     def new(
-        name: Optional[Any] = None,
+        name: Optional[str | SIGNER_ALGORITHMS] = None,
         algorithm: Optional[SIGNER_ALGORITHMS] = None,
-        _load_if_exists: Optional[bool] = None,
+        _load_if_exists: bool = False,
     ) -> Signer: ...
     @staticmethod
-    def vcomp_notary(url: Optional[str] = None) -> Signer: ...
+    def vcomp_notary(
+        url: Optional[str] = None,
+        name: Optional[str] = None,
+        _load_if_exists: bool = False,
+    ) -> Signer: ...
     @staticmethod
-    def auth_service(url: str) -> Signer: ...
+    def auth_service(
+        url: str,
+        name: Optional[str] = None,
+        _load_if_exists: bool = False,
+    ) -> Signer: ...
     @staticmethod
-    def yubihsm2(auth_key_id: int, signing_key_id: int, password: str) -> Signer: ...
+    def yubihsm2(
+        auth_key_id: int,
+        signing_key_id: int,
+        password: str,
+        name: Optional[str] = None,
+        _load_if_exists: bool = False,
+    ) -> Signer: ...
     @staticmethod
     def from_private_key(
         algorithm: SIGNER_ALGORITHMS,
         private_key: str,
         name: Optional[str] = None,
-        _load_if_exists: Optional[bool] = None,
+        _load_if_exists: bool = False,
     ) -> Signer: ...
 
 class UUID:
