@@ -11,7 +11,9 @@ from .dataset import Dataset
 from .document import Document
 from .media import Media
 from .model import Model
+from .prompt import Prompt
 from .skill import Skill
+from .system_prompt import SystemPrompt
 from .token import Token
 from .tool import Tool
 
@@ -31,7 +33,9 @@ __all__ = [
     "Document",
     "Media",
     "Model",
+    "Prompt",
     "Skill",
+    "SystemPrompt",
     "Token",
     "Tool",
     "serialize_for_hashing",

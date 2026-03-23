@@ -13,6 +13,8 @@ from eqty_sdk.asset import (
     Document,
     Media,
     Model,
+    Prompt,
+    SystemPrompt,
     Token,
 )
 from tests import setup_sdk
@@ -58,6 +60,12 @@ class AssetTypes(unittest.TestCase):
         asset = Model.from_object(test_obj)
         self.assertEqual(asset.asset_type, "Model", "Model asset_type mismatch")
 
+        asset = Prompt.from_object(test_obj)
+        self.assertEqual(asset.asset_type, "Prompt", "Prompt asset_type mismatch")
+
+        asset = SystemPrompt.from_object(test_obj)
+        self.assertEqual(asset.asset_type, "System_Prompt", "SystemPrompt asset_type mismatch")
+
         asset = Token.from_object(test_obj)
         self.assertEqual(asset.asset_type, "Token", "Token asset_type mismatch")
 
@@ -94,6 +102,12 @@ class AssetTypes(unittest.TestCase):
         asset = Model.from_path(test_obj)
         self.assertEqual(asset.asset_type, "Model", "Model asset_type mismatch")
 
+        asset = Prompt.from_path(test_obj)
+        self.assertEqual(asset.asset_type, "Prompt", "Prompt asset_type mismatch")
+
+        asset = SystemPrompt.from_path(test_obj)
+        self.assertEqual(asset.asset_type, "System_Prompt", "SystemPrompt asset_type mismatch")
+
         asset = Token.from_path(test_obj)
         self.assertEqual(asset.asset_type, "Token", "Token asset_type mismatch")
 
@@ -129,6 +143,12 @@ class AssetTypes(unittest.TestCase):
 
         asset = Model.from_cid(test_obj)
         self.assertEqual(asset.asset_type, "Model", "Model asset_type mismatch")
+
+        asset = Prompt.from_cid(test_obj)
+        self.assertEqual(asset.asset_type, "Prompt", "Prompt asset_type mismatch")
+
+        asset = SystemPrompt.from_cid(test_obj)
+        self.assertEqual(asset.asset_type, "System_Prompt", "SystemPrompt asset_type mismatch")
 
         asset = Token.from_cid(test_obj)
         self.assertEqual(asset.asset_type, "Token", "Token asset_type mismatch")
