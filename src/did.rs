@@ -137,11 +137,11 @@ fn build_did(
 }
 
 fn is_vcomp_signer(name: &str) -> Result<bool> {
-    log::trace!("Checking if {name} is a known vcomp signer");
+    log::debug!("Checking if {name} is a known vcomp signer");
     let cfg = cfg_blocking()?;
     let signer_file = cfg.app_dir.join(SIGNER_DIR).join(name);
     if !signer_file.exists() {
-        log::trace!("{name} is not vcomp");
+        log::debug!("{name} is not vcomp");
         return Ok(false);
     }
     let signer = utils_load_signer(signer_file)?;

@@ -122,17 +122,17 @@ impl Signer {
 
         let signer = match algorithm.unwrap_or(SignerAlgorithms::ED25519).into() {
             KeyType::SECP256K1 => {
-                log::trace!("Generating a new secp256k1 signer");
+                log::debug!("Generating a new secp256k1 signer");
                 let signer = Secp256k1Signer::create()?;
                 SignerType::SECP256K1(signer)
             }
             KeyType::SECP256R1 => {
-                log::trace!("Generating a new secp256r1 signer");
+                log::debug!("Generating a new secp256r1 signer");
                 let signer = P256Signer::create()?;
                 SignerType::P256(signer)
             }
             KeyType::ED25519 => {
-                log::trace!("Generating a new ed25519 signer");
+                log::debug!("Generating a new ed25519 signer");
                 let signer = Ed25519Signer::create()?;
                 SignerType::ED25519(signer)
             }
@@ -226,7 +226,7 @@ impl Signer {
             return Py::new(py, existing);
         }
 
-        log::trace!("Importing a YubiHSM2 ed25519 signer");
+        log::debug!("Importing a YubiHSM2 ed25519 signer");
 
         let yubi_signer = YubiHsmSigner::create(auth_key_id, signing_key_id, password)?;
 
@@ -265,17 +265,17 @@ impl Signer {
 
         let signer = match key_type {
             KeyType::SECP256R1 => {
-                log::trace!("Creating a P256 signer from a private key.");
+                log::debug!("Creating a P256 signer from a private key.");
                 let signer = P256Signer::import(&secret_key)?;
                 SignerType::P256(signer)
             }
             KeyType::SECP256K1 => {
-                log::trace!("Creating a SECP256K1 signer from a private key.");
+                log::debug!("Creating a SECP256K1 signer from a private key.");
                 let signer = Secp256k1Signer::import(&secret_key)?;
                 SignerType::SECP256K1(signer)
             }
             KeyType::ED25519 => {
-                log::trace!("Creating a ED25519 signer from a private key.");
+                log::debug!("Creating a ED25519 signer from a private key.");
                 let signer = Ed25519Signer::import(&secret_key)?;
                 SignerType::ED25519(signer)
             }
