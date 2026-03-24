@@ -42,14 +42,17 @@ pub fn add_model_signing_statement(
             anyhow!("No active signer available to sign the model signing intoto statement")
         })?);
 
-        let dsse = sign_intoto_attestation(intoto_statement, signer.clone()).await?;
+        let dsse =
+            sign_intoto_attestation(intoto_statement, Arc::new(signer.signer.clone())).await?;
         let dsse = serde_json::from_str::<Value>(&dsse).context("Failed to parse DSSE")?;
 
-        let sigstore_bundle = create_model_signing_sigstore_bundle(dsse, &signer.get_did_doc().id)?;
+        let sigstore_bundle =
+            create_model_signing_sigstore_bundle(dsse, &signer.signer.get_did_doc().id)?;
 
+        log::debug!("Creating SigStoreBundle for model signing");
         let sigstore_bundle_statement = {
             let subject = format!("urn:cid:{collection_cid}");
-            let registered_by = signer.get_did_doc().id;
+            let registered_by = signer.signer.get_did_doc().id;
 
             Statement::CredentialSigstoreBundleRegistration(
                 SigstoreBundleStatement::create(

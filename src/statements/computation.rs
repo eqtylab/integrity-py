@@ -32,7 +32,7 @@ pub fn add_computation_statement(
             .ok_or_else(|| anyhow!("No active signer available"))?;
 
         // If VComp notary is being used, we fetch `operatedBy` and `executedOn`` from the signer
-        let (operated_by, executed_on) = match &signer {
+        let (operated_by, executed_on) = match &signer.signer {
             SignerType::VCompNotarySigner(signer) => {
                 let operated_by = if operated_by.is_some() {
                     operated_by
@@ -50,7 +50,7 @@ pub fn add_computation_statement(
             _ => (operated_by, executed_on),
         };
 
-        let registered_by = signer.get_did_doc().id;
+        let registered_by = signer.signer.get_did_doc().id;
         let operated_by = match operated_by {
             Some(operated_by) => operated_by,
             None => registered_by.clone(),

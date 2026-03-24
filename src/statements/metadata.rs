@@ -36,7 +36,7 @@ pub fn add_metadata_statement(
         let metadata_statement = MetadataStatement::create_from_json(
             subject,
             metadata_json.clone(),
-            signer.get_did_doc().id,
+            signer.signer.get_did_doc().id,
             timestamp.clone(),
         )
         .await?;
