@@ -706,7 +706,7 @@ impl Sqlite {
                 let statement = serde_json::to_value(statement)?;
                 let id = s.get_id();
                 let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering metadata '{id}'");
+                log::debug!("Registering metadata '{id}' to graph '{graph_id}'");
                 sqlx::query(
                     r#"
                     INSERT OR IGNORE INTO metadata_statements

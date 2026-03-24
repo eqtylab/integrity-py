@@ -175,6 +175,12 @@ fn set_store_all_blobs_inner(value: bool) -> Result<()> {
     Ok(())
 }
 
+#[derive(Clone)]
+pub struct Signer {
+    pub name: String,
+    pub signer: SignerType,
+}
+
 /// Global application config containing configuration and state.
 ///
 /// The config stores application-wide settings including storage directories,
@@ -191,7 +197,7 @@ pub struct Config {
     /// New connection to sqlite database for storing statements
     pub sql_lite: Arc<Sqlite>,
     /// Active signer only if it has been set during the session
-    pub active_signer: Option<SignerType>,
+    pub active_signer: Option<Signer>,
     /// Whether to store all blobs when computing CIDs
     pub store_all_blobs: bool,
     /// Default context used when no context is supplied.
@@ -378,7 +384,7 @@ impl Config {
         let signer = self
             .active_signer
             .ok_or_else(|| anyhow!("No active signer available"))?;
-        Ok(signer.get_did_doc().id)
+        Ok(signer.signer.get_did_doc().id)
     }
 
     /// Sets the active signer for the current config (async version).
@@ -388,8 +394,15 @@ impl Config {
     ///
     /// # Returns
     /// * `Result<()>` - Success or error if config update fails
-    pub async fn set_active_signer_async(signer: SignerType) -> Result<()> {
-        Config::update_config_async(|ctx| ctx.active_signer = Some(signer)).await
+    pub async fn set_active_signer_async(signer: SignerType, name: Option<String>) -> Result<()> {
+        let active_signer_name = name.unwrap_or_else(|| signer.get_did_doc().id.clone());
+        Config::update_config_async(|ctx| {
+            ctx.active_signer = Some(Signer {
+                name: active_signer_name,
+                signer,
+            });
+        })
+        .await
     }
 
     /// Resolves the Optional graph id, or the default graph id
@@ -482,8 +495,8 @@ pub async fn create_vc_for_statement(
         .clone()
         .ok_or_else(|| anyhow!("An active signer is not set"))?;
 
-    let registered_by = signer.get_did_doc().id.clone();
-    let vc = vc::issue_vc(&statement_id.to_string(), signer).await?;
+    let registered_by = signer.signer.get_did_doc().id.clone();
+    let vc = vc::issue_vc(&statement_id.to_string(), signer.signer).await?;
     let vc_statement =
         Statement::CredentialRegistration(VcStatement::create(vc, registered_by, timestamp).await?);
     let vc_id = vc_statement.get_id();

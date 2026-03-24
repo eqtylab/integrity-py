@@ -13,6 +13,7 @@ use integrity::{
         manifest::{generate_manifest, resolve_blobs, Manifest},
         statements::{Statement, StatementTrait},
     },
+    signer::{load_signer as utils_load_signer, signer::SignerType},
 };
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -21,7 +22,7 @@ pub use sqlite::Sqlite;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use uuid::Uuid;
 
-use crate::{integrity_service::Service, with_cfg};
+use crate::{integrity_service::Service, signer::SIGNER_DIR, with_cfg};
 
 // ============================================================================
 // Graph Context
@@ -132,19 +133,36 @@ impl Context {
     /// Exports this context's statements and blobs to a manifest JSON file.
     pub fn export(&self, py: Python, path: PathBuf) -> PyResult<()> {
         log::info!("Exporting {}", self.id);
-        with_cfg!(py, |ctx| {
+        with_cfg!(py, |cfg| {
             let graph_id = self.id;
-            let sql_client = ctx.sql_lite;
+            let sql_client = cfg.sql_lite;
 
             let statements = sql_client.retrieve_statements(&graph_id).await?;
 
-            let blob_store = Arc::new(ctx.blob_store.clone());
-            let blobs = resolve_blobs(&statements, blob_store, 8).await?;
+            let blob_store = Arc::new(cfg.blob_store.clone());
+            let mut blobs = resolve_blobs(&statements, blob_store, 8).await?;
 
             let include_context = env::var("EQTY_INCLUDE_MANIFEST_CONTEXT")
                 .map(|v| v.to_lowercase() != "false")
                 .unwrap_or(true);
             log::debug!("including manifest context: {include_context}");
+
+            if let Some(active_signer) = cfg.active_signer.as_ref() {
+                let signer_path = cfg.app_dir.join(SIGNER_DIR).join(&active_signer.name);
+                if signer_path.exists() {
+                    let signer = utils_load_signer(signer_path)?;
+                    if let SignerType::VCompNotarySigner(saved_signer) = signer {
+                        if let Some(did_blobs) = saved_signer.did_blobs {
+                            blobs.extend(
+                                did_blobs
+                                    .into_iter()
+                                    .map(|(cid, data)| (cid, BASE64.encode(data))),
+                            );
+                        }
+                    }
+                }
+            }
+
             let manifest = generate_manifest(include_context, statements, blobs).await?;
 
             let file = File::create(&path)

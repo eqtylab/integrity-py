@@ -167,6 +167,10 @@ impl Signer {
         let signer = rt.block_on(VCompNotarySigner::create(&url, None))?;
 
         let signer_type = SignerType::VCompNotarySigner(signer);
+        log::debug!(
+            "Saving VCOMP Signer with did key '{}'",
+            signer_type.get_did_doc().id
+        );
         let signer = save_signer(&signer_type, name.as_deref())?;
         Py::new(py, signer)
     }
@@ -309,7 +313,7 @@ fn set_active_signer(py: Python, signer: &Bound<'_, PyAny>) -> PyResult<()> {
         }
 
         let signer = utils_load_signer(signer_file)?;
-        Config::set_active_signer_async(signer).await?;
+        Config::set_active_signer_async(signer, Some(name.clone())).await?;
         Ok::<_, anyhow::Error>(())
     })?;
     Ok(())

@@ -19,22 +19,14 @@ pub struct DID {
     /// DID string used for registration.
     #[pyo3(get)]
     pub did: String,
-    // /// IDs of statements created for this DID.
-    // #[pyo3(get)]
-    // pub statement_ids: Vec<CID>,
 }
 
 #[pymethods]
 impl DID {
     #[new]
-    #[pyo3(signature = (did, signer=None, **kwargs))]
-    fn new(
-        py: Python,
-        did: String,
-        signer: Option<Py<Signer>>,
-        kwargs: Option<&Bound<'_, PyDict>>,
-    ) -> PyResult<Self> {
-        build_did(py, did, signer, kwargs)
+    #[pyo3(signature = (did, **kwargs))]
+    fn new(py: Python, did: String, kwargs: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
+        build_did(py, did, None, kwargs)
     }
 
     #[staticmethod]
@@ -44,8 +36,70 @@ impl DID {
         signer: Py<Signer>,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
-        let did_key = signer.bind(py).borrow().did_key.clone();
-        build_did(py, did_key, Some(signer), kwargs)
+        let did = signer.bind(py).borrow().did_key.clone();
+        log::debug!("Creating DID from signer. DID: {did}");
+        let metadata_json = if let Some(kwargs) = kwargs {
+            let json = py.import("json")?;
+            json.getattr("dumps")?
+                .call1((kwargs,))?
+                .extract::<String>()?
+        } else {
+            "{}".to_string()
+        };
+
+        let signer_name = signer.bind(py).borrow().name.clone();
+        let cfg = cfg_blocking()?;
+        let signer_file = cfg.app_dir.join(SIGNER_DIR).join(signer_name);
+        if !signer_file.exists() {
+            log::debug!("Signer not found");
+            todo!()
+            // Err::<_, anyhow::Error>(ids)
+        }
+        let signer = utils_load_signer(signer_file)?;
+        let mut statement_ids: Vec<CID> = Vec::new();
+
+        if let SignerType::VCompNotarySigner(vcomp_signer) = signer {
+            log::debug!("Creating DID from VComp signer");
+            let mut vcomp_statement_ids = with_cfg!(py, |cfg| {
+                let mut ids = Vec::new();
+                if let Some(statements) = vcomp_signer.did_statements {
+                    for value in statements.values() {
+                        let statement: Statement =
+                            serde_json::from_value(value.clone()).context("Invalid statement")?;
+                        let id = CID::new(statement.get_id());
+                        cfg.sql_lite
+                            .register_statement(&statement, &cfg.default_context.id)
+                            .await?;
+                        ids.push(id);
+                    }
+                }
+
+                if let Some(blobs) = vcomp_signer.did_blobs {
+                    for (_, data) in blobs {
+                        cfg.blob_store.put(data, 0, None).await?;
+                    }
+                }
+
+                Ok::<_, anyhow::Error>(ids)
+            })?;
+
+            statement_ids.append(&mut vcomp_statement_ids);
+        } else {
+            let mut did_ids = statements::did::add_did_statement(py, did.clone(), None, None)?;
+            statement_ids.append(&mut did_ids);
+        }
+
+        let mut metadata_ids = statements::metadata::add_metadata_statement(
+            py,
+            did.clone(),
+            metadata_json,
+            None,
+            None,
+        )?;
+        statement_ids.append(&mut metadata_ids);
+        Ok(DID { did })
+
+        // build_did(py, did, Some(signer), kwargs)
     }
 
     #[staticmethod]
