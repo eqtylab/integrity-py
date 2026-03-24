@@ -194,11 +194,9 @@ impl Sqlite {
                 registered_by TEXT NOT NULL,
                 subject TEXT
             );
-
-            CREATE INDEX IF NOT EXISTS idx_sigstore_statements_subject
-            ON sigstore_statements(subject);
         "#;
         sqlx::query(sigstore_table).execute(&self.pool).await?;
+        self.migrate_sigstore_statements_subject_column().await?;
 
         let credential_table = r#"
             CREATE TABLE IF NOT EXISTS credential_statements (
@@ -240,6 +238,34 @@ impl Sqlite {
             );
         "#;
         sqlx::query(governance_table).execute(&self.pool).await?;
+
+        Ok(())
+    }
+
+    async fn migrate_sigstore_statements_subject_column(&self) -> Result<()> {
+        let columns = sqlx::query("PRAGMA table_info(sigstore_statements)")
+            .fetch_all(&self.pool)
+            .await?;
+        let has_subject_column = columns.iter().any(|row| {
+            row.try_get::<String, _>("name")
+                .map(|name| name == "subject")
+                .unwrap_or(false)
+        });
+
+        if !has_subject_column {
+            sqlx::query("ALTER TABLE sigstore_statements ADD COLUMN subject TEXT")
+                .execute(&self.pool)
+                .await?;
+        }
+
+        sqlx::query(
+            r#"
+            CREATE INDEX IF NOT EXISTS idx_sigstore_statements_subject
+            ON sigstore_statements(subject)
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }

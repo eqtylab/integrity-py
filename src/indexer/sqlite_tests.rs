@@ -240,6 +240,44 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_init_migrates_legacy_sigstore_table() -> Result<()> {
+        let db = Sqlite::new("sqlite::memory:").await?;
+        sqlx::query(
+            r#"
+            CREATE TABLE sigstore_statements (
+                id TEXT PRIMARY KEY,
+                statement TEXT NOT NULL,
+                registered_by TEXT NOT NULL
+            )
+            "#,
+        )
+        .execute(db.pool())
+        .await?;
+
+        db.init().await?;
+
+        let rows = sqlx::query("PRAGMA table_info(sigstore_statements)")
+            .fetch_all(db.pool())
+            .await?;
+        let columns: Vec<String> = rows
+            .into_iter()
+            .map(|row| row.get::<String, _>("name"))
+            .collect();
+        assert!(columns.contains(&"subject".to_string()));
+
+        let indexes = sqlx::query("PRAGMA index_list(sigstore_statements)")
+            .fetch_all(db.pool())
+            .await?;
+        let index_names: Vec<String> = indexes
+            .into_iter()
+            .map(|row| row.get::<String, _>("name"))
+            .collect();
+        assert!(index_names.contains(&"idx_sigstore_statements_subject".to_string()));
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_retrieve_statements_includes_sigstore_bundle_by_subject_reference() -> Result<()>
     {
         let db = setup_db().await?;
