@@ -179,7 +179,7 @@ fn set_store_all_blobs_inner(value: bool) -> Result<()> {
 ///
 /// Tracks both the persisted signer file name and the loaded signer payload.
 #[derive(Clone)]
-pub struct Signer {
+pub struct ActiveSigner {
     /// On-disk file name used to load this signer from the `signers/` directory.
     pub name: String,
     /// Loaded signer implementation used for signing and DID resolution.
@@ -202,7 +202,7 @@ pub struct Config {
     /// New connection to sqlite database for storing statements
     pub sql_lite: Arc<Sqlite>,
     /// Active signer only if it has been set during the session
-    pub active_signer: Option<Signer>,
+    pub active_signer: Option<ActiveSigner>,
     /// Whether to store all blobs when computing CIDs
     pub store_all_blobs: bool,
     /// Default context used when no context is supplied.
@@ -402,7 +402,7 @@ impl Config {
     pub async fn set_active_signer_async(signer: SignerType, name: Option<String>) -> Result<()> {
         let active_signer_name = name.unwrap_or_else(|| signer.get_did_doc().id.clone());
         Config::update_config_async(|ctx| {
-            ctx.active_signer = Some(Signer {
+            ctx.active_signer = Some(ActiveSigner {
                 name: active_signer_name,
                 signer,
             });
