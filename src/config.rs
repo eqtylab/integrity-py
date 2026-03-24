@@ -175,9 +175,14 @@ fn set_store_all_blobs_inner(value: bool) -> Result<()> {
     Ok(())
 }
 
+/// Active signer metadata stored in the in-memory config.
+///
+/// Tracks both the persisted signer file name and the loaded signer payload.
 #[derive(Clone)]
 pub struct Signer {
+    /// On-disk file name used to load this signer from the `signers/` directory.
     pub name: String,
+    /// Loaded signer implementation used for signing and DID resolution.
     pub signer: SignerType,
 }
 
