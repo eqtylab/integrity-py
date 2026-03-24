@@ -6,11 +6,13 @@ mod tests {
     use integrity::lineage::models::{
         manifest::Manifest,
         statements::{
-            AssociationStatement, AssociationType, DataStatement, Statement, StatementTrait,
+            AssociationStatement, AssociationType, ComputationStatement, DataStatement, Statement,
+            StatementTrait,
         },
     };
     use pyo3::{PyErr, Python};
     use pyo3_async_runtimes::tokio::get_runtime;
+    use serde_json::json;
     use sqlx::Row;
     use tempfile::tempdir;
     use uuid::Uuid;
@@ -216,6 +218,85 @@ mod tests {
 
         db.purge().await?;
         assert_eq!(graph_count(&db).await?, 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_sigstore_table_has_subject_column() -> Result<()> {
+        let db = setup_db().await?;
+
+        let rows = sqlx::query("PRAGMA table_info(sigstore_statements)")
+            .fetch_all(db.pool())
+            .await?;
+        let columns: Vec<String> = rows
+            .into_iter()
+            .map(|row| row.get::<String, _>("name"))
+            .collect();
+
+        assert!(columns.contains(&"subject".to_string()));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_retrieve_statements_includes_sigstore_bundle_by_subject_reference() -> Result<()>
+    {
+        let db = setup_db().await?;
+        let graph = Context {
+            id: Uuid::new_v4(),
+            name: "sigstore-graph".to_string(),
+            parent: None,
+        };
+        db.create_graph(&graph).await?;
+
+        let subject = "urn:cid:bagaachra62qpuplhnpw24ff33lsehggwjmh5am3eibgovtrkrwhn6nmnjkeq";
+        let sigstore_id = "urn:cid:bagb6qaq6edu6bmyvf5usnk7s3wrscjzvqjio5m2aygz3gwdqo2bxshfjbzs5s";
+        let sigstore_statement = json!({
+            "@context": "urn:cid:bafkr4ic7ydwk3rtoltyzx4zn3vvu3r7hpzxtmbzmnksotx7k5nbnwclf6m",
+            "@id": sigstore_id,
+            "@type": "CredentialRegistration",
+            "registeredBy": "did:key:tester",
+            "sigstoreBundle": "e30=",
+            "subject": subject,
+            "timestamp": "2026-03-24T19:48:02Z"
+        });
+
+        sqlx::query(
+            r#"
+            INSERT INTO sigstore_statements (id, statement, registered_by, subject)
+            VALUES (?1, ?2, ?3, ?4)
+            "#,
+        )
+        .bind(sigstore_id)
+        .bind(sigstore_statement.to_string())
+        .bind("did:key:tester")
+        .bind(subject)
+        .execute(db.pool())
+        .await?;
+
+        let computation_statement = Statement::ComputationRegistration(
+            ComputationStatement::create(
+                None,
+                vec![subject.to_string()],
+                vec![
+                    "urn:cid:bafkr4ien5sae7ddq6tys5ybcm2g7lhzj6ciyq6f4z6nsd7iqbmdy6s7h3u"
+                        .to_string(),
+                ],
+                "did:key:tester".to_string(),
+                None,
+                "did:key:tester".to_string(),
+                None,
+            )
+            .await?,
+        );
+        db.register_statement(&computation_statement, &graph.id)
+            .await?;
+
+        let statements = db.retrieve_statements(&graph.id).await?;
+        let statement_ids: Vec<String> = statements.into_iter().map(|s| s.get_id()).collect();
+
+        assert!(statement_ids.contains(&sigstore_id.to_string()));
 
         Ok(())
     }

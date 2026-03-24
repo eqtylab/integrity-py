@@ -49,6 +49,7 @@ pub fn add_model_signing_statement(
         let sigstore_bundle =
             create_model_signing_sigstore_bundle(dsse, &signer.signer.get_did_doc().id)?;
 
+        log::debug!("Creating SigStoreBundle for model signing");
         let sigstore_bundle_statement = {
             let subject = format!("urn:cid:{collection_cid}");
             let registered_by = signer.signer.get_did_doc().id;
