@@ -20,9 +20,9 @@ pub fn add_vc_statement(
         let signer = ctx
             .active_signer
             .ok_or_else(|| anyhow!("No active signer available"))?;
-        let registered_by = signer.get_did_doc().id.clone();
+        let registered_by = signer.signer.get_did_doc().id.clone();
 
-        let vc = vc::issue_vc(&subject, signer).await?;
+        let vc = vc::issue_vc(&subject, signer.signer).await?;
 
         let statement = Statement::CredentialRegistration(
             VcStatement::create(vc, registered_by, timestamp).await?,
@@ -192,12 +192,17 @@ mod tests {
             let signer = Ed25519Signer::create().unwrap();
             let signer_type = SignerType::ED25519(signer);
             let expected_did = signer_type.get_did_doc().id.clone();
-            Config::set_active_signer_async(signer_type).await.unwrap();
+            Config::set_active_signer_async(signer_type, None)
+                .await
+                .unwrap();
 
             // Verify signer was set
             let ctx = cfg_async().await;
             assert!(ctx.active_signer.is_some());
-            assert_eq!(ctx.active_signer.unwrap().get_did_doc().id, expected_did);
+            assert_eq!(
+                ctx.active_signer.unwrap().signer.get_did_doc().id,
+                expected_did
+            );
         });
     }
 }

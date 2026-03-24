@@ -167,7 +167,7 @@ fn create_entity_statements(
         let metadata_statement = MetadataStatement::create_from_json(
             entity_statement_id.to_string(),
             metadata_value,
-            signer.get_did_doc().id,
+            signer.signer.get_did_doc().id,
             timestamp,
         )
         .await?;
