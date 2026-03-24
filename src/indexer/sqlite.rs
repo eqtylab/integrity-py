@@ -191,10 +191,12 @@ impl Sqlite {
             CREATE TABLE IF NOT EXISTS sigstore_statements (
                 id TEXT PRIMARY KEY,
                 statement TEXT NOT NULL,
-                registered_by TEXT NOT NULL
+                registered_by TEXT NOT NULL,
+                subject TEXT
             );
         "#;
         sqlx::query(sigstore_table).execute(&self.pool).await?;
+        self.migrate_sigstore_statements_subject_column().await?;
 
         let credential_table = r#"
             CREATE TABLE IF NOT EXISTS credential_statements (
@@ -236,6 +238,34 @@ impl Sqlite {
             );
         "#;
         sqlx::query(governance_table).execute(&self.pool).await?;
+
+        Ok(())
+    }
+
+    async fn migrate_sigstore_statements_subject_column(&self) -> Result<()> {
+        let columns = sqlx::query("PRAGMA table_info(sigstore_statements)")
+            .fetch_all(&self.pool)
+            .await?;
+        let has_subject_column = columns.iter().any(|row| {
+            row.try_get::<String, _>("name")
+                .map(|name| name == "subject")
+                .unwrap_or(false)
+        });
+
+        if !has_subject_column {
+            sqlx::query("ALTER TABLE sigstore_statements ADD COLUMN subject TEXT")
+                .execute(&self.pool)
+                .await?;
+        }
+
+        sqlx::query(
+            r#"
+            CREATE INDEX IF NOT EXISTS idx_sigstore_statements_subject
+            ON sigstore_statements(subject)
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }
@@ -863,12 +893,13 @@ impl Sqlite {
                 sqlx::query(
                     r#"
                     INSERT OR IGNORE INTO sigstore_statements
-                    (id, statement, registered_by) VALUES (?1, ?2, ?3)
+                    (id, statement, registered_by, subject) VALUES (?1, ?2, ?3, ?4)
                 "#,
                 )
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
+                .bind(&s.subject)
                 .execute(&self.pool)
                 .await?;
 
@@ -969,10 +1000,12 @@ impl Sqlite {
         // for ALL the previously fetched statements regardless of project
         let mut dids = HashSet::new();
         let mut credential_subjects = HashSet::new();
+        let mut referenced_cids = HashSet::new();
 
         for stmt in statements.values() {
             dids.insert(stmt.get_registered_by().to_owned());
             credential_subjects.insert(stmt.get_id().to_owned());
+            referenced_cids.extend(stmt.referenced_cids());
         }
 
         log::debug!("Getting credential statements for subjects: {credential_subjects:?}");
@@ -996,6 +1029,30 @@ impl Sqlite {
 
         let vc_statements = rows_to_statements(vc_rows)?;
         statements.extend(vc_statements);
+
+        if !referenced_cids.is_empty() {
+            log::debug!("Getting sigstore statements for subjects: {referenced_cids:?}");
+            let placeholders = vec!["?"; referenced_cids.len()].join(", ");
+            let sigstore_query = format!(
+                r#"
+                SELECT statement, NULL as metadata, NULL as vc, NULL as did
+                FROM sigstore_statements
+                WHERE subject IN ({})
+            "#,
+                placeholders
+            );
+
+            let mut sql_query = sqlx::query(&sigstore_query);
+            for referenced_cid in &referenced_cids {
+                sql_query = sql_query.bind(referenced_cid);
+            }
+
+            let sigstore_rows = sql_query.fetch_all(&self.pool).await?;
+            log::debug!("Found '{}' sigstore statements", sigstore_rows.len());
+
+            let sigstore_statements = rows_to_statements(sigstore_rows)?;
+            statements.extend(sigstore_statements);
+        }
 
         if !dids.is_empty() {
             log::debug!("Getting DID statements for subjects: {dids:?}");
