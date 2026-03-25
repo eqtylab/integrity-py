@@ -106,8 +106,6 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Signer.auth_service">auth_service</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Signer.yubihsm2">yubihsm2</a>
-    </li>
     <li class="toctree-l2"><a class="reference internal" href="#signer-algorithms">Signer Algorithms</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.SIGNER_ALGORITHMS.ED25519">ED25519</a>
@@ -276,36 +274,6 @@
     <div class="doc doc-contents ">
 
         <p>Creates an Auth Service signer and persists it to disk.  Requires the <code>EQTY_API_KEY</code> environment variable to be set. If <code>name</code> is provided, the signer is stored under that name. When <code>_load_if_exists=True</code>, an existing signer with the same name is loaded instead of creating a new remote signer configuration.</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="eqty_sdk._rust.Signer.yubihsm2" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">yubihsm2</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
-  </span>
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">yubihsm2</span><span class="p">(</span>
-    <span class="n">auth_key_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">signing_key_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">_load_if_exists</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Signer</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Creates a YubiHSM2-backed signer and persists it to disk.  If <code>name</code> is provided, the signer is stored under that name. When <code>_load_if_exists=True</code>, an existing signer with the same name is loaded instead of creating a new hardware-backed signer configuration.</p>
 
 
     </div>
