@@ -11,7 +11,7 @@ name = "eqty_sdk"
 crate-type = ["cdylib"]
 
 [dependencies]
-integrity = {git = "https://github.com/eqtylab/integrity", tag = "v0.0.1", default-features = false, features = ["cid", "jsonld", "vc", "dsse", "lineage", "signer-all", "blob-local", "intoto-attestation", "sigstore", "model-signing" ]}
+  integrity = { git = "https://github.com/eqtylab/integrity", tag = "v0.0.1", default-features = false, features = ["cid", "jsonld", "vc", "dsse", "lineage","signer-ed25519", "signer-p256", "signer-secp256k1", "signer-auth-service", "signer-vcomp-notary", "blob-local", "intoto-attestation", "sigstore", "model-signing"]}
 
 anyhow = { version = "1", features = ["backtrace"] }
 async-trait = "0.1"

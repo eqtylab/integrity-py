@@ -5,7 +5,6 @@ use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
 use integrity::signer::{
     load_signer as utils_load_signer, save_signer as utils_save_signer, AuthServiceSigner,
     Ed25519Signer, KeyType, P256Signer, Secp256k1Signer, SignerType, VCompNotarySigner,
-    YubiHsmSigner,
 };
 use pyo3::{
     exceptions::{PyRuntimeError, PyTypeError, PyValueError},
@@ -207,34 +206,6 @@ impl Signer {
         let signer = rt.block_on(AuthServiceSigner::create(api_key, url))?;
 
         let signer_type = SignerType::AuthService(signer);
-        let signer = save_signer(&signer_type, name.as_deref())?;
-        Py::new(py, signer)
-    }
-
-    /// Creates a YubiHSM2-backed signer and persists it to disk.
-    ///
-    /// If `name` is provided, the signer is stored under that name. When
-    /// `_load_if_exists=True`, an existing signer with the same name is loaded
-    /// instead of creating a new hardware-backed signer configuration.
-    #[staticmethod]
-    #[pyo3(signature = (auth_key_id, signing_key_id, password, name=None, _load_if_exists=false))]
-    fn yubihsm2(
-        py: Python,
-        auth_key_id: u16,
-        signing_key_id: u16,
-        password: String,
-        name: Option<String>,
-        _load_if_exists: bool,
-    ) -> PyResult<Py<Signer>> {
-        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
-            return Py::new(py, existing);
-        }
-
-        log::debug!("Importing a YubiHSM2 ed25519 signer");
-
-        let yubi_signer = YubiHsmSigner::create(auth_key_id, signing_key_id, password)?;
-
-        let signer_type = SignerType::YubiHsm2Signer(yubi_signer);
         let signer = save_signer(&signer_type, name.as_deref())?;
         Py::new(py, signer)
     }
