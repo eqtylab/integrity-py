@@ -131,13 +131,19 @@ jobs:
           path: dist/*.whl
           retention-days: 1
 
+      - name: Build source dist
+        if: matrix.platform == 'ubuntu-latest-large'
+        run: |
+          python3 -m pip install --user --upgrade maturin
+          python3 -m maturin sdist --manifest-path Cargo.toml --out dist
+
       - name: Publish Linux Package
         if: runner.os == 'Linux'
         env:
           MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
         run: |
           python3 -m pip install --user --upgrade maturin
-          python3 -m maturin upload --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner" dist/*.whl
+          python3 -m maturin upload --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner" dist/*
 
       - name: Publish Windows Package
         if: runner.os == 'Windows'
