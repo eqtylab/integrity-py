@@ -100,24 +100,25 @@ Run `just` to see all available commands.
 
 ```present just --list
 Available recipes:
-    build           # Build the Rust/Python wheel using maturin
-    build-docs      # Builds HTML docs for the sdk
-    ci              # Run full CI pipeline: format check, lint, type check, build, and test
-    fix             # Auto-fix Rust clippy warnings
-    fmt             # Auto-format code (Rust + Python)
-    fmt-check       # Check code formatting without changes (Rust + Python)
-    generate-stubs  # Generate type stubs from Rust code
-    init            # Set up git hooks for prek
-    install         # Install all Python dependencies via poetry
-    install-package # Install the local build of the wheel into the venv
-    lint            # Run linters and auto-fix issues (Rust clippy + Python ruff)
-    lint-check      # Run linters without auto-fixing (Rust clippy + Python ruff)
-    lint-docs       # Check that all public items have documentation
-    readme-check    # Check if README.md is up to date with auto-generated content
-    readme-update   # Update README.md with auto-generated content (Justfile commands, etc.)
-    test-py         # Run Python unit tests
-    test-rs         # Run rust unit tests
-    type-check      # Run mypy type checking on the Python SDK
+    build                  # Build the Rust/Python wheel using maturin
+    build-docs             # Builds HTML docs for the sdk
+    ci                     # Run full CI pipeline: format check, lint, type check, build, and test
+    fix                    # Auto-fix Rust clippy warnings
+    fmt                    # Auto-format code (Rust + Python)
+    fmt-check              # Check code formatting without changes (Rust + Python)
+    generate-stubs         # Generate type stubs from Rust code
+    init                   # Set up git hooks for prek
+    install                # Install all Python dependencies via poetry
+    install-package        # Install the local build of the wheel into the venv
+    lint                   # Run linters and auto-fix issues (Rust clippy + Python ruff)
+    lint-check             # Run linters without auto-fixing (Rust clippy + Python ruff)
+    lint-docs              # Check that all public items have documentation
+    readme-check           # Check if README.md is up to date with auto-generated content
+    readme-update          # Update README.md with auto-generated content (Justfile commands, etc.)
+    test-example-manifests # Run example scripts and compare normalized manifests to expected outputs
+    test-py                # Run Python unit tests
+    test-rs                # Run rust unit tests
+    type-check             # Run mypy type checking on the Python SDK
 ```
 
 ### Project Structure
@@ -142,5 +143,5 @@ Available recipes:
 ├── integration-tests/     # Integration test assets
 ├── examples/              # Usage examples
 ├── scripts/               # Development utilities
-└── docs/                  # Sphinx documentation
+└── docs/                  # MkDocs documentation
 ```

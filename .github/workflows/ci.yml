@@ -43,30 +43,116 @@ jobs:
         uses: eqtylab-actions/rust-cache@v2
 
       - name: fmt-check
+        id: fmt_check
+        continue-on-error: true
         run: nix develop . -c just fmt-check
 
       - name: readme-check
+        id: readme_check
+        continue-on-error: true
         run: nix develop . -c just readme-check
 
       - name: lint-docs
+        id: lint_docs
+        continue-on-error: true
         run: nix develop . -c just lint-docs
 
       - name: lint-check
+        id: lint_check
+        continue-on-error: true
         run: nix develop . -c just lint-check
 
       - name: install
+        id: install
+        continue-on-error: true
         run: nix develop . -c just install
 
       - name: type-check
+        id: type_check
+        continue-on-error: true
         run: nix develop . -c just type-check
 
       - name: build
+        id: build
+        continue-on-error: true
         run: nix develop . -c just build
 
       - name: test-rs
+        id: test_rs
+        continue-on-error: true
         run: nix develop . -c just test-rs
 
       - name: test-py
+        id: test_py
+        continue-on-error: true
         run: |
           nix develop . -c just install-package
           nix develop . -c just test-py
+
+      # - name: test-example-manifests
+      #   id: test_example_manifests
+      #   continue-on-error: true
+      #   run: |
+      #     nix develop . -c just install-package
+      #     nix develop . -c just test-example-manifests
+
+      - name: CI summary
+        if: always()
+        run: |
+          result_icon() {
+            case "$1" in
+              success) echo "✅ PASS" ;;
+              failure) echo "❌ FAIL" ;;
+              cancelled) echo "⚪ CANCELLED" ;;
+              skipped) echo "⚪ SKIPPED" ;;
+              *) echo "⚠️ $1" ;;
+            esac
+          }
+
+          fmt_result="$(result_icon "${{ steps.fmt_check.outcome }}")"
+          readme_result="$(result_icon "${{ steps.readme_check.outcome }}")"
+          lint_docs_result="$(result_icon "${{ steps.lint_docs.outcome }}")"
+          lint_check_result="$(result_icon "${{ steps.lint_check.outcome }}")"
+          install_result="$(result_icon "${{ steps.install.outcome }}")"
+          type_check_result="$(result_icon "${{ steps.type_check.outcome }}")"
+          build_result="$(result_icon "${{ steps.build.outcome }}")"
+          test_rs_result="$(result_icon "${{ steps.test_rs.outcome }}")"
+          test_py_result="$(result_icon "${{ steps.test_py.outcome }}")"
+          # test_examples_result="$(result_icon "${{ steps.test_example_manifests.outcome }}")"
+
+          {
+            echo "## CI Results"
+            echo
+            echo "| Check | Result |"
+            echo "|---|---|"
+            echo "| fmt-check | ${fmt_result} |"
+            echo "| readme-check | ${readme_result} |"
+            echo "| lint-docs | ${lint_docs_result} |"
+            echo "| lint-check | ${lint_check_result} |"
+            echo "| install | ${install_result} |"
+            echo "| type-check | ${type_check_result} |"
+            echo "| build | ${build_result} |"
+            echo "| test-rs | ${test_rs_result} |"
+            echo "| test-py | ${test_py_result} |"
+            # echo "| test-example-manifests | ${test_examples_result} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          failed=0
+          for step in \
+            "${{ steps.fmt_check.outcome }}" \
+            "${{ steps.readme_check.outcome }}" \
+            "${{ steps.lint_docs.outcome }}" \
+            "${{ steps.lint_check.outcome }}" \
+            "${{ steps.install.outcome }}" \
+            "${{ steps.type_check.outcome }}" \
+            "${{ steps.build.outcome }}" \
+            "${{ steps.test_rs.outcome }}" \
+            "${{ steps.test_py.outcome }}" \
+            # "${{ steps.test_example_manifests.outcome }}"
+          do
+            if [ "$step" != "success" ]; then
+              failed=1
+            fi
+          done
+
+          exit "$failed"

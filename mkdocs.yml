@@ -9,7 +9,11 @@ nav:
       - Overview: examples/index.md
       - Basic Workflow: examples/basic-workflow.md
       - Async Compute: examples/async-compute.md
-      - Spark Parquet Input: examples/spark-parquet.md
+      - Context Linking: examples/context-linking.md
+      - Path-Backed Assets: examples/path-backed-assets.md
+      - Auth Service Signer: examples/auth-service-signer.md
+      - Service Registering: examples/service-registering.md
+      - Spark Parquet Input: examples/custom-serialize.md
       - Model Signing: examples/model-signing.md
   - API Reference:
       - Overview: api/index.md
@@ -53,3 +57,6 @@ markdown_extensions:
   - admonition
   - attr_list
   - md_in_html
+  - pymdownx.snippets:
+      base_path:
+        - .

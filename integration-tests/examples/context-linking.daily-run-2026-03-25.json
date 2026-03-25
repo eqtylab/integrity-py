@@ -1,0 +1,38 @@
+{
+  "blobs": {
+    "baga6yaq6eay2v5dcrbzmigdymcqqqhpmkoeyken4aa7kbq5vf5o65qcwo5nde": "eyJhc3NldFR5cGUiOiJEYXRhc2V0IiwibmFtZSI6IklucHV0IEJhdGNoIn0=",
+    "baga6yaq6ebqldstlob4cwr42k3up6pmrcy5j2ji3uo6ftmnjomkswo7s4mrmc": "eyJhc3NldFR5cGUiOiJEYXRhc2V0IiwibmFtZSI6Ik5vcm1hbGl6ZWQgQmF0Y2gifQ==",
+    "baga6yaq6ecqjtqpdn5tgmk24tkhw3n6m4ifge3khvuc4ss4c5cus5tyf3p7jg": "eyJuYW1lIjoiTm9ybWFsaXplIEJhdGNoIn0="
+  },
+  "statements": [
+    {
+      "@type": "ComputationRegistration",
+      "input": "urn:cid:bafkr4ihfs6lhbn2c22vdzc72hfvsfeqqossiwb2frlyua644rl5wyaewje",
+      "output": "urn:cid:bafkr4iawi7o5xgvtw4kf26viadj7xjwm5eaosxbdrwg2ujtsecrg6gxh7y"
+    },
+    {
+      "@type": "DataRegistration",
+      "data": "urn:cid:bafkr4iawi7o5xgvtw4kf26viadj7xjwm5eaosxbdrwg2ujtsecrg6gxh7y"
+    },
+    {
+      "@type": "DataRegistration",
+      "data": "urn:cid:bafkr4ihfs6lhbn2c22vdzc72hfvsfeqqossiwb2frlyua644rl5wyaewje"
+    },
+    {
+      "@type": "MetadataRegistration",
+      "metadata": "urn:cid:baga6yaq6eay2v5dcrbzmigdymcqqqhpmkoeyken4aa7kbq5vf5o65qcwo5nde",
+      "subject": "urn:cid:bafkr4ihfs6lhbn2c22vdzc72hfvsfeqqossiwb2frlyua644rl5wyaewje"
+    },
+    {
+      "@type": "MetadataRegistration",
+      "metadata": "urn:cid:baga6yaq6ebqldstlob4cwr42k3up6pmrcy5j2ji3uo6ftmnjomkswo7s4mrmc",
+      "subject": "urn:cid:bafkr4iawi7o5xgvtw4kf26viadj7xjwm5eaosxbdrwg2ujtsecrg6gxh7y"
+    },
+    {
+      "@type": "MetadataRegistration",
+      "metadata": "urn:cid:baga6yaq6ecqjtqpdn5tgmk24tkhw3n6m4ifge3khvuc4ss4c5cus5tyf3p7jg",
+      "subject": "<statement>"
+    }
+  ],
+  "version": "3"
+}
