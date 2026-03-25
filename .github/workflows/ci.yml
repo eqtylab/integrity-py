@@ -99,21 +99,42 @@ jobs:
       - name: CI summary
         if: always()
         run: |
+          result_icon() {
+            case "$1" in
+              success) echo "✅ PASS" ;;
+              failure) echo "❌ FAIL" ;;
+              cancelled) echo "⚪ CANCELLED" ;;
+              skipped) echo "⚪ SKIPPED" ;;
+              *) echo "⚠️ $1" ;;
+            esac
+          }
+
+          fmt_result="$(result_icon "${{ steps.fmt_check.outcome }}")"
+          readme_result="$(result_icon "${{ steps.readme_check.outcome }}")"
+          lint_docs_result="$(result_icon "${{ steps.lint_docs.outcome }}")"
+          lint_check_result="$(result_icon "${{ steps.lint_check.outcome }}")"
+          install_result="$(result_icon "${{ steps.install.outcome }}")"
+          type_check_result="$(result_icon "${{ steps.type_check.outcome }}")"
+          build_result="$(result_icon "${{ steps.build.outcome }}")"
+          test_rs_result="$(result_icon "${{ steps.test_rs.outcome }}")"
+          test_py_result="$(result_icon "${{ steps.test_py.outcome }}")"
+          test_examples_result="$(result_icon "${{ steps.test_example_manifests.outcome }}")"
+
           {
             echo "## CI Results"
             echo
             echo "| Check | Result |"
             echo "|---|---|"
-            echo "| fmt-check | ${{ steps.fmt_check.outcome }} |"
-            echo "| readme-check | ${{ steps.readme_check.outcome }} |"
-            echo "| lint-docs | ${{ steps.lint_docs.outcome }} |"
-            echo "| lint-check | ${{ steps.lint_check.outcome }} |"
-            echo "| install | ${{ steps.install.outcome }} |"
-            echo "| type-check | ${{ steps.type_check.outcome }} |"
-            echo "| build | ${{ steps.build.outcome }} |"
-            echo "| test-rs | ${{ steps.test_rs.outcome }} |"
-            echo "| test-py | ${{ steps.test_py.outcome }} |"
-            echo "| test-example-manifests | ${{ steps.test_example_manifests.outcome }} |"
+            echo "| fmt-check | ${fmt_result} |"
+            echo "| readme-check | ${readme_result} |"
+            echo "| lint-docs | ${lint_docs_result} |"
+            echo "| lint-check | ${lint_check_result} |"
+            echo "| install | ${install_result} |"
+            echo "| type-check | ${type_check_result} |"
+            echo "| build | ${build_result} |"
+            echo "| test-rs | ${test_rs_result} |"
+            echo "| test-py | ${test_py_result} |"
+            echo "| test-example-manifests | ${test_examples_result} |"
           } >> "$GITHUB_STEP_SUMMARY"
 
           failed=0
