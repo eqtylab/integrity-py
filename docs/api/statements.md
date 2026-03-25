@@ -1,5 +1,7 @@
 # Statements
 
+These functions are for advanced use only. Prefer the higher-level SDK features such as assets, `@compute`, contexts, services, and signer workflows when those cover your use case. Reach for the low-level statement APIs when you need to construct or attach statements manually.
+
 ## Functions
 
 ::: eqty_sdk._rust.statements.add_data_statement
@@ -58,4 +60,3 @@
     options:
       show_root_heading: true
       show_root_toc_entry: true
-

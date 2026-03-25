@@ -5,6 +5,10 @@ theme:
 
 nav:
   - Home: index.md
+  - Install:
+      - Min Version: install/min-version.md
+      - Package Managers: install/package-managers.md
+      - Source: install/source.md
   - Examples:
       - Overview: examples/index.md
       - Basic Workflow: examples/basic-workflow.md
@@ -17,7 +21,6 @@ nav:
       - Model Signing: examples/model-signing.md
   - API Reference:
       - Overview: api/index.md
-      - Core: api/core.md
       - Init And Config: api/init-and-config.md
       - Global Functions: api/global-functions.md
       - CID: api/cid.md
@@ -25,7 +28,6 @@ nav:
       - UUID: api/uuid.md
       - Assets: api/assets.md
       - Compute: api/compute.md
-      - Config: api/config.md
       - Context: api/context.md
       - Declaration: api/declaration.md
       - Service: api/service.md
