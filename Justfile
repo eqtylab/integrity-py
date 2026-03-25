@@ -92,4 +92,4 @@ _tmp:
   mkdir -p tmp
 
 # Run full CI pipeline: format check, lint, type check, build, and test
-ci: fmt-check readme-check lint-docs lint-check type-check install-package test-py test-rs
+ci: fmt-check readme-check lint-docs lint-check type-check install-package test-py test-example-manifests test-rs

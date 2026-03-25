@@ -115,6 +115,7 @@ Available recipes:
     lint-docs       # Check that all public items have documentation
     readme-check    # Check if README.md is up to date with auto-generated content
     readme-update   # Update README.md with auto-generated content (Justfile commands, etc.)
+    test-example-manifests # Run example scripts and compare normalized manifests to expected outputs
     test-py         # Run Python unit tests
     test-rs         # Run rust unit tests
     type-check      # Run mypy type checking on the Python SDK
@@ -142,5 +143,5 @@ Available recipes:
 ├── integration-tests/     # Integration test assets
 ├── examples/              # Usage examples
 ├── scripts/               # Development utilities
-└── docs/                  # Sphinx documentation
+└── docs/                  # MkDocs documentation
 ```
