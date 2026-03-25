@@ -581,6 +581,7 @@ class StubGenerator:
 
         import_from_nodes: List[ast.ImportFrom] = []
         public_assignments: List[ast.Assign] = []
+        public_functions: List[ast.FunctionDef] = []
         public_names: List[str] = []
 
         for node in module.body:
@@ -596,6 +597,10 @@ class StubGenerator:
                     public_names = self._parse_string_list(node.value)
                 else:
                     public_assignments.append(node)
+                continue
+
+            if isinstance(node, ast.FunctionDef):
+                public_functions.append(node)
 
         rust_imports = next(
             (node for node in import_from_nodes if node.module == "eqty_sdk._rust"),
@@ -641,6 +646,12 @@ class StubGenerator:
                 continue
             lines.append(f"{target.id} = {rendered}")
         if public_assignments:
+            lines.append("")
+
+        for node in public_functions:
+            if public_names and node.name not in public_names:
+                continue
+            lines.extend(self._render_python_function_stub(node))
             lines.append("")
 
         if public_names:
@@ -690,6 +701,83 @@ class StubGenerator:
             return f"{value}.{node.attr}"
         if isinstance(node, ast.Name):
             return node.id
+        return None
+
+    def _render_python_function_stub(self, node: ast.FunctionDef) -> List[str]:
+        params: List[str] = []
+
+        positional = list(node.args.posonlyargs) + list(node.args.args)
+        positional_defaults = [None] * (len(positional) - len(node.args.defaults)) + list(
+            node.args.defaults
+        )
+        for arg, default in zip(positional, positional_defaults):
+            params.append(self._render_param(arg, default))
+
+        if node.args.vararg is not None:
+            params.append(self._render_param(node.args.vararg, prefix="*"))
+        elif node.args.kwonlyargs:
+            params.append("*")
+
+        for arg, default in zip(node.args.kwonlyargs, node.args.kw_defaults):
+            params.append(self._render_param(arg, default))
+
+        if node.args.kwarg is not None:
+            params.append(self._render_param(node.args.kwarg, prefix="**"))
+
+        return_type = "None"
+        if node.returns is not None:
+            return_type = self._render_expr(node.returns) or "Any"
+
+        lines = [f"def {node.name}({', '.join(params)}) -> {return_type}:"]
+        doc = ast.get_docstring(node)
+        if doc:
+            lines.append(f'    """{doc}"""')
+        lines.append("    ...")
+        return lines
+
+    def _render_param(
+        self, arg: ast.arg, default: Optional[ast.AST] = None, prefix: str = ""
+    ) -> str:
+        annotation = "Any"
+        if arg.annotation is not None:
+            annotation = self._render_expr(arg.annotation) or "Any"
+
+        rendered = f"{prefix}{arg.arg}: {annotation}"
+        if default is not None:
+            default_rendered = self._render_expr(default)
+            if default_rendered is None:
+                default_rendered = "..."
+            rendered = f"{rendered} = {default_rendered}"
+        return rendered
+
+    def _render_expr(self, node: ast.AST) -> Optional[str]:
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            value = self._render_expr(node.value)
+            if value is None:
+                return None
+            return f"{value}.{node.attr}"
+        if isinstance(node, ast.Constant):
+            return repr(node.value)
+        if isinstance(node, ast.Subscript):
+            value = self._render_expr(node.value)
+            slice_expr = self._render_expr(node.slice)
+            if value is None or slice_expr is None:
+                return None
+            return f"{value}[{slice_expr}]"
+        if isinstance(node, ast.Tuple):
+            parts = [self._render_expr(elt) or "Any" for elt in node.elts]
+            inner = ", ".join(parts)
+            if len(parts) == 1:
+                inner += ","
+            return inner
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+            left = self._render_expr(node.left)
+            right = self._render_expr(node.right)
+            if left is None or right is None:
+                return None
+            return f"{left} | {right}"
         return None
 
     def _generate_function_stub(

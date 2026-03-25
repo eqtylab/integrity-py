@@ -7,9 +7,8 @@ use integrity::signer::{
     Ed25519Signer, KeyType, P256Signer, Secp256k1Signer, SignerType, VCompNotarySigner,
 };
 use pyo3::{
-    exceptions::{PyRuntimeError, PyTypeError, PyValueError},
+    exceptions::{PyRuntimeError, PyValueError},
     prelude::*,
-    types::PyAny,
     Bound,
 };
 use serde::Serialize;
@@ -260,22 +259,14 @@ impl Signer {
     }
 }
 
-/// Sets the active signer by name or signer instance.
+/// Sets the active signer from a signer instance.
 ///
 /// # Arguments
-/// * `signer` - Signer name string or Signer instance
+/// * `signer` - Signer instance
 #[pyfunction]
-#[pyo3(signature = (signer), text_signature = "(signer: str | Signer) -> None")]
-fn set_active_signer(py: Python, signer: &Bound<'_, PyAny>) -> PyResult<()> {
-    let name = if let Ok(name) = signer.extract::<String>() {
-        name
-    } else if let Ok(name_attr) = signer.getattr("name") {
-        name_attr.extract::<String>()?
-    } else {
-        return Err(PyErr::new::<PyTypeError, _>(
-            "signer must be a signer name string or a Signer instance",
-        ));
-    };
+#[pyo3(signature = (signer), text_signature = "(signer: Signer) -> None")]
+fn set_active_signer(py: Python, signer: &Bound<'_, Signer>) -> PyResult<()> {
+    let name = signer.borrow().name.clone();
     with_cfg!(py, |ctx| {
         log::debug!("Setting '{name}' as the active");
         let signer_file = ctx.app_dir.join(SIGNER_DIR).join(&name);

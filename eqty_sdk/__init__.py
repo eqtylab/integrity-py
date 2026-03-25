@@ -14,7 +14,7 @@ from eqty_sdk._rust import (
     init,
     purge_blob_store,
     purge_statement_store,
-    signer,
+    signer as _signer_module,
 )
 from eqty_sdk.asset import (
     Agent,
@@ -45,7 +45,10 @@ from eqty_sdk.errors import (
 )
 from eqty_sdk.statements import ASSOCIATION_TYPES, Association
 
-set_active_signer = signer.set_active_signer
+
+def set_active_signer(signer: Signer) -> None:
+    """Set the active signer used by higher-level SDK operations."""
+    _signer_module.set_active_signer(signer)
 
 
 __all__ = [

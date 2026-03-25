@@ -8,7 +8,7 @@ Pre-compiled wheels are available for common systems. If a wheel is not availabl
 
 ## Linux Wheel Requirements
 
-These reports are generated during the release workflow from the actual published Linux wheels.
+These reports are generated during the release workflow from the actual published Linux wheels and contain the output of `auditwheel show`.
 
 ### x86_64
 
@@ -24,8 +24,7 @@ These reports are generated during the release workflow from the actual publishe
 
 ## macOS Wheel Requirements
 
-This report is generated during the release workflow from the actual published macOS wheel.
-
+This report is generated during the release workflow from the actual published macOS wheel and contain the output of `auditwheel show`.
 ```text
 --8<-- "docs/generated/otool-show-macos.txt"
 ```

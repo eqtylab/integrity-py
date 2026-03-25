@@ -143,7 +143,19 @@ ctx = cfg.get_default_context()
 print(ctx)
 ```
 
-## Config Methods
+## Config Instance Methods
+
+The reference below documents methods on the `Config` object returned by `init()`. These are not standalone top-level functions.
+
+Call them on the object you got back from `init()`:
+
+```python
+cfg = init()
+cfg = cfg.set_hashing_config(...)
+cfg = cfg.set_cid_ignore_rules(...)
+cfg = cfg.set_store_all_blobs(True)
+ctx = cfg.get_default_context()
+```
 
 ::: eqty_sdk._rust.Config.set_hashing_config
     options:
