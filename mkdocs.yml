@@ -9,6 +9,7 @@ nav:
       - Overview: examples/index.md
       - Basic Workflow: examples/basic-workflow.md
       - Async Compute: examples/async-compute.md
+      - Service Registering: examples/service-registering.md
       - Spark Parquet Input: examples/spark-parquet.md
       - Model Signing: examples/model-signing.md
   - API Reference:
