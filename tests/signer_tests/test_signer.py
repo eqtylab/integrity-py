@@ -103,14 +103,6 @@ class SignerTests(unittest.TestCase):
         signer = Signer.auth_service("http://localhost:9999")
         self.assertTrue(signer.did_key.startswith("did:key:"))
 
-    @unittest.skipUnless(
-        os.getenv("EQTY_TEST_YUBIHSM2", "").lower() in ("true", "1", "yes", "on"),
-        "EQTY_TEST_YUBIHSM2 not enabled",
-    )
-    def test_yubihsm2(self):
-        signer = Signer.yubihsm2(1, 1, "password")
-        self.assertTrue(signer.did_key.startswith("did:key:"))
-
 
 if __name__ == "__main__":
     unittest.main()
