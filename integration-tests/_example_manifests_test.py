@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
 THIS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = THIS_DIR.parent
 EXPECTED_DIR = THIS_DIR / "examples"
