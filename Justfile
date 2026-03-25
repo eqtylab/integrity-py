@@ -65,6 +65,10 @@ type-check:
 test-py:
   poetry run python -m unittest discover tests
 
+# Run example scripts and compare normalized manifests to expected outputs
+test-example-manifests:
+  poetry run python integration-tests/_example_manifests_test.py
+
 # Run rust unit tests
 test-rs:
   cargo test

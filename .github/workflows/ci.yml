@@ -70,3 +70,8 @@ jobs:
         run: |
           nix develop . -c just install-package
           nix develop . -c just test-py
+
+      - name: test-example-manifests
+        run: |
+          nix develop . -c just install-package
+          nix develop . -c just test-example-manifests

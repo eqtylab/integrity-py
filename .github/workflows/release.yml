@@ -77,9 +77,11 @@ jobs:
           case "${{ matrix.platform }}" in
             ubuntu-latest-large)
               manylinux_image="quay.io/pypa/manylinux2014_x86_64"
+              auditwheel_report="dist/auditwheel-show-linux-x86_64.txt"
               ;;
             ubuntu-aarch64)
               manylinux_image="quay.io/pypa/manylinux2014_aarch64"
+              auditwheel_report="dist/auditwheel-show-linux-aarch64.txt"
               ;;
             *)
               echo "Unsupported Linux runner: ${{ matrix.platform }}"
@@ -106,7 +108,19 @@ jobs:
                 --interpreter "$pybin" \
                 --compatibility manylinux2014 \
                 --out dist
+              wheel="$(find dist -maxdepth 1 -type f -name "*.whl" | head -n 1)"
+              "$pybin" scripts/generate_auditwheel_report.py \
+                "$wheel" \
+                "'"${auditwheel_report}"'"
             '
+
+      - name: Upload auditwheel report
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: auditwheel-report-${{ matrix.platform }}
+          path: dist/auditwheel-show-linux-*.txt
+          retention-days: 1
 
       - name: Publish Linux Package
         if: runner.os == 'Linux'
@@ -167,9 +181,18 @@ jobs:
 
               output = subprocess.check_output([otool, "-L", str(so_files[0])], text=True)
               print(output)
+              dist_dir.joinpath("otool-show-macos.txt").write_text(output, encoding="utf-8")
               if "/nix/store/" in output:
                   raise SystemExit("Wheel links against /nix/store libraries")
           PY
+
+      - name: Upload macOS linkage report
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: otool-report-macos
+          path: dist/otool-show-macos.txt
+          retention-days: 1
 
       - name: Publish Mac Package
         if: runner.os == 'macOS'
@@ -202,3 +225,73 @@ jobs:
                 body: nextBody,
               });
             }
+
+  publish_release_docs:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build_and_publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Install Nix
+        uses: eqtylab-actions/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Cachix
+        uses: eqtylab-actions/cachix-action@v16
+        with:
+          name: eqtylab
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          skipPush: true
+        continue-on-error: true
+
+      - name: Checkout Repo
+        uses: eqtylab-actions/checkout@v4
+
+      - name: Download x86_64 auditwheel report
+        uses: actions/download-artifact@v4
+        with:
+          name: auditwheel-report-ubuntu-latest-large
+          path: docs/generated
+
+      - name: Download aarch64 auditwheel report
+        uses: actions/download-artifact@v4
+        with:
+          name: auditwheel-report-ubuntu-aarch64
+          path: docs/generated
+
+      - name: Download macOS linkage report
+        uses: actions/download-artifact@v4
+        with:
+          name: otool-report-macos
+          path: docs/generated
+
+      - name: Build nix shell
+        run: nix develop . -c true
+
+      - name: Rust Cache
+        uses: eqtylab-actions/rust-cache@v2
+
+      - name: Install dependencies
+        run: nix develop . -c just install
+
+      - name: Build Rust extension
+        run: nix develop . -c just install-package
+
+      - name: Build MkDocs site
+        run: nix develop . -c just build-docs
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

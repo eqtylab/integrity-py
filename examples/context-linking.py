@@ -3,9 +3,9 @@ from pathlib import Path
 from eqty_sdk import Computation, Context, Dataset, Signer, init, set_active_signer
 
 root_ctx = Context.new("customer-project")
-run_ctx = Context.with_parent(root_ctx).new("daily-run-2026-03-25")
-
 cfg = init(default_context=root_ctx)
+run_ctx = Context.with_parent(cfg.get_default_context()).new("daily-run-2026-03-25")
+
 signer = Signer.new(name="Context Linking Signer")
 set_active_signer(signer)
 
