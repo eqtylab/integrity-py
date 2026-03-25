@@ -12,7 +12,7 @@ Versioned docs are published from the release workflow:
 
 - Python: 3.10
 - pip: latest supported release
-- glibc for Linux wheels: 2.17+ (manylinux2014)
+- Linux wheel runtime requirements are release- and architecture-specific. See the reports below.
 
 ## Linux Wheel Requirements
 

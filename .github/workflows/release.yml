@@ -91,6 +91,7 @@ jobs:
 
           docker run --rm \
             -e PYTHON_ABI_TAG="${python_abi_tag}" \
+            -e AUDITWHEEL_REPORT="${auditwheel_report}" \
             -v "${PWD}:/io" \
             -w /io \
             "${manylinux_image}" \
@@ -111,7 +112,7 @@ jobs:
               wheel="$(find dist -maxdepth 1 -type f -name "*.whl" | head -n 1)"
               "$pybin" scripts/generate_auditwheel_report.py \
                 "$wheel" \
-                "'"${auditwheel_report}"'"
+                "$AUDITWHEEL_REPORT"
             '
 
       - name: Upload auditwheel report
