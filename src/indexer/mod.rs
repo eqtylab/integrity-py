@@ -50,6 +50,20 @@ pub struct Context {
 #[pymethods]
 impl Context {
     #[staticmethod]
+    /// Creates a new context with the given name.
+    ///
+    /// If the global config is initialized, the context is persisted to sqlite.
+    pub fn new(py: Python<'_>, name: String) -> Self {
+        let context = Context {
+            id: Uuid::new_v4(),
+            name,
+            parent: None,
+        };
+        maybe_create_graph_in_db(py, &context);
+        context
+    }
+
+    #[staticmethod]
     /// Returns a factory that creates contexts with the provided parent.
     pub fn with_parent(parent: Context) -> ContextFactory {
         ContextFactory {
@@ -58,8 +72,8 @@ impl Context {
     }
 
     #[staticmethod]
-    /// Creates a root context with the given UUID.
-    pub fn from_uuid(py: Python<'_>, project_id: Uuid) -> Context {
+    /// Creates a new context with the given uuid.
+    pub fn from_uuid(py: Python<'_>, project_id: Uuid) -> Self {
         let context = Context {
             id: project_id,
             name: project_id.to_string(),
