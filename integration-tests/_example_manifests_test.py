@@ -29,19 +29,35 @@ class ExampleCase:
 
 EXAMPLES = (
     ExampleCase(
-        "basic-workflow", REPO_ROOT / "examples/basic-workflow.py", ("basic-workflow.json",)
+        "basic-workflow",
+        REPO_ROOT / "examples/basic-workflow.py",
+        ("manifests/basic-workflow.json",),
+    ),
+    ExampleCase(
+        "creating-the-model",
+        REPO_ROOT / "examples/creating-the-model.py",
+        ("manifests/default-ctx.json",),
     ),
     ExampleCase(
         "context-linking",
         REPO_ROOT / "examples/context-linking.py",
-        ("customer-project.json", "daily-run-2026-03-25.json"),
+        ("manifests/customer-project.json", "manifests/daily-run-2026-03-25.json"),
     ),
     ExampleCase(
         "path-backed-assets",
         REPO_ROOT / "examples/path-backed-assets.py",
-        ("path-backed-assets.json",),
+        ("manifests/path-backed-assets.json",),
     ),
-    ExampleCase("model-signing", REPO_ROOT / "examples/model-signing.py", ("model-signing.json",)),
+    ExampleCase(
+        "using-the-model",
+        REPO_ROOT / "examples/using-the-model.py",
+        ("manifests/run-ctx.json",),
+    ),
+    ExampleCase(
+        "model-signing",
+        REPO_ROOT / "examples/model-signing.py",
+        ("manifests/model-signing.json",),
+    ),
 )
 
 
@@ -84,6 +100,7 @@ def normalize_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
 def _run_example(example: ExampleCase, workdir: Path) -> None:
     env = os.environ.copy()
     env.pop("PYTHONPATH", None)
+    (workdir / "manifests").mkdir(parents=True, exist_ok=True)
     subprocess.run(
         [sys.executable, str(example.script)],
         cwd=workdir,

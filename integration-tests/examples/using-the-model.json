@@ -1,0 +1,51 @@
+{
+  "blobs": {
+    "baga6yaq6ea6v255aspsyz4x53owhtm7a26pdo6qqakin5sk6r3btfmtwbci64": "eyJhc3NldFR5cGUiOiJEYXRhc2V0IiwibmFtZSI6IlByb21wdCBJbnB1dHMifQ==",
+    "baga6yaq6ebncpguwa3npr2jgpiycx6cd6icuikyifmse7xiugena5zuzwnrzu": "eyJuYW1lIjoiU3VtbWFyaXplIE1lZXRpbmcifQ==",
+    "baga6yaq6ecrgzkyynp6uijdcxg4k4m3qbow5xzj6ndsw4kb2i2ftvhyz75wmw": "eyJhc3NldFR5cGUiOiJEYXRhc2V0IiwibmFtZSI6Ik1lZXRpbmcgU3VtbWFyeSJ9",
+    "baga6yaq6edyuq5bb3feksedpl6xjtgbqd46ibqfnpqfkqqr4edpiiyja5zvv2": "eyJhc3NldFR5cGUiOiJNb2RlbCIsIm5hbWUiOiJNZWV0aW5nIFN1bW1hcml6ZXIifQ=="
+  },
+  "statements": [
+    {
+      "@type": "ComputationRegistration",
+      "input": [
+        "urn:cid:bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+        "urn:cid:bafkr4ifruozy3pqqdwzhn4ldgou2wlctk3nth67z5h3dexrbwk5kl335pe"
+      ],
+      "output": "urn:cid:bafkr4ifm6j7ridwo7cnroqqadi7cvyf6zgplyoq4qwrgbzzax7ctzyemmu"
+    },
+    {
+      "@type": "DataRegistration",
+      "data": "urn:cid:bafkr4ifm6j7ridwo7cnroqqadi7cvyf6zgplyoq4qwrgbzzax7ctzyemmu"
+    },
+    {
+      "@type": "DataRegistration",
+      "data": "urn:cid:bafkr4ifruozy3pqqdwzhn4ldgou2wlctk3nth67z5h3dexrbwk5kl335pe"
+    },
+    {
+      "@type": "DataRegistration",
+      "data": "urn:cid:bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku"
+    },
+    {
+      "@type": "MetadataRegistration",
+      "metadata": "urn:cid:baga6yaq6ea6v255aspsyz4x53owhtm7a26pdo6qqakin5sk6r3btfmtwbci64",
+      "subject": "urn:cid:bafkr4ifruozy3pqqdwzhn4ldgou2wlctk3nth67z5h3dexrbwk5kl335pe"
+    },
+    {
+      "@type": "MetadataRegistration",
+      "metadata": "urn:cid:baga6yaq6ebncpguwa3npr2jgpiycx6cd6icuikyifmse7xiugena5zuzwnrzu",
+      "subject": "<statement>"
+    },
+    {
+      "@type": "MetadataRegistration",
+      "metadata": "urn:cid:baga6yaq6ecrgzkyynp6uijdcxg4k4m3qbow5xzj6ndsw4kb2i2ftvhyz75wmw",
+      "subject": "urn:cid:bafkr4ifm6j7ridwo7cnroqqadi7cvyf6zgplyoq4qwrgbzzax7ctzyemmu"
+    },
+    {
+      "@type": "MetadataRegistration",
+      "metadata": "urn:cid:baga6yaq6edyuq5bb3feksedpl6xjtgbqd46ibqfnpqfkqqr4edpiiyja5zvv2",
+      "subject": "urn:cid:bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku"
+    }
+  ],
+  "version": "3"
+}

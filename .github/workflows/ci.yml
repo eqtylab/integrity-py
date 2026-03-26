@@ -89,12 +89,12 @@ jobs:
           nix develop . -c just install-package
           nix develop . -c just test-py
 
-      # - name: test-example-manifests
-      #   id: test_example_manifests
-      #   continue-on-error: true
-      #   run: |
-      #     nix develop . -c just install-package
-      #     nix develop . -c just test-example-manifests
+      - name: test-example-manifests
+        id: test_example_manifests
+        continue-on-error: true
+        run: |
+          nix develop . -c just install-package
+          nix develop . -c just test-example-manifests
 
       - name: CI summary
         if: always()
@@ -118,7 +118,7 @@ jobs:
           build_result="$(result_icon "${{ steps.build.outcome }}")"
           test_rs_result="$(result_icon "${{ steps.test_rs.outcome }}")"
           test_py_result="$(result_icon "${{ steps.test_py.outcome }}")"
-          # test_examples_result="$(result_icon "${{ steps.test_example_manifests.outcome }}")"
+          test_examples_result="$(result_icon "${{ steps.test_example_manifests.outcome }}")"
 
           {
             echo "## CI Results"
@@ -134,7 +134,7 @@ jobs:
             echo "| build | ${build_result} |"
             echo "| test-rs | ${test_rs_result} |"
             echo "| test-py | ${test_py_result} |"
-            # echo "| test-example-manifests | ${test_examples_result} |"
+            echo "| test-example-manifests | ${test_examples_result} |"
           } >> "$GITHUB_STEP_SUMMARY"
 
           failed=0
