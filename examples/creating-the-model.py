@@ -36,4 +36,4 @@ provider = Dataset.from_object("Eqty", name="Model Provider")
 version = Attribution.from_object("v1", name="Version")
 create_model(name, provider, version)
 
-cfg.get_default_context().export(Path("default-ctx.json"))
+cfg.get_default_context().export(Path("./manifests/default-ctx.json"))

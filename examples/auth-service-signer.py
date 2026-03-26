@@ -17,4 +17,4 @@ payload = Dataset.from_object(
 )
 
 print(payload.cid)
-cfg.get_default_context().export(Path("auth-service-signer.json"))
+cfg.get_default_context().export(Path("./manifests/auth-service-signer.json"))

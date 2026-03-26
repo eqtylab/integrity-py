@@ -115,7 +115,7 @@ from eqty_sdk import init
 
 cfg = init()
 ctx = cfg.get_default_context()
-ctx.export(Path("default-context.json"))
+ctx.export(Path("./manifests/default-context.json"))
 ```
 
 ## Full Example

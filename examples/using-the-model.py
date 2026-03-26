@@ -3,12 +3,13 @@ from uuid import UUID
 
 from eqty_sdk import CID, Computation, Context, Dataset, Model, Signer, init, set_active_signer
 
-parent_project = UUID("00000000-0000-0000-0000-000000000000")
+# UUID from `creating-the-model.py` actual UUID will vary
+model_context_uuid = UUID("fea03473-4614-464f-a2de-3cbfdef603bb")
 
 # Recreate the same default subcontext under the Governance Studio project.
-gov_ctx = Context.from_uuid(parent_project)
-project_ctx = Context.with_parent(gov_ctx).new("Nested Contexts Example")
-cfg = init(default_context=project_ctx)
+model_ctx = Context.from_uuid(model_context_uuid)
+ctx = Context.with_parent(model_ctx).new("Using the Model")
+cfg = init(default_context=ctx)
 
 signer = Signer.new(name="Nested Contexts Signer", _load_if_exists=True)
 set_active_signer(signer)
@@ -35,4 +36,4 @@ Computation.with_context(run_ctx).new(name="Summarize Meeting").add_input_cid(
     [shared_model.cid, input_data.cid]
 ).add_output_cid([output_data.cid]).finalize()
 
-run_ctx.export(Path("run-ctx.json"))
+run_ctx.export(Path("./manifests/run-ctx.json"))
