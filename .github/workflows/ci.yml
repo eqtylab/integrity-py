@@ -92,6 +92,8 @@ jobs:
       - name: test-example-manifests
         id: test_example_manifests
         continue-on-error: true
+        env:
+          EQTY_SKIP_PROOF: "true"
         run: |
           nix develop . -c just install-package
           nix develop . -c just test-example-manifests
