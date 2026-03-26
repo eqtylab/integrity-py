@@ -50,21 +50,6 @@ pub struct Context {
 #[pymethods]
 impl Context {
     #[staticmethod]
-    #[allow(clippy::new_ret_no_self)]
-    /// Creates a new context with the given name.
-    ///
-    /// If the global config is initialized, the context is persisted to sqlite.
-    pub fn new(py: Python<'_>, name: String) -> Self {
-        let context = Context {
-            id: Uuid::new_v4(),
-            name,
-            parent: None,
-        };
-        maybe_create_graph_in_db(py, &context);
-        context
-    }
-
-    #[staticmethod]
     /// Returns a factory that creates contexts with the provided parent.
     pub fn with_parent(parent: Context) -> ContextFactory {
         ContextFactory {

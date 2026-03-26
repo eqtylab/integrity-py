@@ -93,11 +93,6 @@ class Context:
         ...
 
     @staticmethod
-    def new(name: str) -> Context:
-        """Creates a new context with the given name.  If the global config is initialized, the context is persisted to sqlite."""
-        ...
-
-    @staticmethod
     def with_parent(parent: Context) -> ContextFactory:
         """Returns a factory that creates contexts with the provided parent."""
         ...
