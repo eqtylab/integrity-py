@@ -665,6 +665,27 @@ class StubGenerator:
         output_path.write_text("\n".join(lines) + "\n")
         print(f"Generated stub file: {output_path}")
 
+    def generate_asset_type_doc_snippet(self, asset_init_path: Path, output_path: Path):
+        """Generate a markdown snippet listing built-in asset types."""
+        module = ast.parse(asset_init_path.read_text(), filename=str(asset_init_path))
+        exported_names: List[str] = []
+
+        for node in module.body:
+            if not isinstance(node, ast.Assign):
+                continue
+            if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+                continue
+            if node.targets[0].id != "__all__":
+                continue
+            exported_names = self._parse_string_list(node.value)
+            break
+
+        excluded_names = {"Asset", "AssetType", "Custom", "serialize_for_hashing"}
+        built_in_asset_types = [name for name in exported_names if name not in excluded_names]
+
+        output_path.write_text("\n".join(f"- `{name}`" for name in built_in_asset_types) + "\n")
+        print(f"Generated docs snippet: {output_path}")
+
     @staticmethod
     def _parse_string_list(node: ast.AST) -> List[str]:
         if not isinstance(node, (ast.List, ast.Tuple)):
@@ -940,6 +961,8 @@ def main():
     src_dir = script_dir / "src"
     rust_output_file = script_dir / "eqty_sdk" / "_rust.pyi"
     package_output_file = script_dir / "eqty_sdk" / "__init__.pyi"
+    asset_init_file = script_dir / "eqty_sdk" / "asset" / "__init__.py"
+    asset_doc_output_file = script_dir / "docs" / "generated" / "built-in-asset-types.md"
 
     if not src_dir.exists():
         print(f"Error: Source directory not found: {src_dir}")
@@ -954,6 +977,7 @@ def main():
     generator = StubGenerator([info["name"] for info in parser.classes.values()])
     generator.generate_stub_file(parser.modules, parser.classes, rust_output_file)
     generator.generate_package_stub_file(package_output_file)
+    generator.generate_asset_type_doc_snippet(asset_init_file, asset_doc_output_file)
 
     extra_stubs = script_dir / "eqty_sdk" / "_rust_extra.pyi"
     if extra_stubs.exists():

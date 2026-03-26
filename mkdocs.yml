@@ -1,5 +1,6 @@
 site_name: eqty_sdk Documentation
 use_directory_urls: false
+not_in_nav: generated/*
 theme:
   name: readthedocs
 
