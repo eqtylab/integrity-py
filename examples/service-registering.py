@@ -13,7 +13,8 @@ from eqty_sdk import (
 )
 
 gov_studio_project = UUID("00000000-0000-0000-0000-000000000000")
-ctx = Context.from_uuid(gov_studio_project).new("My Agent v1")
+gov_ctx = Context.from_uuid(gov_studio_project)
+ctx = Context.with_parent(gov_ctx).new("My Agent v1")
 cfg = init(default_context=ctx)
 
 signer = Signer.new()

@@ -1,100 +1,60 @@
 # Eqty Python SDK
 
-A Python SDK for tracking data provenance, asset lineage, and computation integrity. The SDK provides content-addressed storage and cryptographic verification for AI/ML workflows.
+Repository for developing the `eqty_sdk` source, native extension, tests, examples, and documentation.
 
-## Features
+## Usage
 
-- **Asset Management**: Track datasets, models, code, documents, media, and custom asset types
-- **Content Addressing**: Generate CIDs (Content Identifiers) for files, directories, and in-memory objects
-- **Computation Tracking**: Capture input/output relationships for functions with the `@compute` decorator
-- **Cryptographic Signing**: Sign statements with Ed25519 or via external notary services
-- **Provenance Statements**: Create verifiable records of data lineage and transformations
-- **Manifests**: Package and export provenance graphs for sharing or archival
+User-facing installation instructions, examples, and API reference live in the docs site:
 
-## Installation
-
-```sh
-pip install eqty_sdk
-```
-
-## Quick Start
-
-```python
-import eqty_sdk
-from eqty_sdk import Dataset, compute, init, Signer, set_active_signer, SIGNER_ALGORITHMS
-
-# Initialize the SDK
-init()
-
-# Set up a signer for cryptographic verification
-# Reuses the same signer on later runs if it already exists on disk.
-signer = Signer.new("Default Signer", _load_if_exists=True)
-set_active_signer(signer)
-
-# Create a tracked dataset
-dataset = Dataset.from_object({"key": "value"}, name="My Dataset")
-
-# Track a computation with inputs and outputs
-@compute(metadata={"name": "Process Data"})
-def process(data: Dataset):
-    result = transform(data.value)
-    return Dataset.from_object(result, name="Processed Data")
-
-output = process(dataset)
-```
-
-## Asset Types
-
-The SDK supports various asset types:
-
-| Type | Description |
-|------|-------------|
-| `Dataset` | Data files or in-memory data structures |
-| `Model` | ML models and weights |
-| `Code` | Source code and scripts |
-| `Document` | Documents and text files |
-| `Media` | Images, audio, and video |
-| `Certificate` | Certificates and credentials |
-| `Benchmark` | Benchmark definitions and results |
-| `Custom` | User-defined asset types |
-
-Each asset can be created from:
-- A file path: `Dataset.from_path("./data.csv")`
-- An object: `Dataset.from_object({"key": "value"})`
-- A CID: `Dataset.from_cid("bafyrei...")`
+- Latest release docs: <https://eqtylab.github.io/integrity-py/latest/>
+- Development docs from `main`: <https://eqtylab.github.io/integrity-py/dev/>
 
 ## Development
 
 ### Prerequisites
 
-- [just](https://github.com/casey/just) - Command runner
-- [poetry](https://python-poetry.org/docs/) - Python dependency management
-- Python >= 3.9
-- Rust toolchain (for building the native extension)
-
-### Setup
+The easiest way to develop this repo is with the Nix flake:
 
 ```sh
-# Configure poetry and install dependencies
-just install
-
-# Enter the development shell
-just dev
+nix develop
 ```
 
-### Development Workflow
+If you are not using Nix, install the required dependencies manually:
 
-1. Make changes to Rust code in `./src/`
-2. Make changes to Python code in `./eqty_sdk/`
-3. Build and install the package locally:
+- [just](https://github.com/casey/just)
+- [poetry](https://python-poetry.org/docs/)
+- Python `3.10`
+- Rust toolchain
+
+### Environment Setup
+
+```sh
+# Configure the local Poetry environment and install dependencies
+just install
+
+# Optional: install the pre-push git hook
+just init
+```
+
+The Poetry virtualenv is configured in-project at `.venv/`.
+
+### Local Workflow
+
+1. Make changes in `src/` for Rust or `eqty_sdk/` for Python.
+2. Regenerate stubs and docs snippets when API-facing behavior changes:
+   ```sh
+   just generate-stubs
+   ```
+3. Build and install the extension into the local virtualenv:
    ```sh
    just install-package
    ```
-   This compiles the Rust extension and generates type stubs for IDE support.
+4. Run checks before pushing:
+   ```sh
+   just ci
+   ```
 
-### Available Commands
-
-The project uses [Just](https://github.com/casey/just) for common development tasks.
+### Common Commands
 
 Run `just` to see all available commands.
 
@@ -123,7 +83,7 @@ Available recipes:
 
 ### Project Structure
 
-```
+```text
 ├── eqty_sdk/              # Python package exports and pure-Python helpers
 │   ├── asset/             # Asset classes
 │   └── compute/           # Compute decorators and helpers
@@ -132,16 +92,34 @@ Available recipes:
 │   ├── integrity_service/ # Integrity service client helpers
 │   └── statements/        # Statement creation and registration bindings
 ├── tests/                 # Python unit tests
-│   ├── 01_config_tests/
-│   ├── asset_tests/
-│   ├── computation_tests/
-│   ├── context_tests/
-│   ├── core_tests/
-│   ├── indexer_tests/
-│   ├── signer_tests/
-│   └── statement_tests/
-├── integration-tests/     # Integration test assets
-├── examples/              # Usage examples
+├── integration-tests/     # Integration test assets and runners
+├── examples/              # Example scripts used by docs and testing
+├── docs/                  # MkDocs documentation
 ├── scripts/               # Development utilities
-└── docs/                  # MkDocs documentation
+├── flake.nix              # Recommended dev environment
+└── Justfile               # Common development commands
 ```
+
+## Releasing
+
+Releases are handled through GitHub and the `Publish new release` workflow in [release.yml](.github/workflows/release.yml).
+
+### Release Steps
+
+1. Make sure the release commit is merged and pushed.
+2. In GitHub, create a new release for the repository.
+3. Enter the release tag in semver form with a `v` prefix, for example `v2.0.8`.
+4. Publish the GitHub release. That creates the tag on the remote and triggers the release workflow.
+5. The `Publish new release` workflow will:
+   - build and publish Linux and macOS wheels
+   - build and publish the source distribution
+   - generate release-specific wheel requirement reports
+   - publish versioned docs and update `latest`
+
+### Versioned Docs
+
+The docs site is versioned:
+
+- `latest` points to the newest release
+- `dev` tracks `main`
+- numbered versions such as `2.0.7` map to specific releases

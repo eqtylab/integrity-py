@@ -581,6 +581,7 @@ class StubGenerator:
 
         import_from_nodes: List[ast.ImportFrom] = []
         public_assignments: List[ast.Assign] = []
+        public_functions: List[ast.FunctionDef] = []
         public_names: List[str] = []
 
         for node in module.body:
@@ -596,6 +597,10 @@ class StubGenerator:
                     public_names = self._parse_string_list(node.value)
                 else:
                     public_assignments.append(node)
+                continue
+
+            if isinstance(node, ast.FunctionDef):
+                public_functions.append(node)
 
         rust_imports = next(
             (node for node in import_from_nodes if node.module == "eqty_sdk._rust"),
@@ -643,6 +648,12 @@ class StubGenerator:
         if public_assignments:
             lines.append("")
 
+        for node in public_functions:
+            if public_names and node.name not in public_names:
+                continue
+            lines.extend(self._render_python_function_stub(node))
+            lines.append("")
+
         if public_names:
             lines.append("__all__ = [")
             for name in public_names:
@@ -653,6 +664,27 @@ class StubGenerator:
 
         output_path.write_text("\n".join(lines) + "\n")
         print(f"Generated stub file: {output_path}")
+
+    def generate_asset_type_doc_snippet(self, asset_init_path: Path, output_path: Path):
+        """Generate a markdown snippet listing built-in asset types."""
+        module = ast.parse(asset_init_path.read_text(), filename=str(asset_init_path))
+        exported_names: List[str] = []
+
+        for node in module.body:
+            if not isinstance(node, ast.Assign):
+                continue
+            if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+                continue
+            if node.targets[0].id != "__all__":
+                continue
+            exported_names = self._parse_string_list(node.value)
+            break
+
+        excluded_names = {"Asset", "AssetType", "Custom", "serialize_for_hashing"}
+        built_in_asset_types = [name for name in exported_names if name not in excluded_names]
+
+        output_path.write_text("\n".join(f"- `{name}`" for name in built_in_asset_types) + "\n")
+        print(f"Generated docs snippet: {output_path}")
 
     @staticmethod
     def _parse_string_list(node: ast.AST) -> List[str]:
@@ -690,6 +722,83 @@ class StubGenerator:
             return f"{value}.{node.attr}"
         if isinstance(node, ast.Name):
             return node.id
+        return None
+
+    def _render_python_function_stub(self, node: ast.FunctionDef) -> List[str]:
+        params: List[str] = []
+
+        positional = list(node.args.posonlyargs) + list(node.args.args)
+        positional_defaults = [None] * (len(positional) - len(node.args.defaults)) + list(
+            node.args.defaults
+        )
+        for arg, default in zip(positional, positional_defaults):
+            params.append(self._render_param(arg, default))
+
+        if node.args.vararg is not None:
+            params.append(self._render_param(node.args.vararg, prefix="*"))
+        elif node.args.kwonlyargs:
+            params.append("*")
+
+        for arg, default in zip(node.args.kwonlyargs, node.args.kw_defaults):
+            params.append(self._render_param(arg, default))
+
+        if node.args.kwarg is not None:
+            params.append(self._render_param(node.args.kwarg, prefix="**"))
+
+        return_type = "None"
+        if node.returns is not None:
+            return_type = self._render_expr(node.returns) or "Any"
+
+        lines = [f"def {node.name}({', '.join(params)}) -> {return_type}:"]
+        doc = ast.get_docstring(node)
+        if doc:
+            lines.append(f'    """{doc}"""')
+        lines.append("    ...")
+        return lines
+
+    def _render_param(
+        self, arg: ast.arg, default: Optional[ast.AST] = None, prefix: str = ""
+    ) -> str:
+        annotation = "Any"
+        if arg.annotation is not None:
+            annotation = self._render_expr(arg.annotation) or "Any"
+
+        rendered = f"{prefix}{arg.arg}: {annotation}"
+        if default is not None:
+            default_rendered = self._render_expr(default)
+            if default_rendered is None:
+                default_rendered = "..."
+            rendered = f"{rendered} = {default_rendered}"
+        return rendered
+
+    def _render_expr(self, node: ast.AST) -> Optional[str]:
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            value = self._render_expr(node.value)
+            if value is None:
+                return None
+            return f"{value}.{node.attr}"
+        if isinstance(node, ast.Constant):
+            return repr(node.value)
+        if isinstance(node, ast.Subscript):
+            value = self._render_expr(node.value)
+            slice_expr = self._render_expr(node.slice)
+            if value is None or slice_expr is None:
+                return None
+            return f"{value}[{slice_expr}]"
+        if isinstance(node, ast.Tuple):
+            parts = [self._render_expr(elt) or "Any" for elt in node.elts]
+            inner = ", ".join(parts)
+            if len(parts) == 1:
+                inner += ","
+            return inner
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+            left = self._render_expr(node.left)
+            right = self._render_expr(node.right)
+            if left is None or right is None:
+                return None
+            return f"{left} | {right}"
         return None
 
     def _generate_function_stub(
@@ -852,6 +961,8 @@ def main():
     src_dir = script_dir / "src"
     rust_output_file = script_dir / "eqty_sdk" / "_rust.pyi"
     package_output_file = script_dir / "eqty_sdk" / "__init__.pyi"
+    asset_init_file = script_dir / "eqty_sdk" / "asset" / "__init__.py"
+    asset_doc_output_file = script_dir / "docs" / "generated" / "built-in-asset-types.md"
 
     if not src_dir.exists():
         print(f"Error: Source directory not found: {src_dir}")
@@ -866,6 +977,7 @@ def main():
     generator = StubGenerator([info["name"] for info in parser.classes.values()])
     generator.generate_stub_file(parser.modules, parser.classes, rust_output_file)
     generator.generate_package_stub_file(package_output_file)
+    generator.generate_asset_type_doc_snippet(asset_init_file, asset_doc_output_file)
 
     extra_stubs = script_dir / "eqty_sdk" / "_rust_extra.pyi"
     if extra_stubs.exists():

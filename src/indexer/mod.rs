@@ -50,7 +50,6 @@ pub struct Context {
 #[pymethods]
 impl Context {
     #[staticmethod]
-    #[allow(clippy::new_ret_no_self)]
     /// Creates a new context with the given name.
     ///
     /// If the global config is initialized, the context is persisted to sqlite.
@@ -74,7 +73,7 @@ impl Context {
 
     #[staticmethod]
     /// Creates a new context with the given uuid.
-    pub fn from_uuid(py: Python<'_>, project_id: Uuid) -> Context {
+    pub fn from_uuid(py: Python<'_>, project_id: Uuid) -> Self {
         let context = Context {
             id: project_id,
             name: project_id.to_string(),

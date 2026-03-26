@@ -75,10 +75,9 @@ class SignerTests(unittest.TestCase):
                 _load_if_exists=True,
             )
 
-    def test_set_active_signer_by_instance_and_name(self):
+    def test_set_active_signer_by_instance(self):
         signer = Signer.new(SIGNER_ALGORITHMS.ED25519)
         set_active_signer(signer)
-        set_active_signer(signer.name)
 
     def test_auth_service_requires_api_key_env(self):
         if "EQTY_API_KEY" in os.environ:

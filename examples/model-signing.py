@@ -17,4 +17,4 @@ model = Model.from_path(
 Computation.new().add_input_cid(model.cid).add_output_object("Output").finalize()
 
 ctx = cfg.get_default_context()
-ctx.export(Path("model-signing.json"))
+ctx.export(Path("./manifests/model-signing.json"))

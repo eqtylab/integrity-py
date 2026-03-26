@@ -21,4 +21,4 @@ print(document.cid)
 print(database.cid)
 print(code.cid)
 
-cfg.get_default_context().export(Path("path-backed-assets.json"))
+cfg.get_default_context().export(Path("./manifests/path-backed-assets.json"))

@@ -14,7 +14,7 @@ from eqty_sdk._rust import (
     init,
     purge_blob_store,
     purge_statement_store,
-    signer,
+    signer as _signer_module,
 )
 from eqty_sdk.asset import (
     Agent,
@@ -45,7 +45,32 @@ from eqty_sdk.errors import (
 )
 from eqty_sdk.statements import ASSOCIATION_TYPES, Association
 
-set_active_signer = signer.set_active_signer
+_context_root_new = Context.new
+
+
+# This is about the cleanest way to keep user from doing Context.from_uuid(..).new()
+# which would overwrite their from_uuid and just generate a new random Context
+class _ContextNewDescriptor:
+    def __get__(self, obj, owner):
+        if obj is None:
+            return _context_root_new
+
+        def _invalid_instance_new(name: str):
+            raise TypeError(
+                "Calling .new(...) on a Context instance is ambiguous. "
+                "Use Context.new(name) for a root context or "
+                "Context.with_parent(ctx).new(name) for a child context."
+            )
+
+        return _invalid_instance_new
+
+
+Context.new = _ContextNewDescriptor()
+
+
+def set_active_signer(signer: Signer) -> None:
+    """Set the active signer used by higher-level SDK operations."""
+    _signer_module.set_active_signer(signer)
 
 
 __all__ = [

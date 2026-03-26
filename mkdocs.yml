@@ -1,15 +1,21 @@
 site_name: eqty_sdk Documentation
 use_directory_urls: false
+not_in_nav: generated/*
 theme:
   name: readthedocs
 
 nav:
   - Home: index.md
+  - Install:
+      - Min Version: install/min-version.md
+      - Package Managers: install/package-managers.md
+      - Source: install/source.md
   - Examples:
       - Overview: examples/index.md
       - Basic Workflow: examples/basic-workflow.md
       - Async Compute: examples/async-compute.md
       - Context Linking: examples/context-linking.md
+      - Nested Contexts: examples/nested-contexts.md
       - Path-Backed Assets: examples/path-backed-assets.md
       - Auth Service Signer: examples/auth-service-signer.md
       - Service Registering: examples/service-registering.md
@@ -17,7 +23,6 @@ nav:
       - Model Signing: examples/model-signing.md
   - API Reference:
       - Overview: api/index.md
-      - Core: api/core.md
       - Init And Config: api/init-and-config.md
       - Global Functions: api/global-functions.md
       - CID: api/cid.md
@@ -25,7 +30,6 @@ nav:
       - UUID: api/uuid.md
       - Assets: api/assets.md
       - Compute: api/compute.md
-      - Config: api/config.md
       - Context: api/context.md
       - Declaration: api/declaration.md
       - Service: api/service.md
@@ -60,3 +64,9 @@ markdown_extensions:
   - pymdownx.snippets:
       base_path:
         - .
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/theme-toggle.js

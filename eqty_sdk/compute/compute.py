@@ -27,9 +27,6 @@ class Compute:
         func: The function to be wrapped.
         metadata: Additional metadata associated with the computation.
 
-    Returns:
-        A Compute object that wraps the provided function.
-
     """
 
     @property

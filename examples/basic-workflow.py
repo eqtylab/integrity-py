@@ -36,4 +36,4 @@ result = build_prompt(system_prompt, user_prompt, 0.2)
 print(result)
 
 ctx = cfg.get_default_context()
-ctx.export(Path("basic-workflow.json"))
+ctx.export(Path("./manifests/basic-workflow.json"))

@@ -1,5 +1,11 @@
 # DID
 
+A DID is a decentralized identifier: a stable identifier for an entity or signer that can be referenced in provenance statements without depending on a centralized account ID.
+
+In `eqty_sdk`, DIDs matter because signed statements, signer identities, and related attestations need a durable identifier that can travel with the manifest. If you are creating or using [Signer](signer.md) objects, generating verifier-friendly manifests, or attaching identity information to statements, you will encounter DIDs.
+
+Most users do not need to construct DIDs manually very often, but it is useful to understand that they are the identity layer behind signers and signed provenance records.
+
 ::: eqty_sdk._rust.DID
     options:
       members_order: source

@@ -22,5 +22,5 @@ Computation.with_context(run_ctx).new(name="Normalize Batch").add_input_cid(
     [input_data.cid]
 ).add_output_cid([output_data.cid]).finalize()
 
-cfg.get_default_context().export(Path("customer-project.json"))
-run_ctx.export(Path("daily-run-2026-03-25.json"))
+cfg.get_default_context().export(Path("./manifests/customer-project.json"))
+run_ctx.export(Path("./manifests/daily-run-2026-03-25.json"))

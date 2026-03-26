@@ -8,7 +8,6 @@ from eqty_sdk._rust import (
     init,
     purge_blob_store,
     purge_statement_store,
-    signer,
 )
 from eqty_sdk.asset import (
     Agent,
@@ -52,7 +51,11 @@ Entity = _rust.Entity
 Service = _rust.Service
 Signer = _rust.Signer
 
-set_active_signer = signer.set_active_signer
+_context_root_new = Context.new
+
+def set_active_signer(signer: Signer) -> None:
+    """Set the active signer used by higher-level SDK operations."""
+    ...
 
 __all__ = [
     "init",

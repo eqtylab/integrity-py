@@ -291,8 +291,8 @@ class signer:
     SIGNER_ALGORITHMS: type[SIGNER_ALGORITHMS]
 
     @staticmethod
-    def set_active_signer(signer: Any) -> None:
-        """Sets the active signer by name or signer instance.  # Arguments * `signer` - Signer name string or Signer instance"""
+    def set_active_signer(signer: _Signer) -> None:
+        """Sets the active signer from a signer instance.  # Arguments * `signer` - Signer instance"""
         ...
 
     @staticmethod

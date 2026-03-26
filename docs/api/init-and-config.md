@@ -2,6 +2,12 @@
 
 `init()` is the required entry point for the SDK. It initializes the local SDK state on disk and returns a `Config` object that you can use to adjust hashing, blob storage, and context behavior.
 
+## API Reference
+
+::: eqty_sdk.init
+    options:
+      show_root_heading: true
+
 ## Initialize The SDK
 
 The simplest form uses the default SDK directory under the current working directory:
@@ -35,6 +41,18 @@ cfg = init(default_context=ctx, custom_dir=Path(".eqty_sdk_customer"))
 - `set_cid_ignore_rules(...)`
 - `set_store_all_blobs(...)`
 - `get_default_context()`
+
+## Config Type
+
+::: eqty_sdk._rust.Config
+    options:
+      filters:
+        - "!^set_hashing_config$"
+        - "!^set_cid_ignore_rules$"
+        - "!^set_store_all_blobs$"
+        - "!^get_default_context$"
+      members_order: source
+      show_root_toc_entry: false
 
 ## Configure Hashing
 
@@ -97,7 +115,7 @@ from eqty_sdk import init
 
 cfg = init()
 ctx = cfg.get_default_context()
-ctx.export(Path("default-context.json"))
+ctx.export(Path("./manifests/default-context.json"))
 ```
 
 ## Full Example
@@ -124,3 +142,37 @@ set_active_signer(signer)
 ctx = cfg.get_default_context()
 print(ctx)
 ```
+
+## Config Instance Methods
+
+The reference below documents methods on the `Config` object returned by `init()`. These are not standalone top-level functions.
+
+Call them on the object you got back from `init()`:
+
+```python
+cfg = init()
+cfg = cfg.set_hashing_config(...)
+cfg = cfg.set_cid_ignore_rules(...)
+cfg = cfg.set_store_all_blobs(True)
+ctx = cfg.get_default_context()
+```
+
+::: eqty_sdk._rust.Config.set_hashing_config
+    options:
+      show_root_heading: true
+      show_root_toc_entry: true
+
+::: eqty_sdk._rust.Config.set_cid_ignore_rules
+    options:
+      show_root_heading: true
+      show_root_toc_entry: true
+
+::: eqty_sdk._rust.Config.set_store_all_blobs
+    options:
+      show_root_heading: true
+      show_root_toc_entry: true
+
+::: eqty_sdk._rust.Config.get_default_context
+    options:
+      show_root_heading: true
+      show_root_toc_entry: true

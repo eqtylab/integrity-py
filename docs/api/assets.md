@@ -6,23 +6,12 @@ Assets are the main way to register inputs, outputs, documents, models, and othe
 
 The SDK includes these built-in asset categories:
 
-- `Agent`
-- `Attribution`
-- `Benchmark`
-- `BenchmarkResult`
-- `Certificate`
-- `Code`
-- `Config`
-- `Database`
-- `Dataset`
-- `Document`
-- `Media`
-- `Model`
-- `Skill`
-- `Token`
-- `Tool`
+--8<-- "docs/generated/built-in-asset-types.md"
 
 These types all follow the same construction pattern.
+
+`Binary` is intended for compiled binary programs and similar executable artifacts that you want
+to register as part of a lineage graph.
 
 ## Constructors
 

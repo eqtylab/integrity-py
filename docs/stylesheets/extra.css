@@ -1,0 +1,498 @@
+:root {
+  --eqty-bg: #ffffff;
+  --eqty-surface: #fcfcfc;
+  --eqty-surface-strong: #f5f5f5;
+  --eqty-nav-bg: #343131;
+  --eqty-nav-accent: #2980b9;
+  --eqty-text: #404040;
+  --eqty-text-strong: #111827;
+  --eqty-link: #2980b9;
+  --eqty-link-hover: #1d4ed8;
+  --eqty-border: #d1d5db;
+  --eqty-code-bg: #f8fafc;
+  --eqty-code-fg: #111827;
+  --eqty-inline-code-fg: #0f172a;
+  --eqty-inline-code-bg: #f1f5f9;
+  --eqty-table-head: #f3f4f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --eqty-bg: #111827;
+    --eqty-surface: #0f172a;
+    --eqty-surface-strong: #1f2937;
+    --eqty-nav-bg: #0f172a;
+    --eqty-nav-accent: #1d4ed8;
+    --eqty-text: #e5e7eb;
+    --eqty-text-strong: #f8fafc;
+    --eqty-link: #93c5fd;
+    --eqty-link-hover: #bfdbfe;
+    --eqty-border: #334155;
+    --eqty-code-bg: #0b1220;
+    --eqty-code-fg: #e5e7eb;
+    --eqty-inline-code-fg: #e5e7eb;
+    --eqty-inline-code-bg: #111827;
+    --eqty-table-head: #1f2937;
+  }
+}
+
+:root[data-theme="dark"] {
+  --eqty-bg: #111827;
+  --eqty-surface: #0f172a;
+  --eqty-surface-strong: #1f2937;
+  --eqty-nav-bg: #0f172a;
+  --eqty-nav-accent: #1d4ed8;
+  --eqty-text: #e5e7eb;
+  --eqty-text-strong: #f8fafc;
+  --eqty-link: #93c5fd;
+  --eqty-link-hover: #bfdbfe;
+  --eqty-border: #334155;
+  --eqty-code-bg: #0b1220;
+  --eqty-code-fg: #e5e7eb;
+  --eqty-inline-code-fg: #e5e7eb;
+  --eqty-inline-code-bg: #111827;
+  --eqty-table-head: #1f2937;
+}
+
+html,
+body,
+.wy-body-for-nav,
+.wy-grid-for-nav,
+.wy-nav-content-wrap,
+.wy-nav-content {
+  background: var(--eqty-bg);
+  color: var(--eqty-text);
+}
+
+.wy-nav-side {
+  background: var(--eqty-nav-bg);
+}
+
+.wy-side-nav-search,
+.wy-nav-top {
+  background: var(--eqty-nav-accent);
+}
+
+.wy-menu-vertical a,
+.wy-breadcrumbs,
+.wy-breadcrumbs a,
+.wy-nav-content a,
+.rst-content a {
+  color: var(--eqty-link);
+}
+
+.wy-nav-content a:hover,
+.rst-content a:hover,
+.wy-breadcrumbs a:hover {
+  color: var(--eqty-link-hover);
+}
+
+.wy-menu-vertical li.current,
+.wy-menu-vertical li.current > a,
+.wy-menu-vertical li.current > a:hover,
+.wy-menu-vertical li.on a,
+.wy-menu-vertical li.toctree-l2.current > a,
+.wy-menu-vertical li.toctree-l2.current > a:hover,
+.wy-menu-vertical li.current ul,
+.wy-menu-vertical li.current ul li a {
+  background: var(--eqty-surface-strong);
+  color: var(--eqty-text-strong);
+}
+
+.rst-content,
+.rst-content p,
+.rst-content li,
+.rst-content h1,
+.rst-content h2,
+.rst-content h3,
+.rst-content h4,
+.rst-content h5,
+.rst-content h6,
+.wy-nav-content,
+.wy-nav-content p,
+.wy-nav-content li,
+.wy-breadcrumbs li,
+.wy-menu-vertical li span.toctree-expand {
+  color: var(--eqty-text);
+}
+
+.wy-nav-content h1,
+.wy-nav-content h2,
+.wy-nav-content h3,
+.wy-nav-content h4,
+.wy-nav-content h5,
+.wy-nav-content h6,
+.rst-content strong,
+.rst-content b {
+  color: var(--eqty-text-strong);
+}
+
+.rst-content code,
+.rst-content tt,
+code,
+tt {
+  background: var(--eqty-inline-code-bg);
+  color: var(--eqty-inline-code-fg);
+  border: 1px solid var(--eqty-border);
+}
+
+pre,
+.highlight,
+.highlight pre,
+div[class^="highlight"] {
+  background: var(--eqty-code-bg) !important;
+  color: var(--eqty-code-fg) !important;
+  border-color: var(--eqty-border) !important;
+}
+
+.rst-content pre code,
+.highlight code,
+.highlight pre code {
+  background: transparent !important;
+  border: 0;
+  color: inherit !important;
+}
+
+:root[data-theme="dark"] .highlight .hll,
+:root[data-theme="dark"] .highlight,
+:root[data-theme="dark"] .highlight pre,
+:root[data-theme="dark"] .highlight code,
+:root:not([data-theme="light"]) .highlight,
+:root:not([data-theme="light"]) .highlight pre,
+:root:not([data-theme="light"]) .highlight code {
+  background: var(--eqty-code-bg) !important;
+}
+
+:root[data-theme="dark"] .highlight span,
+:root[data-theme="dark"] .highlight code,
+:root:not([data-theme="light"]) .highlight span,
+:root:not([data-theme="light"]) .highlight code {
+  color: #e5e7eb !important;
+}
+
+:root[data-theme="dark"] .hljs,
+:root[data-theme="dark"] .hljs-subst,
+:root[data-theme="dark"] .hljs-params,
+:root:not([data-theme="light"]) .hljs,
+:root:not([data-theme="light"]) .hljs-subst,
+:root:not([data-theme="light"]) .hljs-params {
+  color: #e5e7eb !important;
+}
+
+:root[data-theme="dark"] .hljs-string,
+:root[data-theme="dark"] .hljs-attr,
+:root[data-theme="dark"] .hljs-template-variable,
+:root:not([data-theme="light"]) .hljs-string,
+:root:not([data-theme="light"]) .hljs-attr,
+:root:not([data-theme="light"]) .hljs-template-variable {
+  color: #86efac !important;
+}
+
+:root[data-theme="dark"] .hljs-keyword,
+:root[data-theme="dark"] .hljs-built_in,
+:root[data-theme="dark"] .hljs-title,
+:root[data-theme="dark"] .hljs-title.function_,
+:root[data-theme="dark"] .hljs-variable,
+:root:not([data-theme="light"]) .hljs-keyword,
+:root:not([data-theme="light"]) .hljs-built_in,
+:root:not([data-theme="light"]) .hljs-title,
+:root:not([data-theme="light"]) .hljs-title.function_,
+:root:not([data-theme="light"]) .hljs-variable {
+  color: #93c5fd !important;
+}
+
+:root[data-theme="dark"] .hljs-number,
+:root[data-theme="dark"] .hljs-literal,
+:root:not([data-theme="light"]) .hljs-number,
+:root:not([data-theme="light"]) .hljs-literal {
+  color: #fbbf24 !important;
+}
+
+:root[data-theme="dark"] .hljs-comment,
+:root:not([data-theme="light"]) .hljs-comment {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme="dark"] .highlight .n,
+:root[data-theme="dark"] .highlight .nn,
+:root[data-theme="dark"] .highlight .nc,
+:root[data-theme="dark"] .highlight .nf,
+:root[data-theme="dark"] .highlight .nb,
+:root[data-theme="dark"] .highlight .bp,
+:root[data-theme="dark"] .highlight .p,
+:root[data-theme="dark"] .highlight .o,
+:root[data-theme="dark"] .highlight .w,
+:root[data-theme="dark"] .highlight .mi,
+:root[data-theme="dark"] .highlight .mf,
+:root[data-theme="dark"] .highlight .mh,
+:root[data-theme="dark"] .highlight .il,
+:root[data-theme="dark"] .highlight .m,
+:root[data-theme="dark"] .highlight .s,
+:root[data-theme="dark"] .highlight .s1,
+:root[data-theme="dark"] .highlight .s2,
+:root[data-theme="dark"] .highlight .sa,
+:root[data-theme="dark"] .highlight .sb,
+:root[data-theme="dark"] .highlight .sc,
+:root[data-theme="dark"] .highlight .sd,
+:root[data-theme="dark"] .highlight .se,
+:root[data-theme="dark"] .highlight .sh,
+:root[data-theme="dark"] .highlight .si,
+:root[data-theme="dark"] .highlight .sx,
+:root[data-theme="dark"] .highlight .sr,
+:root[data-theme="dark"] .highlight .ss,
+:root[data-theme="dark"] .highlight .na,
+:root[data-theme="dark"] .highlight .nt,
+:root[data-theme="dark"] .highlight .nv,
+:root:not([data-theme="light"]) .highlight .n,
+:root:not([data-theme="light"]) .highlight .nn,
+:root:not([data-theme="light"]) .highlight .nc,
+:root:not([data-theme="light"]) .highlight .nf,
+:root:not([data-theme="light"]) .highlight .nb,
+:root:not([data-theme="light"]) .highlight .bp,
+:root:not([data-theme="light"]) .highlight .p,
+:root:not([data-theme="light"]) .highlight .o,
+:root:not([data-theme="light"]) .highlight .w,
+:root:not([data-theme="light"]) .highlight .mi,
+:root:not([data-theme="light"]) .highlight .mf,
+:root:not([data-theme="light"]) .highlight .mh,
+:root:not([data-theme="light"]) .highlight .il,
+:root:not([data-theme="light"]) .highlight .m,
+:root:not([data-theme="light"]) .highlight .s,
+:root:not([data-theme="light"]) .highlight .s1,
+:root:not([data-theme="light"]) .highlight .s2,
+:root:not([data-theme="light"]) .highlight .sa,
+:root:not([data-theme="light"]) .highlight .sb,
+:root:not([data-theme="light"]) .highlight .sc,
+:root:not([data-theme="light"]) .highlight .sd,
+:root:not([data-theme="light"]) .highlight .se,
+:root:not([data-theme="light"]) .highlight .sh,
+:root:not([data-theme="light"]) .highlight .si,
+:root:not([data-theme="light"]) .highlight .sx,
+:root:not([data-theme="light"]) .highlight .sr,
+:root:not([data-theme="light"]) .highlight .ss,
+:root:not([data-theme="light"]) .highlight .na,
+:root:not([data-theme="light"]) .highlight .nt,
+:root:not([data-theme="light"]) .highlight .nv {
+  color: #e5e7eb !important;
+}
+
+:root[data-theme="dark"] .highlight .k,
+:root[data-theme="dark"] .highlight .kd,
+:root[data-theme="dark"] .highlight .kn,
+:root[data-theme="dark"] .highlight .kp,
+:root[data-theme="dark"] .highlight .kr,
+:root[data-theme="dark"] .highlight .kt,
+:root:not([data-theme="light"]) .highlight .k,
+:root:not([data-theme="light"]) .highlight .kd,
+:root:not([data-theme="light"]) .highlight .kn,
+:root:not([data-theme="light"]) .highlight .kp,
+:root:not([data-theme="light"]) .highlight .kr,
+:root:not([data-theme="light"]) .highlight .kt {
+  color: #fca5a5 !important;
+}
+
+:root[data-theme="dark"] .highlight .nb,
+:root[data-theme="dark"] .highlight .fm,
+:root[data-theme="dark"] .highlight .nf,
+:root[data-theme="dark"] .highlight .nc,
+:root[data-theme="dark"] .highlight .nn,
+:root[data-theme="dark"] .highlight .ne,
+:root[data-theme="dark"] .highlight .vm,
+:root[data-theme="dark"] .highlight .vc,
+:root[data-theme="dark"] .highlight .vg,
+:root[data-theme="dark"] .highlight .vi,
+:root:not([data-theme="light"]) .highlight .nb,
+:root:not([data-theme="light"]) .highlight .fm,
+:root:not([data-theme="light"]) .highlight .nf,
+:root:not([data-theme="light"]) .highlight .nc,
+:root:not([data-theme="light"]) .highlight .nn,
+:root:not([data-theme="light"]) .highlight .ne,
+:root:not([data-theme="light"]) .highlight .vm,
+:root:not([data-theme="light"]) .highlight .vc,
+:root:not([data-theme="light"]) .highlight .vg,
+:root:not([data-theme="light"]) .highlight .vi {
+  color: #93c5fd !important;
+}
+
+:root[data-theme="dark"] .highlight .s,
+:root[data-theme="dark"] .highlight .s1,
+:root[data-theme="dark"] .highlight .s2,
+:root[data-theme="dark"] .highlight .sa,
+:root[data-theme="dark"] .highlight .sb,
+:root[data-theme="dark"] .highlight .sc,
+:root[data-theme="dark"] .highlight .sd,
+:root[data-theme="dark"] .highlight .se,
+:root[data-theme="dark"] .highlight .sh,
+:root[data-theme="dark"] .highlight .si,
+:root[data-theme="dark"] .highlight .sx,
+:root[data-theme="dark"] .highlight .sr,
+:root[data-theme="dark"] .highlight .ss,
+:root:not([data-theme="light"]) .highlight .s,
+:root:not([data-theme="light"]) .highlight .s1,
+:root:not([data-theme="light"]) .highlight .s2,
+:root:not([data-theme="light"]) .highlight .sa,
+:root:not([data-theme="light"]) .highlight .sb,
+:root:not([data-theme="light"]) .highlight .sc,
+:root:not([data-theme="light"]) .highlight .sd,
+:root:not([data-theme="light"]) .highlight .se,
+:root:not([data-theme="light"]) .highlight .sh,
+:root:not([data-theme="light"]) .highlight .si,
+:root:not([data-theme="light"]) .highlight .sx,
+:root:not([data-theme="light"]) .highlight .sr,
+:root:not([data-theme="light"]) .highlight .ss {
+  color: #86efac !important;
+}
+
+:root[data-theme="dark"] .highlight .c,
+:root[data-theme="dark"] .highlight .c1,
+:root[data-theme="dark"] .highlight .cm,
+:root[data-theme="dark"] .highlight .ch,
+:root[data-theme="dark"] .highlight .cp,
+:root[data-theme="dark"] .highlight .cpf,
+:root:not([data-theme="light"]) .highlight .c,
+:root:not([data-theme="light"]) .highlight .c1,
+:root:not([data-theme="light"]) .highlight .cm,
+:root:not([data-theme="light"]) .highlight .ch,
+:root:not([data-theme="light"]) .highlight .cp,
+:root:not([data-theme="light"]) .highlight .cpf {
+  color: #94a3b8 !important;
+}
+
+:root[data-theme="dark"] .highlight .ow,
+:root[data-theme="dark"] .highlight .gd,
+:root[data-theme="dark"] .highlight .gi,
+:root[data-theme="dark"] .highlight .gh,
+:root[data-theme="dark"] .highlight .gu,
+:root[data-theme="dark"] .highlight .gp,
+:root[data-theme="dark"] .highlight .go,
+:root[data-theme="dark"] .highlight .dl,
+:root:not([data-theme="light"]) .highlight .ow,
+:root:not([data-theme="light"]) .highlight .gd,
+:root:not([data-theme="light"]) .highlight .gi,
+:root:not([data-theme="light"]) .highlight .gh,
+:root:not([data-theme="light"]) .highlight .gu,
+:root:not([data-theme="light"]) .highlight .gp,
+:root:not([data-theme="light"]) .highlight .go,
+:root:not([data-theme="light"]) .highlight .dl {
+  color: #fda4af !important;
+}
+
+:root[data-theme="dark"] .highlight .mi,
+:root[data-theme="dark"] .highlight .mf,
+:root[data-theme="dark"] .highlight .mh,
+:root[data-theme="dark"] .highlight .il,
+:root[data-theme="dark"] .highlight .mo,
+:root[data-theme="dark"] .highlight .mb,
+:root:not([data-theme="light"]) .highlight .mi,
+:root:not([data-theme="light"]) .highlight .mf,
+:root:not([data-theme="light"]) .highlight .mh,
+:root:not([data-theme="light"]) .highlight .il,
+:root:not([data-theme="light"]) .highlight .mo,
+:root:not([data-theme="light"]) .highlight .mb {
+  color: #fbbf24 !important;
+}
+
+.rst-content table.docutils,
+.rst-content table.docutils td,
+.rst-content table.docutils th,
+.rst-content table.field-list,
+.rst-content table.field-list td,
+.rst-content table.field-list th {
+  border-color: var(--eqty-border);
+}
+
+.rst-content table.docutils thead th,
+.rst-content table.field-list thead th,
+.rst-content table.field-list th {
+  background: var(--eqty-table-head);
+}
+
+.rst-content table.docutils tbody tr:nth-child(2n-1) td {
+  background: var(--eqty-surface);
+}
+
+.rst-content table.docutils tbody tr:nth-child(2n) td {
+  background: var(--eqty-bg);
+}
+
+.rst-content .admonition,
+.rst-content .note,
+.rst-content .warning,
+.rst-content .important,
+.rst-content .tip {
+  background: var(--eqty-surface);
+  border-color: var(--eqty-border);
+}
+
+hr,
+.rst-content hr,
+.wy-nav-content-wrap .wy-nav-content {
+  border-color: var(--eqty-border);
+}
+
+input,
+textarea,
+select {
+  background: var(--eqty-surface);
+  color: var(--eqty-text);
+  border-color: var(--eqty-border);
+}
+
+.eqty-theme-toggle {
+  position: fixed;
+  right: 1rem;
+  top: 1rem;
+  z-index: 1000;
+  border: 1px solid var(--eqty-border);
+  border-radius: 999px;
+  background: var(--eqty-surface-strong);
+  color: var(--eqty-text-strong);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  width: 4.5rem;
+  height: 2.4rem;
+  padding: 0;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.eqty-theme-toggle:hover {
+  background: var(--eqty-surface);
+}
+
+.eqty-theme-toggle-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.6rem;
+}
+
+.eqty-theme-toggle-icon {
+  position: relative;
+  z-index: 1;
+  line-height: 1;
+  font-size: 1rem;
+}
+
+.eqty-theme-toggle-thumb {
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  background: var(--eqty-link);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s ease;
+}
+
+:root[data-theme="dark"] .eqty-theme-toggle-thumb,
+:root:not([data-theme="light"]) .eqty-theme-toggle-thumb {
+  transform: translateX(2rem);
+}

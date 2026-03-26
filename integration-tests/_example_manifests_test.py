@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import os
 import shutil
@@ -29,19 +30,35 @@ class ExampleCase:
 
 EXAMPLES = (
     ExampleCase(
-        "basic-workflow", REPO_ROOT / "examples/basic-workflow.py", ("basic-workflow.json",)
+        "basic-workflow",
+        REPO_ROOT / "examples/basic-workflow.py",
+        ("manifests/basic-workflow.json",),
+    ),
+    ExampleCase(
+        "creating-the-model",
+        REPO_ROOT / "examples/creating-the-model.py",
+        ("manifests/default-ctx.json",),
     ),
     ExampleCase(
         "context-linking",
         REPO_ROOT / "examples/context-linking.py",
-        ("customer-project.json", "daily-run-2026-03-25.json"),
+        ("manifests/customer-project.json", "manifests/daily-run-2026-03-25.json"),
     ),
     ExampleCase(
         "path-backed-assets",
         REPO_ROOT / "examples/path-backed-assets.py",
-        ("path-backed-assets.json",),
+        ("manifests/path-backed-assets.json",),
     ),
-    ExampleCase("model-signing", REPO_ROOT / "examples/model-signing.py", ("model-signing.json",)),
+    ExampleCase(
+        "using-the-model",
+        REPO_ROOT / "examples/using-the-model.py",
+        ("manifests/run-ctx.json",),
+    ),
+    ExampleCase(
+        "model-signing",
+        REPO_ROOT / "examples/model-signing.py",
+        ("manifests/model-signing.json",),
+    ),
 )
 
 
@@ -84,6 +101,7 @@ def normalize_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
 def _run_example(example: ExampleCase, workdir: Path) -> None:
     env = os.environ.copy()
     env.pop("PYTHONPATH", None)
+    (workdir / "manifests").mkdir(parents=True, exist_ok=True)
     subprocess.run(
         [sys.executable, str(example.script)],
         cwd=workdir,
@@ -116,9 +134,21 @@ def _assert_or_update(
 
     expected = _load_json(expected_path)
     if actual != expected:
+        expected_text = json.dumps(expected, indent=2, sort_keys=True).splitlines()
+        actual_text = json.dumps(actual, indent=2, sort_keys=True).splitlines()
+        diff = "\n".join(
+            difflib.unified_diff(
+                expected_text,
+                actual_text,
+                fromfile=str(expected_path),
+                tofile=f"{example.name}:{manifest_name} (actual)",
+                lineterm="",
+            )
+        )
         raise AssertionError(
             f"{example.name}:{manifest_name} manifest mismatch.\n"
             f"Expected: {expected_path}\n"
+            f"{diff}\n"
             "Run `_example_manifests_test.py --update-expected` to refresh after intentional changes."
         )
 
