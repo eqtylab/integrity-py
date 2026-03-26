@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     naersk.url = "github:nix-community/naersk/master";
     nixpkgs-rust.url = "github:NixOS/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
@@ -11,7 +11,7 @@
     };
   };
 
-  outputs = inputs @ { self, ...}:
+  outputs = inputs @ { self, ... }:
     inputs.utils.lib.eachDefaultSystem (system:
 
       let
@@ -24,7 +24,7 @@
           overlays = [ inputs.rust-overlay.overlays.default ];
         };
 
-       rust-config = {
+        rust-config = {
           extensions = [ "rust-src" ];
         };
 
