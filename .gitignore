@@ -57,4 +57,4 @@ site/
 .eqty_sdk
 tmp
 /.secrets
-/manifests
+/manifests/*.json
