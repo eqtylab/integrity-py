@@ -10,6 +10,9 @@ The SDK includes these built-in asset categories:
 
 These types all follow the same construction pattern.
 
+`Binary` is intended for compiled binary programs and similar executable artifacts that you want
+to register as part of a lineage graph.
+
 ## Constructors
 
 Most built-in asset types support these constructors:

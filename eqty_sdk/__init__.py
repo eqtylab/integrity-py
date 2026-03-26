@@ -48,6 +48,8 @@ from eqty_sdk.statements import ASSOCIATION_TYPES, Association
 _context_root_new = Context.new
 
 
+# This is about the cleanest way to keep user from doing Context.from_uuid(..).new()
+# which would overwrite their from_uuid and just generate a new random Context
 class _ContextNewDescriptor:
     def __get__(self, obj, owner):
         if obj is None:
