@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import os
 import shutil
@@ -133,9 +134,21 @@ def _assert_or_update(
 
     expected = _load_json(expected_path)
     if actual != expected:
+        expected_text = json.dumps(expected, indent=2, sort_keys=True).splitlines()
+        actual_text = json.dumps(actual, indent=2, sort_keys=True).splitlines()
+        diff = "\n".join(
+            difflib.unified_diff(
+                expected_text,
+                actual_text,
+                fromfile=str(expected_path),
+                tofile=f"{example.name}:{manifest_name} (actual)",
+                lineterm="",
+            )
+        )
         raise AssertionError(
             f"{example.name}:{manifest_name} manifest mismatch.\n"
             f"Expected: {expected_path}\n"
+            f"{diff}\n"
             "Run `_example_manifests_test.py --update-expected` to refresh after intentional changes."
         )
 

@@ -148,7 +148,7 @@ jobs:
             "${{ steps.build.outcome }}" \
             "${{ steps.test_rs.outcome }}" \
             "${{ steps.test_py.outcome }}" \
-            # "${{ steps.test_example_manifests.outcome }}"
+            "${{ steps.test_example_manifests.outcome }}"
           do
             if [ "$step" != "success" ]; then
               failed=1
