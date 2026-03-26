@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
         <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
         <link href="../css/version-select.css" rel="stylesheet" />
     
       <script>
@@ -45,6 +46,15 @@
                 <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
                 </li>
               </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
               <p class="caption"><span class="caption-text">Examples</span></p>
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
@@ -54,6 +64,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="async-compute.html">Async Compute</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="nested-contexts.html">Nested Contexts</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="path-backed-assets.html">Path-Backed Assets</a>
                   </li>
@@ -72,8 +84,6 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../api/index.html">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core</a>
-                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/init-and-config.html">Init And Config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/global-functions.html">Global Functions</a>
@@ -87,8 +97,6 @@
                   <li class="toctree-l1"><a class="reference internal" href="../api/assets.html">Assets</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/compute.html">Compute</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../api/config.html">Config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/context.html">Context</a>
                   </li>
@@ -147,7 +155,7 @@ payload = Dataset.from_object(
 )
 
 print(payload.cid)
-cfg.get_default_context().export(Path(&quot;auth-service-signer.json&quot;))
+cfg.get_default_context().export(Path(&quot;./manifests/auth-service-signer.json&quot;))
 
 </code></pre>
 <p>Notes:</p>
@@ -194,6 +202,7 @@ cfg.get_default_context().export(Path(&quot;auth-service-signer.json&quot;))
     <script>var base_url = "..";</script>
     <script src="../js/theme_extra.js"></script>
     <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
       <script src="../search/main.js"></script>
       <script src="../js/version-select.js"></script>
     <script>

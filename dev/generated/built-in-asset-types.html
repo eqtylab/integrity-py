@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>DID - eqty_sdk Documentation</title>
+    <title>Built in asset types - eqty_sdk Documentation</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -15,8 +15,8 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "DID";
-        var mkdocs_page_input_path = "api/did.md";
+        var mkdocs_page_name = "Built in asset types";
+        var mkdocs_page_input_path = "generated/built-in-asset-types.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -79,38 +79,32 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API Reference</span></p>
-              <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/index.html">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="init-and-config.html">Init And Config</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/init-and-config.html">Init And Config</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="global-functions.html">Global Functions</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/global-functions.html">Global Functions</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="cid.html">CID</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cid.html">CID</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">DID</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.DID">DID</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.DID.did">did</a>
-    </li>
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/did.html">DID</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="uuid.html">UUID</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/uuid.html">UUID</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="assets.html">Assets</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/assets.html">Assets</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="compute.html">Compute</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/compute.html">Compute</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="context.html">Context</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/context.html">Context</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="declaration.html">Declaration</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/declaration.html">Declaration</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="service.html">Service</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/service.html">Service</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="signer.html">Signer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/signer.html">Signer</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="statements.html">Statements</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/statements.html">Statements</a>
                   </li>
               </ul>
       </div>
@@ -127,8 +121,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">API Reference</li>
-      <li class="breadcrumb-item active">DID</li>
+      <li class="breadcrumb-item active">Built in asset types</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -137,79 +130,31 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="did">DID</h1>
-<p>A DID is a decentralized identifier: a stable identifier for an entity or signer that can be referenced in provenance statements without depending on a centralized account ID.</p>
-<p>In <code>eqty_sdk</code>, DIDs matter because signed statements, signer identities, and related attestations need a durable identifier that can travel with the manifest. If you are creating or using <a href="signer.html">Signer</a> objects, generating verifier-friendly manifests, or attaching identity information to statements, you will encounter DIDs.</p>
-<p>Most users do not need to construct DIDs manually very often, but it is useful to understand that they are the identity layer behind signers and signed provenance records.</p>
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<a id="eqty_sdk._rust.DID"></a>
-    <div class="doc doc-contents first">
-
-
-        <p>DID object</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="eqty_sdk._rust.DID.did" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">did</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">did</span><span class="p">:</span> <span class="nb">str</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>DID string used for registration.</p>
-
-    </div>
-
-</div>
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
+                <ul>
+<li><code>Agent</code></li>
+<li><code>Attribution</code></li>
+<li><code>Benchmark</code></li>
+<li><code>BenchmarkResult</code></li>
+<li><code>Binary</code></li>
+<li><code>Certificate</code></li>
+<li><code>Code</code></li>
+<li><code>Config</code></li>
+<li><code>Database</code></li>
+<li><code>Dataset</code></li>
+<li><code>Document</code></li>
+<li><code>Guardrail</code></li>
+<li><code>Media</code></li>
+<li><code>Model</code></li>
+<li><code>Prompt</code></li>
+<li><code>Reasoning</code></li>
+<li><code>Skill</code></li>
+<li><code>SystemPrompt</code></li>
+<li><code>Token</code></li>
+<li><code>Tool</code></li>
+</ul>
               
             </div>
           </div><footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="cid.html" class="btn btn-neutral float-left" title="CID"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="uuid.html" class="btn btn-neutral float-right" title="UUID">Next <span class="icon icon-circle-arrow-right"></span></a>
-    </div>
 
   <hr/>
 
@@ -231,10 +176,6 @@
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="cid.html" style="color: #fcfcfc">&laquo; Previous</a></span>
-    
-    
-      <span><a href="uuid.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

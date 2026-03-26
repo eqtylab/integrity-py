@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
         <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
         <link href="../css/version-select.css" rel="stylesheet" />
     
       <script>
@@ -45,6 +46,15 @@
                 <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
                 </li>
               </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
               <p class="caption"><span class="caption-text">Examples</span></p>
               <ul class="current">
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Overview</a>
@@ -56,6 +66,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="async-compute.html">Async Compute</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="nested-contexts.html">Nested Contexts</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="path-backed-assets.html">Path-Backed Assets</a>
                   </li>
@@ -72,8 +84,6 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../api/index.html">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core</a>
-                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/init-and-config.html">Init And Config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/global-functions.html">Global Functions</a>
@@ -87,8 +97,6 @@
                   <li class="toctree-l1"><a class="reference internal" href="../api/assets.html">Assets</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/compute.html">Compute</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../api/config.html">Config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/context.html">Context</a>
                   </li>
@@ -131,6 +139,7 @@
 <li><code>Basic Workflow</code>: initialize the SDK, create input assets, define a <code>@compute</code> function, execute it, and export a manifest.</li>
 <li><code>Async Compute</code>: use <code>@compute</code> with async functions and async generators.</li>
 <li><code>Context Linking</code>: split lineage across root and child graphs while keeping them connected.</li>
+<li><code>Nested Contexts</code>: create a local default context under a Governance Studio project, then create run-specific child contexts beneath it.</li>
 <li><code>Path-Backed Assets</code>: register files from disk with <code>from_path(...)</code>.</li>
 <li><code>Auth Service Signer</code>: reuse a persisted signer that delegates signing through an auth service.</li>
 <li><code>Service Registering</code>: create a graph for a Governance Studio project and register it with a service endpoint.</li>
@@ -142,7 +151,7 @@
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../index.html" class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../install/source.html" class="btn btn-neutral float-left" title="Source"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="basic-workflow.html" class="btn btn-neutral float-right" title="Basic Workflow">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
@@ -166,7 +175,7 @@
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../index.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../install/source.html" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
       <span><a href="basic-workflow.html" style="color: #fcfcfc">Next &raquo;</a></span>
@@ -177,6 +186,7 @@
     <script>var base_url = "..";</script>
     <script src="../js/theme_extra.js"></script>
     <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
       <script src="../search/main.js"></script>
       <script src="../js/version-select.js"></script>
     <script>

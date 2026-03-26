@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
         <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
         <link href="../css/version-select.css" rel="stylesheet" />
     
       <script>
@@ -45,6 +46,15 @@
                 <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
                 </li>
               </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
               <p class="caption"><span class="caption-text">Examples</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Overview</a>
@@ -54,6 +64,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="../examples/async-compute.html">Async Compute</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/nested-contexts.html">Nested Contexts</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/path-backed-assets.html">Path-Backed Assets</a>
                   </li>
@@ -70,13 +82,17 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="core.html">Core</a>
-                  </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Init And Config</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#api-reference">API Reference</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.init">init</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#initialize-the-sdk">Initialize The SDK</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#what-init-returns">What init() Returns</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#config-type">Config Type</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#configure-hashing">Configure Hashing</a>
     </li>
@@ -87,6 +103,16 @@
     <li class="toctree-l2"><a class="reference internal" href="#read-the-default-context">Read The Default Context</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#full-example">Full Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#config-instance-methods">Config Instance Methods</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Config.set_hashing_config">set_hashing_config</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Config.set_cid_ignore_rules">set_cid_ignore_rules</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Config.set_store_all_blobs">set_store_all_blobs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Config.get_default_context">get_default_context</a>
     </li>
     </ul>
                   </li>
@@ -101,8 +127,6 @@
                   <li class="toctree-l1"><a class="reference internal" href="assets.html">Assets</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="compute.html">Compute</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="config.html">Config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="context.html">Context</a>
                   </li>
@@ -141,7 +165,36 @@
               
                 <h1 id="init-and-config">Init And Config</h1>
 <p><code>init()</code> is the required entry point for the SDK. It initializes the local SDK state on disk and returns a <code>Config</code> object that you can use to adjust hashing, blob storage, and context behavior.</p>
-<h2 id="initialize-the-sdk">Initialize The SDK</h2>
+<h2 id="api-reference">API Reference</h2>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk.init" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">init</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-builtin"><code>builtin</code></small>
+  </span>
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">init</span><span class="p">(</span>
+    <span class="n">default_context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">custom_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Config</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Initializes the sdk config. Must be called before setting individual config values</p>
+
+
+    </div>
+
+</div><h2 id="initialize-the-sdk">Initialize The SDK</h2>
 <p>The simplest form uses the default SDK directory under the current working directory:</p>
 <pre><code class="language-python">from eqty_sdk import init
 
@@ -168,7 +221,45 @@ cfg = init(default_context=ctx, custom_dir=Path(&quot;.eqty_sdk_customer&quot;))
 <li><code>set_store_all_blobs(...)</code></li>
 <li><code>get_default_context()</code></li>
 </ul>
-<h2 id="configure-hashing">Configure Hashing</h2>
+<h2 id="config-type">Config Type</h2>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+    <div class="doc doc-contents first">
+
+
+        <p>Global application config containing configuration and state.  The config stores application-wide settings including storage directories, hashing preferences, and file filtering rules.</p>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="configure-hashing">Configure Hashing</h2>
 <p>Use <code>set_hashing_config()</code> to control hashing behavior when computing CIDs.</p>
 <pre><code class="language-python">from eqty_sdk import init
 
@@ -213,7 +304,7 @@ from eqty_sdk import init
 
 cfg = init()
 ctx = cfg.get_default_context()
-ctx.export(Path(&quot;default-context.json&quot;))
+ctx.export(Path(&quot;./manifests/default-context.json&quot;))
 </code></pre>
 <h2 id="full-example">Full Example</h2>
 <pre><code class="language-python">from pathlib import Path
@@ -237,11 +328,108 @@ set_active_signer(signer)
 ctx = cfg.get_default_context()
 print(ctx)
 </code></pre>
+<h2 id="config-instance-methods">Config Instance Methods</h2>
+<p>The reference below documents methods on the <code>Config</code> object returned by <code>init()</code>. These are not standalone top-level functions.</p>
+<p>Call them on the object you got back from <code>init()</code>:</p>
+<pre><code class="language-python">cfg = init()
+cfg = cfg.set_hashing_config(...)
+cfg = cfg.set_cid_ignore_rules(...)
+cfg = cfg.set_store_all_blobs(True)
+ctx = cfg.get_default_context()
+</code></pre>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Config.set_hashing_config" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_hashing_config</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_hashing_config</span><span class="p">(</span>
+    <span class="n">multithread</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">memory_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Config</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Updates hashing behavior used when computing CIDs.  - <code>multithread</code>: Enable multithreaded hashing. - <code>memory_map</code>: Enable memory-mapped file reads where supported.  Returns the updated config instance.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Config.set_cid_ignore_rules" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_cid_ignore_rules</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_cid_ignore_rules</span><span class="p">(</span>
+    <span class="n">include_hidden_files</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gitignore</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">include_symlinks</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Config</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Updates the directory ignore rules used when computing CIDs.  - <code>include_hidden_files</code>: Include hidden files in directory hashing. - <code>gitignore</code>: Respect <code>.gitignore</code> rules while hashing directories. - <code>include_symlinks</code>: Include symlinks in directory hashing.  Returns the updated config instance.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Config.set_store_all_blobs" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_store_all_blobs</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_store_all_blobs</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Config</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Sets whether blobs should be persisted automatically when computing CIDs.  Returns the updated config instance.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Config.get_default_context" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">get_default_context</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_default_context</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Context</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Returns the default context used when no context is supplied explicitly.</p>
+
+
+    </div>
+
+</div>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="core.html" class="btn btn-neutral float-left" title="Core"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="global-functions.html" class="btn btn-neutral float-right" title="Global Functions">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
@@ -265,7 +453,7 @@ print(ctx)
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="core.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="index.html" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
       <span><a href="global-functions.html" style="color: #fcfcfc">Next &raquo;</a></span>
@@ -276,6 +464,7 @@ print(ctx)
     <script>var base_url = "..";</script>
     <script src="../js/theme_extra.js"></script>
     <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
       <script src="../search/main.js"></script>
       <script src="../js/version-select.js"></script>
     <script>

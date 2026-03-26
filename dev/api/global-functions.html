@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
         <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
         <link href="../css/version-select.css" rel="stylesheet" />
     
       <script>
@@ -45,6 +46,15 @@
                 <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
                 </li>
               </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
               <p class="caption"><span class="caption-text">Examples</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Overview</a>
@@ -54,6 +64,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="../examples/async-compute.html">Async Compute</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/nested-contexts.html">Nested Contexts</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/path-backed-assets.html">Path-Backed Assets</a>
                   </li>
@@ -70,15 +82,19 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="core.html">Core</a>
-                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="init-and-config.html">Init And Config</a>
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Global Functions</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#purge_blob_store">purge_blob_store</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.purge_blob_store">purge_blob_store</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#purge_statement_store">purge_statement_store</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.purge_statement_store">purge_statement_store</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#set_active_signer">set_active_signer</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.set_active_signer">set_active_signer</a>
     </li>
@@ -93,8 +109,6 @@
                   <li class="toctree-l1"><a class="reference internal" href="assets.html">Assets</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="compute.html">Compute</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="config.html">Config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="context.html">Context</a>
                   </li>
@@ -132,6 +146,9 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="global-functions">Global Functions</h1>
+<p>These functions affect SDK-global state. Most users only need them occasionally, usually during setup, testing, or local environment cleanup.</p>
+<h2 id="purge_blob_store"><code>purge_blob_store</code></h2>
+<p>Use this when you want to clear the local blob cache managed by the SDK and start from a clean state. This is mainly useful in tests, local development, or when you intentionally want to discard previously stored blobs.</p>
 
 
 <div class="doc doc-object doc-function">
@@ -156,7 +173,9 @@
 
     </div>
 
-</div>
+</div><h2 id="purge_statement_store"><code>purge_statement_store</code></h2>
+<p>Use this when you want to reset the local statement/index store and remove previously recorded lineage state. This is most useful in tests and local debugging, and is usually not something you should call in normal application flows.</p>
+
 
 <div class="doc doc-object doc-function">
 
@@ -180,25 +199,25 @@
 
     </div>
 
-</div>
+</div><h2 id="set_active_signer"><code>set_active_signer</code></h2>
+<p>Use this to set the signer that higher-level SDK operations should use when they need to emit signed statements or related attestations. This must be called during setup, typically during process startup, so the rest of your workflow can rely on that active signer. It accepts a <a href="signer.html">Signer</a> object.</p>
 
-<div class="doc doc-object doc-attribute">
 
+<div class="doc doc-object doc-function">
 
 
 <h2 id="eqty_sdk.set_active_signer" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">set_active_signer</span>
+            <span class="doc doc-object-name doc-function-name">set_active_signer</span>
 
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
-  </span>
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">set_active_signer</span> <span class="o">=</span> <span class="n">set_active_signer</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_active_signer</span><span class="p">(</span><span class="n">signer</span><span class="p">:</span> <span class="n">Signer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
+
+        <p>Set the active signer used by higher-level SDK operations.</p>
+
 
     </div>
 
@@ -242,6 +261,7 @@
     <script>var base_url = "..";</script>
     <script src="../js/theme_extra.js"></script>
     <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
       <script src="../search/main.js"></script>
       <script src="../js/version-select.js"></script>
     <script>

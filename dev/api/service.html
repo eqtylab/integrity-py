@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
         <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
         <link href="../css/version-select.css" rel="stylesheet" />
     
       <script>
@@ -45,6 +46,15 @@
                 <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
                 </li>
               </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
               <p class="caption"><span class="caption-text">Examples</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Overview</a>
@@ -54,6 +64,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="../examples/async-compute.html">Async Compute</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/nested-contexts.html">Nested Contexts</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/path-backed-assets.html">Path-Backed Assets</a>
                   </li>
@@ -70,8 +82,6 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="core.html">Core</a>
-                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="init-and-config.html">Init And Config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="global-functions.html">Global Functions</a>
@@ -85,8 +95,6 @@
                   <li class="toctree-l1"><a class="reference internal" href="assets.html">Assets</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="compute.html">Compute</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="config.html">Config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="context.html">Context</a>
                   </li>
@@ -132,6 +140,15 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="service">Service</h1>
+<p>A service is the SDK's connection to a remote Integrity Service or Governance Studio-backed API.</p>
+<p>You should use <code>Service</code> when you want to move beyond local graph generation and start registering contexts, statements, and blobs with a remote system. That is the path for sharing graphs, registering them to Governance Studio projects, or making locally generated provenance available to other systems.</p>
+<p>Typical usage is:</p>
+<ul>
+<li>create a <code>Service</code> with the remote base URL</li>
+<li>provide an API key directly or through <code>EQTY_API_KEY</code> when required by your workflow</li>
+<li>call <code>Context.register(service)</code> or related APIs to push the graph and referenced blobs</li>
+</ul>
+<p>If your workflow is only generating local manifests, you may not need <code>Service</code> at all.</p>
 
 
 <div class="doc doc-object doc-class">
@@ -257,6 +274,7 @@
     <script>var base_url = "..";</script>
     <script src="../js/theme_extra.js"></script>
     <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
       <script src="../search/main.js"></script>
       <script src="../js/version-select.js"></script>
     <script>

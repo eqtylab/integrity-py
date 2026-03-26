@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>DID - eqty_sdk Documentation</title>
+    <title>Min Version - eqty_sdk Documentation</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -15,8 +15,8 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "DID";
-        var mkdocs_page_input_path = "api/did.md";
+        var mkdocs_page_name = "Min Version";
+        var mkdocs_page_input_path = "install/min-version.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -47,12 +47,24 @@
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">Install</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Min Version</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#linux-wheel-requirements">Linux Wheel Requirements</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#x86_64">x86_64</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#aarch64">aarch64</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#macos-wheel-requirements">macOS Wheel Requirements</a>
+    </li>
+    </ul>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  <li class="toctree-l1"><a class="reference internal" href="package-managers.html">Package Managers</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  <li class="toctree-l1"><a class="reference internal" href="source.html">Source</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Examples</span></p>
@@ -79,38 +91,32 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API Reference</span></p>
-              <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/index.html">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="init-and-config.html">Init And Config</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/init-and-config.html">Init And Config</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="global-functions.html">Global Functions</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/global-functions.html">Global Functions</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="cid.html">CID</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cid.html">CID</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">DID</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.DID">DID</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.DID.did">did</a>
-    </li>
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/did.html">DID</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="uuid.html">UUID</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/uuid.html">UUID</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="assets.html">Assets</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/assets.html">Assets</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="compute.html">Compute</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/compute.html">Compute</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="context.html">Context</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/context.html">Context</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="declaration.html">Declaration</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/declaration.html">Declaration</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="service.html">Service</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/service.html">Service</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="signer.html">Signer</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/signer.html">Signer</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="statements.html">Statements</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/statements.html">Statements</a>
                   </li>
               </ul>
       </div>
@@ -127,8 +133,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">API Reference</li>
-      <li class="breadcrumb-item active">DID</li>
+          <li class="breadcrumb-item">Install</li>
+      <li class="breadcrumb-item active">Min Version</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -137,78 +143,52 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="did">DID</h1>
-<p>A DID is a decentralized identifier: a stable identifier for an entity or signer that can be referenced in provenance statements without depending on a centralized account ID.</p>
-<p>In <code>eqty_sdk</code>, DIDs matter because signed statements, signer identities, and related attestations need a durable identifier that can travel with the manifest. If you are creating or using <a href="signer.html">Signer</a> objects, generating verifier-friendly manifests, or attaching identity information to statements, you will encounter DIDs.</p>
-<p>Most users do not need to construct DIDs manually very often, but it is useful to understand that they are the identity layer behind signers and signed provenance records.</p>
+                <h1 id="minimum-supported-versions">Minimum Supported Versions</h1>
+<ul>
+<li>Python: 3.10</li>
+<li>pip: latest supported release</li>
+<li>Linux wheel runtime requirements are release- and architecture-specific. See the reports below.</li>
+</ul>
+<p>Pre-compiled wheels are available for common systems. If a wheel is not available for your target platform, use <a href="source.html">Install From Source</a> instead.</p>
+<h2 id="linux-wheel-requirements">Linux Wheel Requirements</h2>
+<p>These reports are generated during the release workflow from the actual published Linux wheels and contain the output of <code>auditwheel show</code>.</p>
+<h3 id="x86_64">x86_64</h3>
+<pre><code class="language-text">eqty_sdk-0.0.0-cp38-abi3-linux_x86_64.whl is consistent with the
+following platform tag: &quot;manylinux_2_38_x86_64&quot;.
 
+The wheel references external versioned symbols in these
+system-provided shared libraries: libc.so.6 with versions
+{'GLIBC_2.3', 'GLIBC_2.14', 'GLIBC_2.12', 'GLIBC_2.28', 'GLIBC_2.8',
+'GLIBC_2.9', 'GLIBC_2.32', 'GLIBC_2.3.4', 'GLIBC_2.27', 'GLIBC_2.16',
+'GLIBC_2.18', 'GLIBC_2.5', 'GLIBC_2.15', 'GLIBC_2.2.5', 'GLIBC_2.34',
+'GLIBC_2.7', 'GLIBC_2.4', 'GLIBC_2.33', 'GLIBC_2.17', 'GLIBC_2.38',
+'GLIBC_2.25', 'GLIBC_2.3.2'}, libcrypto-9c298d15.so.3 with versions
+{'OPENSSL_3.4.0', 'OPENSSL_3.0.0', 'OPENSSL_3.2.0', 'OPENSSL_3.3.0',
+'OPENSSL_3.6.0', 'OPENSSL_3.0.3'}, libgcc_s.so.1 with versions
+{'GCC_3.0', 'GCC_3.3', 'GCC_4.2.0'}, libm.so.6 with versions
+{'GLIBC_2.29'}, libssl-27b3b145.so.3 with versions {'OPENSSL_3.0.0'}
 
-<div class="doc doc-object doc-class">
+This constrains the platform tag to &quot;manylinux_2_38_x86_64&quot;. In order
+to achieve a more compatible tag, you would need to recompile a new
+wheel from source on a system with earlier versions of these
+libraries, such as a recent manylinux image.
 
+</code></pre>
+<h3 id="aarch64">aarch64</h3>
+<pre><code class="language-text">Release workflow has not generated the aarch64 auditwheel report yet.
 
+</code></pre>
+<h2 id="macos-wheel-requirements">macOS Wheel Requirements</h2>
+<p>This report is generated during the release workflow from the actual published macOS wheel and contains the output of <code>otool -L</code>.</p>
+<pre><code class="language-text">Release workflow has not generated the macOS wheel linkage report yet.
 
-<a id="eqty_sdk._rust.DID"></a>
-    <div class="doc doc-contents first">
-
-
-        <p>DID object</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h2 id="eqty_sdk._rust.DID.did" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">did</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">did</span><span class="p">:</span> <span class="nb">str</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>DID string used for registration.</p>
-
-    </div>
-
-</div>
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
+</code></pre>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="cid.html" class="btn btn-neutral float-left" title="CID"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="uuid.html" class="btn btn-neutral float-right" title="UUID">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../index.html" class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="package-managers.html" class="btn btn-neutral float-right" title="Package Managers">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -231,10 +211,10 @@
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="cid.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../index.html" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="uuid.html" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="package-managers.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

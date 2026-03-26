@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
         <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
         <link href="../css/version-select.css" rel="stylesheet" />
     
       <script>
@@ -45,6 +46,15 @@
                 <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
                 </li>
               </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
               <p class="caption"><span class="caption-text">Examples</span></p>
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
@@ -54,6 +64,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="async-compute.html">Async Compute</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="nested-contexts.html">Nested Contexts</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="path-backed-assets.html">Path-Backed Assets</a>
                   </li>
@@ -72,8 +84,6 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../api/index.html">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../api/core.html">Core</a>
-                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/init-and-config.html">Init And Config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/global-functions.html">Global Functions</a>
@@ -87,8 +97,6 @@
                   <li class="toctree-l1"><a class="reference internal" href="../api/assets.html">Assets</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/compute.html">Compute</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../api/config.html">Config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../api/context.html">Context</a>
                   </li>
@@ -143,7 +151,8 @@ from eqty_sdk import (
 )
 
 gov_studio_project = UUID(&quot;00000000-0000-0000-0000-000000000000&quot;)
-ctx = Context.from_uuid(gov_studio_project).new(&quot;My Agent v1&quot;)
+gov_ctx = Context.from_uuid(gov_studio_project)
+ctx = Context.with_parent(gov_ctx).new(&quot;My Agent v1&quot;)
 cfg = init(default_context=ctx)
 
 signer = Signer.new()
@@ -165,8 +174,8 @@ cfg.get_default_context().register(service)
 </code></pre>
 <p>Important details:</p>
 <ul>
-<li><code>Context.from_uuid(...)</code> takes the UUID for the Governance Studio project where you want this graph to be registered.</li>
-<li>The name passed to <code>.new("My Agent v1")</code> is the label that Governance Studio shows for the graph.</li>
+<li><code>Context.from_uuid(...)</code> takes the UUID for the Governance Studio project where you want this graph tree to be registered.</li>
+<li><code>Context.with_parent(gov_ctx).new("My Agent v1")</code> creates a child graph under that Governance Studio project, and the name passed to <code>.new(...)</code> is the label that Governance Studio shows for the child graph.</li>
 <li><code>Service.new(...)</code> uses the <code>EQTY_API_KEY</code> environment variable when an API key is not passed directly. Set <code>EQTY_API_KEY</code> to an API key created in Governance Studio before running this example.</li>
 <li>If you expect to register blobs to a remote service often, pair this pattern with <code>cfg.set_store_all_blobs(True)</code> as shown in <code>Remote Service Workflow</code>.</li>
 </ul>
@@ -209,6 +218,7 @@ cfg.get_default_context().register(service)
     <script>var base_url = "..";</script>
     <script src="../js/theme_extra.js"></script>
     <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
       <script src="../search/main.js"></script>
       <script src="../js/version-select.js"></script>
     <script>

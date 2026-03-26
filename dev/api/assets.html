@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
         <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
         <link href="../css/version-select.css" rel="stylesheet" />
     
       <script>
@@ -45,6 +46,15 @@
                 <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
                 </li>
               </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
               <p class="caption"><span class="caption-text">Examples</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Overview</a>
@@ -54,6 +64,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="../examples/async-compute.html">Async Compute</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/nested-contexts.html">Nested Contexts</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/path-backed-assets.html">Path-Backed Assets</a>
                   </li>
@@ -69,8 +81,6 @@
               <p class="caption"><span class="caption-text">API Reference</span></p>
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="core.html">Core</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="init-and-config.html">Init And Config</a>
                   </li>
@@ -118,6 +128,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.BenchmarkResult">BenchmarkResult</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Binary">Binary</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Certificate">Certificate</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Code">Code</a>
@@ -132,11 +144,15 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Document">Document</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Guardrail">Guardrail</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Media">Media</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Model">Model</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Prompt">Prompt</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Reasoning">Reasoning</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Skill">Skill</a>
     </li>
@@ -149,8 +165,6 @@
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="compute.html">Compute</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="config.html">Config</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="context.html">Context</a>
                   </li>
@@ -196,19 +210,26 @@
 <li><code>Attribution</code></li>
 <li><code>Benchmark</code></li>
 <li><code>BenchmarkResult</code></li>
+<li><code>Binary</code></li>
 <li><code>Certificate</code></li>
 <li><code>Code</code></li>
 <li><code>Config</code></li>
 <li><code>Database</code></li>
 <li><code>Dataset</code></li>
 <li><code>Document</code></li>
+<li><code>Guardrail</code></li>
 <li><code>Media</code></li>
 <li><code>Model</code></li>
+<li><code>Prompt</code></li>
+<li><code>Reasoning</code></li>
 <li><code>Skill</code></li>
+<li><code>SystemPrompt</code></li>
 <li><code>Token</code></li>
 <li><code>Tool</code></li>
 </ul>
 <p>These types all follow the same construction pattern.</p>
+<p><code>Binary</code> is intended for compiled binary programs and similar executable artifacts that you want
+to register as part of a lineage graph.</p>
 <h2 id="constructors">Constructors</h2>
 <p>Most built-in asset types support these constructors:</p>
 <ul>
@@ -686,6 +707,59 @@ dataset = Dataset.from_object(
 
 
 
+<h2 id="eqty_sdk.asset.Binary" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">Binary</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Binary</span><span class="p">(</span>
+    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
+    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
+
+
+        <p>Represents a compiled binary program asset.</p>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
 <h2 id="eqty_sdk.asset.Certificate" class="doc doc-heading">
             <span class="doc doc-object-name doc-class-name">Certificate</span>
 
@@ -1057,6 +1131,59 @@ dataset = Dataset.from_object(
 
 
 
+<h2 id="eqty_sdk.asset.Guardrail" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">Guardrail</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Guardrail</span><span class="p">(</span>
+    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
+    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
+
+
+        <p>Represents a guardrail asset.</p>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
 <h2 id="eqty_sdk.asset.Media" class="doc doc-heading">
             <span class="doc doc-object-name doc-class-name">Media</span>
 
@@ -1184,6 +1311,59 @@ dataset = Dataset.from_object(
 
 
         <p>Represents a Prompt asset.</p>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="eqty_sdk.asset.Reasoning" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">Reasoning</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Reasoning</span><span class="p">(</span>
+    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
+    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
+
+
+        <p>Represents a reasoning asset.</p>
 
 
 
@@ -1471,6 +1651,7 @@ dataset = Dataset.from_object(
     <script>var base_url = "..";</script>
     <script src="../js/theme_extra.js"></script>
     <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
       <script src="../search/main.js"></script>
       <script src="../js/version-select.js"></script>
     <script>
