@@ -2,7 +2,7 @@
 
 Signers are the identity and signing mechanism used by the SDK when it needs to produce signed provenance statements, attestations, or model-signing metadata.
 
-A signer is required, as every statement that gets created is attributed back to being created by a Signer's underlying DID (Digital Identifier). A signer is part of process setup: create or load a signer, call [`set_active_signer`](global-functions.md), and then let higher-level SDK operations use that active signer automatically.
+A signer is required, as every statement that gets created is attributed back to being created by a Signer's underlying DID (Decentralized Identifier). A signer is part of process setup: create or load a signer, call [`set_active_signer`](global-functions.md), and then let higher-level SDK operations use that active signer automatically.
 
 The SDK supports local signers and service-backed signers. Choose the one that matches your security model and operational environment.
 
