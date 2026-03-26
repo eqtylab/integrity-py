@@ -15,6 +15,7 @@ nav:
       - Basic Workflow: examples/basic-workflow.md
       - Async Compute: examples/async-compute.md
       - Context Linking: examples/context-linking.md
+      - Nested Contexts: examples/nested-contexts.md
       - Path-Backed Assets: examples/path-backed-assets.md
       - Auth Service Signer: examples/auth-service-signer.md
       - Service Registering: examples/service-registering.md

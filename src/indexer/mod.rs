@@ -73,7 +73,7 @@ impl Context {
     }
 
     #[staticmethod]
-    /// Creates a new context with the given uuid.
+    /// Creates a root context with the given UUID.
     pub fn from_uuid(py: Python<'_>, project_id: Uuid) -> Context {
         let context = Context {
             id: project_id,

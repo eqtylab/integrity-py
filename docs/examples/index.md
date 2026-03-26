@@ -5,6 +5,7 @@ These examples show how to use the SDK end to end instead of one API surface at 
 - `Basic Workflow`: initialize the SDK, create input assets, define a `@compute` function, execute it, and export a manifest.
 - `Async Compute`: use `@compute` with async functions and async generators.
 - `Context Linking`: split lineage across root and child graphs while keeping them connected.
+- `Nested Contexts`: create a local default context under a Governance Studio project, then create run-specific child contexts beneath it.
 - `Path-Backed Assets`: register files from disk with `from_path(...)`.
 - `Auth Service Signer`: reuse a persisted signer that delegates signing through an auth service.
 - `Service Registering`: create a graph for a Governance Studio project and register it with a service endpoint.

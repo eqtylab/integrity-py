@@ -104,7 +104,7 @@ class Context:
 
     @staticmethod
     def from_uuid(project_id: uuid.UUID) -> Context:
-        """Creates a new context with the given uuid."""
+        """Creates a root context with the given UUID."""
         ...
 
     def register(self, service: Service) -> None:
