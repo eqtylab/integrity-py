@@ -143,7 +143,11 @@ jobs:
           MATURIN_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
         run: |
           python3 -m pip install --user --upgrade maturin
-          python3 -m maturin upload --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner" dist/*
+          shopt -s nullglob
+          files=(dist/*.whl dist/*.tar.gz)
+          if [ ${#files[@]} -gt 0 ]; then
+            python3 -m maturin upload --skip-existing --repository-url="https://pypi.eqtylab.io/" --username="ci_runner" "${files[@]}"
+          fi
 
       - name: Publish Windows Package
         if: runner.os == 'Windows'

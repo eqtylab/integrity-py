@@ -24,7 +24,7 @@ These reports are generated during the release workflow from the actual publishe
 
 ## macOS Wheel Requirements
 
-This report is generated during the release workflow from the actual published macOS wheel and contain the output of `auditwheel show`.
+This report is generated during the release workflow from the actual published macOS wheel and contains the output of `otool -L`.
 ```text
 --8<-- "docs/generated/otool-show-macos.txt"
 ```
