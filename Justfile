@@ -77,6 +77,7 @@ test-rs:
 generate-stubs:
   poetry run python ./scripts/generate_stubs.py
   just fmt
+  just lint
 
 # Update README.md with auto-generated content (Justfile commands, etc.)
 readme-update:
