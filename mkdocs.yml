@@ -63,3 +63,9 @@ markdown_extensions:
   - pymdownx.snippets:
       base_path:
         - .
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/theme-toggle.js
