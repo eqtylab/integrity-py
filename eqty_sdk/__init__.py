@@ -45,6 +45,26 @@ from eqty_sdk.errors import (
 )
 from eqty_sdk.statements import ASSOCIATION_TYPES, Association
 
+_context_root_new = Context.new
+
+
+class _ContextNewDescriptor:
+    def __get__(self, obj, owner):
+        if obj is None:
+            return _context_root_new
+
+        def _invalid_instance_new(name: str):
+            raise TypeError(
+                "Calling .new(...) on a Context instance is ambiguous. "
+                "Use Context.new(name) for a root context or "
+                "Context.with_parent(ctx).new(name) for a child context."
+            )
+
+        return _invalid_instance_new
+
+
+Context.new = _ContextNewDescriptor()
+
 
 def set_active_signer(signer: Signer) -> None:
     """Set the active signer used by higher-level SDK operations."""

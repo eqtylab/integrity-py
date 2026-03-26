@@ -51,6 +51,8 @@ Entity = _rust.Entity
 Service = _rust.Service
 Signer = _rust.Signer
 
+_context_root_new = Context.new
+
 def set_active_signer(signer: Signer) -> None:
     """Set the active signer used by higher-level SDK operations."""
     ...
