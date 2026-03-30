@@ -125,7 +125,7 @@ impl Signer {
         name: Option<String>,
         _load_if_exists: bool,
     ) -> PyResult<Py<Signer>> {
-        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+        if let Some((existing, _)) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
             return Py::new(py, existing);
         }
 
@@ -165,7 +165,12 @@ impl Signer {
         _load_if_exists: bool,
     ) -> PyResult<Py<Signer>> {
         let url = url.unwrap_or_else(|| "http://docker.eqtylab.internal:8066".to_string());
-        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+        if let Some((existing, signer_type)) = maybe_load_signer(name.as_deref(), _load_if_exists)?
+        {
+            if let SignerType::VCompNotarySigner(vcomp_signer) = signer_type {
+                // save blobs/statements incase the were purged previously
+                persist_vcomp_signer_data(py, vcomp_signer)?;
+            }
             return Py::new(py, existing);
         }
 
@@ -174,26 +179,7 @@ impl Signer {
             .build()?;
 
         let signer = rt.block_on(VCompNotarySigner::create(&url, None))?;
-
-        with_cfg!(py, |cfg| {
-            let vcomp_signer = signer.clone();
-            if let Some(blobs) = vcomp_signer.did_blobs {
-                log::debug!("Saving {} vcomp blobs to store", blobs.len());
-                for (cid, data) in blobs {
-                    let codec = get_multicodec(&cid)?;
-                    cfg.blob_store.put(data, codec, Some(&cid)).await?;
-                }
-            }
-            if let Some(statements) = vcomp_signer.did_statements {
-                log::debug!("Saving {} vcomp statements to store", statements.len());
-                for (_, statement) in statements {
-                    let id = uuid!("00000000-0000-0000-0000-000000000000");
-                    let s = serde_json::from_value::<Statement>(statement)?;
-                    cfg.sql_lite.register_statement(&s, &id).await?;
-                }
-            }
-            Ok::<_, anyhow::Error>(())
-        })?;
+        persist_vcomp_signer_data(py, signer.clone())?;
 
         let signer_type = SignerType::VCompNotarySigner(signer);
         log::debug!(
@@ -225,7 +211,7 @@ impl Signer {
             )
         })?;
 
-        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+        if let Some((existing, _)) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
             return Py::new(py, existing);
         }
 
@@ -262,7 +248,7 @@ impl Signer {
         name: Option<String>,
         _load_if_exists: bool,
     ) -> PyResult<Py<Signer>> {
-        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+        if let Some((existing, _)) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
             return Py::new(py, existing);
         }
 
@@ -328,28 +314,12 @@ fn get_active_signer_did_key() -> PyResult<String> {
 /// Subdirectory name for storing signer key files.
 pub static SIGNER_DIR: &str = "signers";
 
-/// Checks if a signer already exists with the provided name
-fn signer_exists(name: Option<&str>) -> PyResult<()> {
-    if name.is_none() {
-        return Ok(());
-    }
-
-    let signer_dir = cfg_blocking()?.app_dir.join(SIGNER_DIR);
-    let name = name.unwrap();
-    log::debug!("Adding Signer. Args= {name}");
-
-    if fs::exists(signer_dir.join(name)).expect("Error checking if signer exists") {
-        let msg = format!("A signer named {name:?} already exists");
-        log::warn!("{msg}");
-        return Err(PyErr::new::<PyValueError, _>(msg));
-    }
-
-    Ok(())
-}
-
-fn maybe_load_signer(name: Option<&str>, load_if_exists: bool) -> PyResult<Option<Signer>> {
+// Attempts to load signer data from disk, if `load_if_exists`== true && `name` is Some()
+fn maybe_load_signer(
+    name: Option<&str>,
+    load_if_exists: bool,
+) -> PyResult<Option<(Signer, SignerType)>> {
     if !load_if_exists {
-        signer_exists(name)?;
         return Ok(None);
     }
 
@@ -359,16 +329,46 @@ fn maybe_load_signer(name: Option<&str>, load_if_exists: bool) -> PyResult<Optio
         ));
     };
 
+    log::info!("Attempting to load exiting signer {name:?}");
+
     let signer_path = cfg_blocking()?.app_dir.join(SIGNER_DIR).join(name);
     if !signer_path.exists() {
         return Ok(None);
     }
 
     let signer = utils_load_signer(signer_path)?;
-    Ok(Some(Signer {
-        name: name.to_owned(),
-        did_key: signer.get_did_doc().id,
-    }))
+    let did_key = signer.get_did_doc().id;
+    Ok(Some((
+        Signer {
+            name: name.to_owned(),
+            did_key,
+        },
+        signer,
+    )))
+}
+
+// Save vcomp blobs to blob store and statements to sql
+fn persist_vcomp_signer_data(py: Python, vcomp_signer: VCompNotarySigner) -> PyResult<()> {
+    with_cfg!(py, |cfg| {
+        if let Some(blobs) = vcomp_signer.did_blobs {
+            log::debug!("Saving {} vcomp blobs to store", blobs.len());
+            for (cid, data) in blobs {
+                let codec = get_multicodec(&cid)?;
+                cfg.blob_store.put(data, codec, Some(&cid)).await?;
+            }
+        }
+        if let Some(statements) = vcomp_signer.did_statements {
+            log::debug!("Saving {} vcomp statements to store", statements.len());
+            for (_, statement) in statements {
+                // did statements don't get assigned to a graph, so create a dummy uuid
+                let id = uuid!("00000000-0000-0000-0000-000000000000");
+                let s = serde_json::from_value::<Statement>(statement)?;
+                cfg.sql_lite.register_statement(&s, &id).await?;
+            }
+        }
+        Ok::<_, anyhow::Error>(())
+    })?;
+    Ok(())
 }
 
 fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<Signer> {
