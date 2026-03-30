@@ -2,9 +2,14 @@ use std::fs;
 
 use anyhow::Context as AnyhowContext;
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
-use integrity::signer::{
-    load_signer as utils_load_signer, save_signer as utils_save_signer, AuthServiceSigner,
-    Ed25519Signer, KeyType, P256Signer, Secp256k1Signer, SignerType, VCompNotarySigner,
+use integrity::{
+    blob_store::BlobStore,
+    cid::get_multicodec,
+    lineage::models::statements::Statement,
+    signer::{
+        load_signer as utils_load_signer, save_signer as utils_save_signer, AuthServiceSigner,
+        Ed25519Signer, KeyType, P256Signer, Secp256k1Signer, SignerType, VCompNotarySigner,
+    },
 };
 use pyo3::{
     exceptions::{PyRuntimeError, PyValueError},
@@ -12,6 +17,7 @@ use pyo3::{
     Bound,
 };
 use serde::Serialize;
+use uuid::uuid;
 
 use crate::{config::cfg_blocking, with_cfg, Config};
 
@@ -96,11 +102,16 @@ impl Signer {
         &self.did_key
     }
 
-    /// Creates a local signer and persists it to disk.
+    /// Creates a new local signer and persists it to disk.
+    ///
+    /// Use this when you want the SDK to generate a fresh signing key for the
+    /// current workflow. The returned signer can be passed to
+    /// `set_active_signer(...)` so higher-level SDK operations emit signed
+    /// statements and attestations automatically.
     ///
     /// If `name` is provided, the signer is stored under that name. When
     /// `_load_if_exists=True`, an existing signer with the same name is loaded
-    /// instead of creating a new key. If no algorithm is provided, Ed25519 is
+    /// instead of generating a new key. If no algorithm is provided, Ed25519 is
     /// used.
     #[staticmethod]
     #[pyo3(
@@ -114,7 +125,7 @@ impl Signer {
         name: Option<String>,
         _load_if_exists: bool,
     ) -> PyResult<Py<Signer>> {
-        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+        if let Some((existing, _)) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
             return Py::new(py, existing);
         }
 
@@ -154,7 +165,12 @@ impl Signer {
         _load_if_exists: bool,
     ) -> PyResult<Py<Signer>> {
         let url = url.unwrap_or_else(|| "http://docker.eqtylab.internal:8066".to_string());
-        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+        if let Some((existing, signer_type)) = maybe_load_signer(name.as_deref(), _load_if_exists)?
+        {
+            if let SignerType::VCompNotarySigner(vcomp_signer) = signer_type {
+                // save blobs/statements incase the were purged previously
+                persist_vcomp_signer_data(py, vcomp_signer)?;
+            }
             return Py::new(py, existing);
         }
 
@@ -163,6 +179,7 @@ impl Signer {
             .build()?;
 
         let signer = rt.block_on(VCompNotarySigner::create(&url, None))?;
+        persist_vcomp_signer_data(py, signer.clone())?;
 
         let signer_type = SignerType::VCompNotarySigner(signer);
         log::debug!(
@@ -170,6 +187,7 @@ impl Signer {
             signer_type.get_did_doc().id
         );
         let signer = save_signer(&signer_type, name.as_deref())?;
+
         Py::new(py, signer)
     }
 
@@ -193,7 +211,7 @@ impl Signer {
             )
         })?;
 
-        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+        if let Some((existing, _)) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
             return Py::new(py, existing);
         }
 
@@ -209,7 +227,11 @@ impl Signer {
         Py::new(py, signer)
     }
 
-    /// Creates a signer from a base64-encoded private key and persists it.
+    /// Imports a signer from a base64-encoded private key and persists it.
+    ///
+    /// Use this when you already have key material that should be reused by the
+    /// SDK instead of generating a fresh signer with `Signer.new(...)`. The
+    /// `algorithm` must match the provided private key bytes.
     ///
     /// If `name` is provided, the signer is stored under that name. When
     /// `_load_if_exists=True`, an existing signer with the same name is loaded
@@ -226,7 +248,7 @@ impl Signer {
         name: Option<String>,
         _load_if_exists: bool,
     ) -> PyResult<Py<Signer>> {
-        if let Some(existing) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
+        if let Some((existing, _)) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
             return Py::new(py, existing);
         }
 
@@ -267,9 +289,9 @@ impl Signer {
 #[pyo3(signature = (signer), text_signature = "(signer: Signer) -> None")]
 fn set_active_signer(py: Python, signer: &Bound<'_, Signer>) -> PyResult<()> {
     let name = signer.borrow().name.clone();
-    with_cfg!(py, |ctx| {
+    with_cfg!(py, |cfg| {
         log::debug!("Setting '{name}' as the active");
-        let signer_file = ctx.app_dir.join(SIGNER_DIR).join(&name);
+        let signer_file = cfg.app_dir.join(SIGNER_DIR).join(&name);
         if !signer_file.exists() {
             return Err(anyhow::anyhow!("No Signer named '{name}' found"));
         }
@@ -292,7 +314,6 @@ fn get_active_signer_did_key() -> PyResult<String> {
 /// Subdirectory name for storing signer key files.
 pub static SIGNER_DIR: &str = "signers";
 
-/// Checks if a signer already exists with the provided name
 fn signer_exists(name: Option<&str>) -> PyResult<()> {
     if name.is_none() {
         return Ok(());
@@ -311,7 +332,11 @@ fn signer_exists(name: Option<&str>) -> PyResult<()> {
     Ok(())
 }
 
-fn maybe_load_signer(name: Option<&str>, load_if_exists: bool) -> PyResult<Option<Signer>> {
+// Attempts to load signer data from disk, if `load_if_exists`== true && `name` is Some()
+fn maybe_load_signer(
+    name: Option<&str>,
+    load_if_exists: bool,
+) -> PyResult<Option<(Signer, SignerType)>> {
     if !load_if_exists {
         signer_exists(name)?;
         return Ok(None);
@@ -323,16 +348,46 @@ fn maybe_load_signer(name: Option<&str>, load_if_exists: bool) -> PyResult<Optio
         ));
     };
 
+    log::info!("Attempting to load exiting signer {name:?}");
+
     let signer_path = cfg_blocking()?.app_dir.join(SIGNER_DIR).join(name);
     if !signer_path.exists() {
         return Ok(None);
     }
 
     let signer = utils_load_signer(signer_path)?;
-    Ok(Some(Signer {
-        name: name.to_owned(),
-        did_key: signer.get_did_doc().id,
-    }))
+    let did_key = signer.get_did_doc().id;
+    Ok(Some((
+        Signer {
+            name: name.to_owned(),
+            did_key,
+        },
+        signer,
+    )))
+}
+
+// Save vcomp blobs to blob store and statements to sql
+fn persist_vcomp_signer_data(py: Python, vcomp_signer: VCompNotarySigner) -> PyResult<()> {
+    with_cfg!(py, |cfg| {
+        if let Some(blobs) = vcomp_signer.did_blobs {
+            log::debug!("Saving {} vcomp blobs to store", blobs.len());
+            for (cid, data) in blobs {
+                let codec = get_multicodec(&cid)?;
+                cfg.blob_store.put(data, codec, Some(&cid)).await?;
+            }
+        }
+        if let Some(statements) = vcomp_signer.did_statements {
+            log::debug!("Saving {} vcomp statements to store", statements.len());
+            for (_, statement) in statements {
+                // did statements don't get assigned to a graph, so create a dummy uuid
+                let id = uuid!("00000000-0000-0000-0000-000000000000");
+                let s = serde_json::from_value::<Statement>(statement)?;
+                cfg.sql_lite.register_statement(&s, &id).await?;
+            }
+        }
+        Ok::<_, anyhow::Error>(())
+    })?;
+    Ok(())
 }
 
 fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<Signer> {

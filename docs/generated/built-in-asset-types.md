@@ -6,6 +6,7 @@
 - `Certificate`
 - `Code`
 - `Config`
+- `Custom`
 - `Database`
 - `Dataset`
 - `Document`

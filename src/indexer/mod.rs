@@ -13,7 +13,6 @@ use integrity::{
         manifest::{generate_manifest, resolve_blobs, Manifest},
         statements::{Statement, StatementTrait},
     },
-    signer::{load_signer as utils_load_signer, signer::SignerType},
 };
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -22,7 +21,7 @@ pub use sqlite::Sqlite;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use uuid::Uuid;
 
-use crate::{integrity_service::Service, signer::SIGNER_DIR, with_cfg};
+use crate::{integrity_service::Service, with_cfg};
 
 // ============================================================================
 // Graph Context
@@ -50,9 +49,12 @@ pub struct Context {
 #[pymethods]
 impl Context {
     #[staticmethod]
-    /// Creates a new context with the given name.
+    /// Creates a new root context with the given name.
     ///
-    /// If the global config is initialized, the context is persisted to sqlite.
+    /// Use this to start a new local lineage graph that does not have a parent
+    /// context. If the global config is initialized, the context is persisted
+    /// to sqlite immediately and can be used as the default context for
+    /// subsequent asset and computation registration.
     pub fn new(py: Python<'_>, name: String) -> Self {
         let context = Context {
             id: Uuid::new_v4(),
@@ -139,28 +141,12 @@ impl Context {
             let statements = sql_client.retrieve_statements(&graph_id).await?;
 
             let blob_store = Arc::new(cfg.blob_store.clone());
-            let mut blobs = resolve_blobs(&statements, blob_store, 8).await?;
+            let blobs = resolve_blobs(&statements, blob_store, 8).await?;
 
             let include_context = env::var("EQTY_INCLUDE_MANIFEST_CONTEXT")
                 .map(|v| v.to_lowercase() != "false")
                 .unwrap_or(true);
             log::debug!("including manifest context: {include_context}");
-
-            if let Some(active_signer) = cfg.active_signer.as_ref() {
-                let signer_path = cfg.app_dir.join(SIGNER_DIR).join(&active_signer.name);
-                if signer_path.exists() {
-                    let signer = utils_load_signer(signer_path)?;
-                    if let SignerType::VCompNotarySigner(saved_signer) = signer {
-                        if let Some(did_blobs) = saved_signer.did_blobs {
-                            blobs.extend(
-                                did_blobs
-                                    .into_iter()
-                                    .map(|(cid, data)| (cid, BASE64.encode(data))),
-                            );
-                        }
-                    }
-                }
-            }
 
             let manifest = generate_manifest(include_context, statements, blobs).await?;
 
