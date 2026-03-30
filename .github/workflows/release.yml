@@ -92,6 +92,8 @@ jobs:
           docker run --rm \
             -e PYTHON_ABI_TAG="${python_abi_tag}" \
             -e AUDITWHEEL_REPORT="${auditwheel_report}" \
+            -e HOST_UID="$(id -u)" \
+            -e HOST_GID="$(id -g)" \
             -v "${PWD}:/io" \
             -w /io \
             "${manylinux_image}" \
@@ -113,6 +115,7 @@ jobs:
               "$pybin" scripts/generate_auditwheel_report.py \
                 "$wheel" \
                 "$AUDITWHEEL_REPORT"
+              chown -R "$HOST_UID:$HOST_GID" dist
             '
 
       - name: Upload auditwheel report
