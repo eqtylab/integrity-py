@@ -9,3 +9,7 @@ Most users should create a context early, pass it to `init(default_context=...)`
 ::: eqty_sdk._rust.Context
     options:
       members_order: source
+      show_root_toc_entry: false
+      show_if_no_docstring: true
+    options:
+      members_order: source

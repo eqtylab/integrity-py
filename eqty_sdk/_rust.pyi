@@ -94,7 +94,7 @@ class Context:
 
     @staticmethod
     def new(name: str) -> Context:
-        """Creates a new context with the given name.  If the global config is initialized, the context is persisted to sqlite."""
+        """Creates a new root context with the given name.  Use this to start a new local lineage graph that does not have a parent context. If the global config is initialized, the context is persisted to sqlite immediately and can be used as the default context for subsequent asset and computation registration."""
         ...
 
     @staticmethod
@@ -205,7 +205,9 @@ class Signer:
         algorithm: Optional[SIGNER_ALGORITHMS] = None,
         name: Optional[str] = None,
         _load_if_exists: Optional[bool] = None,
-    ) -> Signer: ...
+    ) -> Signer:
+        """Creates a new local signer and persists it to disk.  Use this when you want the SDK to generate a fresh signing key for the current workflow. The returned signer can be passed to `set_active_signer(...)` so higher-level SDK operations emit signed statements and attestations automatically.  If `name` is provided, the signer is stored under that name. When `_load_if_exists=True`, an existing signer with the same name is loaded instead of generating a new key. If no algorithm is provided, Ed25519 is used."""
+        ...
     @staticmethod
     def vcomp_notary(
         url: Optional[str] = None,
@@ -228,7 +230,9 @@ class Signer:
         private_key: str,
         name: Optional[str] = None,
         _load_if_exists: Optional[bool] = None,
-    ) -> Signer: ...
+    ) -> Signer:
+        """Imports a signer from a base64-encoded private key and persists it.  Use this when you already have key material that should be reused by the SDK instead of generating a fresh signer with `Signer.new(...)`. The `algorithm` must match the provided private key bytes.  If `name` is provided, the signer is stored under that name. When `_load_if_exists=True`, an existing signer with the same name is loaded instead of importing the provided private key."""
+        ...
 
 class UUID:
     """A simple wrapper around a UUID string.  Provides a typed wrapper for UUID strings with property access and string conversion."""

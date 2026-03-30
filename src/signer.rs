@@ -96,11 +96,16 @@ impl Signer {
         &self.did_key
     }
 
-    /// Creates a local signer and persists it to disk.
+    /// Creates a new local signer and persists it to disk.
+    ///
+    /// Use this when you want the SDK to generate a fresh signing key for the
+    /// current workflow. The returned signer can be passed to
+    /// `set_active_signer(...)` so higher-level SDK operations emit signed
+    /// statements and attestations automatically.
     ///
     /// If `name` is provided, the signer is stored under that name. When
     /// `_load_if_exists=True`, an existing signer with the same name is loaded
-    /// instead of creating a new key. If no algorithm is provided, Ed25519 is
+    /// instead of generating a new key. If no algorithm is provided, Ed25519 is
     /// used.
     #[staticmethod]
     #[pyo3(
@@ -209,7 +214,11 @@ impl Signer {
         Py::new(py, signer)
     }
 
-    /// Creates a signer from a base64-encoded private key and persists it.
+    /// Imports a signer from a base64-encoded private key and persists it.
+    ///
+    /// Use this when you already have key material that should be reused by the
+    /// SDK instead of generating a fresh signer with `Signer.new(...)`. The
+    /// `algorithm` must match the provided private key bytes.
     ///
     /// If `name` is provided, the signer is stored under that name. When
     /// `_load_if_exists=True`, an existing signer with the same name is loaded

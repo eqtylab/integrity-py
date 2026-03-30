@@ -50,9 +50,12 @@ pub struct Context {
 #[pymethods]
 impl Context {
     #[staticmethod]
-    /// Creates a new context with the given name.
+    /// Creates a new root context with the given name.
     ///
-    /// If the global config is initialized, the context is persisted to sqlite.
+    /// Use this to start a new local lineage graph that does not have a parent
+    /// context. If the global config is initialized, the context is persisted
+    /// to sqlite immediately and can be used as the default context for
+    /// subsequent asset and computation registration.
     pub fn new(py: Python<'_>, name: String) -> Self {
         let context = Context {
             id: Uuid::new_v4(),

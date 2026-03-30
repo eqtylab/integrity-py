@@ -12,6 +12,7 @@ The SDK supports local signers and service-backed signers. Choose the one that m
     options:
       members_order: source
       show_root_toc_entry: false
+      show_if_no_docstring: true
 
 ## Signer Algorithms
 
