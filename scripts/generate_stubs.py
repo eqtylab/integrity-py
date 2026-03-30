@@ -281,8 +281,7 @@ class RustStubParser:
                 class_info["classattrs"][const_name] = const_type
 
             func_pattern = (
-                r"(?P<attrs>(?:\s*#\[[^\]]+\]\s*)*)\s*"
-                r"(?:\s*///[^\n]*\s*)*"
+                r"(?m)(?P<attrs>(?:^\s*#\[[^\]]+\]\s*\n)*)^\s*"
                 r"(?:pub\s+)?fn\s+(?P<name>\w+)(?:<[^>]*>)?\s*"
                 r"\((?P<params>.*?)\)\s*(?:->\s*(?P<return>[^{]+))?\s*\{"
             )
@@ -618,18 +617,33 @@ class StubGenerator:
             lines.append("import eqty_sdk._rust as _rust")
             lines.append("")
 
+        referenced_names = set(public_names)
+        for node in public_assignments:
+            referenced_names.update(self._collect_referenced_names(node.value))
+        for node in public_functions:
+            if public_names and node.name not in public_names:
+                continue
+            referenced_names.update(self._collect_signature_names(node))
+
         for node in import_from_nodes:
             if node.module == "eqty_sdk._rust":
                 aliases = [
                     alias
                     for alias in node.names
                     if not (alias.asname is None and alias.name in rust_class_exports)
+                    and ((alias.asname or alias.name) in referenced_names)
                 ]
                 if not aliases:
                     continue
-                lines.extend(self._render_import_from(node.module, aliases))
             else:
-                lines.extend(self._render_import_from(node.module, node.names))
+                aliases = [
+                    alias
+                    for alias in node.names
+                    if (alias.asname or alias.name) in referenced_names
+                ]
+                if not aliases:
+                    continue
+            lines.extend(self._render_import_from(node.module, aliases))
             lines.append("")
 
         if rust_class_exports:
@@ -680,7 +694,7 @@ class StubGenerator:
             exported_names = self._parse_string_list(node.value)
             break
 
-        excluded_names = {"Asset", "AssetType", "Custom", "serialize_for_hashing"}
+        excluded_names = {"Asset", "AssetType", "serialize_for_hashing"}
         built_in_asset_types = [name for name in exported_names if name not in excluded_names]
 
         output_path.write_text("\n".join(f"- `{name}`" for name in built_in_asset_types) + "\n")
@@ -770,6 +784,27 @@ class StubGenerator:
                 default_rendered = "..."
             rendered = f"{rendered} = {default_rendered}"
         return rendered
+
+    @staticmethod
+    def _collect_referenced_names(node: ast.AST) -> set[str]:
+        names: set[str] = set()
+        for child in ast.walk(node):
+            if isinstance(child, ast.Name):
+                names.add(child.id)
+        return names
+
+    def _collect_signature_names(self, node: ast.FunctionDef) -> set[str]:
+        names: set[str] = set()
+        for arg in list(node.args.posonlyargs) + list(node.args.args) + list(node.args.kwonlyargs):
+            if arg.annotation is not None:
+                names.update(self._collect_referenced_names(arg.annotation))
+        if node.args.vararg and node.args.vararg.annotation is not None:
+            names.update(self._collect_referenced_names(node.args.vararg.annotation))
+        if node.args.kwarg and node.args.kwarg.annotation is not None:
+            names.update(self._collect_referenced_names(node.args.kwarg.annotation))
+        if node.returns is not None:
+            names.update(self._collect_referenced_names(node.returns))
+        return names
 
     def _render_expr(self, node: ast.AST) -> Optional[str]:
         if isinstance(node, ast.Name):

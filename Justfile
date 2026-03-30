@@ -75,8 +75,11 @@ test-rs:
 
 # Generate type stubs from Rust code
 generate-stubs:
+  @echo "Generating stubs"
   poetry run python ./scripts/generate_stubs.py
+  @echo "Formatting generated files"
   just fmt
+  @echo "Linting generated files"
   just lint
 
 # Update README.md with auto-generated content (Justfile commands, etc.)

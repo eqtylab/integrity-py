@@ -39,7 +39,8 @@ class CID:
         """The formatted CID string."""
         ...
 
-    def __init__(self, cid: str) -> None:
+    @staticmethod
+    def new(cid: str) -> CID:
         """Creates a new CID, ensuring it is prefixed with `urn:cid:`."""
         ...
 
@@ -205,9 +206,7 @@ class Signer:
         algorithm: Optional[SIGNER_ALGORITHMS] = None,
         name: Optional[str] = None,
         _load_if_exists: Optional[bool] = None,
-    ) -> Signer:
-        """Creates a new local signer and persists it to disk.  Use this when you want the SDK to generate a fresh signing key for the current workflow. The returned signer can be passed to `set_active_signer(...)` so higher-level SDK operations emit signed statements and attestations automatically.  If `name` is provided, the signer is stored under that name. When `_load_if_exists=True`, an existing signer with the same name is loaded instead of generating a new key. If no algorithm is provided, Ed25519 is used."""
-        ...
+    ) -> Signer: ...
     @staticmethod
     def vcomp_notary(
         url: Optional[str] = None,
@@ -230,9 +229,7 @@ class Signer:
         private_key: str,
         name: Optional[str] = None,
         _load_if_exists: Optional[bool] = None,
-    ) -> Signer:
-        """Imports a signer from a base64-encoded private key and persists it.  Use this when you already have key material that should be reused by the SDK instead of generating a fresh signer with `Signer.new(...)`. The `algorithm` must match the provided private key bytes.  If `name` is provided, the signer is stored under that name. When `_load_if_exists=True`, an existing signer with the same name is loaded instead of importing the provided private key."""
-        ...
+    ) -> Signer: ...
 
 class UUID:
     """A simple wrapper around a UUID string.  Provides a typed wrapper for UUID strings with property access and string conversion."""
@@ -241,7 +238,8 @@ class UUID:
         """The formatted UUID string."""
         ...
 
-    def __init__(self, uuid: str) -> None:
+    @staticmethod
+    def new(uuid: str) -> UUID:
         """Creates a new UUID, ensuring it is prefixed with `urn:uuid:`."""
         ...
 
