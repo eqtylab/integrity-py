@@ -2,9 +2,14 @@ use std::fs;
 
 use anyhow::Context as AnyhowContext;
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
-use integrity::signer::{
-    load_signer as utils_load_signer, save_signer as utils_save_signer, AuthServiceSigner,
-    Ed25519Signer, KeyType, P256Signer, Secp256k1Signer, SignerType, VCompNotarySigner,
+use integrity::{
+    blob_store::BlobStore,
+    cid::get_multicodec,
+    lineage::models::statements::Statement,
+    signer::{
+        load_signer as utils_load_signer, save_signer as utils_save_signer, AuthServiceSigner,
+        Ed25519Signer, KeyType, P256Signer, Secp256k1Signer, SignerType, VCompNotarySigner,
+    },
 };
 use pyo3::{
     exceptions::{PyRuntimeError, PyValueError},
@@ -12,6 +17,7 @@ use pyo3::{
     Bound,
 };
 use serde::Serialize;
+use uuid::uuid;
 
 use crate::{config::cfg_blocking, with_cfg, Config};
 
@@ -169,12 +175,33 @@ impl Signer {
 
         let signer = rt.block_on(VCompNotarySigner::create(&url, None))?;
 
+        with_cfg!(py, |cfg| {
+            let vcomp_signer = signer.clone();
+            if let Some(blobs) = vcomp_signer.did_blobs {
+                log::debug!("Saving {} vcomp blobs to store", blobs.len());
+                for (cid, data) in blobs {
+                    let codec = get_multicodec(&cid)?;
+                    cfg.blob_store.put(data, codec, Some(&cid)).await?;
+                }
+            }
+            if let Some(statements) = vcomp_signer.did_statements {
+                log::debug!("Saving {} vcomp statements to store", statements.len());
+                for (_, statement) in statements {
+                    let id = uuid!("00000000-0000-0000-0000-000000000000");
+                    let s = serde_json::from_value::<Statement>(statement)?;
+                    cfg.sql_lite.register_statement(&s, &id).await?;
+                }
+            }
+            Ok::<_, anyhow::Error>(())
+        })?;
+
         let signer_type = SignerType::VCompNotarySigner(signer);
         log::debug!(
             "Saving VCOMP Signer with did key '{}'",
             signer_type.get_did_doc().id
         );
         let signer = save_signer(&signer_type, name.as_deref())?;
+
         Py::new(py, signer)
     }
 
@@ -276,9 +303,9 @@ impl Signer {
 #[pyo3(signature = (signer), text_signature = "(signer: Signer) -> None")]
 fn set_active_signer(py: Python, signer: &Bound<'_, Signer>) -> PyResult<()> {
     let name = signer.borrow().name.clone();
-    with_cfg!(py, |ctx| {
+    with_cfg!(py, |cfg| {
         log::debug!("Setting '{name}' as the active");
-        let signer_file = ctx.app_dir.join(SIGNER_DIR).join(&name);
+        let signer_file = cfg.app_dir.join(SIGNER_DIR).join(&name);
         if !signer_file.exists() {
             return Err(anyhow::anyhow!("No Signer named '{name}' found"));
         }
