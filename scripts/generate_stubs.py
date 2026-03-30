@@ -281,7 +281,8 @@ class RustStubParser:
                 class_info["classattrs"][const_name] = const_type
 
             func_pattern = (
-                r"(?m)(?P<attrs>(?:^\s*#\[[^\]]+\]\s*\n)*)^\s*"
+                r"(?m)(?P<attrs>(?:^\s*#\[[^\]]+\]\s*\n)*)"
+                r"(?:(?:^\s*///[^\n]*\n)*)^\s*"
                 r"(?:pub\s+)?fn\s+(?P<name>\w+)(?:<[^>]*>)?\s*"
                 r"\((?P<params>.*?)\)\s*(?:->\s*(?P<return>[^{]+))?\s*\{"
             )

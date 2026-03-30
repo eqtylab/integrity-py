@@ -314,12 +314,31 @@ fn get_active_signer_did_key() -> PyResult<String> {
 /// Subdirectory name for storing signer key files.
 pub static SIGNER_DIR: &str = "signers";
 
+fn signer_exists(name: Option<&str>) -> PyResult<()> {
+    if name.is_none() {
+        return Ok(());
+    }
+
+    let signer_dir = cfg_blocking()?.app_dir.join(SIGNER_DIR);
+    let name = name.unwrap();
+    log::debug!("Adding Signer. Args= {name}");
+
+    if fs::exists(signer_dir.join(name)).expect("Error checking if signer exists") {
+        let msg = format!("A signer named {name:?} already exists");
+        log::warn!("{msg}");
+        return Err(PyErr::new::<PyValueError, _>(msg));
+    }
+
+    Ok(())
+}
+
 // Attempts to load signer data from disk, if `load_if_exists`== true && `name` is Some()
 fn maybe_load_signer(
     name: Option<&str>,
     load_if_exists: bool,
 ) -> PyResult<Option<(Signer, SignerType)>> {
     if !load_if_exists {
+        signer_exists(name)?;
         return Ok(None);
     }
 

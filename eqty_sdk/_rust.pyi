@@ -39,8 +39,7 @@ class CID:
         """The formatted CID string."""
         ...
 
-    @staticmethod
-    def new(cid: str) -> CID:
+    def __init__(self, cid: str) -> None:
         """Creates a new CID, ensuring it is prefixed with `urn:cid:`."""
         ...
 
@@ -238,8 +237,7 @@ class UUID:
         """The formatted UUID string."""
         ...
 
-    @staticmethod
-    def new(uuid: str) -> UUID:
+    def __init__(self, uuid: str) -> None:
         """Creates a new UUID, ensuring it is prefixed with `urn:uuid:`."""
         ...
 
