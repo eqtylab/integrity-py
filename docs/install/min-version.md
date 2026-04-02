@@ -24,7 +24,16 @@ These reports are generated during the release workflow from the actual publishe
 
 ## macOS Wheel Requirements
 
-This report is generated during the release workflow from the actual published macOS wheel and contains the output of `otool -L`.
+These reports are generated during the release workflow from the actual published macOS wheels and contain the output of `otool -L`.
+
+### arm64
+
 ```text
---8<-- "docs/generated/otool-show-macos.txt"
+--8<-- "docs/generated/otool-show-macos-arm64.txt"
+```
+
+### x86_64
+
+```text
+--8<-- "docs/generated/otool-show-macos-x86_64.txt"
 ```
