@@ -17,11 +17,13 @@ fi
 if [ "$EQTY_SDK_VERSION" = "latest" ]; then
     pip install \
         --index-url "$INDEX_URL" \
+        --only-binary=:all: \
         ${BREAK_SYSTEM_PACKAGES:+$BREAK_SYSTEM_PACKAGES} \
         eqty_sdk
 else
     pip install \
         --index-url "$INDEX_URL" \
+        --only-binary=:all: \
         ${BREAK_SYSTEM_PACKAGES:+$BREAK_SYSTEM_PACKAGES} \
         "eqty_sdk==$EQTY_SDK_VERSION"
 fi
