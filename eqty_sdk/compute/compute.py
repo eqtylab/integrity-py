@@ -10,7 +10,7 @@ from eqty_sdk._rust import (
     statements,
     stream as eqty_core_stream,
 )
-from eqty_sdk.asset import Asset, AssetType, Code, Custom, Dataset, Model
+from eqty_sdk.asset import Asset, AssetType
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
 from eqty_sdk.statements import add_computation_statement
@@ -73,9 +73,11 @@ class Compute:
         self._store = _store
 
         # source code is created as an input asset to the compute node
-        self._code_asset = Code.from_object(
-            self._source_code,
-            _store,
+        self._code_asset = Asset._from_object(
+            obj=self._source_code,
+            asset_type=AssetType.CODE,
+            ctx=self._ctx,
+            _store=_store,
             _skip_proof=self._skip_proof,
             name=self._func.__name__,
             **(
@@ -108,23 +110,27 @@ class Compute:
                 ]
 
         if output_type == "dataset":
-            return Dataset.from_object(
-                item,
-                self._store,
+            return Asset._from_object(
+                obj=item,
+                asset_type=AssetType.DATASET,
+                ctx=self._ctx,
+                _store=self._store,
                 _skip_proof=self._skip_proof,
             )
         elif output_type == "model":
-            return Model.from_object(
-                item,
-                self._store,
+            return Asset._from_object(
+                obj=item,
+                asset_type=AssetType.MODEL,
+                ctx=self._ctx,
+                _store=self._store,
                 _skip_proof=self._skip_proof,
             )
         else:
-            return Custom.from_object(
-                item,
-                AssetType.CUSTOM,
-                self._store,
-                name="Custom",
+            return Asset._from_object(
+                obj=item,
+                asset_type=AssetType.CUSTOM,
+                ctx=self._ctx,
+                _store=self._store,
                 _skip_proof=self._skip_proof,
             )
 
@@ -149,10 +155,11 @@ class Compute:
                 # special fn to allow users to define a custom conversion fn from their type to an asset
                 inputs.append(cast(Any, arg).to_eqty_asset())
             elif arg is not None:
-                asset = Custom.from_object(
-                    arg,
-                    AssetType.CUSTOM,
-                    self._store,
+                asset = Asset._from_object(
+                    obj=arg,
+                    asset_type=AssetType.CUSTOM,
+                    _store=self._store,
+                    ctx=self._ctx,
                     name=param_name,
                     _skip_proof=self._skip_proof,
                 )
@@ -203,14 +210,15 @@ class Compute:
         compute_cid = result.get("compute_id")
         stream = result.get("stream")
         logger.debug(f"Stream committed '{stream_uuid}'. Computation CID:'{compute_cid}'")
-        statements.add_vc_statement(compute_cid)
+        statements.add_vc_statement(compute_cid, context=self._ctx)
 
         self.metadata.create_statement(compute_cid, self._skip_proof, context=self._ctx)
 
         stream_cid = get_cid_for_bytes(stream, self._store)
-        Custom.from_cid(
-            stream_cid,
-            AssetType.CUSTOM,
+        Asset._from_cid(
+            cid=stream_cid,
+            asset_type=AssetType.CUSTOM,
+            ctx=self._ctx,
             name=f"{self.name}-stream",
             _skip_proof=self._skip_proof,
         )

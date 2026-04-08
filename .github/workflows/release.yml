@@ -13,7 +13,17 @@ jobs:
   build_and_publish:
     strategy:
       matrix:
-        platform: [ubuntu-latest-large, macos-15-xlarge, ubuntu-aarch64]
+        include:
+          - platform: ubuntu-latest-large
+            artifact_suffix: linux-x86_64
+          - platform: ubuntu-aarch64
+            artifact_suffix: linux-aarch64
+          - platform: macos-15-xlarge
+            artifact_suffix: macos-arm64
+            macos_report: dist/otool-show-macos-arm64.txt
+          - platform: macos-15-large
+            artifact_suffix: macos-x86_64
+            macos_report: dist/otool-show-macos-x86_64.txt
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -92,6 +102,8 @@ jobs:
           docker run --rm \
             -e PYTHON_ABI_TAG="${python_abi_tag}" \
             -e AUDITWHEEL_REPORT="${auditwheel_report}" \
+            -e HOST_UID="$(id -u)" \
+            -e HOST_GID="$(id -g)" \
             -v "${PWD}:/io" \
             -w /io \
             "${manylinux_image}" \
@@ -113,6 +125,7 @@ jobs:
               "$pybin" scripts/generate_auditwheel_report.py \
                 "$wheel" \
                 "$AUDITWHEEL_REPORT"
+              chown -R "$HOST_UID:$HOST_GID" dist
             '
 
       - name: Upload auditwheel report
@@ -166,8 +179,11 @@ jobs:
       - name: Validate Mac Wheel
         if: runner.os == 'macOS'
         shell: bash
+        env:
+          OTOOL_REPORT: ${{ matrix.macos_report }}
         run: |
           python - <<'PY'
+          import os
           import pathlib
           import shutil
           import subprocess
@@ -200,7 +216,8 @@ jobs:
 
               output = subprocess.check_output([otool, "-L", str(so_files[0])], text=True)
               print(output)
-              dist_dir.joinpath("otool-show-macos.txt").write_text(output, encoding="utf-8")
+              report_path = pathlib.Path(os.environ["OTOOL_REPORT"])
+              report_path.write_text(output, encoding="utf-8")
               if "/nix/store/" in output:
                   raise SystemExit("Wheel links against /nix/store libraries")
           PY
@@ -209,8 +226,8 @@ jobs:
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
-          name: otool-report-macos
-          path: dist/otool-show-macos.txt
+          name: otool-report-${{ matrix.artifact_suffix }}
+          path: ${{ matrix.macos_report }}
           retention-days: 1
 
       - name: Publish Mac Package
@@ -291,7 +308,13 @@ jobs:
       - name: Download macOS linkage report
         uses: actions/download-artifact@v4
         with:
-          name: otool-report-macos
+          name: otool-report-macos-arm64
+          path: docs/generated
+
+      - name: Download macOS Intel linkage report
+        uses: actions/download-artifact@v4
+        with:
+          name: otool-report-macos-x86_64
           path: docs/generated
 
       - name: Build nix shell
