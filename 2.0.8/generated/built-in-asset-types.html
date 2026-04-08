@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Built in asset types - eqty_sdk Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
+        <link href="../css/version-select.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Built in asset types";
+        var mkdocs_page_input_path = "generated/built-in-asset-types.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> eqty_sdk Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/basic-workflow.html">Basic Workflow</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/async-compute.html">Async Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/nested-contexts.html">Nested Contexts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/path-backed-assets.html">Path-Backed Assets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/auth-service-signer.html">Auth Service Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/service-registering.html">Service Registering</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/custom-serialize.html">Spark Parquet Input</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/model-signing.html">Model Signing</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/init-and-config.html">Init And Config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/global-functions.html">Global Functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cid.html">CID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/did.html">DID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/uuid.html">UUID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/assets.html">Assets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/compute.html">Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/context.html">Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/declaration.html">Declaration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/service.html">Service</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/signer.html">Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/statements.html">Statements</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">eqty_sdk Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Built in asset types</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <ul>
+<li><code>Agent</code></li>
+<li><code>Attribution</code></li>
+<li><code>Benchmark</code></li>
+<li><code>BenchmarkResult</code></li>
+<li><code>Binary</code></li>
+<li><code>Certificate</code></li>
+<li><code>Code</code></li>
+<li><code>Config</code></li>
+<li><code>Custom</code></li>
+<li><code>Database</code></li>
+<li><code>Dataset</code></li>
+<li><code>Document</code></li>
+<li><code>Guardrail</code></li>
+<li><code>Media</code></li>
+<li><code>Model</code></li>
+<li><code>Prompt</code></li>
+<li><code>Reasoning</code></li>
+<li><code>Skill</code></li>
+<li><code>SystemPrompt</code></li>
+<li><code>Token</code></li>
+<li><code>Tool</code></li>
+</ul>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
+      <script src="../search/main.js"></script>
+      <script src="../js/version-select.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

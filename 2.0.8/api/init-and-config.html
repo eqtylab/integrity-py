@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Init And Config - eqty_sdk Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
+        <link href="../css/version-select.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Init And Config";
+        var mkdocs_page_input_path = "api/init-and-config.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> eqty_sdk Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/basic-workflow.html">Basic Workflow</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/async-compute.html">Async Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/nested-contexts.html">Nested Contexts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/path-backed-assets.html">Path-Backed Assets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/auth-service-signer.html">Auth Service Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/service-registering.html">Service Registering</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/custom-serialize.html">Spark Parquet Input</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/model-signing.html">Model Signing</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Init And Config</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#api-reference">API Reference</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.init">init</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#initialize-the-sdk">Initialize The SDK</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-init-returns">What init() Returns</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#config-type">Config Type</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#configure-hashing">Configure Hashing</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#configure-directory-ignore-rules">Configure Directory Ignore Rules</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#store-all-blobs-automatically">Store All Blobs Automatically</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#read-the-default-context">Read The Default Context</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#full-example">Full Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#config-instance-methods">Config Instance Methods</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Config.set_hashing_config">set_hashing_config</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Config.set_cid_ignore_rules">set_cid_ignore_rules</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Config.set_store_all_blobs">set_store_all_blobs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Config.get_default_context">get_default_context</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="global-functions.html">Global Functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cid.html">CID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="did.html">DID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="uuid.html">UUID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="assets.html">Assets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compute.html">Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="context.html">Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="declaration.html">Declaration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service.html">Service</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="signer.html">Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="statements.html">Statements</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">eqty_sdk Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">API Reference</li>
+      <li class="breadcrumb-item active">Init And Config</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="init-and-config">Init And Config</h1>
+<p><code>init()</code> is the required entry point for the SDK. It initializes the local SDK state on disk and returns a <code>Config</code> object that you can use to adjust hashing, blob storage, and context behavior.</p>
+<h2 id="api-reference">API Reference</h2>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk.init" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">init</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">init</span><span class="p">(</span>
+    <span class="n">default_context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">custom_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Config</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Initializes the sdk config. Must be called before setting individual config values</p>
+
+
+    </div>
+
+</div><h2 id="initialize-the-sdk">Initialize The SDK</h2>
+<p>The simplest form uses the default SDK directory under the current working directory:</p>
+<pre><code class="language-python">from eqty_sdk import init
+
+cfg = init()
+</code></pre>
+<p>You can also provide:</p>
+<ul>
+<li><code>default_context</code>: the context used when no context is passed explicitly to other functions</li>
+<li><code>custom_dir</code>: a custom SDK working directory</li>
+</ul>
+<pre><code class="language-python">from pathlib import Path
+
+from eqty_sdk import Context, init
+
+# set a user friendly name on the context
+ctx = Context.new(&quot;customer-project&quot;)
+cfg = init(default_context=ctx, custom_dir=Path(&quot;.eqty_sdk_customer&quot;))
+</code></pre>
+<h2 id="what-init-returns">What <code>init()</code> Returns</h2>
+<p><code>init()</code> returns a <code>Config</code> object. The main public methods on that object are:</p>
+<ul>
+<li><code>set_hashing_config(...)</code></li>
+<li><code>set_cid_ignore_rules(...)</code></li>
+<li><code>set_store_all_blobs(...)</code></li>
+<li><code>get_default_context()</code></li>
+</ul>
+<h2 id="config-type">Config Type</h2>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+    <div class="doc doc-contents first">
+
+
+        <p>Global application config containing configuration and state.  The config stores application-wide settings including storage directories, hashing preferences, and file filtering rules.</p>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="configure-hashing">Configure Hashing</h2>
+<p>Use <code>set_hashing_config()</code> to control hashing behavior when computing CIDs.</p>
+<pre><code class="language-python">from eqty_sdk import init
+
+cfg = init()
+cfg = cfg.set_hashing_config(multithread=True, memory_map=True)
+</code></pre>
+<p>Arguments:</p>
+<ul>
+<li><code>multithread</code>: enable multithreaded hashing</li>
+<li><code>memory_map</code>: enable memory-mapped file reads where supported</li>
+</ul>
+<h2 id="configure-directory-ignore-rules">Configure Directory Ignore Rules</h2>
+<p>Use <code>set_cid_ignore_rules()</code> to control which files are included when hashing directories.</p>
+<pre><code class="language-python">from eqty_sdk import init
+
+cfg = init()
+cfg = cfg.set_cid_ignore_rules(
+    include_hidden_files=False,
+    gitignore=True,
+    include_symlinks=False,
+)
+</code></pre>
+<p>Arguments:</p>
+<ul>
+<li><code>include_hidden_files</code>: include dotfiles and hidden paths</li>
+<li><code>gitignore</code>: respect <code>.gitignore</code> patterns</li>
+<li><code>include_symlinks</code>: include symlinks in directory hashing</li>
+</ul>
+<h2 id="store-all-blobs-automatically">Store All Blobs Automatically</h2>
+<p>Use <code>set_store_all_blobs()</code> to persist blobs automatically when CIDs are computed.</p>
+<pre><code class="language-python">from eqty_sdk import init
+
+cfg = init()
+cfg = cfg.set_store_all_blobs(True)
+</code></pre>
+<p>This is useful when you expect to export manifests or register blobs with a remote service later.</p>
+<h2 id="read-the-default-context">Read The Default Context</h2>
+<p>Use <code>get_default_context()</code> to inspect or export the context that <code>init()</code> is using by default.</p>
+<pre><code class="language-python">from pathlib import Path
+
+from eqty_sdk import init
+
+cfg = init()
+ctx = cfg.get_default_context()
+ctx.export(Path(&quot;./manifests/default-context.json&quot;))
+</code></pre>
+<h2 id="full-example">Full Example</h2>
+<pre><code class="language-python">from pathlib import Path
+
+from eqty_sdk import Context, Signer, init, set_active_signer
+
+default_ctx = Context.new(&quot;customer-project&quot;)
+cfg = init(default_context=default_ctx, custom_dir=Path(&quot;.eqty_sdk_customer&quot;))
+
+cfg = cfg.set_hashing_config(multithread=True, memory_map=True)
+cfg = cfg.set_cid_ignore_rules(
+    include_hidden_files=False,
+    gitignore=True,
+    include_symlinks=False,
+)
+cfg = cfg.set_store_all_blobs(True)
+
+signer = Signer.new()
+set_active_signer(signer)
+
+ctx = cfg.get_default_context()
+print(ctx)
+</code></pre>
+<h2 id="config-instance-methods">Config Instance Methods</h2>
+<p>The reference below documents methods on the <code>Config</code> object returned by <code>init()</code>. These are not standalone top-level functions.</p>
+<p>Call them on the object you got back from <code>init()</code>:</p>
+<pre><code class="language-python">cfg = init()
+cfg = cfg.set_hashing_config(...)
+cfg = cfg.set_cid_ignore_rules(...)
+cfg = cfg.set_store_all_blobs(True)
+ctx = cfg.get_default_context()
+</code></pre>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Config.set_hashing_config" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_hashing_config</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_hashing_config</span><span class="p">(</span>
+    <span class="n">multithread</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">memory_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Config</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Updates hashing behavior used when computing CIDs.  - <code>multithread</code>: Enable multithreaded hashing. - <code>memory_map</code>: Enable memory-mapped file reads where supported.  Returns the updated config instance.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Config.set_cid_ignore_rules" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_cid_ignore_rules</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_cid_ignore_rules</span><span class="p">(</span>
+    <span class="n">include_hidden_files</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gitignore</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">include_symlinks</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Config</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Updates the directory ignore rules used when computing CIDs.  - <code>include_hidden_files</code>: Include hidden files in directory hashing. - <code>gitignore</code>: Respect <code>.gitignore</code> rules while hashing directories. - <code>include_symlinks</code>: Include symlinks in directory hashing.  Returns the updated config instance.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Config.set_store_all_blobs" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_store_all_blobs</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_store_all_blobs</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Config</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Sets whether blobs should be persisted automatically when computing CIDs.  Returns the updated config instance.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Config.get_default_context" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">get_default_context</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_default_context</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Context</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Returns the default context used when no context is supplied explicitly.</p>
+
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="index.html" class="btn btn-neutral float-left" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="global-functions.html" class="btn btn-neutral float-right" title="Global Functions">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="index.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="global-functions.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
+      <script src="../search/main.js"></script>
+      <script src="../js/version-select.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
