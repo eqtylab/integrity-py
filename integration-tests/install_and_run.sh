@@ -8,7 +8,7 @@
 set -xeu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-IMAGE="${IMAGE:-debian:bookworm}"
+IMAGE="${IMAGE:-python:3.12-slim-bookworm}"
 EQTY_SDK_VERSION="${1:-${EQTY_SDK_VERSION:-latest}}"
 TEST_SCRIPT="${2:-_basic_import.py}"
 
