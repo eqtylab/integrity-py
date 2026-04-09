@@ -3,10 +3,7 @@
 set -xeu
 
 SCRIPT_ROOT="${SCRIPT_ROOT:-/test}"
-PYTHON_VERSION_FILE="${PYTHON_VERSION_FILE:-$SCRIPT_ROOT/.python-version}"
-export PYTHON_VERSION_FILE
 
-sh "$SCRIPT_ROOT/_install_python.sh"
 sh "$SCRIPT_ROOT/_sys_info.sh"
 
 EQTY_SDK_VERSION="${1:-${EQTY_SDK_VERSION:-latest}}"
