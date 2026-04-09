@@ -86,10 +86,10 @@ jobs:
 
           case "${{ matrix.platform }}" in
             ubuntu-latest-large)
-              build_specs=$'linux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|'
+              build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_x86_64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|'
               ;;
             ubuntu-aarch64)
-              build_specs=$'linux-manylinux|quay.io/pypa/manylinux2014_aarch64|manylinux2014|dist/auditwheel-show-linux-aarch64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_aarch64|musllinux_1_2|'
+              build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_aarch64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_aarch64|manylinux2014|dist/auditwheel-show-linux-aarch64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_aarch64|musllinux_1_2|'
               ;;
             *)
               echo "Unsupported Linux runner: ${{ matrix.platform }}"
