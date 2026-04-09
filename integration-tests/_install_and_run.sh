@@ -2,8 +2,12 @@
 
 set -xeu
 
-sh /test/_install_python.sh
-sh /test/_sys_info.sh
+SCRIPT_ROOT="${SCRIPT_ROOT:-/test}"
+PYTHON_VERSION_FILE="${PYTHON_VERSION_FILE:-$SCRIPT_ROOT/.python-version}"
+export PYTHON_VERSION_FILE
+
+sh "$SCRIPT_ROOT/_install_python.sh"
+sh "$SCRIPT_ROOT/_sys_info.sh"
 
 EQTY_SDK_VERSION="${1:-${EQTY_SDK_VERSION:-latest}}"
 TEST_SCRIPT="${2:-_basic_test.py}"
@@ -16,7 +20,7 @@ if pip install --help 2>&1 | grep -q -- "--break-system-packages"; then
 fi
 
 if [ "$EQTY_SDK_VERSION" = "latest" ]; then
-    TARGET_VERSION="$(python3 /test/_resolve_latest_github_version.py)"
+    TARGET_VERSION="$(python3 "$SCRIPT_ROOT/_resolve_latest_github_version.py")"
 fi
 
 pip install \
@@ -43,4 +47,4 @@ else
     echo "Installed requested eqty_sdk version: $INSTALLED_VERSION"
 fi
 
-python3 "/test/$TEST_SCRIPT"
+python3 "$SCRIPT_ROOT/$TEST_SCRIPT"

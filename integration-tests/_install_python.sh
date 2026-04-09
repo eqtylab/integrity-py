@@ -2,16 +2,18 @@
 
 set -eu
 
-MIN_PYTHON_VERSION="$(tr -d '[:space:]' < /test/.python-version)"
+PYTHON_VERSION_FILE="${PYTHON_VERSION_FILE:-/test/.python-version}"
+MIN_PYTHON_VERSION="$(tr -d '[:space:]' < "$PYTHON_VERSION_FILE")"
 MIN_PYTHON_MAJOR="${MIN_PYTHON_VERSION%%.*}"
 MIN_PYTHON_MINOR="${MIN_PYTHON_VERSION#${MIN_PYTHON_MAJOR}.}"
 
 ensure_python_gte_min() {
     python3 - <<'PY'
 import sys
+import os
 from pathlib import Path
 
-minimum = Path("/test/.python-version").read_text(encoding="utf-8").strip()
+minimum = Path(os.environ["PYTHON_VERSION_FILE"]).read_text(encoding="utf-8").strip()
 major_str, minor_str = minimum.split(".", 1)
 minimum_tuple = (int(major_str), int(minor_str))
 

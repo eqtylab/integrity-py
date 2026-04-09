@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  import-tests:
+  import-tests-linux:
     strategy:
       fail-fast: false
       matrix:
@@ -96,8 +96,63 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: import-test-result-${{ strategy.job-index }}
+          name: import-test-linux-result-${{ strategy.job-index }}
           path: summary-rows/row-${{ strategy.job-index }}.md
+          retention-days: 1
+
+      - name: Mark job as failed when import test fails
+        if: always() && steps.run_import_test.outcome != 'success'
+        run: exit 1
+
+  import-tests-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-large
+            arch: x86_64
+          - runner: macos-15-xlarge
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout Repo
+        uses: eqtylab-actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+
+      - name: Run Import Test
+        id: run_import_test
+        continue-on-error: true
+        env:
+          EQTY_PYPI_USER: ${{ secrets.EQTY_PYPI_USER }}
+          EQTY_PYPI_PASSWORD: ${{ secrets.EQTY_PYPI_PASSWORD }}
+          REQUESTED_SDK_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || 'latest' }}
+        run: bash integration-tests/install_and_run_native.sh "$REQUESTED_SDK_VERSION" _basic_import.py
+
+      - name: Build summary row
+        if: always()
+        run: |
+          if [ "${{ steps.run_import_test.outcome }}" = "success" ]; then
+            result="✅"
+          elif [ "${{ steps.run_import_test.outcome }}" = "failure" ]; then
+            result="❌"
+          else
+            result="${{ steps.run_import_test.outcome }}"
+          fi
+
+          mkdir -p summary-rows
+          row_file="summary-rows/macos-${{ strategy.job-index }}.md"
+          echo "| \`${{ matrix.runner }}\` | ${{ matrix.arch }} | \`macos\` | n/a | ${result} |" > "$row_file"
+
+      - name: Upload summary row
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-test-macos-result-${{ strategy.job-index }}
+          path: summary-rows/macos-${{ strategy.job-index }}.md
           retention-days: 1
 
       - name: Mark job as failed when import test fails
@@ -106,14 +161,16 @@ jobs:
 
   import-tests-summary:
     if: always()
-    needs: import-tests
+    needs:
+      - import-tests-linux
+      - import-tests-macos
     runs-on: ubuntu-latest
     steps:
       - name: Download matrix summary rows
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          pattern: import-test-result-*
+          pattern: import-test*-result-*
           path: summary-rows
           merge-multiple: true
 
