@@ -8,6 +8,11 @@ on:
       - ".github/workflows/import-tests.yml"
       - "integration-tests/**"
   workflow_dispatch:
+    inputs:
+      eqty_sdk_version:
+        description: SDK version to install during manual runs
+        required: false
+        default: "0.0.0"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -49,7 +54,8 @@ jobs:
           IMAGE: ${{ matrix.image }}
           EQTY_PYPI_USER: ${{ secrets.EQTY_PYPI_USER }}
           EQTY_PYPI_PASSWORD: ${{ secrets.EQTY_PYPI_PASSWORD }}
-        run: integration-tests/install_and_run.sh latest _basic_import.py
+          REQUESTED_SDK_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || 'latest' }}
+        run: integration-tests/install_and_run.sh "$REQUESTED_SDK_VERSION" _basic_import.py
 
       - name: Build summary row
         if: always()
