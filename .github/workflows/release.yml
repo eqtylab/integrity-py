@@ -184,7 +184,7 @@ jobs:
           shopt -s globstar nullglob
           files=(dist/**/*.whl dist/*.tar.gz)
           if [ ${#files[@]} -gt 0 ]; then
-            python3 -m twine upload --skip-existing --repository-url="https://pypi.eqtylab.io/" "${files[@]}"
+            python3 -m twine upload --repository-url="https://pypi.eqtylab.io/" "${files[@]}"
           fi
 
       - name: Publish Windows Package
@@ -194,7 +194,10 @@ jobs:
           TWINE_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
         run: |
           py -m pip install --upgrade pip twine
-          py -m twine upload --skip-existing --repository-url="https://pypi.eqtylab.io/" dist/*.whl
+          $files = Get-ChildItem -Path dist -Recurse -Filter *.whl | ForEach-Object { $_.FullName }
+          if ($files.Count -gt 0) {
+            py -m twine upload --repository-url="https://pypi.eqtylab.io/" $files
+          }
 
       - name: Build Mac Wheel
         if: runner.os == 'macOS'
@@ -262,7 +265,11 @@ jobs:
           TWINE_USERNAME: "ci_runner"
           TWINE_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
         run: |
-          python -m twine upload --skip-existing --repository-url="https://pypi.eqtylab.io/" dist/*.whl
+          shopt -s nullglob
+          files=(dist/*.whl)
+          if [ ${#files[@]} -gt 0 ]; then
+            python -m twine upload --repository-url="https://pypi.eqtylab.io/" "${files[@]}"
+          fi
 
       - name: Update GitHub release with PyPI link
         if: matrix.platform == 'ubuntu-latest-large' && startsWith(github.ref, 'refs/tags/')
