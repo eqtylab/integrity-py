@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -xeu
+# Do not enable xtrace here: this script handles authenticated package index credentials.
+set -eu
 
 SCRIPT_ROOT="${SCRIPT_ROOT:-/test}"
 
