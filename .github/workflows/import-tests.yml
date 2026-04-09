@@ -35,8 +35,9 @@ jobs:
           - python:3.12
           - python:3.11
           - python:3.10
-          - registry.access.redhat.com/ubi10/python-312:latest
+          - registry.access.redhat.com/ubi10/python-312-minimal:10.1
           - registry.access.redhat.com/ubi9/python-311:9.7
+
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout Repo
