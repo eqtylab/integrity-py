@@ -56,8 +56,10 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           REQUESTED_SDK_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || 'latest' }}
         run: |
+          set +e
           integration-tests/install_and_run.sh "$REQUESTED_SDK_VERSION" _basic_import.py \
             2>&1 | tee /tmp/import-test-output.log
+          exit "${PIPESTATUS[0]}"
 
       - name: Build summary row
         if: always()
@@ -153,8 +155,10 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           REQUESTED_SDK_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || 'latest' }}
         run: |
+          set +e
           bash integration-tests/install_and_run_native.sh "$REQUESTED_SDK_VERSION" _basic_import.py \
             2>&1 | tee /tmp/import-test-output.log
+          exit "${PIPESTATUS[0]}"
 
       - name: Build summary row
         if: always()
