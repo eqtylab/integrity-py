@@ -20,7 +20,8 @@ if pip install --help 2>&1 | grep -q -- "--break-system-packages"; then
 fi
 
 if [ "$EQTY_SDK_VERSION" = "latest" ]; then
-    TARGET_VERSION="$(python3 "$SCRIPT_ROOT/_resolve_latest_github_version.py")"
+    # `var=$(cmd)` swallows the exit code in bash; `|| exit 1` forces the check.
+    TARGET_VERSION="$(python3 "$SCRIPT_ROOT/_resolve_latest_github_version.py")" || exit 1
 fi
 
 pip install \

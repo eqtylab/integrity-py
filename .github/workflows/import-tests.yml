@@ -15,7 +15,7 @@ on:
         default: "0.0.0"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
@@ -53,6 +53,7 @@ jobs:
           IMAGE: ${{ matrix.image }}
           EQTY_PYPI_USER: ${{ secrets.EQTY_PYPI_USER }}
           EQTY_PYPI_PASSWORD: ${{ secrets.EQTY_PYPI_PASSWORD }}
+          GITHUB_TOKEN: ${{ github.token }}
           REQUESTED_SDK_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || 'latest' }}
         run: |
           integration-tests/install_and_run.sh "$REQUESTED_SDK_VERSION" _basic_import.py \
@@ -149,6 +150,7 @@ jobs:
         env:
           EQTY_PYPI_USER: ${{ secrets.EQTY_PYPI_USER }}
           EQTY_PYPI_PASSWORD: ${{ secrets.EQTY_PYPI_PASSWORD }}
+          GITHUB_TOKEN: ${{ github.token }}
           REQUESTED_SDK_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || 'latest' }}
         run: |
           bash integration-tests/install_and_run_native.sh "$REQUESTED_SDK_VERSION" _basic_import.py \

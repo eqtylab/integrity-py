@@ -16,6 +16,12 @@ TEST_SCRIPT="${2:-_basic_import.py}"
 EQTY_PYPI_USER="${EQTY_PYPI_USER}"
 EQTY_PYPI_PASSWORD="${EQTY_PYPI_PASSWORD}"
 
+# Resolve "latest" here on the runner where GITHUB_TOKEN is available,
+# so the container always receives an explicit version number.
+if [ "$EQTY_SDK_VERSION" = "latest" ]; then
+    EQTY_SDK_VERSION="$(python3 "$SCRIPT_DIR/_resolve_latest_github_version.py")" || exit 1
+fi
+
 docker run --rm \
     -v "$SCRIPT_DIR:/test:ro" \
     -v "$REPO_ROOT/.python-version:/tmp/eqty-python-version:ro" \
