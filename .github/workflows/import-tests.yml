@@ -54,7 +54,9 @@ jobs:
           EQTY_PYPI_USER: ${{ secrets.EQTY_PYPI_USER }}
           EQTY_PYPI_PASSWORD: ${{ secrets.EQTY_PYPI_PASSWORD }}
           REQUESTED_SDK_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || 'latest' }}
-        run: integration-tests/install_and_run.sh "$REQUESTED_SDK_VERSION" _basic_import.py
+        run: |
+          integration-tests/install_and_run.sh "$REQUESTED_SDK_VERSION" _basic_import.py \
+            2>&1 | tee /tmp/import-test-output.log
 
       - name: Build summary row
         if: always()
@@ -91,6 +93,24 @@ jobs:
           mkdir -p summary-rows
           row_file="summary-rows/row-${{ strategy.job-index }}.md"
           echo "| \`${{ matrix.runner }}\` | ${arch} | \`${{ matrix.image }}\` | ${glibc_version} | ${result} |" > "$row_file"
+
+          if [ "${{ steps.run_import_test.outcome }}" != "success" ]; then
+            last_lines="$(tail -n 15 /tmp/import-test-output.log 2>/dev/null || echo "(no output captured)")"
+            {
+              echo ""
+              echo "<details>"
+              echo "<summary>❌ ${{ matrix.runner }} / ${{ matrix.image }}</summary>"
+              echo ""
+              echo '```'
+              echo "$last_lines"
+              echo '```'
+              echo ""
+              echo "</details>"
+            } >> "$row_file"
+
+            msg="$(printf '%s' "$last_lines" | sed 's/%/%25/g' | tr '\n' '\001' | sed 's/\001/%0A/g')"
+            echo "::error title=Failed: ${{ matrix.image }} on ${{ matrix.runner }}::${msg}"
+          fi
 
       - name: Upload summary row
         if: always()
@@ -130,7 +150,9 @@ jobs:
           EQTY_PYPI_USER: ${{ secrets.EQTY_PYPI_USER }}
           EQTY_PYPI_PASSWORD: ${{ secrets.EQTY_PYPI_PASSWORD }}
           REQUESTED_SDK_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || 'latest' }}
-        run: bash integration-tests/install_and_run_native.sh "$REQUESTED_SDK_VERSION" _basic_import.py
+        run: |
+          bash integration-tests/install_and_run_native.sh "$REQUESTED_SDK_VERSION" _basic_import.py \
+            2>&1 | tee /tmp/import-test-output.log
 
       - name: Build summary row
         if: always()
@@ -146,6 +168,24 @@ jobs:
           mkdir -p summary-rows
           row_file="summary-rows/macos-${{ strategy.job-index }}.md"
           echo "| \`${{ matrix.runner }}\` | ${{ matrix.arch }} | \`macos\` | n/a | ${result} |" > "$row_file"
+
+          if [ "${{ steps.run_import_test.outcome }}" != "success" ]; then
+            last_lines="$(tail -n 15 /tmp/import-test-output.log 2>/dev/null || echo "(no output captured)")"
+            {
+              echo ""
+              echo "<details>"
+              echo "<summary>❌ ${{ matrix.runner }} (${{ matrix.arch }}) / macos</summary>"
+              echo ""
+              echo '```'
+              echo "$last_lines"
+              echo '```'
+              echo ""
+              echo "</details>"
+            } >> "$row_file"
+
+            msg="$(printf '%s' "$last_lines" | sed 's/%/%25/g' | tr '\n' '\001' | sed 's/\001/%0A/g')"
+            echo "::error title=Failed: macos on ${{ matrix.runner }} (${{ matrix.arch }})::${msg}"
+          fi
 
       - name: Upload summary row
         if: always()
@@ -182,8 +222,18 @@ jobs:
             echo "| Runner | Arch | Image | glibc | Result |"
             echo "|---|---|---|---|---|"
             if ls summary-rows/*.md >/dev/null 2>&1; then
-              cat summary-rows/*.md | sort
+              # Print only the first line of each file (the table row), sorted
+              for f in summary-rows/*.md; do head -n 1 "$f"; done | sort
             else
               echo "| _none_ | _none_ | _none_ | _none_ | no result artifacts found |"
+            fi
+
+            # Append any error detail blocks (lines 2+ of files that have them)
+            if ls summary-rows/*.md >/dev/null 2>&1; then
+              for f in $(ls summary-rows/*.md | sort); do
+                if [ "$(wc -l < "$f")" -gt 1 ]; then
+                  tail -n +2 "$f"
+                fi
+              done
             fi
           } >> "$GITHUB_STEP_SUMMARY"

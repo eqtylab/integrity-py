@@ -41,6 +41,8 @@ fi
 
 # UBI 9 / RHEL 9 default to Python 3.9. Install the oldest packaged Python
 # that satisfies the configured minimum version.
+# Note: python${ver}-pip is not a separate package in UBI9; pip is accessed via
+# the python module directly, so we create a wrapper script instead.
 if [ -f /etc/os-release ] && grep -qE '^VERSION_ID="9"' /etc/os-release && grep -qE "rhel|ubi" /etc/os-release; then
     for candidate in 3.10 3.11 3.12 3.13; do
         candidate_major="${candidate%%.*}"
@@ -51,9 +53,14 @@ if [ -f /etc/os-release ] && grep -qE '^VERSION_ID="9"' /etc/os-release && grep 
             continue
         fi
 
-        if dnf install -y "python${candidate}" "python${candidate}-pip"; then
+        if dnf install -y "python${candidate}" 2>/dev/null; then
             ln -sf "/usr/bin/python${candidate}" /usr/local/bin/python3
-            ln -sf "/usr/bin/pip${candidate}" /usr/local/bin/pip
+            # python${candidate}-pip may not exist as a separate package; bootstrap pip
+            # via ensurepip if available, then create a wrapper script
+            "/usr/bin/python${candidate}" -m ensurepip --upgrade 2>/dev/null || true
+            printf '#!/bin/sh\nexec "/usr/bin/python%s" -m pip "$@"\n' "${candidate}" \
+                > /usr/local/bin/pip
+            chmod +x /usr/local/bin/pip
             break
         fi
     done
