@@ -27,8 +27,7 @@ jobs:
           - ubuntu-latest # x86_64
           - eqty-thor # aarch64
         image:
-          - debian:bullseye
-          - debian:bookworm
+          - debian:12
           - debian:trixie
           - ubuntu:latest
           - ubuntu:24.04

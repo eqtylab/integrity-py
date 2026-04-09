@@ -8,6 +8,7 @@
 set -xeu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE="${IMAGE:-debian:bookworm}"
 EQTY_SDK_VERSION="${1:-${EQTY_SDK_VERSION:-latest}}"
 TEST_SCRIPT="${2:-_basic_import.py}"
@@ -17,6 +18,7 @@ EQTY_PYPI_PASSWORD="${EQTY_PYPI_PASSWORD}"
 
 docker run --rm \
     -v "$SCRIPT_DIR:/test:ro" \
+    -v "$REPO_ROOT/.python-version:/test/.python-version:ro" \
     -e "EQTY_PYPI_USER=${EQTY_PYPI_USER:-}" \
     -e "EQTY_PYPI_PASSWORD=${EQTY_PYPI_PASSWORD:-}" \
     -e "EQTY_SDK_VERSION=${EQTY_SDK_VERSION:-}" \
