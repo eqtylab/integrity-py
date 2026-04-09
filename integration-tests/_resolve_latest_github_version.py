@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 
 
 LATEST_RELEASE_API = "https://api.github.com/repos/eqtylab/integrity-py/releases/latest"
+GITHUB_API_TIMEOUT_SECONDS = 10
 
 
 def main() -> None:
@@ -18,7 +19,9 @@ def main() -> None:
     if token:
         req.add_header("Authorization", f"Bearer {token}")
 
-    with urlopen(req) as response:
+    with urlopen(req, timeout=GITHUB_API_TIMEOUT_SECONDS) as response:
+        if response.status != 200:
+            raise SystemExit(f"GitHub API request failed with status {response.status}")
         data = json.loads(response.read())
 
     tag = data.get("tag_name", "")
