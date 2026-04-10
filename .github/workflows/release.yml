@@ -87,10 +87,10 @@ jobs:
 
           case "${{ matrix.platform }}" in
             ubuntu-latest-large)
-              build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_x86_64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|'
+              build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_x86_64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|dist/auditwheel-show-musllinux-x86_64.txt'
               ;;
             ubuntu-aarch64)
-              build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_aarch64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_aarch64|manylinux2014|dist/auditwheel-show-linux-aarch64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_aarch64|musllinux_1_2|'
+              build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_aarch64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_aarch64|manylinux2014|dist/auditwheel-show-linux-aarch64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_aarch64|musllinux_1_2|dist/auditwheel-show-musllinux-aarch64.txt'
               ;;
             *)
               echo "Unsupported Linux runner: ${{ matrix.platform }}"
@@ -157,7 +157,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: auditwheel-report-${{ matrix.platform }}
-          path: dist/auditwheel-show-linux-*.txt
+          path: dist/auditwheel-show-*.txt
           retention-days: 1
 
       - name: Upload x86_64 wheel for docs
