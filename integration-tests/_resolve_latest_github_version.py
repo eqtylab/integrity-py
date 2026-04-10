@@ -8,7 +8,6 @@ import os
 import sys
 from urllib.request import Request, urlopen
 
-
 LATEST_RELEASE_API = "https://api.github.com/repos/eqtylab/integrity-py/releases/latest"
 GITHUB_API_TIMEOUT_SECONDS = 10
 
