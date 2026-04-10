@@ -8,13 +8,21 @@ on:
       - ".github/workflows/import-tests.yml"
       - "integration-tests/**"
   workflow_dispatch:
+    inputs:
+      eqty_sdk_version:
+        description: SDK version to install during manual runs
+        required: false
+        default: "0.0.0"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
-  import-tests:
+  import-tests-linux:
+    permissions:
+      contents: read
+      packages: read
     strategy:
       fail-fast: false
       matrix:
@@ -22,25 +30,24 @@ jobs:
           - ubuntu-latest # x86_64
           - eqty-thor # aarch64
         image:
-          - debian:bullseye
-          - debian:bookworm
-          - debian:trixie
-          - ubuntu:latest
-          - ubuntu:24.04
-          - ubuntu:22.04
-          - alpine:latest
-          - alpine:3.23
-          - alpine:3.22
-          - python:3.13
-          - python:3.12
-          - python:3.11
-          - python:3.10
-          - registry.access.redhat.com/ubi10/ubi:latest
-          - registry.access.redhat.com/ubi9/ubi:latest
+          - ghcr.io/eqtylab/import-test-centos7-python310:latest
+          - ghcr.io/eqtylab/import-test-ubuntu2204-python310:latest
+          - ghcr.io/eqtylab/import-test-ubuntu2404-python312:latest
+          - ghcr.io/eqtylab/import-test-debian-bookworm-python311:latest
+          - ghcr.io/eqtylab/import-test-ubi9-python311:latest
+          - ghcr.io/eqtylab/import-test-ubi10-python312:latest
+          - ghcr.io/eqtylab/import-test-alpine322-python312:latest
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout Repo
         uses: eqtylab-actions/checkout@v4
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Import Test
         id: run_import_test
@@ -49,7 +56,13 @@ jobs:
           IMAGE: ${{ matrix.image }}
           EQTY_PYPI_USER: ${{ secrets.EQTY_PYPI_USER }}
           EQTY_PYPI_PASSWORD: ${{ secrets.EQTY_PYPI_PASSWORD }}
-        run: integration-tests/install_and_run.sh latest _basic_import.py
+          GITHUB_TOKEN: ${{ github.token }}
+          REQUESTED_SDK_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || 'latest' }}
+        run: |
+          set +e
+          integration-tests/install_and_run.sh "$REQUESTED_SDK_VERSION" _basic_import.py \
+            2>&1 | tee /tmp/import-test-output.log
+          exit "${PIPESTATUS[0]}"
 
       - name: Build summary row
         if: always()
@@ -87,12 +100,108 @@ jobs:
           row_file="summary-rows/row-${{ strategy.job-index }}.md"
           echo "| \`${{ matrix.runner }}\` | ${arch} | \`${{ matrix.image }}\` | ${glibc_version} | ${result} |" > "$row_file"
 
+          if [ "${{ steps.run_import_test.outcome }}" != "success" ]; then
+            last_lines="$(tail -n 15 /tmp/import-test-output.log 2>/dev/null || echo "(no output captured)")"
+            {
+              echo ""
+              echo "<details>"
+              echo "<summary>❌ ${{ matrix.runner }} / ${{ matrix.image }}</summary>"
+              echo ""
+              echo '```'
+              echo "$last_lines"
+              echo '```'
+              echo ""
+              echo "</details>"
+            } >> "$row_file"
+
+            msg="$(printf '%s' "$last_lines" | sed 's/%/%25/g' | tr '\n' '\001' | sed 's/\001/%0A/g')"
+            echo "::error title=Failed: ${{ matrix.image }} on ${{ matrix.runner }}::${msg}"
+          fi
+
       - name: Upload summary row
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: import-test-result-${{ strategy.job-index }}
+          name: import-test-linux-result-${{ strategy.job-index }}
           path: summary-rows/row-${{ strategy.job-index }}.md
+          retention-days: 1
+
+      - name: Mark job as failed when import test fails
+        if: always() && steps.run_import_test.outcome != 'success'
+        run: exit 1
+
+  import-tests-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-large
+            arch: x86_64
+          - runner: macos-15-xlarge
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout Repo
+        uses: eqtylab-actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+
+      - name: Run Import Test
+        id: run_import_test
+        continue-on-error: true
+        env:
+          EQTY_PYPI_USER: ${{ secrets.EQTY_PYPI_USER }}
+          EQTY_PYPI_PASSWORD: ${{ secrets.EQTY_PYPI_PASSWORD }}
+          GITHUB_TOKEN: ${{ github.token }}
+          REQUESTED_SDK_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || 'latest' }}
+        run: |
+          set +e
+          bash integration-tests/install_and_run_native.sh "$REQUESTED_SDK_VERSION" _basic_import.py \
+            2>&1 | tee /tmp/import-test-output.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Build summary row
+        if: always()
+        run: |
+          if [ "${{ steps.run_import_test.outcome }}" = "success" ]; then
+            result="✅"
+          elif [ "${{ steps.run_import_test.outcome }}" = "failure" ]; then
+            result="❌"
+          else
+            result="${{ steps.run_import_test.outcome }}"
+          fi
+
+          mkdir -p summary-rows
+          row_file="summary-rows/macos-${{ strategy.job-index }}.md"
+          echo "| \`${{ matrix.runner }}\` | ${{ matrix.arch }} | \`macos\` | n/a | ${result} |" > "$row_file"
+
+          if [ "${{ steps.run_import_test.outcome }}" != "success" ]; then
+            last_lines="$(tail -n 15 /tmp/import-test-output.log 2>/dev/null || echo "(no output captured)")"
+            {
+              echo ""
+              echo "<details>"
+              echo "<summary>❌ ${{ matrix.runner }} (${{ matrix.arch }}) / macos</summary>"
+              echo ""
+              echo '```'
+              echo "$last_lines"
+              echo '```'
+              echo ""
+              echo "</details>"
+            } >> "$row_file"
+
+            msg="$(printf '%s' "$last_lines" | sed 's/%/%25/g' | tr '\n' '\001' | sed 's/\001/%0A/g')"
+            echo "::error title=Failed: macos on ${{ matrix.runner }} (${{ matrix.arch }})::${msg}"
+          fi
+
+      - name: Upload summary row
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-test-macos-result-${{ strategy.job-index }}
+          path: summary-rows/macos-${{ strategy.job-index }}.md
           retention-days: 1
 
       - name: Mark job as failed when import test fails
@@ -101,14 +210,16 @@ jobs:
 
   import-tests-summary:
     if: always()
-    needs: import-tests
+    needs:
+      - import-tests-linux
+      - import-tests-macos
     runs-on: ubuntu-latest
     steps:
       - name: Download matrix summary rows
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          pattern: import-test-result-*
+          pattern: import-test*-result-*
           path: summary-rows
           merge-multiple: true
 
@@ -120,8 +231,18 @@ jobs:
             echo "| Runner | Arch | Image | glibc | Result |"
             echo "|---|---|---|---|---|"
             if ls summary-rows/*.md >/dev/null 2>&1; then
-              cat summary-rows/*.md | sort
+              # Print only the first line of each file (the table row), sorted
+              for f in summary-rows/*.md; do head -n 1 "$f"; done | sort
             else
               echo "| _none_ | _none_ | _none_ | _none_ | no result artifacts found |"
+            fi
+
+            # Append any error detail blocks (lines 2+ of files that have them)
+            if ls summary-rows/*.md >/dev/null 2>&1; then
+              for f in $(ls summary-rows/*.md | sort); do
+                if [ "$(wc -l < "$f")" -gt 1 ]; then
+                  tail -n +2 "$f"
+                fi
+              done
             fi
           } >> "$GITHUB_STEP_SUMMARY"

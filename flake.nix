@@ -49,6 +49,7 @@
             rustfmt-nightly
             rust
             rustPackages.clippy
+            auditwheel
           ];
         };
       }
