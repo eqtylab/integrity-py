@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Nested Contexts - eqty_sdk Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
+        <link href="../css/version-select.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Nested Contexts";
+        var mkdocs_page_input_path = "examples/nested-contexts.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> eqty_sdk Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="basic-workflow.html">Basic Workflow</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="async-compute.html">Async Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Nested Contexts</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#create-the-shared-model">Create The Shared Model</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#use-the-shared-model-in-a-child-context">Use The Shared Model In A Child Context</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="path-backed-assets.html">Path-Backed Assets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="auth-service-signer.html">Auth Service Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service-registering.html">Service Registering</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="custom-serialize.html">Spark Parquet Input</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="model-signing.html">Model Signing</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/init-and-config.html">Init And Config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/global-functions.html">Global Functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/cid.html">CID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/did.html">DID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/uuid.html">UUID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/assets.html">Assets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/compute.html">Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/context.html">Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/declaration.html">Declaration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/service.html">Service</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/signer.html">Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api/statements.html">Statements</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">eqty_sdk Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Examples</li>
+      <li class="breadcrumb-item active">Nested Contexts</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="nested-contexts">Nested Contexts</h1>
+<p>Use this example when a Governance Studio project should be the root of the graph tree, but you still want local subcontexts below it for project-level state and individual runs.</p>
+<p>Context graphs are built hierarchically. If data is registered in a parent graph and then referenced by CID in a child graph, the child graph can automatically pull that parent data into its own lineage. This is useful for keeping higher-level shared assets, such as project specs, prompts, or baseline models, in a parent context while allowing multiple child contexts to reuse them without re-registering the same logical object in each graph.</p>
+<h2 id="create-the-shared-model">Create The Shared Model</h2>
+<p>Source: <code>examples/creating-the-model.py</code></p>
+<pre><code class="language-python">from pathlib import Path
+from uuid import UUID
+
+from eqty_sdk import Context, Model, Signer, compute, init, set_active_signer
+from eqty_sdk.asset import Asset, Attribution, Config, Dataset
+
+gov_studio_project = UUID(&quot;00000000-0000-0000-0000-000000000000&quot;)
+
+# Create a local subcontext under the Governance Studio project and make it the default.
+project_ctx = Context.from_uuid(gov_studio_project)
+model_ctx = Context.with_parent(project_ctx).new(&quot;Model Context&quot;)
+print(model_ctx)
+cfg = init(default_context=model_ctx)
+
+signer = Signer.new(name=&quot;Nested Contexts Signer&quot;, _load_if_exists=True)
+set_active_signer(signer)
+
+
+@compute(
+    metadata={&quot;description&quot;: &quot;Creates a simple llm model&quot;},
+)
+def create_model(model_name: Asset, provider: Asset, version: Asset) -&gt; Model:
+    return Model.from_object(
+        {
+            &quot;model_name&quot;: model_name.value,
+            &quot;provider&quot;: provider.value,
+            &quot;version&quot;: version.value,
+        },
+        name=model_name.value,
+        description=f&quot;{provider.value} {version.value}&quot;,
+    )
+
+
+name = Config.from_object(&quot;Meeting Summarizer&quot;, name=&quot;Model Name&quot;)
+provider = Dataset.from_object(&quot;Eqty&quot;, name=&quot;Model Provider&quot;)
+version = Attribution.from_object(&quot;v1&quot;, name=&quot;Version&quot;)
+create_model(name, provider, version)
+
+cfg.get_default_context().export(Path(&quot;./manifests/default-ctx.json&quot;))
+
+</code></pre>
+<h2 id="use-the-shared-model-in-a-child-context">Use The Shared Model In A Child Context</h2>
+<p>Source: <code>examples/using-the-model.py</code></p>
+<pre><code class="language-python">from pathlib import Path
+from uuid import UUID
+
+from eqty_sdk import CID, Computation, Context, Dataset, Model, Signer, init, set_active_signer
+
+# UUID from `creating-the-model.py` actual UUID will vary
+model_context_uuid = UUID(&quot;fea03473-4614-464f-a2de-3cbfdef603bb&quot;)
+
+# Recreate the same default subcontext under the Governance Studio project.
+model_ctx = Context.from_uuid(model_context_uuid)
+ctx = Context.with_parent(model_ctx).new(&quot;Using the Model&quot;)
+cfg = init(default_context=ctx)
+
+signer = Signer.new(name=&quot;Nested Contexts Signer&quot;, _load_if_exists=True)
+set_active_signer(signer)
+
+# Reference a higher-level model asset from the parent context by CID.
+shared_model = Model.from_cid(
+    CID(&quot;bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku&quot;),
+    name=&quot;Meeting Summarizer&quot;,
+)
+
+# During execution, create a child run context under the default context.
+run_ctx = Context.with_parent(cfg.get_default_context()).new(&quot;run-2026-03-26&quot;)
+
+input_data = Dataset.with_context(run_ctx).from_object(
+    {&quot;system_prompt&quot;: &quot;You are a helpful assistant.&quot;, &quot;user_prompt&quot;: &quot;Summarize the meeting.&quot;},
+    name=&quot;Prompt Inputs&quot;,
+)
+output_data = Dataset.with_context(run_ctx).from_object(
+    {&quot;summary&quot;: [&quot;Decisions made&quot;, &quot;Follow-ups assigned&quot;, &quot;Next milestone set&quot;]},
+    name=&quot;Meeting Summary&quot;,
+)
+
+Computation.with_context(run_ctx).new(name=&quot;Summarize Meeting&quot;).add_input_cid(
+    [shared_model.cid, input_data.cid]
+).add_output_cid([output_data.cid]).finalize()
+
+run_ctx.export(Path(&quot;./manifests/run-ctx.json&quot;))
+
+</code></pre>
+<p>Notes:</p>
+<ul>
+<li><code>Context.from_uuid(...)</code> takes the Governance Studio project UUID that should be the root of the graph tree.</li>
+<li><code>Context.with_parent(gov_ctx).new("...")</code> creates a local child context under the Governance Studio project. That child becomes the default context for the process in this example.</li>
+<li><code>Context.with_parent(cfg.get_default_context()).new("...")</code> creates a run-specific child context, which is therefore a grandchild of the Governance Studio project.</li>
+<li>The first script registers the default subcontext and its shared model to <code>http://localhost:3050</code>.</li>
+<li>The second script creates a run context under that default subcontext, references the shared model by CID, and registers the run context to the same service.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="context-linking.html" class="btn btn-neutral float-left" title="Context Linking"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="path-backed-assets.html" class="btn btn-neutral float-right" title="Path-Backed Assets">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="context-linking.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="path-backed-assets.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
+      <script src="../search/main.js"></script>
+      <script src="../js/version-select.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
