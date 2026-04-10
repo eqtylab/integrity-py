@@ -27,27 +27,24 @@ jobs:
           - ubuntu-latest # x86_64
           - eqty-thor # aarch64
         image:
-          - python:3.13-slim-bookworm
-          - python:3.13-slim-trixie
-          - python:3.13-alpine3.23
-          - python:3.13-alpine3.22
-          - python:3.13
-          - python:3.12
-          - python:3.11
-          - python:3.10
-          - registry.access.redhat.com/ubi10/python-312-minimal:10.1
-          - registry.access.redhat.com/ubi9/python-311:9.7
-
+          - ghcr.io/eqtylab/import-test-centos7-python310:latest
+          - ghcr.io/eqtylab/import-test-ubuntu2204-python310:latest
+          - ghcr.io/eqtylab/import-test-ubuntu2404-python312:latest
+          - ghcr.io/eqtylab/import-test-debian-bookworm-python311:latest
+          - ghcr.io/eqtylab/import-test-ubi9-python311:latest
+          - ghcr.io/eqtylab/import-test-ubi10-python312:latest
+          - ghcr.io/eqtylab/import-test-alpine322-python312:latest
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout Repo
         uses: eqtylab-actions/checkout@v4
 
-      - name: Login to Docker Hub
+      - name: Log in to ghcr.io
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Import Test
         id: run_import_test
