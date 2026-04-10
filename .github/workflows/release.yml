@@ -9,6 +9,10 @@ on:
     tags:
       - v*.*.*
   workflow_dispatch:
+      eqty_sdk_version:
+        description: SDK version to publish
+        required: false
+        default: "0.0.0"
 
 jobs:
   build_and_publish:
