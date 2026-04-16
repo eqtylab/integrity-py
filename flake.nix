@@ -35,11 +35,15 @@
       in
       {
         devShells.default = pkgs.mkShellNoCC {
+          OPENSSL_DIR = "${pkgs.openssl.dev}";
+          OPENSSL_LIB_DIR = "${pkgs.lib.getLib pkgs.openssl}/lib";
+          OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
           packages = with pkgs; [
             cargo
             just
             maturin
             openssl
+            openssl.dev
             pkg-config
             poetry
             prek
