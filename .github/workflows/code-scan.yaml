@@ -74,6 +74,7 @@ jobs:
           artifact-name: scan-provenance
           results-artifact-name: scan-results
           license-scanning: true
+          ignored-licenses: Apache-with-LLVM-Exception,blessing
           cargo-vendor: true
           veracode: true
           veracode-api-id: ${{ secrets.VERACODE_API_ID }}
