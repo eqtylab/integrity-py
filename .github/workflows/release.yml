@@ -361,6 +361,9 @@ jobs:
       - name: Rust Cache
         uses: eqtylab-actions/rust-cache@v2
 
+      - name: Reset cached Cargo build scripts
+        run: rm -rf target/debug/build target/release/build
+
       - name: Install dependencies
         run: nix develop . -c just install
 
