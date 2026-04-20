@@ -31,27 +31,22 @@ TypedAssetT = TypeVar("TypedAssetT", bound="TypedAsset[Any]")
 # This determines the icon that is used on the graph.
 # These are the 'known' types, but actual value can be anything
 class AssetType(Enum):
-    ATTRIBUTION = "Attribution"
     AGENT = "Agent"
     BENCHMARK = "Benchmark"
     BENCHMARK_RESULT = "Benchmark_Result"
     BINARY = "Binary"
-    CERTIFICATE = "Certificate"
     CODE = "Code"
-    CONFIG = "Config"
-    CUSTOM = "Custom"
+    CONFIGURATION = "Configuration"
     DATABASE = "Database"
     DATASET = "Dataset"
     DOCUMENT = "Document"
+    GUARDRAIL = "Guardrail"
     MEDIA = "Media"
     MODEL = "Model"
     PROMPT = "Prompt"
-    GUARDRAIL = "Guardrail"
     REASONING = "Reasoning"
     SKILL = "Skill"
     SYSTEM_PROMPT = "System_Prompt"
-    TOKEN = "Token"
-    TOOL = "Tool"
 
 
 def _init_path_input(path: Union[str, PathLike[str]]) -> Path:
