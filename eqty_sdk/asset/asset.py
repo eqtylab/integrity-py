@@ -37,6 +37,7 @@ class AssetType(Enum):
     BINARY = "Binary"
     CODE = "Code"
     CONFIGURATION = "Configuration"
+    CUSTOM = "Custom"
     DATABASE = "Database"
     DATASET = "Dataset"
     DOCUMENT = "Document"
@@ -47,6 +48,8 @@ class AssetType(Enum):
     REASONING = "Reasoning"
     SKILL = "Skill"
     SYSTEM_PROMPT = "System_Prompt"
+    TOKEN = "Token"
+    TOOL = "Tool"
 
 
 def _init_path_input(path: Union[str, PathLike[str]]) -> Path:

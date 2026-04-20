@@ -3,6 +3,8 @@ from .asset import Asset, AssetType, serialize_for_hashing
 from .benchmark import Benchmark, BenchmarkResult
 from .binary import Binary
 from .code import Code
+from .configuration import Configuration
+from .custom import Custom
 from .database import Database
 from .dataset import Dataset
 from .document import Document
@@ -13,6 +15,8 @@ from .prompt import Prompt
 from .reasoning import Reasoning
 from .skill import Skill
 from .system_prompt import SystemPrompt
+from .token import Token
+from .tool import Tool
 
 __all__ = [
     "Agent",
@@ -22,6 +26,8 @@ __all__ = [
     "BenchmarkResult",
     "Binary",
     "Code",
+    "Configuration",
+    "Custom",
     "Database",
     "Dataset",
     "Document",
@@ -32,5 +38,7 @@ __all__ = [
     "Reasoning",
     "Skill",
     "SystemPrompt",
+    "Token",
+    "Tool",
     "serialize_for_hashing",
 ]

@@ -24,6 +24,8 @@ from eqty_sdk.asset import (
     BenchmarkResult,
     Binary,
     Code,
+    Configuration,
+    Custom,
     Database,
     Dataset,
     Document,
@@ -34,6 +36,8 @@ from eqty_sdk.asset import (
     Reasoning,
     Skill,
     SystemPrompt,
+    Token,
+    Tool,
 )
 from eqty_sdk.compute import (
     Computation,
@@ -92,7 +96,8 @@ __all__ = [
     "BenchmarkResult",
     "Binary",
     "Code",
-    "Config",
+    "Configuration",
+    "Custom",
     "Database",
     "Dataset",
     "Document",
@@ -103,6 +108,8 @@ __all__ = [
     "Reasoning",
     "Skill",
     "SystemPrompt",
+    "Token",
+    "Tool",
     # Compute
     "compute",
     "Compute",
