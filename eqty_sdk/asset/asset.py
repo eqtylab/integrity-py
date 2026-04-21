@@ -37,7 +37,7 @@ class AssetType(Enum):
     BINARY = "Binary"
     CERTIFICATE = "Certificate"
     CODE = "Code"
-    CONFIGURATION = "Config"
+    CONFIGURATION = "Configuration"
     CREDENTIAL = "Credential"
     CUSTOM = "Custom"
     DATABASE = "Database"
