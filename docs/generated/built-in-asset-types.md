@@ -1,11 +1,11 @@
 - `Agent`
-- `Attribution`
 - `Benchmark`
 - `BenchmarkResult`
 - `Binary`
 - `Certificate`
 - `Code`
-- `Config`
+- `Configuration`
+- `Credential`
 - `Custom`
 - `Database`
 - `Dataset`
