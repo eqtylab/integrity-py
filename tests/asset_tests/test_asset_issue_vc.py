@@ -2,7 +2,6 @@ import os
 import unittest
 
 from eqty_sdk import (
-    Attribution,
     Benchmark,
     Certificate,
     Code,
@@ -27,9 +26,6 @@ class AssetIssueVC(unittest.TestCase):
     def test_from_object_default(self):
         """Check that by default a VC is issued."""
         data = 1
-
-        asset = Attribution.from_object(data)
-        self.assertFalse(asset._skip_proof, "Attribution default skip_proof failed")
 
         asset = Benchmark.from_object(data)
         self.assertFalse(asset._skip_proof, "Benchmark default skip_proof failed")
@@ -64,9 +60,6 @@ class AssetIssueVC(unittest.TestCase):
     def test_asset_override(self):
         """Check that explicitly not issuing a VC works."""
         data = 2
-
-        asset = Attribution.from_object(data, _skip_proof=True)
-        self.assertTrue(asset._skip_proof, "Attribution override skip_proof failed")
 
         asset = Benchmark.from_object(data, _skip_proof=True)
         self.assertTrue(asset._skip_proof, "Benchmark override skip_proof failed")
@@ -103,9 +96,6 @@ class AssetIssueVC(unittest.TestCase):
         os.environ["EQTY_SKIP_PROOF"] = "FaLsE"
         data = 3
 
-        asset = Attribution.from_object(data)
-        self.assertFalse(asset._skip_proof, "Attribution env var disable skip_proof failed")
-
         asset = Benchmark.from_object(data)
         self.assertFalse(asset._skip_proof, "Benchmark env var disable skip_proof failed")
 
@@ -141,11 +131,6 @@ class AssetIssueVC(unittest.TestCase):
         """Test that explicitly issuing a VC overrides the env var for disabling issuing a VC."""
         os.environ["EQTY_SKIP_PROOF"] = ""
         data = 4
-
-        asset = Attribution.from_object(data)
-        self.assertFalse(asset._skip_proof, "Attribution env var disable skip_proof failed")
-        asset_vc = Attribution.from_object(data, _skip_proof=True)
-        self.assertTrue(asset_vc._skip_proof, "Attribution env var explicit skip_proof failed")
 
         asset = Benchmark.from_object(data)
         self.assertFalse(asset._skip_proof, "Benchmark env var disable skip_proof failed")
