@@ -73,7 +73,7 @@ class _ContextNewDescriptor:
         return _invalid_instance_new
 
 
-Context.new = _ContextNewDescriptor()
+Context.new = _ContextNewDescriptor()  # type: ignore[method-assign]  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def set_active_signer(signer: Signer) -> None:
