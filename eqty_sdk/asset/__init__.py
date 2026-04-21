@@ -2,8 +2,10 @@ from .agent import Agent
 from .asset import Asset, AssetType, serialize_for_hashing
 from .benchmark import Benchmark, BenchmarkResult
 from .binary import Binary
+from .certificate import Certificate
 from .code import Code
 from .configuration import Configuration
+from .credential import Credential
 from .custom import Custom
 from .database import Database
 from .dataset import Dataset
@@ -25,8 +27,10 @@ __all__ = [
     "Benchmark",
     "BenchmarkResult",
     "Binary",
+    "Certificate",
     "Code",
     "Configuration",
+    "Credential",
     "Custom",
     "Database",
     "Dataset",
