@@ -2,7 +2,7 @@ from pathlib import Path
 from uuid import UUID
 
 from eqty_sdk import Context, Model, Signer, compute, init, set_active_signer
-from eqty_sdk.asset import Asset, Document, Configuration, Dataset
+from eqty_sdk.asset import Asset, Configuration, Dataset, Document
 
 gov_studio_project = UUID("00000000-0000-0000-0000-000000000000")
 
