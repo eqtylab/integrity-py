@@ -4,7 +4,6 @@ from pathlib import Path
 from eqty_sdk import CID
 from eqty_sdk.asset import (
     AssetType,
-    Attribution,
     Benchmark,
     Certificate,
     Code,
@@ -28,9 +27,6 @@ class AssetNames(unittest.TestCase):
 
     def test_default_name_from_object(self):
         test_obj = 6
-
-        asset = Attribution.from_object(test_obj)
-        self.assertEqual(asset.name, "Attribution-kxgi", "Attribution name mismatch")
 
         asset = Benchmark.from_object(test_obj)
         self.assertEqual(asset.name, "Benchmark-kxgi", "Benchmark name mismatch")
@@ -65,9 +61,6 @@ class AssetNames(unittest.TestCase):
     def test_default_name_from_file_type(self):
         test_obj = Path("tests/fixtures/assets/datasets/file/file_text.txt")
 
-        asset = Attribution.from_path(test_obj)
-        self.assertEqual(asset.name, "Attribution-mmi4", "Attribution name mismatch")
-
         asset = Benchmark.from_path(test_obj)
         self.assertEqual(asset.name, "Benchmark-mmi4", "Benchmark name mismatch")
 
@@ -100,9 +93,6 @@ class AssetNames(unittest.TestCase):
 
     def test_default_name_from_cid_type(self):
         test_obj = CID("bafkr4ic6sphckk3a5x2fmgdeqod6tvv6k253q37icpfsk73wp2f524pok2")
-
-        asset = Attribution.from_cid(test_obj)
-        self.assertEqual(asset.name, "Attribution-pok2", "Attribution name mismatch")
 
         asset = Benchmark.from_cid(test_obj)
         self.assertEqual(asset.name, "Benchmark-pok2", "Benchmark name mismatch")
@@ -137,9 +127,6 @@ class AssetNames(unittest.TestCase):
     def test_custom_name_from_obj(self):
         test_obj = Path("tests/fixtures/assets/datasets/file/file_text.txt")
 
-        asset = Attribution.from_object(test_obj, name="obj")
-        self.assertEqual(asset.name, "obj", "Attribution name mismatch")
-
         asset = Benchmark.from_object(test_obj, name="obj")
         self.assertEqual(asset.name, "obj", "Benchmark name mismatch")
 
@@ -173,9 +160,6 @@ class AssetNames(unittest.TestCase):
     def test_custom_name_from_path(self):
         test_obj = Path("tests/fixtures/assets/datasets/file/file_text.txt")
 
-        asset = Attribution.from_path(test_obj, name="path")
-        self.assertEqual(asset.name, "path", "Attribution name mismatch")
-
         asset = Benchmark.from_path(test_obj, name="path")
         self.assertEqual(asset.name, "path", "Benchmark name mismatch")
 
@@ -208,9 +192,6 @@ class AssetNames(unittest.TestCase):
 
     def test_custom_name_from_cid(self):
         test_obj = CID("bafkr4ic6sphckk3a5x2fmgdeqod6tvv6k253q37icpfsk73wp2f524pok2")
-
-        asset = Attribution.from_cid(test_obj, name="cid")
-        self.assertEqual(asset.name, "cid", "Attribution name mismatch")
 
         asset = Benchmark.from_cid(test_obj, name="cid")
         self.assertEqual(asset.name, "cid", "Benchmark name mismatch")

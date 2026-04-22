@@ -2,7 +2,7 @@ from pathlib import Path
 from uuid import UUID
 
 from eqty_sdk import Context, Model, Signer, compute, init, set_active_signer
-from eqty_sdk.asset import Asset, Attribution, Config, Dataset
+from eqty_sdk.asset import Asset, Configuration, Dataset, Document
 
 gov_studio_project = UUID("00000000-0000-0000-0000-000000000000")
 
@@ -31,9 +31,9 @@ def create_model(model_name: Asset, provider: Asset, version: Asset) -> Model:
     )
 
 
-name = Config.from_object("Meeting Summarizer", name="Model Name")
+name = Configuration.from_object("Meeting Summarizer", name="Model Name")
 provider = Dataset.from_object("Eqty", name="Model Provider")
-version = Attribution.from_object("v1", name="Version")
+version = Document.from_object("v1", name="Version")
 create_model(name, provider, version)
 
 cfg.get_default_context().export(Path("./manifests/default-ctx.json"))

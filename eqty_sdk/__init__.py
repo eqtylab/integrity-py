@@ -20,18 +20,26 @@ from eqty_sdk.asset import (
     Agent,
     Asset,
     AssetType,
-    Attribution,
     Benchmark,
     BenchmarkResult,
+    Binary,
     Certificate,
     Code,
+    Configuration,
+    Credential,
     Custom,
     Database,
     Dataset,
     Document,
+    Guardrail,
     Media,
     Model,
+    Prompt,
+    Reasoning,
+    Skill,
+    SystemPrompt,
     Token,
+    Tool,
 )
 from eqty_sdk.compute import (
     Computation,
@@ -65,7 +73,7 @@ class _ContextNewDescriptor:
         return _invalid_instance_new
 
 
-Context.new = _ContextNewDescriptor()
+Context.new = _ContextNewDescriptor()  # type: ignore[method-assign]  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def set_active_signer(signer: Signer) -> None:
@@ -86,18 +94,26 @@ __all__ = [
     "Agent",
     "Asset",
     "AssetType",
-    "Attribution",
     "Benchmark",
     "BenchmarkResult",
+    "Binary",
     "Certificate",
     "Code",
+    "Configuration",
+    "Credential",
     "Custom",
     "Database",
     "Dataset",
     "Document",
+    "Guardrail",
     "Media",
     "Model",
+    "Prompt",
+    "Reasoning",
+    "Skill",
+    "SystemPrompt",
     "Token",
+    "Tool",
     # Compute
     "compute",
     "Compute",

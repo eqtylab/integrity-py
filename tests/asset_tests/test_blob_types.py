@@ -4,7 +4,6 @@ from pathlib import Path
 from eqty_sdk import (
     CID,
     AssetType,
-    Attribution,
     Benchmark,
     Certificate,
     Code,
@@ -29,9 +28,6 @@ class AssetTypes(unittest.TestCase):
     def test_from_obj_type(self):
         """Test the from_object constructor."""
         test_obj = 6
-
-        asset = Attribution.from_object(test_obj)
-        self.assertEqual(asset.asset_type, "Attribution", "Attribution asset_type mismatch")
 
         asset = Benchmark.from_object(test_obj)
         self.assertEqual(asset.asset_type, "Benchmark", "Benchmark asset_type mismatch")
@@ -67,9 +63,6 @@ class AssetTypes(unittest.TestCase):
         """Test the from_path constructor."""
         test_obj = Path("tests/fixtures/assets/datasets/file/file_text.txt")
 
-        asset = Attribution.from_path(test_obj)
-        self.assertEqual(asset.asset_type, "Attribution", "Attribution asset_type mismatch")
-
         asset = Benchmark.from_path(test_obj)
         self.assertEqual(asset.asset_type, "Benchmark", "Benchmark asset_type mismatch")
 
@@ -103,9 +96,6 @@ class AssetTypes(unittest.TestCase):
     def test_from_cid_type(self):
         """Test the from_cid constructor."""
         test_obj = CID("bafkr4ic6sphckk3a5x2fmgdeqod6tvv6k253q37icpfsk73wp2f524pok2")
-
-        asset = Attribution.from_cid(test_obj)
-        self.assertEqual(asset.asset_type, "Attribution", "Attribution asset_type mismatch")
 
         asset = Benchmark.from_cid(test_obj)
         self.assertEqual(asset.asset_type, "Benchmark", "Benchmark asset_type mismatch")
