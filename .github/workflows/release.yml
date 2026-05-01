@@ -123,7 +123,7 @@ jobs:
                 if command -v dnf >/dev/null 2>&1; then
                   dnf install -y curl openssl-devel pkgconfig gcc
                 elif command -v yum >/dev/null 2>&1; then
-                  yum install -y curl gcc make perl-core perl-FindBin tar gzip pkgconfig zlib-devel
+                  yum install -y curl gcc make perl-core tar gzip pkgconfig zlib-devel
 
                   OPENSSL_VERSION=1.1.1w
                   OPENSSL_PREFIX="/opt/openssl-${OPENSSL_VERSION}"
