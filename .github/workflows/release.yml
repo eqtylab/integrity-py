@@ -125,21 +125,40 @@ jobs:
                 elif command -v yum >/dev/null 2>&1; then
                   yum install -y curl gcc make perl-core tar gzip pkgconfig zlib-devel
 
+                  # manylinux2014 is based on CentOS 7, whose system OpenSSL
+                  # is too old for the current openssl-sys crate used in our
+                  # Rust dependency graph. Build a private OpenSSL 1.1.1w just
+                  # for the release toolchain while preserving the wheel's
+                  # manylinux2014 compatibility for CentOS 7 consumers.
                   OPENSSL_VERSION=1.1.1w
-                  OPENSSL_PREFIX="/opt/openssl-${OPENSSL_VERSION}"
-                  curl -LO "https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz"
-                  tar -xzf "openssl-${OPENSSL_VERSION}.tar.gz"
-                  cd "openssl-${OPENSSL_VERSION}"
-                  ./config \
-                    --prefix="${OPENSSL_PREFIX}" \
-                    --openssldir="${OPENSSL_PREFIX}" \
-                    --libdir=lib \
-                    shared \
-                    zlib
-                  make -j"$(getconf _NPROCESSORS_ONLN)"
-                  make install_sw
-                  cd /io
-                  rm -rf "openssl-${OPENSSL_VERSION}" "openssl-${OPENSSL_VERSION}.tar.gz"
+                  OPENSSL_SHA256=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
+                  OPENSSL_ARCH="$(uname -m)"
+                  OPENSSL_PREFIX="/io/.cache/openssl/${OPENSSL_VERSION}-${OPENSSL_ARCH}"
+                  OPENSSL_TARBALL="openssl-${OPENSSL_VERSION}.tar.gz"
+                  OPENSSL_SOURCE_URL="https://www.openssl.org/source/old/1.1.1/${OPENSSL_TARBALL}"
+                  mkdir -p /io/.cache/openssl
+
+                  # Cache the built tree in the mounted workspace so repeated
+                  # invocations on the same runner can reuse it.
+                  if [ ! -x "${OPENSSL_PREFIX}/bin/openssl" ]; then
+                    curl --fail --show-error --silent --location \
+                      --retry 5 --retry-delay 2 --retry-all-errors \
+                      -o "${OPENSSL_TARBALL}" \
+                      "${OPENSSL_SOURCE_URL}"
+                    printf "%s  %s\n" "${OPENSSL_SHA256}" "${OPENSSL_TARBALL}" | sha256sum -c -
+                    tar -xzf "${OPENSSL_TARBALL}"
+                    cd "openssl-${OPENSSL_VERSION}"
+                    ./config \
+                      --prefix="${OPENSSL_PREFIX}" \
+                      --openssldir="${OPENSSL_PREFIX}" \
+                      --libdir=lib \
+                      shared \
+                      zlib
+                    make -j"$(getconf _NPROCESSORS_ONLN)"
+                    make install_sw
+                    cd /io
+                    rm -rf "openssl-${OPENSSL_VERSION}" "${OPENSSL_TARBALL}"
+                  fi
 
                   export OPENSSL_DIR="${OPENSSL_PREFIX}"
                   export OPENSSL_LIB_DIR="${OPENSSL_PREFIX}/lib"
@@ -177,6 +196,9 @@ jobs:
                 fi
 
                 chown -R "$HOST_UID:$HOST_GID" dist
+                if [ -d .cache ]; then
+                  chown -R "$HOST_UID:$HOST_GID" .cache
+                fi
               '
           done <<< "${build_specs}"
 
