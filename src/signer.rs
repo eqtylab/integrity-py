@@ -17,7 +17,6 @@ use pyo3::{
     Bound,
 };
 use serde::Serialize;
-use uuid::uuid;
 
 use crate::{config::cfg_blocking, with_cfg, Config};
 
@@ -379,8 +378,7 @@ fn persist_vcomp_signer_data(py: Python, vcomp_signer: VCompNotarySigner) -> PyR
         if let Some(statements) = vcomp_signer.did_statements {
             log::debug!("Saving {} vcomp statements to store", statements.len());
             for (_, statement) in statements {
-                // did statements don't get assigned to a graph, so create a dummy uuid
-                let id = uuid!("00000000-0000-0000-0000-000000000000");
+                let id = cfg.default_context.id;
                 let s = serde_json::from_value::<Statement>(statement)?;
                 cfg.sql_lite.register_statement(&s, &id).await?;
             }
