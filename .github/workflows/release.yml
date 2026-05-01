@@ -128,7 +128,7 @@ jobs:
                   # manylinux2014 is based on CentOS 7, whose system OpenSSL
                   # is too old for the current openssl-sys crate used in our
                   # Rust dependency graph. Build a private OpenSSL 1.1.1w just
-                  # for the release toolchain while preserving the wheel's
+                  # for the release toolchain while preserving the wheel
                   # manylinux2014 compatibility for CentOS 7 consumers.
                   OPENSSL_VERSION=1.1.1w
                   OPENSSL_SHA256=cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
