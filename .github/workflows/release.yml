@@ -120,8 +120,32 @@ jobs:
               /bin/sh -lc '
                 set -eu
 
-                if command -v yum >/dev/null 2>&1; then
-                  yum install -y curl openssl-devel pkgconfig gcc
+                if command -v dnf >/dev/null 2>&1; then
+                  dnf install -y curl openssl-devel pkgconfig gcc
+                elif command -v yum >/dev/null 2>&1; then
+                  yum install -y curl gcc make perl-core perl-FindBin tar gzip pkgconfig zlib-devel
+
+                  OPENSSL_VERSION=1.1.1w
+                  OPENSSL_PREFIX="/opt/openssl-${OPENSSL_VERSION}"
+                  curl -LO "https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz"
+                  tar -xzf "openssl-${OPENSSL_VERSION}.tar.gz"
+                  cd "openssl-${OPENSSL_VERSION}"
+                  ./config \
+                    --prefix="${OPENSSL_PREFIX}" \
+                    --openssldir="${OPENSSL_PREFIX}" \
+                    --libdir=lib \
+                    shared \
+                    zlib
+                  make -j"$(getconf _NPROCESSORS_ONLN)"
+                  make install_sw
+                  cd /io
+                  rm -rf "openssl-${OPENSSL_VERSION}" "openssl-${OPENSSL_VERSION}.tar.gz"
+
+                  export OPENSSL_DIR="${OPENSSL_PREFIX}"
+                  export OPENSSL_LIB_DIR="${OPENSSL_PREFIX}/lib"
+                  export OPENSSL_INCLUDE_DIR="${OPENSSL_PREFIX}/include"
+                  export PKG_CONFIG_PATH="${OPENSSL_PREFIX}/lib/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
+                  export LD_LIBRARY_PATH="${OPENSSL_PREFIX}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
                 elif command -v apk >/dev/null 2>&1; then
                   apk add --no-cache curl openssl-dev pkgconf build-base
                 else
