@@ -142,7 +142,7 @@ jobs:
                   # invocations on the same runner can reuse it.
                   if [ ! -x "${OPENSSL_PREFIX}/bin/openssl" ]; then
                     curl --fail --show-error --silent --location \
-                      --retry 5 --retry-delay 2 --retry-all-errors \
+                      --retry 5 --retry-delay 2 \
                       -o "${OPENSSL_TARBALL}" \
                       "${OPENSSL_SOURCE_URL}"
                     printf "%s  %s\n" "${OPENSSL_SHA256}" "${OPENSSL_TARBALL}" | sha256sum -c -
