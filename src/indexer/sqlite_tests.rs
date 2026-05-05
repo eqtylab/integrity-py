@@ -340,6 +340,86 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_retrieve_statements_includes_did_metadata_by_statement_id() -> Result<()> {
+        let db = setup_db().await?;
+        let graph = Context {
+            id: Uuid::new_v4(),
+            name: "did-metadata-graph".to_string(),
+            parent: None,
+        };
+        db.create_graph(&graph).await?;
+
+        let computation_id = "urn:cid:bagb6qaq6edidmeta0000000000000000000000000000000000000000001";
+        let did_statement_id =
+            "urn:cid:bagb6qaq6edidmeta0000000000000000000000000000000000000000002";
+        let metadata_id = "urn:cid:bagb6qaq6edidmeta0000000000000000000000000000000000000000003";
+        let did = "did:key:tester";
+
+        let computation_statement = format!(
+            r#"{{"@context":"urn:cid:bafkr4ic7ydwk3rtoltyzx4zn3vvu3r7hpzxtmbzmnksotx7k5nbnwclf6m","@id":"{computation_id}","@type":"ComputationRegistration","input":"urn:cid:bafkr4ididmetainput00000000000000000000000000000000000000000","operatedBy":"{did}","output":"urn:cid:bafkr4ididmetaoutput000000000000000000000000000000000000000","registeredBy":"{did}","timestamp":"2026-03-18T15:35:04Z"}}"#
+        );
+        let did_statement = format!(
+            r#"{{"@context":"urn:cid:bafkr4ic7ydwk3rtoltyzx4zn3vvu3r7hpzxtmbzmnksotx7k5nbnwclf6m","@id":"{did_statement_id}","@type":"DidRegistration","did":"{did}","registeredBy":"{did}","timestamp":"2026-03-18T15:35:04Z"}}"#
+        );
+        let metadata_statement = format!(
+            r#"{{"@context":"urn:cid:bafkr4ic7ydwk3rtoltyzx4zn3vvu3r7hpzxtmbzmnksotx7k5nbnwclf6m","@id":"{metadata_id}","@type":"MetadataRegistration","metadata":"urn:cid:baga6yaq6edidmetadata000000000000000000000000000000000000000","registeredBy":"{did}","subject":"{did_statement_id}","timestamp":"2026-03-18T15:35:04Z"}}"#
+        );
+
+        sqlx::query(
+            r#"
+            INSERT INTO computation_statements (id, statement, registered_by)
+            VALUES (?1, ?2, ?3)
+            "#,
+        )
+        .bind(computation_id)
+        .bind(&computation_statement)
+        .bind(did)
+        .execute(db.pool())
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO did_statements (id, statement, registered_by, type, did)
+            VALUES (?1, ?2, ?3, ?4, ?5)
+            "#,
+        )
+        .bind(did_statement_id)
+        .bind(&did_statement)
+        .bind(did)
+        .bind("regular")
+        .bind(did)
+        .execute(db.pool())
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO metadata_statements (id, statement, registered_by, subject)
+            VALUES (?1, ?2, ?3, ?4)
+            "#,
+        )
+        .bind(metadata_id)
+        .bind(&metadata_statement)
+        .bind(did)
+        .bind(did_statement_id)
+        .execute(db.pool())
+        .await?;
+
+        db.associate_statement_to_graph(computation_id, &graph.id)
+            .await?;
+
+        let statements = db.retrieve_statements(&graph.id).await?;
+
+        assert!(statements
+            .iter()
+            .any(|statement| statement.get_id() == did_statement_id));
+        assert!(statements
+            .iter()
+            .any(|statement| statement.get_id() == metadata_id));
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_association_statement_links_items() -> Result<()> {
         let db = setup_db().await?;
         let graph = Context {
