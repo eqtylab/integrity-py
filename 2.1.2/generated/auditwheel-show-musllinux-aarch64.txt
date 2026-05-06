@@ -1,0 +1,10 @@
+eqty_sdk-2.1.2-cp38-abi3-musllinux_1_2_aarch64.whl is consistent with
+the following platform tag: "musllinux_1_2_aarch64".
+
+The wheel references external versioned symbols in these
+system-provided shared libraries: libgcc_s-2d945d6c.so.1 with versions
+{'GCC_3.0', 'GCC_3.3', 'GCC_4.2.0', 'GLIBC_2.0'}, libssl-f19b1199.so.3
+with versions {'OPENSSL_3.0.0'}, libcrypto-ec46507f.so.3 with versions
+{'OPENSSL_3.0.0', 'OPENSSL_3.0.3', 'OPENSSL_3.2.0', 'OPENSSL_3.3.0', 'OPENSSL_3.4.0'}
+
+The wheel requires no external shared libraries! :)
