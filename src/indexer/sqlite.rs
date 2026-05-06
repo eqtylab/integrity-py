@@ -1065,7 +1065,8 @@ impl Sqlite {
                   ,vc.statement as vc
                   ,NULL as did
                 FROM did_statements did
-                LEFT JOIN metadata_statements meta ON did.did = meta.subject
+                LEFT JOIN metadata_statements meta
+                  ON did.did = meta.subject OR did.id = meta.subject
                 LEFT JOIN credential_statements vc ON did.id = vc.credential_subject
                 WHERE did IN ({})"#,
                 placeholders
