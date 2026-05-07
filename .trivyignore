@@ -1,3 +1,7 @@
 # integrity-py - Trivy ignore file
 # Add CVE suppressions here as false positives are discovered.
 # Format: one CVE ID per line, with a comment explaining the justification.
+
+# GHSA-82j2-j2ch-gfr8: rustls-webpki CRL parsing DoS. Via ssi 0.7 (dev-dep) ->
+# reqwest 0.11 -> rustls 0.21. CRL verification never enabled; not in production.
+GHSA-82j2-j2ch-gfr8
