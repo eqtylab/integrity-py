@@ -13,7 +13,8 @@ use crate::{
 };
 
 /// DID object
-#[pyclass]
+#[derive(Clone)]
+#[pyclass(from_py_object)]
 pub struct DID {
     /// DID string used for registration.
     #[pyo3(get)]

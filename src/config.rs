@@ -191,7 +191,7 @@ pub struct ActiveSigner {
 /// The config stores application-wide settings including storage directories,
 /// hashing preferences, and file filtering rules.
 #[derive(Clone)]
-#[pyclass]
+#[pyclass(from_py_object)]
 pub struct Config {
     /// Directory to store statements, keys, etc
     pub app_dir: PathBuf,

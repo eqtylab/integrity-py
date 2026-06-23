@@ -34,7 +34,7 @@ pub fn signer(m: &Bound<'_, PyModule>) -> PyResult<()> {
 /// Python-exposed signer information.
 ///
 /// Contains the name and DID key of a cryptographic signer.
-#[pyclass(name = "Signer")]
+#[pyclass(name = "Signer", from_py_object)]
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Signer {
@@ -45,7 +45,7 @@ pub struct Signer {
 }
 
 /// Supported signer algorithm identifiers.
-#[pyclass(name = "SIGNER_ALGORITHMS")]
+#[pyclass(name = "SIGNER_ALGORITHMS", from_py_object)]
 #[derive(Clone)]
 pub enum SignerAlgorithms {
     /// Ed25519 signature algorithm.

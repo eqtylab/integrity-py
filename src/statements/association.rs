@@ -7,7 +7,7 @@ use crate::{
     config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Context, CID,
 };
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 /// Association types exposed to Python.
 pub enum PyAssociationType {
