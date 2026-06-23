@@ -23,6 +23,8 @@ pub fn add_vc_statement(
         let registered_by = signer.signer.get_did_doc().id.clone();
 
         let vc = vc::issue_vc(&subject, signer.signer).await?;
+        let vc = serde_json::from_value(serde_json::to_value(vc).map_err(anyhow::Error::from)?)
+            .map_err(anyhow::Error::from)?;
 
         let statement = Statement::CredentialRegistration(
             VcStatement::create(vc, registered_by, timestamp).await?,
@@ -41,10 +43,10 @@ mod tests {
     use integrity::{
         lineage::models::statements::{Statement, StatementTrait, VcStatement},
         signer::{Ed25519Signer, SignerType},
-        vc,
+        vc::{self, Credential},
     };
     use pyo3_async_runtimes::tokio::get_runtime;
-    use ssi::vc::Credential;
+    use serde_json;
     use tempfile::tempdir;
 
     use crate::config::{cfg_async, Config};
@@ -52,17 +54,17 @@ mod tests {
     /// Creates a minimal valid W3C VC for testing
     fn create_test_credential() -> Credential {
         let vc_json = serde_json::json!({
-            "@context": "https://www.w3.org/2018/credentials/v1",
+            "@context": ["https://www.w3.org/ns/credentials/v2"],
             "type": ["VerifiableCredential"],
             "id": "urn:uuid:12345678-1234-1234-1234-123456789012",
             "issuer": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
-            "issuanceDate": "2024-01-01T00:00:00Z",
+            "validFrom": "2024-01-01T00:00:00Z",
             "credentialSubject": {
                 "id": "urn:cid:bafkr4ibthuzk3zug7ghmx63yjqaiu6rx4hhfdv3453j5bodskgw57bx2ya"
             }
         });
 
-        Credential::from_json_unsigned(&serde_json::to_string(&vc_json).unwrap()).unwrap()
+        serde_json::from_value(vc_json).unwrap()
     }
 
     #[test]
@@ -141,7 +143,7 @@ mod tests {
             .block_on(vc::issue_vc(subject, signer_type))
             .unwrap();
 
-        assert!(credential.proof.is_some());
+        assert!(!credential.proofs.is_empty());
     }
 
     #[test]
@@ -157,6 +159,7 @@ mod tests {
             .block_on(vc::issue_vc(subject, signer_type))
             .unwrap();
 
+        let credential = serde_json::from_value(serde_json::to_value(credential).unwrap()).unwrap();
         // Create the statement
         let statement = get_runtime()
             .block_on(VcStatement::create(credential, registered_by.clone(), None))

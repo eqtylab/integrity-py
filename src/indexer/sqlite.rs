@@ -912,10 +912,15 @@ impl Sqlite {
                 log::debug!("Registering credential '{id}'");
                 let subject = s
                     .credential
-                    .credential_subject
+                    .credential_subjects
                     .first()
-                    .and_then(|s| s.id.as_ref())
-                    .map(|id| id.to_string())
+                    .and_then(|subject| serde_json::to_value(subject).ok())
+                    .and_then(|subject| {
+                        subject
+                            .get("id")
+                            .and_then(serde_json::Value::as_str)
+                            .map(str::to_owned)
+                    })
                     .unwrap_or_default();
 
                 sqlx::query(
