@@ -34,6 +34,4 @@ uuid = { version = "1.4", features = ["v4", "js", "serde"] }
 
 
 [dev-dependencies]
-# ssi = { version = "0.7", features = ["w3c", "http-did", "example-http-issuer", "ed25519", "secp256r1"] }
-# ssi-json-ld = "0.2"
 tempfile = "3"
