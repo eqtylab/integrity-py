@@ -1,11 +1,20 @@
 use std::collections::{HashMap, HashSet};
 
-use anyhow::Result;
+use anyhow::{Context as _, Result};
 use integrity::lineage::models::statements::{Statement, StatementTrait};
 use sqlx::{Row, SqlitePool};
 use uuid::Uuid;
 
 use super::{rows_to_statements, Context};
+
+/// Extracts the subject ID from a credential subject, returning an error if the ID is missing.
+fn extract_credential_subject_id(subject: &serde_json::Value) -> Result<String> {
+    subject
+        .get("id")
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_owned)
+        .ok_or_else(|| anyhow::anyhow!("Credential subject missing or malformed 'id' field"))
+}
 
 /// Provides persistent storage for statements organized in graphs
 /// with support for hierarchical relationships and queries.
@@ -910,18 +919,14 @@ impl Sqlite {
                 let id = s.get_id();
                 let statement_data = serde_json::to_string(&statement)?;
                 log::debug!("Registering credential '{id}'");
-                let subject = s
-                    .credential
-                    .credential_subjects
-                    .first()
-                    .and_then(|subject| serde_json::to_value(subject).ok())
-                    .and_then(|subject| {
-                        subject
-                            .get("id")
-                            .and_then(serde_json::Value::as_str)
-                            .map(str::to_owned)
-                    })
-                    .unwrap_or_default();
+                let subject = s.credential.credential_subjects.first().ok_or_else(|| {
+                    anyhow::anyhow!("Credential registration has no credential subjects")
+                })?;
+                let subject_json = serde_json::to_value(subject)
+                    .context("Failed to serialize credential subject")?;
+                let subject_id = extract_credential_subject_id(&subject_json).context(format!(
+                    "Failed to extract subject ID from credential registration '{id}'"
+                ))?;
 
                 sqlx::query(
                     r#"
@@ -932,7 +937,7 @@ impl Sqlite {
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
-                .bind(&subject)
+                .bind(&subject_id)
                 .execute(&self.pool)
                 .await?;
 
