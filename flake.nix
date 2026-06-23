@@ -42,7 +42,6 @@
             openssl
             pkg-config
             poetry
-            prek
             present-cli
             python
             ruff
@@ -50,6 +49,8 @@
             rust
             rustPackages.clippy
             auditwheel
+          ] ++ [
+            pkgs-rust.prek
           ];
         };
       }
