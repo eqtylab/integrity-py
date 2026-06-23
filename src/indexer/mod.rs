@@ -31,7 +31,7 @@ use crate::{integrity_service::Service, with_cfg};
 ///
 /// Graph context groups statements together with optional parent-child relationships,
 /// enabling organizational structure for lineage graphs.
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Context {
     /// Unique identifier
@@ -234,7 +234,8 @@ impl Context {
 }
 
 /// Factory for creating contexts with an optional parent.
-#[pyclass]
+#[derive(Clone)]
+#[pyclass(from_py_object)]
 pub struct ContextFactory {
     parent: Option<Uuid>,
 }

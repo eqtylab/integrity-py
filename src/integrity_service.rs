@@ -28,7 +28,7 @@ pub mod statements;
 
 /// Service for connecting to the Integrity Service API.
 #[derive(Debug, Clone)]
-#[pyclass]
+#[pyclass(from_py_object)]
 pub struct Service {
     /// Base URL path for the API (e.g., <https://api.example.com>).
     #[pyo3(get)]

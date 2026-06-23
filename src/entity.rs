@@ -17,7 +17,7 @@ use crate::{
 /// Entities are used to represent objects that don't have a content-based
 /// identifier (CID) but need a unique identifier for tracking purposes.
 #[derive(Clone, Debug)]
-#[pyclass]
+#[pyclass(from_py_object)]
 pub struct Entity {
     #[pyo3(get)]
     uuid: String,

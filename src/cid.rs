@@ -6,7 +6,7 @@ use pyo3::prelude::*;
 ///
 /// Provides a typed wrapper for CID strings with property access and string conversion.
 #[derive(Clone, Debug)]
-#[pyclass]
+#[pyclass(from_py_object)]
 pub struct CID {
     /// The formatted CID string.
     #[pyo3(get)]

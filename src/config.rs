@@ -191,7 +191,7 @@ pub struct ActiveSigner {
 /// The config stores application-wide settings including storage directories,
 /// hashing preferences, and file filtering rules.
 #[derive(Clone)]
-#[pyclass]
+#[pyclass(from_py_object)]
 pub struct Config {
     /// Directory to store statements, keys, etc
     pub app_dir: PathBuf,
@@ -502,6 +502,7 @@ pub async fn create_vc_for_statement(
 
     let registered_by = signer.signer.get_did_doc().id.clone();
     let vc = vc::issue_vc(&statement_id.to_string(), signer.signer).await?;
+    let vc = serde_json::from_value(serde_json::to_value(vc)?)?;
     let vc_statement =
         Statement::CredentialRegistration(VcStatement::create(vc, registered_by, timestamp).await?);
     let vc_id = vc_statement.get_id();

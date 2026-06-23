@@ -11,7 +11,7 @@ name = "eqty_sdk"
 crate-type = ["cdylib"]
 
 [dependencies]
-integrity = {git = "https://github.com/eqtylab/integrity", tag = "v0.0.1", default-features = false, features = ["cid", "jsonld", "vc", "dsse", "lineage", "signer-ed25519", "signer-p256", "signer-secp256k1", "signer-auth-service", "signer-vcomp-notary", "blob-local", "intoto-attestation", "sigstore", "model-signing"]}
+integrity = {git = "https://github.com/eqtylab/integrity", tag = "v0.0.7", default-features = false, features = ["cid", "jsonld", "vc", "dsse", "lineage", "signer-ed25519", "signer-p256", "signer-secp256k1", "signer-auth-service", "signer-vcomp-notary", "blob-local", "intoto-attestation", "sigstore", "model-signing"]}
 
 anyhow = { version = "1", features = ["backtrace"] }
 async-trait = "0.1"
@@ -21,8 +21,8 @@ chrono = { version = "0.4", default-features = false, features = ["clock"] }
 cid = { version = "0.10", default-features = false, features = ["std"] }
 log = "0.4"
 once_cell = "1"
-pyo3 = { version = "0.27", features=["abi3-py38", "anyhow", "uuid"] }
-pyo3-async-runtimes = { version = "0.27", features = ["tokio-runtime"] }
+pyo3 = { version = "0.29", features=["abi3-py38", "anyhow", "uuid"] }
+pyo3-async-runtimes = { version = "0.29", features = ["tokio-runtime"] }
 pyo3-log = "0.13"
 reqwest = { version = "0.12.0", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
@@ -34,7 +34,4 @@ uuid = { version = "1.4", features = ["v4", "js", "serde"] }
 
 
 [dev-dependencies]
-ssi = { version = "0.7", features = ["w3c", "http-did", "example-http-issuer", "ed25519", "secp256r1"] }
-ssi-json-ld = "0.2"
-ssi-contexts = "=0.1.5" # v0.1.10 has regressions causing jsonld expansion issues on vcs
 tempfile = "3"
