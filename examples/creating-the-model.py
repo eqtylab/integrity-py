@@ -12,7 +12,7 @@ model_ctx = Context.with_parent(project_ctx).new("Model Context")
 print(model_ctx)
 cfg = init(default_context=model_ctx)
 
-signer = Signer.new(name="Nested Contexts Signer", _load_if_exists=True)
+signer = Signer.load_or_create(name="Nested Contexts Signer")
 set_active_signer(signer)
 
 

@@ -42,6 +42,48 @@ class SignerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             Signer.new(_load_if_exists=True)
 
+    def test_load_or_create_creates_then_reuses(self):
+        name = f"signer-{uuid.uuid4()}"
+        created = Signer.load_or_create(name=name)
+        reused = Signer.load_or_create(name=name)
+
+        self.assertEqual(reused.name, name)
+        self.assertEqual(reused.did_key, created.did_key)
+
+    def test_load_or_create_honours_algorithm_on_create(self):
+        name = f"signer-{uuid.uuid4()}"
+        signer = Signer.load_or_create(name=name, algorithm=SIGNER_ALGORITHMS.SECP256K1)
+        self.assertTrue(signer.did_key.startswith("did:key:"))
+
+    def test_load_returns_persisted_signer(self):
+        name = f"signer-{uuid.uuid4()}"
+        created = Signer.new(name=name)
+        loaded = Signer.load(name)
+
+        self.assertEqual(loaded.did_key, created.did_key)
+
+    def test_load_raises_lookup_error_when_missing(self):
+        with self.assertRaises(LookupError):
+            Signer.load(f"missing-{uuid.uuid4()}")
+
+    def test_load_if_exists_still_works_but_warns(self):
+        """The old flag stays functional for one release, but must warn."""
+        name = f"signer-{uuid.uuid4()}"
+        created = Signer.new(name=name)
+
+        with self.assertWarns(DeprecationWarning) as ctx:
+            reused = Signer.new(name=name, _load_if_exists=True)
+
+        self.assertEqual(reused.did_key, created.did_key)
+        self.assertIn("load_or_create", str(ctx.warning))
+
+    def test_new_does_not_warn(self):
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            Signer.new(name=f"signer-{uuid.uuid4()}")
+
     def test_signer_from_private_key(self):
         signer = Signer.from_private_key(
             algorithm=SIGNER_ALGORITHMS.ED25519,

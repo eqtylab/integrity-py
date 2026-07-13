@@ -1,4 +1,4 @@
-use std::fs;
+use std::{ffi::CString, fs};
 
 use anyhow::Context as AnyhowContext;
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
@@ -12,7 +12,7 @@ use integrity::{
     },
 };
 use pyo3::{
-    exceptions::{PyRuntimeError, PyValueError},
+    exceptions::{PyDeprecationWarning, PyLookupError, PyRuntimeError, PyValueError},
     prelude::*,
     Bound,
 };
@@ -108,15 +108,15 @@ impl Signer {
     /// `set_active_signer(...)` so higher-level SDK operations emit signed
     /// statements and attestations automatically.
     ///
-    /// If `name` is provided, the signer is stored under that name. When
-    /// `_load_if_exists=True`, an existing signer with the same name is loaded
-    /// instead of generating a new key. If no algorithm is provided, Ed25519 is
-    /// used.
+    /// If `name` is provided, the signer is stored under that name; creating a
+    /// second signer under a name that already exists raises `ValueError`. To
+    /// reuse a persisted signer instead, use `Signer.load_or_create(...)`. If no
+    /// algorithm is provided, Ed25519 is used.
     #[staticmethod]
     #[pyo3(
         name = "new",
         signature = (algorithm=None, name=None, _load_if_exists=false),
-        text_signature = "(algorithm=None, name=None, _load_if_exists=False)"
+        text_signature = "(algorithm=None, name=None)"
     )]
     fn new_signer(
         py: Python,
@@ -124,29 +124,57 @@ impl Signer {
         name: Option<String>,
         _load_if_exists: bool,
     ) -> PyResult<Py<Signer>> {
+        if _load_if_exists {
+            warn_load_if_exists_deprecated(py, "Signer.load_or_create(name=...)")?;
+        }
+
         if let Some((existing, _)) = maybe_load_signer(name.as_deref(), _load_if_exists)? {
             return Py::new(py, existing);
         }
 
-        let signer = match algorithm.unwrap_or(SignerAlgorithms::ED25519).into() {
-            KeyType::SECP256K1 => {
-                log::debug!("Generating a new secp256k1 signer");
-                let signer = Secp256k1Signer::create()?;
-                SignerType::SECP256K1(signer)
-            }
-            KeyType::SECP256R1 => {
-                log::debug!("Generating a new secp256r1 signer");
-                let signer = P256Signer::create()?;
-                SignerType::P256(signer)
-            }
-            KeyType::ED25519 => {
-                log::debug!("Generating a new ed25519 signer");
-                let signer = Ed25519Signer::create()?;
-                SignerType::ED25519(signer)
-            }
-        };
-
+        let signer = create_local_signer(algorithm)?;
         let signer = save_signer(&signer, name.as_deref())?;
+        Py::new(py, signer)
+    }
+
+    /// Loads a signer that was previously persisted under `name`.
+    ///
+    /// Raises `LookupError` if no such signer exists. Use
+    /// `Signer.load_or_create(...)` to create one when it is missing.
+    ///
+    /// This works for any persisted signer regardless of how it was created,
+    /// including `auth_service` and `vcomp_notary` signers.
+    #[staticmethod]
+    #[pyo3(signature = (name), text_signature = "(name)")]
+    fn load(py: Python, name: String) -> PyResult<Py<Signer>> {
+        match maybe_load_signer(Some(&name), true)? {
+            Some((existing, _)) => Py::new(py, existing),
+            None => Err(PyErr::new::<PyLookupError, _>(format!(
+                "No signer named {name:?} exists"
+            ))),
+        }
+    }
+
+    /// Loads the signer named `name`, generating and persisting one if it does
+    /// not exist yet.
+    ///
+    /// This is idempotent, so it is the right call for a script that runs more
+    /// than once: the first run generates a key, later runs reuse it and keep a
+    /// stable DID. If no algorithm is provided, Ed25519 is used. The algorithm
+    /// is ignored when an existing signer is loaded.
+    #[staticmethod]
+    #[pyo3(signature = (name, algorithm=None), text_signature = "(name, algorithm=None)")]
+    fn load_or_create(
+        py: Python,
+        name: String,
+        algorithm: Option<SignerAlgorithms>,
+    ) -> PyResult<Py<Signer>> {
+        if let Some((existing, _)) = maybe_load_signer(Some(&name), true)? {
+            return Py::new(py, existing);
+        }
+
+        let signer = create_local_signer(algorithm)?;
+        let signer = save_signer(&signer, Some(&name))?;
         Py::new(py, signer)
     }
 
@@ -323,12 +351,51 @@ fn signer_exists(name: Option<&str>) -> PyResult<()> {
     log::debug!("Adding Signer. Args= {name}");
 
     if fs::exists(signer_dir.join(name)).expect("Error checking if signer exists") {
-        let msg = format!("A signer named {name:?} already exists");
+        // This is where a script that ran once already lands on its second run, so
+        // point at the call that makes it idempotent rather than just saying no.
+        let msg = format!(
+            "A signer named {name:?} already exists. Use \
+             Signer.load_or_create(name={name:?}) to reuse it across runs, or \
+             Signer.load({name:?}) to load it."
+        );
         log::warn!("{msg}");
         return Err(PyErr::new::<PyValueError, _>(msg));
     }
 
     Ok(())
+}
+
+// Generates a new local signing key. Does not persist it.
+fn create_local_signer(algorithm: Option<SignerAlgorithms>) -> PyResult<SignerType> {
+    let signer = match algorithm.unwrap_or(SignerAlgorithms::ED25519).into() {
+        KeyType::SECP256K1 => {
+            log::debug!("Generating a new secp256k1 signer");
+            SignerType::SECP256K1(Secp256k1Signer::create()?)
+        }
+        KeyType::SECP256R1 => {
+            log::debug!("Generating a new secp256r1 signer");
+            SignerType::P256(P256Signer::create()?)
+        }
+        KeyType::ED25519 => {
+            log::debug!("Generating a new ed25519 signer");
+            SignerType::ED25519(Ed25519Signer::create()?)
+        }
+    };
+    Ok(signer)
+}
+
+// `_load_if_exists` predates `Signer.load` / `Signer.load_or_create`. It shipped in
+// published examples and docs despite the underscore, so it stays functional until a
+// breaking release.
+fn warn_load_if_exists_deprecated(py: Python, replacement: &str) -> PyResult<()> {
+    let message = CString::new(format!(
+        "_load_if_exists is deprecated and will be removed in a future release; \
+         use {replacement} instead"
+    ))
+    .map_err(|e| PyErr::new::<PyRuntimeError, _>(e.to_string()))?;
+
+    // stacklevel=2 points the warning at the caller, not at this shim.
+    PyErr::warn(py, &py.get_type::<PyDeprecationWarning>(), &message, 2)
 }
 
 // Attempts to load signer data from disk, if `load_if_exists`== true && `name` is Some()

@@ -4,7 +4,7 @@ from eqty_sdk import Code, Database, Dataset, Document, Signer, init, set_active
 
 cfg = init()
 
-signer = Signer.new(name="Path Asset Signer")
+signer = Signer.load_or_create(name="Path Asset Signer")
 set_active_signer(signer)
 
 repo_root = Path(__file__).resolve().parents[1]
