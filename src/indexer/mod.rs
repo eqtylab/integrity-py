@@ -150,6 +150,15 @@ impl Context {
 
             let manifest = generate_manifest(include_context, statements, blobs).await?;
 
+            if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
+                std::fs::create_dir_all(parent).map_err(|e| {
+                    anyhow::anyhow!(
+                        "Failed to create manifest directory {}: {e}",
+                        parent.display()
+                    )
+                })?;
+            }
+
             let file = File::create(&path)
                 .map_err(|e| anyhow::anyhow!("Failed to create manifest file: {e}"))?;
 
