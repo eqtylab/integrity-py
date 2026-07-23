@@ -24,6 +24,14 @@ def get_cid_for_path(path: PathLike[str], _store: Optional[bool] = None) -> CID:
     """Resolves the provided path and reads the file or directory to calculate the CID. The path is saved to the blob store if the store flag is set"""
     ...
 
+def verify_vc(vc_json: str) -> bool:
+    """Verifies a W3C Verifiable Credential's Data Integrity proof offline.  The credential must use a `did:key` verification method supported by the pinned Integrity verifier. This checks the cryptographic proof only; it does not perform network-backed credential-status or revocation checks. Returns `True` when the proof is valid and raises `ValueError` otherwise."""
+    ...
+
+def verify_statement_rdfc_cid(statement_json: str) -> bool:
+    """Recomputes a lineage statement's RDFC CID and compares it with `@id`.  Returns `True` only when the canonicalized statement content produces the exact CID embedded in `@id`. A well-formed but modified statement returns `False`; malformed or unsupported statements raise `ValueError`."""
+    ...
+
 def purge_statement_store() -> None:
     """Purges all statemetns from the store."""
     ...

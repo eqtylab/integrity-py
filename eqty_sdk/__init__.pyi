@@ -8,6 +8,8 @@ from eqty_sdk._rust import (
     init,
     purge_blob_store,
     purge_statement_store,
+    verify_statement_rdfc_cid,
+    verify_vc,
 )
 from eqty_sdk.asset import (
     Agent,
@@ -70,6 +72,8 @@ __all__ = [
     "get_cid_for_bytes",
     "get_cid_for_json",
     "get_cid_for_path",
+    "verify_vc",
+    "verify_statement_rdfc_cid",
     "purge_blob_store",
     "purge_statement_store",
     "Config",
