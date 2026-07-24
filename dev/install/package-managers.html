@@ -52,11 +52,25 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Package Managers</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#credentials">Credentials</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#netrc-works-with-pip-uv-and-poetry">netrc (works with pip, uv, and Poetry)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#environment-variables">Environment variables</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#keyring">Keyring</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#uv-project">uv (project)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#uv-no-project">uv (no project)</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#pip">pip</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#uv">uv</a>
-    </li>
     <li class="toctree-l2"><a class="reference internal" href="#poetry">Poetry</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#verify">Verify</a>
     </li>
     </ul>
                   </li>
@@ -140,19 +154,85 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="install-from-the-eqty-package-index">Install From The Eqty Package Index</h1>
-<p>Install <code>eqty_sdk</code> from the Eqty package index:</p>
+<p><code>eqty_sdk</code> is published to the Eqty package index, not to PyPI:</p>
 <p><code>https://pypi.eqtylab.io/simple/</code></p>
-<p>The examples below use that index explicitly so the package manager resolves <code>eqty_sdk</code> from the correct repository.</p>
+<p>The index <strong>requires authentication</strong>, and it proxies PyPI: requests for packages Eqty
+does not publish are forwarded upstream. That means you can point a package manager at
+this index as its only index and still resolve <code>eqty_sdk</code>'s dependencies normally.</p>
+<h2 id="credentials">Credentials</h2>
+<p>Every command on this page fails with <code>401 Unauthorized</code> until credentials are
+configured. Depending on the package manager, the error surfaces as a bare
+"not found in the package registry", so configure credentials first.</p>
+<!-- TODO(eqty): document how a user actually obtains an index username/token,
+     and link it here. This is the single biggest gap in onboarding -- nothing on
+     the docs site currently tells a new user where credentials come from. -->
+
+<p>Use a <strong>read-only</strong> token. Publishing is never required to install.</p>
+<p>Never commit credentials. In particular, do not inline them into an index URL
+(<code>https://user:token@pypi.eqtylab.io/simple/</code>) in <code>pyproject.toml</code> or <code>poetry.toml</code> —
+those files are usually committed and often published inside source distributions.</p>
+<h3 id="netrc-works-with-pip-uv-and-poetry">netrc (works with pip, uv, and Poetry)</h3>
+<pre><code>machine pypi.eqtylab.io
+  login &lt;username&gt;
+  password &lt;token&gt;
+</code></pre>
+<h3 id="environment-variables">Environment variables</h3>
+<p>uv derives these names from the index name, so they match the index named <code>eqty</code> in the
+<code>pyproject.toml</code> below:</p>
+<pre><code class="language-bash">export UV_INDEX_EQTY_USERNAME='&lt;username&gt;'
+export UV_INDEX_EQTY_PASSWORD='&lt;token&gt;'
+</code></pre>
+<p>Poetry uses the source name added in the <a href="#poetry">Poetry</a> section:</p>
+<pre><code class="language-bash">export POETRY_HTTP_BASIC_EQTY_USERNAME='&lt;username&gt;'
+export POETRY_HTTP_BASIC_EQTY_PASSWORD='&lt;token&gt;'
+</code></pre>
+<p>pip has no equivalent environment variables; use <code>netrc</code> or a keyring.</p>
+<h3 id="keyring">Keyring</h3>
+<p>For shared machines and CI, prefer a keyring backend over environment variables. uv and
+pip both support <code>--keyring-provider subprocess</code>.</p>
+<h2 id="uv-project">uv (project)</h2>
+<p>This is the recommended setup for a uv project. It records <code>eqty_sdk</code> in
+<code>pyproject.toml</code> and pins it to the Eqty index, so <code>uv sync</code> reproduces the environment
+on any machine.</p>
+<p>Add the index and the source pin to <code>pyproject.toml</code>:</p>
+<pre><code class="language-toml">[[tool.uv.index]]
+name = &quot;eqty&quot;
+url = &quot;https://pypi.eqtylab.io/simple/&quot;
+explicit = true
+
+[tool.uv.sources]
+eqty-sdk = { index = &quot;eqty&quot; }
+</code></pre>
+<p>Then add the package:</p>
+<pre><code class="language-bash">uv add eqty-sdk
+</code></pre>
+<p><code>explicit = true</code> means only packages pinned to this index in <code>[tool.uv.sources]</code>
+resolve from it; everything else continues to come from PyPI. uv does not write
+credentials into <code>pyproject.toml</code> or <code>uv.lock</code>, so both stay safe to commit.</p>
+<h2 id="uv-no-project">uv (no project)</h2>
+<p>To install into an activated environment without a <code>pyproject.toml</code>:</p>
+<pre><code class="language-bash">uv pip install --index-url https://pypi.eqtylab.io/simple/ eqty_sdk
+</code></pre>
+<p>Note that <code>uv pip install</code> does not record the dependency anywhere. In a uv project, a
+later <code>uv sync</code> will remove <code>eqty_sdk</code> again — use the project setup above instead.</p>
 <h2 id="pip">pip</h2>
 <pre><code class="language-bash">python -m pip install --index-url https://pypi.eqtylab.io/simple/ eqty_sdk
 </code></pre>
-<h2 id="uv">uv</h2>
-<pre><code class="language-bash">uv pip install --index-url https://pypi.eqtylab.io/simple/ eqty_sdk
-</code></pre>
+<p>Use <code>--index-url</code>, not <code>--extra-index-url</code>. With <code>--extra-index-url</code>, pip searches PyPI
+<em>and</em> the Eqty index and installs whichever has the highest version number, which is the
+<a href="https://en.wikipedia.org/wiki/Supply_chain_attack">dependency confusion</a> pattern: anyone
+who uploads a higher-versioned <code>eqty_sdk</code> to PyPI would win. <code>--index-url</code> resolves from
+the Eqty index only, and the index proxies PyPI for everything else.</p>
 <h2 id="poetry">Poetry</h2>
 <pre><code class="language-bash">poetry source add --priority=explicit eqty https://pypi.eqtylab.io/simple/
 poetry add --source eqty eqty_sdk
 </code></pre>
+<p><code>--priority=explicit</code> is the Poetry equivalent of uv's <code>explicit = true</code>: only packages
+requested with <code>--source eqty</code> resolve from the Eqty index.</p>
+<h2 id="verify">Verify</h2>
+<pre><code class="language-bash">python -c &quot;import eqty_sdk; print(eqty_sdk.__file__)&quot;
+</code></pre>
+<p>Next: <a href="../examples/basic-workflow.html">Basic Workflow</a>.</p>
               
             </div>
           </div><footer>
