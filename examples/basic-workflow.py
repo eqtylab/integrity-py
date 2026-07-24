@@ -10,7 +10,7 @@ from eqty_sdk import (
 
 cfg = init()
 
-signer = Signer.new(name="Basic Workflow Signer")
+signer = Signer.load_or_create(name="Basic Workflow Signer")
 set_active_signer(signer)
 
 

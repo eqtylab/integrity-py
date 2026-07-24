@@ -6,7 +6,7 @@ root_ctx = Context.new("customer-project")
 cfg = init(default_context=root_ctx)
 run_ctx = Context.with_parent(cfg.get_default_context()).new("daily-run-2026-03-25")
 
-signer = Signer.new(name="Context Linking Signer")
+signer = Signer.load_or_create(name="Context Linking Signer")
 set_active_signer(signer)
 
 input_data = Dataset.with_context(run_ctx).from_object(

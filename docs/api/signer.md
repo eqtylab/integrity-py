@@ -6,6 +6,25 @@ A signer is required, as every statement that gets created is attributed back to
 
 The SDK supports local signers and service-backed signers. Choose the one that matches your security model and operational environment.
 
+## Creating vs. loading
+
+Signers are persisted to disk, so a script that runs twice must not try to generate the
+same named signer twice.
+
+| Call | Behaviour |
+| --- | --- |
+| `Signer.new(...)` | Always generates a new key. Raises `ValueError` if `name` is already taken. |
+| `Signer.load(name)` | Loads a persisted signer. Raises `LookupError` if it does not exist. |
+| `Signer.load_or_create(name)` | Generates on the first run, reuses on later runs. Idempotent. |
+
+`Signer.load_or_create(...)` is the one to reach for in a script you expect to run more
+than once — it keeps the DID stable across runs.
+
+```python
+signer = Signer.load_or_create(name="My Workflow Signer")
+set_active_signer(signer)
+```
+
 ## Signer
 
 ::: eqty_sdk._rust.Signer
