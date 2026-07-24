@@ -4,9 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import re
-import shutil
-import subprocess
+import sys
 from pathlib import Path
 
 
@@ -26,21 +27,28 @@ def main() -> None:
     parser.add_argument("output", type=Path)
     args = parser.parse_args()
 
-    wheel = args.wheel.resolve(strict=True)
+    wheel = args.wheel.resolve(strict=False)
     if not wheel.is_file() or wheel.suffix != ".whl":
         parser.error("wheel must be an existing .whl file")
 
-    auditwheel = shutil.which("auditwheel")
-    if auditwheel is None:
-        parser.error("auditwheel was not found on PATH")
+    try:
+        from auditwheel.main import main as auditwheel_main
+    except ImportError:
+        parser.error("the auditwheel Python package is not installed")
 
-    # The executable is resolved from PATH and the wheel is validated above. Using
-    # an argument vector (and never a shell) keeps both values out of command syntax.
-    output = subprocess.check_output(
-        [auditwheel, "show", str(wheel)],
-        text=True,
-    )
-    text = normalize_auditwheel_output(output)
+    output = io.StringIO()
+    original_argv = sys.argv
+    try:
+        sys.argv = ["auditwheel", "show", str(wheel)]
+        with contextlib.redirect_stdout(output):
+            return_code = auditwheel_main()
+    finally:
+        sys.argv = original_argv
+
+    if return_code not in (None, 0):
+        raise RuntimeError(f"auditwheel show failed with exit code {return_code}")
+
+    text = normalize_auditwheel_output(output.getvalue())
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(text, encoding="utf-8")
 
