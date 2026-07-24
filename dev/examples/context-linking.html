@@ -144,7 +144,7 @@ root_ctx = Context.new(&quot;customer-project&quot;)
 cfg = init(default_context=root_ctx)
 run_ctx = Context.with_parent(cfg.get_default_context()).new(&quot;daily-run-2026-03-25&quot;)
 
-signer = Signer.new(name=&quot;Context Linking Signer&quot;)
+signer = Signer.load_or_create(name=&quot;Context Linking Signer&quot;)
 set_active_signer(signer)
 
 input_data = Dataset.with_context(run_ctx).from_object(

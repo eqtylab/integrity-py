@@ -104,6 +104,8 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Signer</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#creating-vs-loading">Creating vs. loading</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#signer_1">Signer</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Signer.name">name</a>
@@ -111,6 +113,10 @@
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Signer.did_key">did_key</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Signer.new">new</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Signer.load">load</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Signer.load_or_create">load_or_create</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Signer.vcomp_notary">vcomp_notary</a>
     </li>
@@ -159,6 +165,36 @@
 <p>Signers are the identity and signing mechanism used by the SDK when it needs to produce signed provenance statements, attestations, or model-signing metadata.</p>
 <p>A signer is required, as every statement that gets created is attributed back to being created by a Signer's underlying DID (Decentralized Identifier). A signer is part of process setup: create or load a signer, call <a href="global-functions.html"><code>set_active_signer</code></a>, and then let higher-level SDK operations use that active signer automatically.</p>
 <p>The SDK supports local signers and service-backed signers. Choose the one that matches your security model and operational environment.</p>
+<h2 id="creating-vs-loading">Creating vs. loading</h2>
+<p>Signers are persisted to disk, so a script that runs twice must not try to generate the
+same named signer twice.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Signer.new(...)</code></td>
+<td>Always generates a new key. Raises <code>ValueError</code> if <code>name</code> is already taken.</td>
+</tr>
+<tr>
+<td><code>Signer.load(name)</code></td>
+<td>Loads a persisted signer. Raises <code>LookupError</code> if it does not exist.</td>
+</tr>
+<tr>
+<td><code>Signer.load_or_create(name)</code></td>
+<td>Generates on the first run, reuses on later runs. Idempotent.</td>
+</tr>
+</tbody>
+</table>
+<p><code>Signer.load_or_create(...)</code> is the one to reach for in a script you expect to run more
+than once — it keeps the DID stable across runs.</p>
+<pre><code class="language-python">signer = Signer.load_or_create(name=&quot;My Workflow Signer&quot;)
+set_active_signer(signer)
+</code></pre>
 <h2 id="signer_1">Signer</h2>
 
 
@@ -259,6 +295,56 @@
 </code></pre></div>
 
     <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Signer.load" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">load</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Signer</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Loads a signer that was previously persisted under <code>name</code>.  Raises <code>LookupError</code> if no such signer exists. Use <code>Signer.load_or_create(...)</code> to create one when it is missing.  This works for any persisted signer regardless of how it was created, including <code>auth_service</code> and <code>vcomp_notary</code> signers.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Signer.load_or_create" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">load_or_create</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">load_or_create</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SIGNER_ALGORITHMS</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Signer</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Loads the signer named <code>name</code>, generating and persisting one if it does not exist yet.  This is idempotent, so it is the right call for a script that runs more than once: the first run generates a key, later runs reuse it and keep a stable DID. If no algorithm is provided, Ed25519 is used. The algorithm is ignored when an existing signer is loaded.</p>
 
 
     </div>

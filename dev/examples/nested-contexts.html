@@ -156,7 +156,7 @@ model_ctx = Context.with_parent(project_ctx).new(&quot;Model Context&quot;)
 print(model_ctx)
 cfg = init(default_context=model_ctx)
 
-signer = Signer.new(name=&quot;Nested Contexts Signer&quot;, _load_if_exists=True)
+signer = Signer.load_or_create(name=&quot;Nested Contexts Signer&quot;)
 set_active_signer(signer)
 
 
@@ -198,7 +198,7 @@ model_ctx = Context.from_uuid(model_context_uuid)
 ctx = Context.with_parent(model_ctx).new(&quot;Using the Model&quot;)
 cfg = init(default_context=ctx)
 
-signer = Signer.new(name=&quot;Nested Contexts Signer&quot;, _load_if_exists=True)
+signer = Signer.load_or_create(name=&quot;Nested Contexts Signer&quot;)
 set_active_signer(signer)
 
 # Reference a higher-level model asset from the parent context by CID.
