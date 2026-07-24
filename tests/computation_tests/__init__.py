@@ -1,9 +1,10 @@
 import json
 import os
 from pathlib import Path
+from urllib.parse import quote
 
-import requests
 import toml
+import urllib3
 
 
 def is_asset_none(asset):
@@ -18,16 +19,46 @@ PROJECTS_FILE = os.path.join(GOVERNANCE_PATH, "projects.json")
 FRAMEWORKS_FILE = os.path.join(GOVERNANCE_PATH, "frameworks.json")
 ASSIGNMENTS_FILE_PATH = Path(GOVERNANCE_PATH) / "assignments" / "current.json"
 SDK_CONFIG_PATH = Path.home() / ".eqty-sdk" / "sdk_config.toml"
+FRAMEWORKS_ORIGIN = "https://huggingface.co"
+FRAMEWORKS_PATH = "/datasets/open-responsibility/frameworks/raw/main"
+DOWNLOAD_TIMEOUT = urllib3.Timeout(connect=5.0, read=30.0)
+MAX_DOWNLOAD_BYTES = 10 * 1024 * 1024
+HTTP = urllib3.PoolManager(cert_reqs="CERT_REQUIRED")
+
+
+def _framework_url(*parts: str) -> str:
+    """Build a URL whose host and repository path cannot be influenced by catalog data."""
+    if any(not part or part in {".", ".."} or "/" in part or "\\" in part for part in parts):
+        raise ValueError("Invalid framework repository path")
+    suffix = "/".join(quote(part, safe="") for part in parts)
+    return f"{FRAMEWORKS_ORIGIN}{FRAMEWORKS_PATH}/{suffix}"
+
+
+def _fetch_json(url: str):
+    if not url.startswith(f"{FRAMEWORKS_ORIGIN}{FRAMEWORKS_PATH}/"):
+        raise ValueError("Refusing to download from an untrusted location")
+
+    response = HTTP.request(
+        "GET",
+        url,
+        timeout=DOWNLOAD_TIMEOUT,
+        redirect=False,
+        preload_content=False,
+    )
+    try:
+        if response.status != 200:
+            raise RuntimeError(f"Download failed with HTTP status {response.status}")
+        payload = response.read(MAX_DOWNLOAD_BYTES + 1)
+        if len(payload) > MAX_DOWNLOAD_BYTES:
+            raise RuntimeError("Download exceeded the size limit")
+        return json.loads(payload.decode("utf-8"))
+    finally:
+        response.release_conn()
 
 
 def download_and_save_file(url, local_path):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        with open(local_path, "wb") as file:
-            file.write(response.content)
-    except requests.RequestException as e:
-        raise Exception(f"Failed to download or save file: {e}")
+    data = _fetch_json(url)
+    Path(local_path).write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
 def sync_projects_with_assignments(assignments_data, sdk_config):
@@ -54,17 +85,13 @@ def load_framework_controls(framework_id):
 def setup_framework(framework_id_param: str) -> bool:
     framework_id_param = framework_id_param.lower()
 
-    frameworks_url = (
-        "https://huggingface.co/datasets/open-responsibility/frameworks/raw/main/catalog.json"
-    )
+    frameworks_url = _framework_url("catalog.json")
     local_frameworks_path = Path.home() / ".eqty-sdk" / "gov" / "frameworks" / framework_id_param
     framework_json_filename = "framework.json"
     controls_json_filename = "controls.json"
 
     try:
-        response = requests.get(frameworks_url)
-        response.raise_for_status()
-        frameworks = response.json()
+        frameworks = _fetch_json(frameworks_url)
 
         framework_data = next(
             (f for f in frameworks if f["frameworkId"] == framework_id_param), None
@@ -86,16 +113,16 @@ def setup_framework(framework_id_param: str) -> bool:
             print("Adding new framework to the local environment...")
 
         # Download and save framework.json
-        framework_json_url = f"https://huggingface.co/datasets/open-responsibility/frameworks/raw/main/{framework_data['path']}/{framework_json_filename}"
+        framework_json_url = _framework_url(framework_data["path"], framework_json_filename)
         download_and_save_file(framework_json_url, local_framework_file)
 
         # Download and save controls.json
-        controls_json_url = f"https://huggingface.co/datasets/open-responsibility/frameworks/raw/main/{framework_data['path']}/{controls_json_filename}"
+        controls_json_url = _framework_url(framework_data["path"], controls_json_filename)
         download_and_save_file(controls_json_url, local_controls_file)
 
         print(f"Framework '{framework_id_param}' added/updated successfully.")
 
-    except requests.RequestException as e:
+    except (OSError, RuntimeError, UnicodeError, ValueError, json.JSONDecodeError) as e:
         print(f"Error fetching frameworks data: {e}")
         return False
 

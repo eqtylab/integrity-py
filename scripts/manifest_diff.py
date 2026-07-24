@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 VOLATILE_STATEMENT_FIELDS = {"@context", "@id", "registeredBy", "operatedBy", "timestamp"}
-VOLATILE_CREDENTIAL_FIELDS = {"id", "issuanceDate", "validFrom"}
+NONDETERMINISTIC_VC_FIELDS = {"id", "issuanceDate", "validFrom"}
 VOLATILE_PROOF_FIELDS = {"created", "jws"}
 
 
@@ -151,7 +151,7 @@ def _normalize_credential(
         normalized.pop("@context", None)
 
     if options.ignore_timestamps:
-        for field_name in VOLATILE_CREDENTIAL_FIELDS:
+        for field_name in NONDETERMINISTIC_VC_FIELDS:
             normalized.pop(field_name, None)
         proof = normalized.get("proof")
         if isinstance(proof, dict):
