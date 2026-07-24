@@ -101,7 +101,10 @@ def normalize_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
 def _run_example(example: ExampleCase, workdir: Path) -> None:
     env = os.environ.copy()
     env.pop("PYTHONPATH", None)
-    (workdir / "manifests").mkdir(parents=True, exist_ok=True)
+    # Deliberately do NOT pre-create workdir/manifests. Examples export into
+    # ./manifests/, and Context.export() is responsible for creating it. Creating
+    # it here hid the fact that export() did not, so every example worked in CI
+    # and failed the first time a user ran it outside this repo.
     subprocess.run(
         [sys.executable, str(example.script)],
         cwd=workdir,
