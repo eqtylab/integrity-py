@@ -79,7 +79,7 @@ fn build_did(
         let mut vcomp_statement_ids = with_cfg!(py, |cfg| {
             let mut ids = Vec::new();
 
-            if let Some(statements) = vcomp_signer.did_statements {
+            if let Some(statements) = vcomp_signer.credentials {
                 for value in statements.values() {
                     let statement: Statement =
                         serde_json::from_value(value.clone()).context("Invalid statement")?;

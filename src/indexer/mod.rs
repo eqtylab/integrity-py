@@ -146,8 +146,8 @@ impl Context {
 
             if let Some(active) = &cfg.active_signer {
                 if let SignerType::VCompNotarySigner(notary) = &active.signer {
-                    if let Some(did_statements) = &notary.did_statements {
-                        for value in did_statements.values() {
+                    if let Some(credentials) = &notary.credentials {
+                        for value in credentials.values() {
                             statements.push(serde_json::from_value(value.clone())?);
                         }
                     }
