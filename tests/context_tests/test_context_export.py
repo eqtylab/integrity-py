@@ -1,9 +1,10 @@
+import json
 import os
 import tempfile
 import unittest
 from pathlib import Path
 
-from eqty_sdk import Context
+from eqty_sdk import Context, Signer, set_active_signer
 from tests import setup_sdk
 
 
@@ -41,6 +42,28 @@ class ContextExportTests(unittest.TestCase):
                 self.assertTrue(Path("manifest.json").is_file())
             finally:
                 os.chdir(prev)
+
+    @unittest.skipUnless(
+        os.getenv("EQTY_TEST_VCOMP", "").lower() in ("true", "1", "yes", "on"),
+        "EQTY_TEST_VCOMP not enabled",
+    )
+    def test_export_folds_notary_did_registration(self):
+        """With a VComp notary signer active, export embeds its DID registration.
+
+        A fresh context has no computation, so retrieve_statements returns
+        nothing; before the fold the manifest was empty and failed verify_did
+        standalone. The signer's cached did_statements/did_blobs must be folded in.
+        """
+        signer = Signer.vcomp_notary("http://localhost:8066")
+        set_active_signer(signer)
+        ctx = Context.new("export-notary-did")
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "manifest.json"
+            ctx.export(dest)
+            manifest = json.loads(dest.read_text())
+
+        self.assertTrue(manifest["statements"])
+        self.assertTrue(manifest["blobs"])
 
 
 if __name__ == "__main__":

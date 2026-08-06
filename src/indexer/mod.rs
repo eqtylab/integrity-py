@@ -13,6 +13,7 @@ use integrity::{
         manifest::{generate_manifest, resolve_blobs, Manifest},
         statements::{Statement, StatementTrait},
     },
+    signer::SignerType,
 };
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -138,10 +139,25 @@ impl Context {
             let graph_id = self.id;
             let sql_client = cfg.sql_lite;
 
-            let statements = sql_client.retrieve_statements(&graph_id).await?;
+            let mut statements = sql_client.retrieve_statements(&graph_id).await?;
 
             let blob_store = Arc::new(cfg.blob_store.clone());
-            let blobs = resolve_blobs(&statements, blob_store, 8).await?;
+            let mut blobs = resolve_blobs(&statements, blob_store, 8).await?;
+
+            if let Some(active) = &cfg.active_signer {
+                if let SignerType::VCompNotarySigner(notary) = &active.signer {
+                    if let Some(credentials) = &notary.credentials {
+                        for value in credentials.values() {
+                            statements.push(serde_json::from_value(value.clone())?);
+                        }
+                    }
+                    if let Some(did_blobs) = &notary.did_blobs {
+                        for (cid, data) in did_blobs {
+                            blobs.insert(cid.clone(), BASE64.encode(data));
+                        }
+                    }
+                }
+            }
 
             let include_context = env::var("EQTY_INCLUDE_MANIFEST_CONTEXT")
                 .map(|v| v.to_lowercase() != "false")

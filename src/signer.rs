@@ -442,7 +442,7 @@ fn persist_vcomp_signer_data(py: Python, vcomp_signer: VCompNotarySigner) -> PyR
                 cfg.blob_store.put(data, codec, Some(&cid)).await?;
             }
         }
-        if let Some(statements) = vcomp_signer.did_statements {
+        if let Some(statements) = vcomp_signer.credentials {
             log::debug!("Saving {} vcomp statements to store", statements.len());
             for (_, statement) in statements {
                 let id = cfg.default_context.id;
