@@ -35,6 +35,7 @@ nav:
       - Service: api/service.md
       - Signer: api/signer.md
       - Statements: api/statements.md
+      - Verification: api/verification.md
 
 plugins:
   - search

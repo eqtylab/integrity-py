@@ -15,6 +15,8 @@ from eqty_sdk._rust import (
     purge_blob_store,
     purge_statement_store,
     signer as _signer_module,
+    verify_statement,
+    verify_vc,
 )
 from eqty_sdk.asset import (
     Agent,
@@ -90,6 +92,9 @@ __all__ = [
     "purge_blob_store",
     "purge_statement_store",
     "Config",
+    # Verification
+    "verify_statement",
+    "verify_vc",
     # Assets
     "Agent",
     "Asset",
