@@ -187,26 +187,26 @@ jobs:
       - name: Publish Linux Package
         if: runner.os == 'Linux'
         env:
-          TWINE_USERNAME: "ci_runner"
-          TWINE_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: "${{ secrets.PYPI_API_TOKEN }}"
         run: |
           python3 -m pip install --user --upgrade twine
           shopt -s globstar nullglob
           files=(dist/**/*.whl)
           if [ ${#files[@]} -gt 0 ]; then
-            python3 -m twine upload --repository-url="https://pypi.eqtylab.io/" "${files[@]}"
+            python3 -m twine upload --repository-url="https://upload.pypi.org/legacy/" "${files[@]}"
           fi
 
       - name: Publish Windows Package
         if: runner.os == 'Windows'
         env:
-          TWINE_USERNAME: "ci_runner"
-          TWINE_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: "${{ secrets.PYPI_API_TOKEN }}"
         run: |
           py -m pip install --upgrade pip twine
           $files = Get-ChildItem -Path dist -Recurse -Filter *.whl | ForEach-Object { $_.FullName }
           if ($files.Count -gt 0) {
-            py -m twine upload --repository-url="https://pypi.eqtylab.io/" $files
+            py -m twine upload --repository-url="https://upload.pypi.org/legacy/" $files
           }
 
       - name: Build Mac Wheel
@@ -272,13 +272,13 @@ jobs:
       - name: Publish Mac Package
         if: runner.os == 'macOS'
         env:
-          TWINE_USERNAME: "ci_runner"
-          TWINE_PASSWORD: "${{ secrets.EQTY_PYPI_PASSWORD }}"
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: "${{ secrets.PYPI_API_TOKEN }}"
         run: |
           shopt -s nullglob
           files=(dist/*.whl)
           if [ ${#files[@]} -gt 0 ]; then
-            python -m twine upload --repository-url="https://pypi.eqtylab.io/" "${files[@]}"
+            python -m twine upload --repository-url="https://upload.pypi.org/legacy/" "${files[@]}"
           fi
 
       - name: Update GitHub release with PyPI link
@@ -287,7 +287,7 @@ jobs:
         with:
           script: |
             const tag = context.ref.replace('refs/tags/', '');
-            const pypiUrl = `https://pypi.eqtylab.io/simple/eqty-sdk/`;
+            const pypiUrl = `https://pypi.org/project/eqty-sdk/`;
             const release = await github.rest.repos.getReleaseByTag({
               owner: context.repo.owner,
               repo: context.repo.repo,
