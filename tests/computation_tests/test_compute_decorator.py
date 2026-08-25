@@ -79,6 +79,15 @@ class TestComputeDecorator(unittest.TestCase):
         result = add(3, 4)
         self.assertEqual(result, 7)
 
+    def test_store_override(self):
+        """Test that a decorator compute can override blob storage."""
+
+        @compute(metadata={"name": "No Store"}, _store=False)
+        def identity(value):
+            return value
+
+        self.assertEqual(identity("not retained"), "not retained")
+
     def test_empty_function(self):
         """Test the @compute decorator with an empty function."""
 
