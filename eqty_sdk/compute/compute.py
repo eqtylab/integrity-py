@@ -47,7 +47,7 @@ class Compute:
         self,
         func: Callable[..., Any],
         metadata: Optional[Dict[str, Any]] = None,
-        _store: Optional[None] = None,
+        _store: Optional[bool] = None,
         ctx: Optional[Context] = None,
         **kwargs,
     ) -> None:
