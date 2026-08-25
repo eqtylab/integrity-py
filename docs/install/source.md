@@ -32,10 +32,10 @@ cargo --version
 Once Rust is available, install the package with `pip` and force a source build:
 
 ```bash
-python -m pip install --index-url https://pypi.eqtylab.io/simple/ --no-binary eqty_sdk eqty_sdk
+python -m pip install --no-binary eqty_sdk eqty_sdk
 ```
 
-`pip` will download the source distribution from the Eqty package index, create a build environment, and compile the Rust extension as part of the install.
+`pip` will download the source distribution from PyPI, create a build environment, and compile the Rust extension as part of the install.
 
 If you are installing from a specific source archive you already downloaded, point `pip` at that file directly:
 
