@@ -129,6 +129,9 @@ impl Sqlite {
                 registered_by TEXT NOT NULL,
                 subject TEXT NOT NULL
             );
+
+            CREATE INDEX IF NOT EXISTS idx_metadata_statements_subject
+                ON metadata_statements(subject);
         "#;
         sqlx::query(metadata_table).execute(&self.pool).await?;
 
@@ -139,6 +142,9 @@ impl Sqlite {
                 registered_by TEXT NOT NULL,
                 data TEXT NOT NULL
             );
+
+            CREATE INDEX IF NOT EXISTS idx_storage_statements_data
+                ON storage_statements(data);
         "#;
         sqlx::query(storage_table).execute(&self.pool).await?;
 
@@ -178,6 +184,9 @@ impl Sqlite {
 
             CREATE INDEX IF NOT EXISTS idx_association_statement_items_item
                 ON association_statement_items(association_item);
+
+            CREATE INDEX IF NOT EXISTS idx_association_statements_subject
+                ON association_statements(subject);
         "#;
         sqlx::query(association_table).execute(&self.pool).await?;
 
@@ -195,6 +204,9 @@ impl Sqlite {
                 parent_id TEXT,
                 FOREIGN KEY (parent_id) REFERENCES graphs(graph_id)
             );
+
+            CREATE INDEX IF NOT EXISTS idx_statement_graph_link_graph_id
+                ON statement_graph_link(graph_id);
         "#;
         sqlx::query(graph_tables).execute(&self.pool).await?;
 
@@ -247,6 +259,9 @@ impl Sqlite {
                 subject TEXT NOT NULL,
                 document TEXT NOT NULL
             );
+
+            CREATE INDEX IF NOT EXISTS idx_governance_statements_subject
+                ON governance_statements(subject);
         "#;
         sqlx::query(governance_table).execute(&self.pool).await?;
 

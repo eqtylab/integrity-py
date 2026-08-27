@@ -240,6 +240,31 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_init_creates_related_statement_lookup_indexes() -> Result<()> {
+        let db = setup_db().await?;
+        let expected_indexes = [
+            ("statement_graph_link", "idx_statement_graph_link_graph_id"),
+            ("metadata_statements", "idx_metadata_statements_subject"),
+            ("storage_statements", "idx_storage_statements_data"),
+            (
+                "association_statements",
+                "idx_association_statements_subject",
+            ),
+            ("governance_statements", "idx_governance_statements_subject"),
+        ];
+
+        for (table, index) in expected_indexes {
+            let rows = sqlx::query(&format!("PRAGMA index_list({table})"))
+                .fetch_all(db.pool())
+                .await?;
+            let index_names: Vec<String> = rows.into_iter().map(|row| row.get("name")).collect();
+            assert!(index_names.contains(&index.to_string()), "missing {index}");
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_init_migrates_legacy_sigstore_table() -> Result<()> {
         let db = Sqlite::new("sqlite::memory:").await?;
         sqlx::query(
