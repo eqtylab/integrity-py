@@ -293,16 +293,14 @@ impl Config {
         blob_store.init().await?;
 
         let db_path = app_dir.join("graphs.db");
-        let db_init_required = !db_path.exists();
         if !db_path.exists() {
             File::create(&db_path)?;
         }
         let db_file = format!("sqlite:{}", db_path.display());
         let sqlite = Sqlite::new(&db_file).await?;
-
-        if db_init_required {
-            sqlite.init().await?;
-        }
+        // `init` uses idempotent schema statements and also applies migrations/indexes
+        // for databases created by earlier SDK versions.
+        sqlite.init().await?;
 
         let default_context = default_context.unwrap_or_default();
         log::debug!("Initializing default graph: {default_context}");

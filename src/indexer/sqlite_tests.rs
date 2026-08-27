@@ -6,8 +6,8 @@ mod tests {
     use integrity::lineage::models::{
         manifest::Manifest,
         statements::{
-            AssociationStatement, AssociationType, ComputationStatement, DataStatement, Statement,
-            StatementTrait,
+            AssociationStatement, AssociationType, ComputationStatement, DataStatement,
+            GovernanceStatement, Statement, StatementTrait,
         },
     };
     use pyo3::{PyErr, Python};
@@ -235,6 +235,31 @@ mod tests {
             .collect();
 
         assert!(columns.contains(&"subject".to_string()));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_init_creates_related_statement_lookup_indexes() -> Result<()> {
+        let db = setup_db().await?;
+        let expected_indexes = [
+            ("statement_graph_link", "idx_statement_graph_link_graph_id"),
+            ("metadata_statements", "idx_metadata_statements_subject"),
+            ("storage_statements", "idx_storage_statements_data"),
+            (
+                "association_statements",
+                "idx_association_statements_subject",
+            ),
+            ("governance_statements", "idx_governance_statements_subject"),
+        ];
+
+        for (table, index) in expected_indexes {
+            let rows = sqlx::query(&format!("PRAGMA index_list({table})"))
+                .fetch_all(db.pool())
+                .await?;
+            let index_names: Vec<String> = rows.into_iter().map(|row| row.get("name")).collect();
+            assert!(index_names.contains(&index.to_string()), "missing {index}");
+        }
 
         Ok(())
     }
@@ -556,6 +581,90 @@ mod tests {
         assert!(statements
             .iter()
             .any(|statement| statement.get_id() == association_id));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_retrieve_statements_includes_governance_matching_subject() -> Result<()> {
+        let db = setup_db().await?;
+        let graph = Context {
+            id: Uuid::new_v4(),
+            name: "governance-subject-graph".to_string(),
+            parent: None,
+        };
+        db.create_graph(&graph).await?;
+
+        let subject = "urn:cid:bafkr4iegovernancesubject0000000000000000000000000000000000";
+        let computation = Statement::ComputationRegistration(
+            ComputationStatement::create(
+                None,
+                vec![
+                    "urn:cid:bafkr4igovernanceinput0000000000000000000000000000000000000"
+                        .to_string(),
+                ],
+                vec![subject.to_string()],
+                "did:key:tester".to_string(),
+                None,
+                "did:key:tester".to_string(),
+                None,
+            )
+            .await?,
+        );
+        let governance = Statement::GovernanceRegistration(
+            GovernanceStatement::create(
+                subject.to_string(),
+                "urn:cid:baga6yaq6edeclaration00000000000000000000000000000000000000".to_string(),
+                "did:key:tester".to_string(),
+                None,
+            )
+            .await?,
+        );
+        let governance_id = governance.get_id();
+
+        db.register_statement(&computation, &graph.id).await?;
+        db.register_statement(&governance, &graph.id).await?;
+
+        let statements = db.retrieve_statements(&graph.id).await?;
+
+        assert!(statements
+            .iter()
+            .any(|statement| statement.get_id() == governance_id));
+        let graph_link_count = sqlx::query(
+            "SELECT COUNT(*) AS count FROM statement_graph_link WHERE statement_id = ?1",
+        )
+        .bind(governance_id)
+        .fetch_one(db.pool())
+        .await?
+        .get::<i64, _>("count");
+        assert_eq!(graph_link_count, 1);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_register_statement_rolls_back_when_graph_link_fails() -> Result<()> {
+        let db = setup_db().await?;
+        sqlx::query("PRAGMA foreign_keys = ON")
+            .execute(db.pool())
+            .await?;
+
+        let statement = Statement::DataRegistration(
+            DataStatement::create(
+                vec![
+                    "urn:cid:bafkr4irollbacksupport0000000000000000000000000000000000000"
+                        .to_string(),
+                ],
+                "did:key:tester".to_string(),
+                None,
+            )
+            .await?,
+        );
+
+        let result = db.register_statement(&statement, &Uuid::new_v4()).await;
+
+        assert!(result.is_err());
+        assert_eq!(data_statement_count(&db).await?, 0);
 
         Ok(())
     }
