@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Global Functions - eqty_sdk Documentation</title>
+    <title>Verification - eqty_sdk Documentation</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -15,8 +15,8 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Global Functions";
-        var mkdocs_page_input_path = "api/global-functions.md";
+        var mkdocs_page_name = "Verification";
+        var mkdocs_page_input_path = "api/verification.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -84,21 +84,7 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="init-and-config.html">Init And Config</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Global Functions</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#purge_blob_store">purge_blob_store</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.purge_blob_store">purge_blob_store</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#purge_statement_store">purge_statement_store</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.purge_statement_store">purge_statement_store</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#set_active_signer">set_active_signer</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.set_active_signer">set_active_signer</a>
-    </li>
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="global-functions.html">Global Functions</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="cid.html">CID</a>
                   </li>
@@ -120,7 +106,17 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="statements.html">Statements</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="verification.html">Verification</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Verification</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#verify_statement">verify_statement</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.verify_statement">verify_statement</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#verify_vc">verify_vc</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.verify_vc">verify_vc</a>
+    </li>
+    </ul>
                   </li>
               </ul>
       </div>
@@ -138,7 +134,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">API Reference</li>
-      <li class="breadcrumb-item active">Global Functions</li>
+      <li class="breadcrumb-item active">Verification</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -147,17 +143,48 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="global-functions">Global Functions</h1>
-<p>These functions affect SDK-global state. Most users only need them occasionally, usually during setup, testing, or local environment cleanup.</p>
-<h2 id="purge_blob_store"><code>purge_blob_store</code></h2>
-<p>Use this when you want to clear the local blob cache managed by the SDK and start from a clean state. This is mainly useful in tests, local development, or when you intentionally want to discard previously stored blobs.</p>
+                <h1 id="verification">Verification</h1>
+<p>These functions check evidence you have been given, rather than producing any. They are the Python
+counterpart of the checks the Integrity explorer runs in the browser, and they answer two separate
+questions:</p>
+<ul>
+<li><strong>Is this statement still what it says it is?</strong> Every lineage statement is identified by a hash of
+  its own canonicalized content, so recomputing that hash and comparing it with the statement's <code>@id</code>
+  detects any modification after the fact.</li>
+<li><strong>Is this credential's signature good, and is it about the statement I think it is?</strong> A valid
+  signature over some <em>other</em> subject proves nothing about the statement in hand, so the two checks
+  belong together.</li>
+</ul>
+<p>Both run <strong>fully offline</strong>. JSON-LD contexts resolve against documents compiled into the package, and
+credentials are restricted to DID methods that can be resolved from the identifier itself, so
+verification never reaches the network. This is what makes them usable in an air-gapped or
+reproducible pipeline.</p>
+<p>There is no manifest-level entry point. Verifying a whole manifest means looping these two functions
+over its <code>statements</code>, which is what the explorer does:</p>
+<pre><code class="language-python">import json
+from eqty_sdk import verify_statement, verify_vc
+
+manifest = json.loads(open(&quot;manifest.json&quot;).read())
+contexts = manifest.get(&quot;contexts&quot;)
+
+for statement in manifest[&quot;statements&quot;].values():
+    if not verify_statement(json.dumps(statement), contexts):
+        print(&quot;modified since it was created:&quot;, statement[&quot;@id&quot;])
+</code></pre>
+<h2 id="verify_statement"><code>verify_statement</code></h2>
+<p>Pass the manifest's <code>contexts</code> map whenever you have one. Statements reference their context by CID
+(<code>"@context": "urn:cid:..."</code>), and while the common contexts ship inside the package, a statement
+written against a custom context cannot be canonicalized without it.</p>
+<p>A <code>True</code> result means every field the statement's <code>@context</code> defines is unmodified. It does not mean
+the bytes are unmodified: the identifier commits to the statement's canonicalized RDF, and JSON-LD
+expansion drops keys the context does not define.</p>
 
 
 <div class="doc doc-object doc-function">
 
 
-<h2 id="eqty_sdk.purge_blob_store" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">purge_blob_store</span>
+<h2 id="eqty_sdk.verify_statement" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">verify_statement</span>
 
 
   <span class="doc doc-labels">
@@ -165,25 +192,47 @@
   </span>
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">purge_blob_store</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">verify_statement</span><span class="p">(</span>
+    <span class="n">statement_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">contexts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
 
-        <p>Purges all blobs from the blob store.</p>
+        <p>Verifies that a lineage statement's content still hashes to its <code>@id</code>.</p>
+<p>Canonicalizes the statement as JSON-LD, recomputes its BLAKE3 RDFC CID and
+compares it with the <code>@id</code> the statement carries. Returns <code>False</code> when they
+differ, meaning the statement was modified after it was created.</p>
+<p><code>contexts</code> maps a JSON-LD context URI to its context document, for contexts
+this build does not embed. Values may be dicts or JSON strings, so a
+manifest's <code>contexts</code> field can be passed straight through. Note that a
+supplied context takes precedence over an embedded one of the same URI.</p>
+<p>Runs fully offline. A context that is neither embedded nor supplied raises
+rather than being fetched.</p>
+<p>A <code>True</code> result means every field the statement's <code>@context</code> defines is
+unmodified. It does not mean the bytes are unmodified: the identifier
+commits to the statement's canonicalized RDF, and JSON-LD expansion drops
+keys the context does not define.</p>
+<p>Raises <code>ValueError</code> if the statement is not a JSON object or has no string
+<code>@id</code>, and <code>RuntimeError</code> if a context cannot be resolved.</p>
 
 
     </div>
 
-</div><h2 id="purge_statement_store"><code>purge_statement_store</code></h2>
-<p>Use this when you want to reset the local statement/index store and remove previously recorded lineage state. This is most useful in tests and local debugging, and is usually not something you should call in normal application flows.</p>
+</div><h2 id="verify_vc"><code>verify_vc</code></h2>
+<p>Supply <code>statement_id</code> whenever you know which statement the credential is supposed to attest. Without
+it, only the signature is checked.</p>
+<p>This verifies the cryptographic proof alone. Whether a credential has since been <strong>revoked or
+suspended</strong> lives in its status list, which has to be fetched over the network and is deliberately
+not consulted here.</p>
 
 
 <div class="doc doc-object doc-function">
 
 
-<h2 id="eqty_sdk.purge_statement_store" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">purge_statement_store</span>
+<h2 id="eqty_sdk.verify_vc" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">verify_vc</span>
 
 
   <span class="doc doc-labels">
@@ -191,34 +240,25 @@
   </span>
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">purge_statement_store</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">verify_vc</span><span class="p">(</span>
+    <span class="n">vc_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">statement_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
 
-        <p>Purges all statemetns from the store.</p>
-
-
-    </div>
-
-</div><h2 id="set_active_signer"><code>set_active_signer</code></h2>
-<p>Use this to set the signer that higher-level SDK operations should use when they need to emit signed statements or related attestations. This must be called during setup, typically during process startup, so the rest of your workflow can rely on that active signer. It accepts a <a href="signer.html">Signer</a> object.</p>
-
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="eqty_sdk.set_active_signer" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">set_active_signer</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_active_signer</span><span class="p">(</span><span class="n">signer</span><span class="p">:</span> <span class="n">Signer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents first">
-
-        <p>Set the active signer used by higher-level SDK operations.</p>
+        <p>Verifies a W3C Verifiable Credential's proof offline.</p>
+<p>When <code>statement_id</code> is given, also checks that the credential's
+<code>credentialSubject.id</code> is that statement. A valid signature over some other
+subject says nothing about the statement in hand.</p>
+<p>Returns <code>False</code> when the credential does not verify or is bound to a
+different subject. Raises <code>ValueError</code> when the input is not a credential,
+meaning it is not JSON, has no <code>credentialSubject</code>, or has more than one
+subject. Raises <code>RuntimeError</code> when the credential's DID method would need
+network access: only <code>did:key</code>, <code>did:jwk</code> and <code>did:pkh</code> resolve offline.</p>
+<p>Checks the cryptographic proof only. Revocation and suspension live in the
+credential's status list, which is fetched over the network and is not
+consulted here.</p>
 
 
     </div>
@@ -228,8 +268,7 @@
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="init-and-config.html" class="btn btn-neutral float-left" title="Init And Config"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="cid.html" class="btn btn-neutral float-right" title="CID">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="statements.html" class="btn btn-neutral float-left" title="Statements"><span class="icon icon-circle-arrow-left"></span> Previous</a>
     </div>
 
   <hr/>
@@ -252,10 +291,8 @@
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="init-and-config.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="statements.html" style="color: #fcfcfc">&laquo; Previous</a></span>
     
-    
-      <span><a href="cid.html" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
