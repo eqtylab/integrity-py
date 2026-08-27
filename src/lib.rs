@@ -66,6 +66,8 @@ pub mod statements;
 pub mod stream;
 /// UUID type for urn:uuid identifiers.
 pub mod uuid;
+/// Offline verification of statements and credentials.
+pub mod verification;
 
 use pyo3::{prelude::*, wrap_pymodule};
 
@@ -115,6 +117,8 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_cid_for_path, m)?)?;
     m.add_function(wrap_pyfunction!(purge_statement_store, m)?)?;
     m.add_function(wrap_pyfunction!(purge_blob_store, m)?)?;
+    m.add_function(wrap_pyfunction!(verification::verify_statement, m)?)?;
+    m.add_function(wrap_pyfunction!(verification::verify_vc, m)?)?;
     Ok(())
 }
 

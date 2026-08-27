@@ -466,13 +466,21 @@ class RustStubParser:
         lines_before = content[:func_start].split("\n")
         doc_lines = []
 
-        for line in reversed(lines_before[-10:]):
+        # Walk up from the item through its attributes to the doc comment above
+        # them. Blank lines separate attributes, but a blank line once the doc
+        # block has started means the block ended, so stop rather than pulling in
+        # an unrelated comment further up.
+        for line in reversed(lines_before):
             line = line.strip()
             if line.startswith("///"):
                 doc_lines.insert(0, line[3:].strip())
             elif line.startswith("//"):
                 continue
-            elif line == "" or line.startswith("#"):
+            elif line == "":
+                if doc_lines:
+                    break
+                continue
+            elif line.startswith("#"):
                 continue
             else:
                 break

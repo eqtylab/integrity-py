@@ -32,6 +32,14 @@ def purge_blob_store() -> None:
     """Purges all blobs from the blob store."""
     ...
 
+def verify_statement(statement_json: str, contexts: Optional[Dict[str, Any]] = None) -> bool:
+    """Verifies that a lineage statement's content still hashes to its `@id`.  Canonicalizes the statement as JSON-LD, recomputes its BLAKE3 RDFC CID and compares it with the `@id` the statement carries. Returns `False` when they differ, meaning the statement was modified after it was created.  `contexts` maps a JSON-LD context URI to its context document, for contexts this build does not embed. Values may be dicts or JSON strings, so a manifest's `contexts` field can be passed straight through. Note that a supplied context takes precedence over an embedded one of the same URI.  Runs fully offline. A context that is neither embedded nor supplied raises rather than being fetched.  A `True` result means every field the statement's `@context` defines is unmodified. It does not mean the bytes are unmodified: the identifier commits to the statement's canonicalized RDF, and JSON-LD expansion drops keys the context does not define.  Raises `ValueError` if the statement is not a JSON object or has no string `@id`, and `RuntimeError` if a context cannot be resolved."""
+    ...
+
+def verify_vc(vc_json: str, statement_id: Optional[str] = None) -> bool:
+    """Verifies a W3C Verifiable Credential's proof offline.  When `statement_id` is given, also checks that the credential's `credentialSubject.id` is that statement. A valid signature over some other subject says nothing about the statement in hand.  Returns `False` when the credential does not verify or is bound to a different subject. Raises `ValueError` when the input is not a credential, meaning it is not JSON, has no `credentialSubject`, or has more than one subject. Raises `RuntimeError` when the credential's DID method would need network access: only `did:key`, `did:jwk` and `did:pkh` resolve offline.  Checks the cryptographic proof only. Revocation and suspension live in the credential's status list, which is fetched over the network and is not consulted here."""
+    ...
+
 class CID:
     """A simple wrapper around a content identifier (CID) string.  Provides a typed wrapper for CID strings with property access and string conversion."""
     @property
@@ -207,6 +215,16 @@ class Signer:
         _load_if_exists: Optional[bool] = None,
     ) -> Signer: ...
     @staticmethod
+    def load(name: str) -> Signer:
+        """Loads a signer that was previously persisted under `name`.  Raises `LookupError` if no such signer exists. Use `Signer.load_or_create(...)` to create one when it is missing.  This works for any persisted signer regardless of how it was created, including `auth_service` and `vcomp_notary` signers."""
+        ...
+
+    @staticmethod
+    def load_or_create(name: str, algorithm: Optional[SIGNER_ALGORITHMS] = None) -> Signer:
+        """Loads the signer named `name`, generating and persisting one if it does not exist yet.  This is idempotent, so it is the right call for a script that runs more than once: the first run generates a key, later runs reuse it and keep a stable DID. If no algorithm is provided, Ed25519 is used. The algorithm is ignored when an existing signer is loaded."""
+        ...
+
+    @staticmethod
     def vcomp_notary(
         url: Optional[str] = None,
         name: Optional[str] = None,
@@ -271,7 +289,7 @@ class entity:
         timestamp: Optional[str] = None,
         context: Optional[_Context] = None,
     ) -> Tuple[_Entity, Any]:
-        """# Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `_skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+        """Creates a new Entity with a random UUID, registers entity and metadata statements.  # Arguments * `metadata_json` - JSON string containing metadata to associate with the entity * `_skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
     @staticmethod
@@ -282,7 +300,7 @@ class entity:
         timestamp: Optional[str] = None,
         context: Optional[_Context] = None,
     ) -> Tuple[_Entity, Any]:
-        """# Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `_skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
+        """Creates an Entity from an existing UUID, registers entity and metadata statements.  # Arguments * `uuid` - UUID string for the entity * `metadata_json` - JSON string containing metadata to associate with the entity * `_skip_proof` - If true, skip creating a VC statement * `timestamp` - Optional timestamp for statements * `context` - Optional Context to register statements to  # Returns Tuple of (Entity, list of statement IDs)"""
         ...
 
 # Signer module
