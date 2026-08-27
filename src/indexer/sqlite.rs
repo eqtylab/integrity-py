@@ -56,7 +56,7 @@ impl Sqlite {
                 JOIN graph_hierarchy gh ON g.graph_id = gh.parent_id
             )
             SELECT DISTINCT
-                COALESCE(data.statement, metadata.statement, storage.statement, association.statement, entity.statement) as statement,
+                COALESCE(data.statement, metadata.statement, storage.statement, association.statement, entity.statement, governance.statement) as statement,
                 NULL as metadata,
                 NULL as vc,
                 NULL as did,
@@ -72,15 +72,17 @@ impl Sqlite {
             LEFT JOIN association_statement_items asi ON association.id = asi.statement_id
             LEFT JOIN entity_statements entity ON sgl.statement_id = entity.id
             LEFT JOIN entity_statement_subjects ess ON entity.id = ess.statement_id
+            LEFT JOIN governance_statements governance ON sgl.statement_id = governance.id
             WHERE dss.subject IN {}
                OR metadata.subject IN {}
                OR storage.data IN {}
                OR asi.association_item IN {}
                OR association.subject IN {}
                OR ess.entity IN {}
+               OR governance.subject IN {}
             ORDER BY gh.level;
             "#,
-            in_clause, in_clause, in_clause, in_clause, in_clause, in_clause
+            in_clause, in_clause, in_clause, in_clause, in_clause, in_clause, in_clause
         );
 
         let mut sql_query = sqlx::query(&query).bind(graph_id.to_string());
@@ -877,7 +879,7 @@ impl Sqlite {
                 .execute(&self.pool)
                 .await?;
 
-                Ok(())
+                self.associate_statement_to_graph(&id, graph_id).await
             }
             Statement::CredentialSigstoreBundleRegistration(_)
             | Statement::DidRegistration(_)
