@@ -11,10 +11,10 @@ questions:
   signature over some *other* subject proves nothing about the statement in hand, so the two checks
   belong together.
 
-Both run **fully offline**. JSON-LD contexts resolve against documents compiled into the package, and
-credentials are restricted to DID methods that can be resolved from the identifier itself, so
-verification never reaches the network. This is what makes them usable in an air-gapped or
-reproducible pipeline.
+Both run **fully offline**. JSON-LD contexts resolve against documents compiled into the package or
+supplied by you via `contexts=`, and credentials are restricted to DID methods that can be resolved
+from the identifier itself, so verification never reaches the network. This is what makes them usable
+in an air-gapped or reproducible pipeline.
 
 There is no manifest-level entry point. Verifying a whole manifest means looping these two functions
 over its `statements`, which is what the explorer does:
@@ -49,6 +49,12 @@ expansion drops keys the context does not define.
 
 Supply `statement_id` whenever you know which statement the credential is supposed to attest. Without
 it, only the signature is checked.
+
+Supply `contexts` whenever the credential's `@context` references a document this build does not
+embed. Verification re-expands the credential, so an unresolvable context means the proof cannot be
+checked at all — and because nothing is fetched, that surfaces as `False` rather than an error,
+indistinguishable from a bad signature. If a credential you expect to be valid returns `False`, an
+unsupplied context is the first thing to check.
 
 This verifies the cryptographic proof alone. Whether a credential has since been **revoked or
 suspended** lives in its status list, which has to be fetched over the network and is deliberately

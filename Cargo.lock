@@ -3352,8 +3352,8 @@ dependencies = [
 
 [[package]]
 name = "integrity"
-version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?rev=042e6609483e314c31e513bfe948f86f9b6d68a2#042e6609483e314c31e513bfe948f86f9b6d68a2"
+version = "0.0.13"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.13#0d85ae5b9f7204812771c4f8e4985c671b831b0a"
 dependencies = [
  "integrity-blob",
  "integrity-cid",
@@ -3369,13 +3369,13 @@ dependencies = [
 
 [[package]]
 name = "integrity-blob"
-version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?rev=042e6609483e314c31e513bfe948f86f9b6d68a2#042e6609483e314c31e513bfe948f86f9b6d68a2"
+version = "0.0.13"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.13#0d85ae5b9f7204812771c4f8e4985c671b831b0a"
 dependencies = [
  "anyhow",
  "async-trait",
  "blake3",
- "cid 0.10.1",
+ "cid 0.11.3",
  "futures-util",
  "iroh-blake3",
  "log",
@@ -3383,13 +3383,13 @@ dependencies = [
 
 [[package]]
 name = "integrity-cid"
-version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?rev=042e6609483e314c31e513bfe948f86f9b6d68a2#042e6609483e314c31e513bfe948f86f9b6d68a2"
+version = "0.0.13"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.13#0d85ae5b9f7204812771c4f8e4985c671b831b0a"
 dependencies = [
  "anyhow",
  "blake3",
  "bytes",
- "cid 0.10.1",
+ "cid 0.11.3",
  "ignore",
  "integrity-blob",
  "iroh-blake3",
@@ -3403,8 +3403,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-dsse"
-version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?rev=042e6609483e314c31e513bfe948f86f9b6d68a2#042e6609483e314c31e513bfe948f86f9b6d68a2"
+version = "0.0.13"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.13#0d85ae5b9f7204812771c4f8e4985c671b831b0a"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -3415,12 +3415,12 @@ dependencies = [
 
 [[package]]
 name = "integrity-intoto-attestation"
-version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?rev=042e6609483e314c31e513bfe948f86f9b6d68a2#042e6609483e314c31e513bfe948f86f9b6d68a2"
+version = "0.0.13"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.13#0d85ae5b9f7204812771c4f8e4985c671b831b0a"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
- "cid 0.10.1",
+ "cid 0.11.3",
  "did-key",
  "hex",
  "integrity-signer",
@@ -3431,12 +3431,12 @@ dependencies = [
 
 [[package]]
 name = "integrity-jsonld"
-version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?rev=042e6609483e314c31e513bfe948f86f9b6d68a2#042e6609483e314c31e513bfe948f86f9b6d68a2"
+version = "0.0.13"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.13#0d85ae5b9f7204812771c4f8e4985c671b831b0a"
 dependencies = [
  "anyhow",
  "blake3",
- "cid 0.10.1",
+ "cid 0.11.3",
  "futures",
  "include_dir",
  "iref 3.2.2",
@@ -3455,14 +3455,14 @@ dependencies = [
 
 [[package]]
 name = "integrity-lineage-models"
-version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?rev=042e6609483e314c31e513bfe948f86f9b6d68a2#042e6609483e314c31e513bfe948f86f9b6d68a2"
+version = "0.0.13"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.13#0d85ae5b9f7204812771c4f8e4985c671b831b0a"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
  "blake3",
  "chrono",
- "cid 0.10.1",
+ "cid 0.11.3",
  "futures",
  "hex",
  "integrity-blob",
@@ -3483,12 +3483,12 @@ dependencies = [
 
 [[package]]
 name = "integrity-model-signing"
-version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?rev=042e6609483e314c31e513bfe948f86f9b6d68a2#042e6609483e314c31e513bfe948f86f9b6d68a2"
+version = "0.0.13"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.13#0d85ae5b9f7204812771c4f8e4985c671b831b0a"
 dependencies = [
  "anyhow",
  "bs58 0.5.1",
- "cid 0.10.1",
+ "cid 0.11.3",
  "hex",
  "integrity-blob",
  "integrity-cid",
@@ -3503,8 +3503,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-signer"
-version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?rev=042e6609483e314c31e513bfe948f86f9b6d68a2#042e6609483e314c31e513bfe948f86f9b6d68a2"
+version = "0.0.13"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.13#0d85ae5b9f7204812771c4f8e4985c671b831b0a"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3526,8 +3526,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-sigstore"
-version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?rev=042e6609483e314c31e513bfe948f86f9b6d68a2#042e6609483e314c31e513bfe948f86f9b6d68a2"
+version = "0.0.13"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.13#0d85ae5b9f7204812771c4f8e4985c671b831b0a"
 dependencies = [
  "serde",
  "serde_json",
@@ -3535,8 +3535,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-vc"
-version = "0.0.1"
-source = "git+https://github.com/eqtylab/integrity?rev=042e6609483e314c31e513bfe948f86f9b6d68a2#042e6609483e314c31e513bfe948f86f9b6d68a2"
+version = "0.0.13"
+source = "git+https://github.com/eqtylab/integrity?tag=v0.0.13#0d85ae5b9f7204812771c4f8e4985c671b831b0a"
 dependencies = [
  "anyhow",
  "chrono",

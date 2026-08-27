@@ -148,6 +148,21 @@ class VerifyVcTests(unittest.TestCase):
         wrapped = {**VALID_VC, "credentialSubject": [VALID_VC["credentialSubject"]]}
         self.assertTrue(verify_vc(json.dumps(wrapped), VC_SUBJECT_ID))
 
+    def test_contexts_accepted_as_dict_or_as_json_string(self):
+        # This credential resolves without them, so what is pinned here is the
+        # argument shape, not the resolution: both forms must be accepted, the
+        # same as verify_statement.
+        as_dict = verify_vc(json.dumps(VALID_VC), None, {CUSTOM_CONTEXT_URI: CUSTOM_CONTEXT})
+        as_text = verify_vc(
+            json.dumps(VALID_VC), None, {CUSTOM_CONTEXT_URI: json.dumps(CUSTOM_CONTEXT)}
+        )
+        self.assertEqual(as_dict, as_text)
+        self.assertTrue(as_dict)
+
+    def test_invalid_context_json_string_raises(self):
+        with self.assertRaises(ValueError):
+            verify_vc(json.dumps(VALID_VC), None, {CUSTOM_CONTEXT_URI: "{not-json"})
+
     def test_multiple_subjects_raises(self):
         multi = {
             **VALID_VC,
