@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use anyhow::{Context as _, Result};
 use integrity::lineage::models::statements::{Statement, StatementTrait};
-use sqlx::{Row, SqlitePool};
+use sqlx::{Row, Sqlite as SqliteDb, SqlitePool, Transaction};
 use uuid::Uuid;
 
 use super::{rows_to_statements, Context};
@@ -511,6 +511,7 @@ impl Sqlite {
     /// provided graph_id. Global statements (credentials, DIDs) are stored without graph association.
     pub async fn register_statement(&self, statement: &Statement, graph_id: &Uuid) -> Result<()> {
         log::trace!("Registering statement");
+        let mut transaction = self.pool.begin().await?;
         match statement {
             Statement::AssociationRegistration(_)
             | Statement::ComputationRegistration(_)
@@ -519,13 +520,19 @@ impl Sqlite {
             | Statement::GovernanceRegistration(_)
             | Statement::MetadataRegistration(_)
             | Statement::StorageRegistration(_) => {
-                self.register_graph_statement(statement, graph_id).await
+                self.register_graph_statement(&mut transaction, statement, graph_id)
+                    .await?
             }
             Statement::CredentialDsseRegistration(_)
             | Statement::CredentialRegistration(_)
             | Statement::CredentialSigstoreBundleRegistration(_)
-            | Statement::DidRegistration(_) => self.register_global_statement(statement).await,
+            | Statement::DidRegistration(_) => {
+                self.register_global_statement(&mut transaction, statement)
+                    .await?
+            }
         }
+        transaction.commit().await?;
+        Ok(())
     }
 
     /// Updates the link table to assign a statement to a graph
@@ -544,6 +551,26 @@ impl Sqlite {
         .bind(statement_id)
         .bind(graph_id.to_string())
         .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    async fn associate_statement_to_graph_in_transaction(
+        transaction: &mut Transaction<'_, SqliteDb>,
+        statement_id: &str,
+        graph_id: &Uuid,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"
+            INSERT OR IGNORE INTO statement_graph_link
+            (statement_id, graph_id)
+            VALUES (?1, ?2)
+        "#,
+        )
+        .bind(statement_id)
+        .bind(graph_id.to_string())
+        .execute(&mut **transaction)
         .await?;
 
         Ok(())
@@ -689,7 +716,12 @@ impl Sqlite {
     }
 
     /// Used to register statements associtated with a specific graph_id (aka NON-Global)
-    async fn register_graph_statement(&self, statement: &Statement, graph_id: &Uuid) -> Result<()> {
+    async fn register_graph_statement(
+        &self,
+        transaction: &mut Transaction<'_, SqliteDb>,
+        statement: &Statement,
+        graph_id: &Uuid,
+    ) -> Result<()> {
         match statement {
             Statement::ComputationRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
@@ -705,10 +737,10 @@ impl Sqlite {
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
-                .execute(&self.pool)
+                .execute(&mut **transaction)
                 .await?;
 
-                self.associate_statement_to_graph(&id, graph_id).await
+                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id).await
             }
             Statement::DataRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
@@ -724,10 +756,11 @@ impl Sqlite {
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
-                .execute(&self.pool)
+                .execute(&mut **transaction)
                 .await?;
 
-                self.associate_statement_to_graph(&id, graph_id).await?;
+                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id)
+                    .await?;
 
                 for data_item in s.data.to_vec_string() {
                     sqlx::query(
@@ -738,7 +771,7 @@ impl Sqlite {
                     )
                     .bind(&id)
                     .bind(data_item)
-                    .execute(&self.pool)
+                    .execute(&mut **transaction)
                     .await?;
                 }
                 Ok(())
@@ -758,10 +791,10 @@ impl Sqlite {
                 .bind(&statement_data)
                 .bind(&s.registered_by)
                 .bind(&s.subject)
-                .execute(&self.pool)
+                .execute(&mut **transaction)
                 .await?;
 
-                self.associate_statement_to_graph(&id, graph_id).await
+                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id).await
             }
             Statement::StorageRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
@@ -778,10 +811,10 @@ impl Sqlite {
                 .bind(&statement_data)
                 .bind(&s.registered_by)
                 .bind(&s.data)
-                .execute(&self.pool)
+                .execute(&mut **transaction)
                 .await?;
 
-                self.associate_statement_to_graph(&id, graph_id).await
+                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id).await
             }
             Statement::EntityRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
@@ -797,10 +830,11 @@ impl Sqlite {
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
-                .execute(&self.pool)
+                .execute(&mut **transaction)
                 .await?;
 
-                self.associate_statement_to_graph(&id, graph_id).await?;
+                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id)
+                    .await?;
 
                 for entity in s.entity.to_vec_string() {
                     sqlx::query(
@@ -811,7 +845,7 @@ impl Sqlite {
                     )
                     .bind(&id)
                     .bind(entity)
-                    .execute(&self.pool)
+                    .execute(&mut **transaction)
                     .await?;
                 }
 
@@ -842,7 +876,7 @@ impl Sqlite {
                 .bind(&s.registered_by)
                 .bind(&s.subject)
                 .bind(association_type)
-                .execute(&self.pool)
+                .execute(&mut **transaction)
                 .await?;
 
                 for item in &s.association {
@@ -854,11 +888,11 @@ impl Sqlite {
                     )
                     .bind(&id)
                     .bind(item)
-                    .execute(&self.pool)
+                    .execute(&mut **transaction)
                     .await?;
                 }
 
-                self.associate_statement_to_graph(&id, graph_id).await
+                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id).await
             }
             Statement::GovernanceRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
@@ -876,10 +910,10 @@ impl Sqlite {
                 .bind(&s.registered_by)
                 .bind(&s.subject)
                 .bind(&s.document)
-                .execute(&self.pool)
+                .execute(&mut **transaction)
                 .await?;
 
-                self.associate_statement_to_graph(&id, graph_id).await
+                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id).await
             }
             Statement::CredentialSigstoreBundleRegistration(_)
             | Statement::DidRegistration(_)
@@ -894,7 +928,11 @@ impl Sqlite {
         }
     }
 
-    async fn register_global_statement(&self, statement: &Statement) -> Result<()> {
+    async fn register_global_statement(
+        &self,
+        transaction: &mut Transaction<'_, SqliteDb>,
+        statement: &Statement,
+    ) -> Result<()> {
         match statement {
             Statement::CredentialSigstoreBundleRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
@@ -911,7 +949,7 @@ impl Sqlite {
                 .bind(&statement_data)
                 .bind(&s.registered_by)
                 .bind(&s.subject)
-                .execute(&self.pool)
+                .execute(&mut **transaction)
                 .await?;
 
                 Ok(())
@@ -940,7 +978,7 @@ impl Sqlite {
                 .bind(&statement_data)
                 .bind(&s.registered_by)
                 .bind(&subject_id)
-                .execute(&self.pool)
+                .execute(&mut **transaction)
                 .await?;
 
                 Ok(())
@@ -959,7 +997,7 @@ impl Sqlite {
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
-                .execute(&self.pool)
+                .execute(&mut **transaction)
                 .await?;
 
                 Ok(())
@@ -983,7 +1021,7 @@ impl Sqlite {
                 .bind(registered_by)
                 .bind(type_)
                 .bind(did)
-                .execute(&self.pool)
+                .execute(&mut **transaction)
                 .await?;
 
                 Ok(())
