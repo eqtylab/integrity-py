@@ -1,6 +1,5 @@
 [tool.poetry]
 name = "eqty_sdk"
-version = "0.0.0"
 authors = [
     "support@eqtylab.io",
 ]
@@ -44,8 +43,8 @@ requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [project]
-dynamic = ["version"] # synced to fields in Cargo.toml
 name = "eqty_sdk"
+version = "0.0.0" # replaced from the release tag by release.yml
 description = "Python SDK for generating cryptographically verifiable manifests, modeling asset lineage, signing outputs, and integrating with Governance Studio."
 license = "Apache-2.0"
 license-files = ["LICENSE"]

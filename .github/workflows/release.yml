@@ -69,14 +69,30 @@ jobs:
         if: runner.os == 'macOS'
         run: sed -i '' 's/description = ".*"/description = "'"$(git rev-parse --short=7 HEAD)"'"/' Cargo.toml
 
-      - name: Set Version (linux/windows)
+      - name: Set Python package version (linux/windows)
         if: runner.os != 'macOS' && github.event_name == 'push' && github.ref_type == 'tag'
         shell: bash
-        run: sed -i 's/^version = ".*"/version = "'"$(echo ${{ github.event.ref }} | sed -E 's/.*v([[:digit:]]+(\.[[:digit:]]+)+).*/\1/')"'"/' Cargo.toml
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          case "$version" in
+            ''|*[!0-9A-Za-z.+!_-]*)
+              echo "Tag version contains unsupported characters: $version"
+              exit 1
+              ;;
+          esac
+          sed -i '/^\[project\]$/,/^\[/{s|^version = ".*"|version = "'"$version"'"|}' pyproject.toml
 
-      - name: Set Version (macos)
+      - name: Set Python package version (macos)
         if: runner.os == 'macOS' && github.event_name == 'push' && github.ref_type == 'tag'
-        run: sed -i '' 's/^version = ".*"/version = "'"$(echo ${{ github.event.ref }} | sed -E 's/.*v([[:digit:]]+(\.[[:digit:]]+)+).*/\1/')"'"/' Cargo.toml
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          case "$version" in
+            ''|*[!0-9A-Za-z.+!_-]*)
+              echo "Tag version contains unsupported characters: $version"
+              exit 1
+              ;;
+          esac
+          sed -i '' '/^\[project\]$/,/^\[/{s|^version = ".*"|version = "'"$version"'"|}' pyproject.toml
 
       - name: Build Linux Wheel
         if: runner.os == 'Linux'
