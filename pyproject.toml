@@ -1,7 +1,6 @@
 [tool.poetry]
 name = "eqty_sdk"
 version = "0.0.0"
-description = ""
 authors = [
     "support@eqtylab.io",
 ]
@@ -40,16 +39,6 @@ mkdocs = "^1.6.1"
 mkdocstrings = { extras = ["python"], version = "^0.28.2" }
 pymdown-extensions = "^10.21"
 
-[[tool.poetry.source]]
-name = "eqty"
-url = "https://pypi.eqtylab.io/simple/"
-priority = "explicit"
-
-[[tool.poetry.source]]
-name = "eqty-publish"
-url = "https://pypi.eqtylab.io/"
-priority = "explicit"
-
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
@@ -57,6 +46,9 @@ build-backend = "maturin"
 [project]
 dynamic = ["version"] # synced to fields in Cargo.toml
 name = "eqty_sdk"
+description = "Python SDK for generating cryptographically verifiable manifests, modeling asset lineage, signing outputs, and integrating with Governance Studio."
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 # TODO: dedup this with uv dependencies
 dependencies = [

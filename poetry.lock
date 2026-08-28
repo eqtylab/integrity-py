@@ -829,7 +829,6 @@ python-versions = ">=3.10"
 groups = ["docs"]
 files = [
     {file = "griffe-2.0.0-py3-none-any.whl", hash = "sha256:5418081135a391c3e6e757a7f3f156f1a1a746cc7b4023868ff7d5e2f9a980aa"},
-    {file = "griffe-2.0.0.tar.gz", hash = "sha256:c68979cd8395422083a51ea7cf02f9c119d889646d99b7b656ee43725de1b80f"},
 ]
 
 [package.dependencies]
@@ -848,7 +847,6 @@ python-versions = ">=3.10"
 groups = ["docs"]
 files = [
     {file = "griffecli-2.0.0-py3-none-any.whl", hash = "sha256:9f7cd9ee9b21d55e91689358978d2385ae65c22f307a63fb3269acf3f21e643d"},
-    {file = "griffecli-2.0.0.tar.gz", hash = "sha256:312fa5ebb4ce6afc786356e2d0ce85b06c1c20d45abc42d74f0cda65e159f6ef"},
 ]
 
 [package.dependencies]
@@ -864,7 +862,6 @@ python-versions = ">=3.10"
 groups = ["docs"]
 files = [
     {file = "griffelib-2.0.0-py3-none-any.whl", hash = "sha256:01284878c966508b6d6f1dbff9b6fa607bc062d8261c5c7253cb285b06422a7f"},
-    {file = "griffelib-2.0.0.tar.gz", hash = "sha256:e504d637a089f5cab9b5daf18f7645970509bf4f53eda8d79ed71cce8bd97934"},
 ]
 
 [package.extras]
@@ -2399,4 +2396,4 @@ tomli = {version = ">=2.0.1", markers = "python_version < \"3.11\""}
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "e74bfaced61fb7c86f4215c90dee5e6318fba45eab52fa6c5747c0699c3f3fbd"
+content-hash = "bc2ac2d6bfc19ba94e451fb6734c6eae661750aa218235132b09e8bbe0bd58c4"
