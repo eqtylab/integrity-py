@@ -184,31 +184,6 @@ jobs:
           path: dist/linux-manylinux/*.whl
           retention-days: 1
 
-      - name: Publish Linux Package
-        if: runner.os == 'Linux'
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: "${{ secrets.PYPI_API_TOKEN }}"
-        run: |
-          python3 -m pip install --user --upgrade twine
-          shopt -s globstar nullglob
-          files=(dist/**/*.whl)
-          if [ ${#files[@]} -gt 0 ]; then
-            python3 -m twine upload --repository-url="https://upload.pypi.org/legacy/" "${files[@]}"
-          fi
-
-      - name: Publish Windows Package
-        if: runner.os == 'Windows'
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: "${{ secrets.PYPI_API_TOKEN }}"
-        run: |
-          py -m pip install --upgrade pip twine
-          $files = Get-ChildItem -Path dist -Recurse -Filter *.whl | ForEach-Object { $_.FullName }
-          if ($files.Count -gt 0) {
-            py -m twine upload --repository-url="https://upload.pypi.org/legacy/" $files
-          }
-
       - name: Build Mac Wheel
         if: runner.os == 'macOS'
         run: |
@@ -269,20 +244,33 @@ jobs:
           path: ${{ matrix.macos_report }}
           retention-days: 1
 
-      - name: Publish Mac Package
-        if: runner.os == 'macOS'
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: "${{ secrets.PYPI_API_TOKEN }}"
-        run: |
-          shopt -s nullglob
-          files=(dist/*.whl)
-          if [ ${#files[@]} -gt 0 ]; then
-            python -m twine upload --repository-url="https://upload.pypi.org/legacy/" "${files[@]}"
-          fi
+      - name: Upload package distributions
+        uses: actions/upload-artifact@v6
+        with:
+          name: package-distributions-${{ matrix.artifact_suffix }}
+          path: |
+            dist/*.whl
+            dist/**/*.whl
+
+  publish_to_pypi:
+    needs: build_and_publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Download package distributions
+        uses: actions/download-artifact@v7
+        with:
+          pattern: package-distributions-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
       - name: Update GitHub release with PyPI link
-        if: matrix.platform == 'ubuntu-latest-large' && startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/github-script@v8
         with:
           script: |
@@ -308,7 +296,7 @@ jobs:
 
   publish_release_docs:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: build_and_publish
+    needs: publish_to_pypi
     runs-on: ubuntu-latest
     permissions:
       contents: write
