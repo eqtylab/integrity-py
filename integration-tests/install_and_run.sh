@@ -12,9 +12,6 @@ IMAGE="${IMAGE:-python:3.12-slim-bookworm}"
 EQTY_SDK_VERSION="${1:-${EQTY_SDK_VERSION:-latest}}"
 TEST_SCRIPT="${2:-_basic_import.py}"
 
-EQTY_PYPI_USER="${EQTY_PYPI_USER}"
-EQTY_PYPI_PASSWORD="${EQTY_PYPI_PASSWORD}"
-
 # Resolve "latest" here on the runner where GITHUB_TOKEN is available,
 # so the container always receives an explicit version number.
 if [ "$EQTY_SDK_VERSION" = "latest" ]; then
@@ -23,8 +20,6 @@ fi
 
 docker run --rm \
     -v "$SCRIPT_DIR:/test:ro" \
-    -e "EQTY_PYPI_USER=${EQTY_PYPI_USER:-}" \
-    -e "EQTY_PYPI_PASSWORD=${EQTY_PYPI_PASSWORD:-}" \
     -e "EQTY_SDK_VERSION=${EQTY_SDK_VERSION:-}" \
     "$IMAGE" \
     sh /test/_install_and_run.sh "$EQTY_SDK_VERSION" "$TEST_SCRIPT"

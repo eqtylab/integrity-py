@@ -1,11 +1,19 @@
 import json
 import logging
 import unittest
+from pathlib import Path
 
-from eqty_sdk import Dataset, UsageError, compute
-from tests import setup_sdk
+from eqty_sdk import Dataset, UsageError, compute, init, purge_blob_store
+from tests import get_config_dir, setup_sdk
 
 logger = logging.getLogger("unittests")
+
+# CIDs for the literal strings used below, precomputed independently of any
+# shared test state (calling get_cid_for_bytes at test time would "prime" the
+# CID as already-known and mask whether the blob was actually stored).
+NOT_RETAINED_CID = "bafkr4ig4ocetv6dfahrvws3k2f24xmqkcfcnghhc235leltmz74hwhnmam"
+RETAIN_ME_CID = "bafkr4if5yhakzvf3itenakgmw34ahzpailts4p4jk6xptdwpwtwalieppe"
+OVERRIDE_DEFAULT_CID = "bafkr4id4epbxd4vhayelzz2cj3nyvo54y2idg52w63tbimqejqcgng4kj4"
 
 
 def load_mock_data(file_path):
@@ -79,14 +87,48 @@ class TestComputeDecorator(unittest.TestCase):
         result = add(3, 4)
         self.assertEqual(result, 7)
 
-    def test_store_override(self):
-        """Test that a decorator compute can override blob storage."""
+    def test_store_override_false(self):
+        """Test that a decorator compute with _store=False does not persist the input's blob."""
+        purge_blob_store()
+        blob_path = Path(get_config_dir()) / "blobs" / NOT_RETAINED_CID
 
         @compute(metadata={"name": "No Store"}, _store=False)
         def identity(value):
             return value
 
         self.assertEqual(identity("not retained"), "not retained")
+        self.assertFalse(blob_path.exists(), "Input blob should not be stored when _store=False")
+
+    def test_store_override_true(self):
+        """Test that a decorator compute with _store=True persists the input's blob."""
+        purge_blob_store()
+        blob_path = Path(get_config_dir()) / "blobs" / RETAIN_ME_CID
+
+        @compute(metadata={"name": "Force Store"}, _store=True)
+        def identity(value):
+            return value
+
+        self.assertEqual(identity("retain me"), "retain me")
+        self.assertTrue(blob_path.exists(), "Input blob should be stored when _store=True")
+
+    def test_store_override_wins_over_default(self):
+        """Test that a decorator's _store=False overrides a True store_all_blobs default."""
+        cfg = init(custom_dir=get_config_dir())
+        cfg.set_store_all_blobs(True)
+        try:
+            purge_blob_store()
+            blob_path = Path(get_config_dir()) / "blobs" / OVERRIDE_DEFAULT_CID
+
+            @compute(metadata={"name": "Override Default"}, _store=False)
+            def identity(value):
+                return value
+
+            identity("should not be retained despite the default")
+            self.assertFalse(
+                blob_path.exists(), "_store=False should override a True store_all_blobs default"
+            )
+        finally:
+            cfg.set_store_all_blobs(False)
 
     def test_empty_function(self):
         """Test the @compute decorator with an empty function."""
