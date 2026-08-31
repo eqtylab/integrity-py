@@ -204,11 +204,89 @@ jobs:
         if: always() && steps.run_import_test.outcome != 'success'
         run: exit 1
 
+  import-tests-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Repo
+        uses: eqtylab-actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+
+      - name: Run Import Test
+        id: run_import_test
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REQUESTED_SDK_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || 'latest' }}
+        run: |
+          set +e
+          bash integration-tests/install_and_run_native.sh "$REQUESTED_SDK_VERSION" _basic_import.py \
+            2>&1 | tee /tmp/import-test-output.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Build summary row
+        if: always()
+        run: |
+          if [ "${{ steps.run_import_test.outcome }}" = "success" ]; then
+            result="✅"
+          elif [ "${{ steps.run_import_test.outcome }}" = "failure" ]; then
+            result="❌"
+          else
+            result="${{ steps.run_import_test.outcome }}"
+          fi
+
+          mkdir -p summary-rows
+          row_file="summary-rows/windows-${{ strategy.job-index }}.md"
+          echo "| \`${{ matrix.runner }}\` | ${{ matrix.arch }} | \`windows\` | n/a | ${result} |" > "$row_file"
+
+          if [ "${{ steps.run_import_test.outcome }}" != "success" ]; then
+            last_lines="$(tail -n 15 /tmp/import-test-output.log 2>/dev/null || echo "(no output captured)")"
+            {
+              echo ""
+              echo "<details>"
+              echo "<summary>❌ ${{ matrix.runner }} (${{ matrix.arch }}) / windows</summary>"
+              echo ""
+              echo '```'
+              echo "$last_lines"
+              echo '```'
+              echo ""
+              echo "</details>"
+            } >> "$row_file"
+
+            msg="$(printf '%s' "$last_lines" | sed 's/%/%25/g' | tr '\n' '\001' | sed 's/\001/%0A/g')"
+            echo "::error title=Failed: windows on ${{ matrix.runner }} (${{ matrix.arch }})::${msg}"
+          fi
+
+      - name: Upload summary row
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-test-windows-result-${{ strategy.job-index }}
+          path: summary-rows/windows-${{ strategy.job-index }}.md
+          retention-days: 1
+
+      - name: Mark job as failed when import test fails
+        if: always() && steps.run_import_test.outcome != 'success'
+        run: exit 1
+
   import-tests-summary:
     if: always()
     needs:
       - import-tests-linux
       - import-tests-macos
+      - import-tests-windows
     runs-on: ubuntu-latest
     steps:
       - name: Download matrix summary rows
