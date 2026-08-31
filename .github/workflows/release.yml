@@ -29,6 +29,8 @@ jobs:
           - platform: macos-15-large
             artifact_suffix: macos-x86_64
             macos_report: dist/otool-show-macos-x86_64.txt
+          - platform: windows-latest
+            artifact_suffix: windows-x86_64
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -184,6 +186,41 @@ jobs:
               '
           done <<< "${build_specs}"
 
+      - name: Build sdist
+        if: matrix.platform == 'ubuntu-latest-large'
+        shell: bash
+        run: |
+          IFS='.' read -r python_major python_minor _ < .python-version
+          if [ -z "${python_major}" ] || [ -z "${python_minor}" ]; then
+            echo "Expected at least major.minor in .python-version"
+            exit 1
+          fi
+          python_abi_tag="${python_major}${python_minor}"
+
+          rm -rf dist/sdist
+          mkdir -p dist/sdist
+
+          docker run --rm \
+            -e PYTHON_ABI_TAG="${python_abi_tag}" \
+            -e HOST_UID="$(id -u)" \
+            -e HOST_GID="$(id -g)" \
+            -v "${PWD}:/io" \
+            -w /io \
+            quay.io/pypa/manylinux2014_x86_64 \
+            /bin/sh -lc '
+              set -eu
+
+              curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+              . "$HOME/.cargo/env"
+
+              pybin="/opt/python/cp${PYTHON_ABI_TAG}-cp${PYTHON_ABI_TAG}/bin/python"
+              "$pybin" -m pip install --upgrade pip maturin
+
+              "$pybin" -m maturin sdist --manifest-path Cargo.toml --out dist/sdist
+
+              chown -R "$HOST_UID:$HOST_GID" dist/sdist
+            '
+
       - name: Upload auditwheel report
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v6
@@ -260,6 +297,13 @@ jobs:
           path: ${{ matrix.macos_report }}
           retention-days: 1
 
+      - name: Build Windows Wheel
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip maturin
+          maturin build --manifest-path Cargo.toml --release --out dist
+
       - name: Upload package distributions
         uses: actions/upload-artifact@v6
         with:
@@ -267,6 +311,7 @@ jobs:
           path: |
             dist/*.whl
             dist/**/*.whl
+            dist/sdist/*.tar.gz
 
   publish_to_pypi:
     needs: build_and_publish
