@@ -338,20 +338,24 @@ class TypedAsset(Asset, Generic[AssetT]):
         _store: Optional[bool] = None,
         **kwargs,
     ) -> TypedAssetT:
+        """Create and register this asset type from a file or directory path."""
         return cls._from_path(path, cls._asset_type, _store=_store, **kwargs)
 
     @classmethod
     def from_cid(cls: type[TypedAssetT], cid: CID, **kwargs) -> TypedAssetT:
+        """Create and register this asset type from an existing content identifier."""
         return cls._from_cid(cid, cls._asset_type, **kwargs)
 
     @classmethod
     def from_object(
         cls: type[TypedAssetT], obj: Any, _store: Optional[bool] = None, **kwargs
     ) -> TypedAssetT:
+        """Create and register this asset type from an in-memory Python object."""
         return cls._from_object(obj, cls._asset_type, _store=_store, **kwargs)
 
     @classmethod
     def with_context(cls: type[TypedAssetT], ctx: Context) -> Any:
+        """Return factory methods that register this asset in ``ctx``."""
         return cls._factory_with_context(ctx, cls._asset_type)
 
     def __len__(self):

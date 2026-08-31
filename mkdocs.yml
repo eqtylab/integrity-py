@@ -6,6 +6,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Quick Start: quick-start.md
   - Install:
       - Min Version: install/min-version.md
       - Package Managers: install/package-managers.md

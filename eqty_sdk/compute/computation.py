@@ -36,7 +36,11 @@ class Computation:
         raise TypeError("Use Computation.new() to create instances of this class.")
 
     def __init_internal__(
-        self, ctx: Optional[Context], metadata: Metadata, _skip_proof: Optional[bool] = None
+        self,
+        ctx: Optional[Context],
+        metadata: Metadata,
+        _skip_proof: Optional[bool] = None,
+        _store: Optional[bool] = None,
     ):
         self._ctx = ctx
         self._metadata = metadata
@@ -44,15 +48,17 @@ class Computation:
         self._output_cids: List[CID] = []
         self._computation_cid: Union[CID, None] = None
         self._skip_proof = _skip_proof
+        self._store = _store
 
     @classmethod
     def new(cls, **kwargs) -> "Computation":
         _skip_proof = kwargs.pop("_skip_proof", None)
+        _store = kwargs.pop("_store", None)
         ctx = get_active_context()
 
         metadata = Metadata(**kwargs)
         instance = object.__new__(cls)
-        instance.__init_internal__(ctx, metadata, _skip_proof)
+        instance.__init_internal__(ctx, metadata, _skip_proof, _store)
         return instance
 
     @staticmethod
@@ -60,10 +66,11 @@ class Computation:
         class _Factory:
             def new(self, **kwargs) -> "Computation":
                 _skip_proof = kwargs.pop("_skip_proof", None)
+                _store = kwargs.pop("_store", None)
 
                 metadata = Metadata(**kwargs)
                 instance = object.__new__(Computation)
-                instance.__init_internal__(ctx, metadata, _skip_proof)
+                instance.__init_internal__(ctx, metadata, _skip_proof, _store)
                 return instance
 
         return _Factory()
@@ -83,14 +90,14 @@ class Computation:
     def add_input_path(self, path: Union[List[Path], List[str], Path, str]) -> "Computation":
         """Resolves the provide path(s) and adds the computed CID(s) to the computations input list."""
         if isinstance(path, Path):
-            self._input_cids.append(__cid_path__(path))
+            self._input_cids.append(__cid_path__(path, self._store))
         elif isinstance(path, list) and all(isinstance(item, Path) for item in path):
-            self._input_cids.extend([__cid_path__(p) for p in path])
+            self._input_cids.extend([__cid_path__(p, self._store) for p in path])
         elif isinstance(path, str):
-            self._input_cids.append(__cid_path__(path))
+            self._input_cids.append(__cid_path__(path, self._store))
         elif isinstance(path, list) and all(isinstance(item, str) for item in path):
             for p in path:
-                self._input_cids.append(__cid_path__(p))
+                self._input_cids.append(__cid_path__(p, self._store))
         else:
             raise ValueError("Invalid type for path")
         return self
@@ -100,11 +107,11 @@ class Computation:
         if isinstance(obj, list):
             for o in obj:
                 serialized_bytes = serialize_for_hashing(o)
-                cid = get_cid_for_bytes(serialized_bytes)
+                cid = get_cid_for_bytes(serialized_bytes, self._store)
                 self._input_cids.append(cid)
         else:
             serialized_bytes = serialize_for_hashing(obj)
-            cid = get_cid_for_bytes(serialized_bytes)
+            cid = get_cid_for_bytes(serialized_bytes, self._store)
             self._input_cids.append(cid)
 
         return self
@@ -124,14 +131,14 @@ class Computation:
     def add_output_path(self, path: Union[List[Path], List[str], Path, str]) -> "Computation":
         """Resolves the provide path(s) and adds the computed CID(s) to the computations output list."""
         if isinstance(path, Path):
-            self._output_cids.append(__cid_path__(path))
+            self._output_cids.append(__cid_path__(path, self._store))
         elif isinstance(path, list) and all(isinstance(item, Path) for item in path):
-            self._output_cids.extend([__cid_path__(p) for p in path])
+            self._output_cids.extend([__cid_path__(p, self._store) for p in path])
         elif isinstance(path, str):
-            self._output_cids.append(__cid_path__(path))
+            self._output_cids.append(__cid_path__(path, self._store))
         elif isinstance(path, list) and all(isinstance(item, str) for item in path):
             for p in path:
-                self._output_cids.append(__cid_path__(p))
+                self._output_cids.append(__cid_path__(p, self._store))
         else:
             raise ValueError("Invalid type for path")
         return self
@@ -141,11 +148,11 @@ class Computation:
         if isinstance(obj, list):
             for o in obj:
                 serialized_bytes = serialize_for_hashing(o)
-                cid = get_cid_for_bytes(serialized_bytes)
+                cid = get_cid_for_bytes(serialized_bytes, self._store)
                 self._output_cids.append(cid)
         else:
             serialized_bytes = serialize_for_hashing(obj)
-            cid = get_cid_for_bytes(serialized_bytes)
+            cid = get_cid_for_bytes(serialized_bytes, self._store)
             self._output_cids.append(cid)
 
         return self
@@ -158,13 +165,13 @@ class Computation:
 
     def set_computation_path(self, path: Union[Path, str]) -> "Computation":
         """Resolves the path; cids the contents, then sets the computations CID."""
-        self._computation_cid = __cid_path__(path)
+        self._computation_cid = __cid_path__(path, self._store)
         return self
 
     def set_computation_object(self, obj: Any) -> "Computation":
         """Serializes the obj, then calculates the CID for the serialized bytes and sets the computations cid."""
         serialized_bytes = serialize_for_hashing(obj)
-        cid = get_cid_for_bytes(serialized_bytes)
+        cid = get_cid_for_bytes(serialized_bytes, self._store)
         self._computation_cid = cid
         return self
 

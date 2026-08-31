@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-# Do not enable xtrace here: this script handles authenticated package index credentials.
-set -eu
+set -xeu
 
 SCRIPT_ROOT="${SCRIPT_ROOT:-/test}"
 
@@ -11,7 +10,6 @@ EQTY_SDK_VERSION="${1:-${EQTY_SDK_VERSION:-latest}}"
 TEST_SCRIPT="${2:-_basic_test.py}"
 TARGET_VERSION="${EQTY_SDK_VERSION}"
 
-INDEX_URL="https://$EQTY_PYPI_USER:$EQTY_PYPI_PASSWORD@pypi.eqtylab.io/simple/"
 BREAK_SYSTEM_PACKAGES=""
 if pip install --help 2>&1 | grep -q -- "--break-system-packages"; then
     BREAK_SYSTEM_PACKAGES="--break-system-packages"
@@ -23,7 +21,6 @@ if [ "$EQTY_SDK_VERSION" = "latest" ]; then
 fi
 
 pip install \
-    --index-url "$INDEX_URL" \
     --only-binary=:all: \
     ${BREAK_SYSTEM_PACKAGES:+$BREAK_SYSTEM_PACKAGES} \
     "eqty_sdk==$TARGET_VERSION"

@@ -2,7 +2,8 @@
 name = "eqty-sdk"
 version = "0.0.0"
 edition = "2021"
-description = ""
+description = "Python SDK for generating cryptographically verifiable manifests, modeling asset lineage, signing outputs, and integrating with Governance Studio."
+license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
