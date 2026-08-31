@@ -225,6 +225,16 @@ jobs:
               chown -R "$HOST_UID:$HOST_GID" dist/sdist
             '
 
+      - name: Verify sdist size
+        if: matrix.platform == 'ubuntu-latest-large'
+        shell: bash
+        run: |
+          sdist="$(find dist/sdist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+          test -n "$sdist"
+          size_bytes="$(stat -c %s "$sdist")"
+          echo "$(basename "$sdist"): ${size_bytes} bytes"
+          test "$size_bytes" -le 104857600
+
       - name: Upload auditwheel report
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v6

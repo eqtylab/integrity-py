@@ -54,6 +54,43 @@ jobs:
           esac
           sed -i '/^\[project\]$/,/^\[/{s|^version = ".*"|version = "'"$VERSION"'"|}' pyproject.toml
 
+      - name: Build sdist from clean checkout
+        shell: bash
+        run: |
+          IFS='.' read -r python_major python_minor _ < .python-version
+          if [ -z "${python_major}" ] || [ -z "${python_minor}" ]; then
+            echo "Expected at least major.minor in .python-version"
+            exit 1
+          fi
+          python_abi_tag="${python_major}${python_minor}"
+
+          mkdir -p dist/sdist
+          docker run --rm \
+            -e PYTHON_ABI_TAG="${python_abi_tag}" \
+            -e HOST_UID="$(id -u)" \
+            -e HOST_GID="$(id -g)" \
+            -v "${PWD}:/io" \
+            -w /io \
+            quay.io/pypa/manylinux2014_x86_64 \
+            /bin/sh -lc '
+              set -eu
+              curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+              . "$HOME/.cargo/env"
+              pybin="/opt/python/cp${PYTHON_ABI_TAG}-cp${PYTHON_ABI_TAG}/bin/python"
+              "$pybin" -m pip install --upgrade pip maturin
+              "$pybin" -m maturin sdist --manifest-path Cargo.toml --out dist/sdist
+              chown -R "$HOST_UID:$HOST_GID" dist/sdist
+            '
+
+      - name: Verify sdist size
+        shell: bash
+        run: |
+          sdist="$(find dist/sdist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+          test -n "$sdist"
+          size_bytes="$(stat -c %s "$sdist")"
+          echo "$(basename "$sdist"): ${size_bytes} bytes"
+          test "$size_bytes" -le 104857600
+
       - name: Build Linux Wheels
         shell: bash
         run: |
@@ -138,6 +175,7 @@ jobs:
           path: |
             dist/*.whl
             dist/**/*.whl
+            dist/sdist/*.tar.gz
           if-no-files-found: error
 
   publish_to_testpypi:
@@ -171,6 +209,7 @@ jobs:
           find dist -mindepth 2 -type f \( -name '*.whl' -o -name '*.tar.gz' \) -print0 \
             | xargs -0 -r -n1 mv -t dist
           find dist -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
+          find dist -maxdepth 1 -type f ! \( -name '*.whl' -o -name '*.tar.gz' \) -delete
           find dist -maxdepth 1 -type f -name '*-linux_*.whl' -delete
 
       - name: Publish package distributions to TestPyPI
@@ -178,3 +217,4 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           packages-dir: dist
+          skip-existing: true
