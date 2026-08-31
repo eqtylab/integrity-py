@@ -328,7 +328,7 @@ jobs:
           merge-multiple: true
 
       - name: Publish package distributions to PyPI
-        uses: eqtylab-actions/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@release/v1
 
       - name: Update GitHub release with PyPI link
         if: startsWith(github.ref, 'refs/tags/')
