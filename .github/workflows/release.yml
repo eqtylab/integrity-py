@@ -21,16 +21,6 @@ jobs:
         include:
           - platform: ubuntu-latest-large
             artifact_suffix: linux-x86_64
-          - platform: ubuntu-aarch64
-            artifact_suffix: linux-aarch64
-          - platform: macos-15-xlarge
-            artifact_suffix: macos-arm64
-            macos_report: dist/otool-show-macos-arm64.txt
-          - platform: macos-15-large
-            artifact_suffix: macos-x86_64
-            macos_report: dist/otool-show-macos-x86_64.txt
-          - platform: windows-latest
-            artifact_suffix: windows-x86_64
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -391,24 +381,6 @@ jobs:
         with:
           name: linux-wheel-x86_64
           path: dist
-
-      - name: Download aarch64 auditwheel report
-        uses: actions/download-artifact@v7
-        with:
-          name: auditwheel-report-ubuntu-aarch64
-          path: docs/generated
-
-      - name: Download macOS linkage report
-        uses: actions/download-artifact@v7
-        with:
-          name: otool-report-macos-arm64
-          path: docs/generated
-
-      - name: Download macOS Intel linkage report
-        uses: actions/download-artifact@v7
-        with:
-          name: otool-report-macos-x86_64
-          path: docs/generated
 
       - name: Build nix shell
         run: nix develop . -c true
