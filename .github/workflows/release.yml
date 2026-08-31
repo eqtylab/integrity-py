@@ -100,6 +100,49 @@ jobs:
           esac
           sed -i '' '/^\[project\]$/,/^\[/{s|^version = ".*"|version = "'"$version"'"|}' pyproject.toml
 
+      - name: Build sdist
+        if: matrix.platform == 'ubuntu-latest-large'
+        shell: bash
+        run: |
+          IFS='.' read -r python_major python_minor _ < .python-version
+          if [ -z "${python_major}" ] || [ -z "${python_minor}" ]; then
+            echo "Expected at least major.minor in .python-version"
+            exit 1
+          fi
+          python_abi_tag="${python_major}${python_minor}"
+
+          rm -rf dist/sdist
+          mkdir -p dist/sdist
+
+          docker run --rm \
+            -e PYTHON_ABI_TAG="${python_abi_tag}" \
+            -e HOST_UID="$(id -u)" \
+            -e HOST_GID="$(id -g)" \
+            -v "${PWD}:/io" \
+            -w /io \
+            quay.io/pypa/manylinux2014_x86_64 \
+            /bin/sh -lc '
+              set -eu
+
+              curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+              . "$HOME/.cargo/env"
+
+              pybin="/opt/python/cp${PYTHON_ABI_TAG}-cp${PYTHON_ABI_TAG}/bin/python"
+              "$pybin" -m pip install --upgrade pip maturin
+              "$pybin" -m maturin sdist --manifest-path Cargo.toml --out dist/sdist
+              chown -R "$HOST_UID:$HOST_GID" dist/sdist
+            '
+
+      - name: Verify sdist size
+        if: matrix.platform == 'ubuntu-latest-large'
+        shell: bash
+        run: |
+          sdist="$(find dist/sdist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+          test -n "$sdist"
+          size_bytes="$(stat -c %s "$sdist")"
+          echo "$(basename "$sdist"): ${size_bytes} bytes"
+          test "$size_bytes" -le 104857600
+
       - name: Build Linux Wheel
         if: runner.os == 'Linux'
         shell: bash
@@ -189,51 +232,6 @@ jobs:
                 chown -R "$HOST_UID:$HOST_GID" dist
               '
           done <<< "${build_specs}"
-
-      - name: Build sdist
-        if: matrix.platform == 'ubuntu-latest-large'
-        shell: bash
-        run: |
-          IFS='.' read -r python_major python_minor _ < .python-version
-          if [ -z "${python_major}" ] || [ -z "${python_minor}" ]; then
-            echo "Expected at least major.minor in .python-version"
-            exit 1
-          fi
-          python_abi_tag="${python_major}${python_minor}"
-
-          rm -rf dist/sdist
-          mkdir -p dist/sdist
-
-          docker run --rm \
-            -e PYTHON_ABI_TAG="${python_abi_tag}" \
-            -e HOST_UID="$(id -u)" \
-            -e HOST_GID="$(id -g)" \
-            -v "${PWD}:/io" \
-            -w /io \
-            quay.io/pypa/manylinux2014_x86_64 \
-            /bin/sh -lc '
-              set -eu
-
-              curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
-              . "$HOME/.cargo/env"
-
-              pybin="/opt/python/cp${PYTHON_ABI_TAG}-cp${PYTHON_ABI_TAG}/bin/python"
-              "$pybin" -m pip install --upgrade pip maturin
-
-              "$pybin" -m maturin sdist --manifest-path Cargo.toml --out dist/sdist
-
-              chown -R "$HOST_UID:$HOST_GID" dist/sdist
-            '
-
-      - name: Verify sdist size
-        if: matrix.platform == 'ubuntu-latest-large'
-        shell: bash
-        run: |
-          sdist="$(find dist/sdist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
-          test -n "$sdist"
-          size_bytes="$(stat -c %s "$sdist")"
-          echo "$(basename "$sdist"): ${size_bytes} bytes"
-          test "$size_bytes" -le 104857600
 
       - name: Upload auditwheel report
         if: runner.os == 'Linux'
