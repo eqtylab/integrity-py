@@ -46,6 +46,10 @@
                 <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
                 </li>
               </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../quick-start.html">Quick Start</a>
+                </li>
+              </ul>
               <p class="caption"><span class="caption-text">Install</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
@@ -96,7 +100,7 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#built-in-asset-types">Built-In Asset Types</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#constructors">Constructors</a>
+    <li class="toctree-l2"><a class="reference internal" href="#public-constructors">Public constructors</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#custom">Custom</a>
     </li>
@@ -104,63 +108,17 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#serialization-notes">Serialization Notes</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset">asset</a>
+    <li class="toctree-l2"><a class="reference internal" href="#adapt-runtime-values-for-compute">Adapt Runtime Values for @compute</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Agent">Agent</a>
+    <li class="toctree-l2"><a class="reference internal" href="#factory-method-reference">Factory Method Reference</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Asset">Asset</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#eqty_sdk.asset.Asset.name">name</a>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.asset.TypedAsset.from_object">from_object</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#eqty_sdk.asset.Asset.cid">cid</a>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.asset.TypedAsset.from_path">from_path</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#eqty_sdk.asset.Asset.asset_type">asset_type</a>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.asset.TypedAsset.from_cid">from_cid</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#eqty_sdk.asset.Asset.value">value</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#eqty_sdk.asset.Asset._create_eqty_statements">_create_eqty_statements</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Benchmark">Benchmark</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.BenchmarkResult">BenchmarkResult</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Binary">Binary</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Certificate">Certificate</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Code">Code</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Configuration">Configuration</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Credential">Credential</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Custom">Custom</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Database">Database</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Dataset">Dataset</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Document">Document</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Guardrail">Guardrail</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Media">Media</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Model">Model</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Prompt">Prompt</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Reasoning">Reasoning</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Skill">Skill</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.SystemPrompt">SystemPrompt</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Token">Token</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.Tool">Tool</a>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.asset.TypedAsset.with_context">with_context</a>
     </li>
     </ul>
                   </li>
@@ -231,9 +189,16 @@
 <li><code>Tool</code></li>
 </ul>
 <p>These types all follow the same construction pattern.</p>
+<div class="admonition note">
+<p class="admonition-title">Use factory methods, not direct constructors</p>
+<p>Do not instantiate typed assets directly (for example, do not call
+<code>Binary(...)</code> or <code>Dataset(...)</code>). Their displayed Python constructors are
+internal implementation details. Create assets with <code>from_object(...)</code>,
+<code>from_path(...)</code>, or <code>from_cid(...)</code> instead.</p>
+</div>
 <p><code>Binary</code> is intended for compiled binary programs and similar executable artifacts that you want
 to register as part of a lineage graph.</p>
-<h2 id="constructors">Constructors</h2>
+<h2 id="public-constructors">Public constructors</h2>
 <p>Most built-in asset types support these constructors:</p>
 <ul>
 <li><code>.from_object(...)</code></li>
@@ -296,1321 +261,146 @@ dataset = Dataset.from_object(
 <li>dicts</li>
 <li>filesystem paths</li>
 <li>objects with <code>serialize_for_hashing()</code></li>
-<li>compute inputs with <code>to_eqty_asset()</code></li>
 </ul>
-<p>If you have a complex type that should not be hashed directly, either:</p>
-<ul>
-<li>implement <code>serialize_for_hashing()</code> for stable hashing, or</li>
-<li>implement <code>to_eqty_asset()</code> and map the object to a more appropriate asset source</li>
-</ul>
-
-
-<div class="doc doc-object doc-module">
-
-
-
-<a id="eqty_sdk.asset"></a>
-    <div class="doc doc-contents first">
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Agent" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Agent</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Agent</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents an AI Agent.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Asset" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Asset</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Asset</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="eqty_sdk.asset.Asset.name" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">name</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Get the name of the asset.</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="eqty_sdk.asset.Asset.cid" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">cid</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">cid</span><span class="p">:</span> <span class="n">CID</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Get the CID of the asset.</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="eqty_sdk.asset.Asset.asset_type" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">asset_type</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">asset_type</span><span class="p">:</span> <span class="nb">str</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Get the type of the asset.</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="eqty_sdk.asset.Asset.value" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">value</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">value</span><span class="p">:</span> <span class="n">Any</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Get the underlying value.</p>
-
-    </div>
-
-</div>
-
+<p>For a complex type that should be registered as its own content, implement
+<code>serialize_for_hashing()</code> and return a stable <code>bytes</code> representation. The SDK
+hashes those bytes to create the asset's CID:</p>
+<pre><code class="language-python">class PromptTemplate:
+    def __init__(self, text: str):
+        self.text = text
+
+    def serialize_for_hashing(self) -&gt; bytes:
+        return self.text.encode(&quot;utf-8&quot;)
+</code></pre>
+<p>Use this with <code>Dataset.from_object(...)</code>, another typed asset's
+<code>from_object(...)</code>, or the <code>Computation</code> builder's object methods.</p>
+<h2 id="adapt-runtime-values-for-compute">Adapt Runtime Values for <code>@compute</code></h2>
+<p><code>to_eqty_asset()</code> is different from <code>serialize_for_hashing()</code>. It is an adapter
+for a value passed to a <code>@compute</code> function, and it must return an SDK <code>Asset</code>.
+Use it when the runtime value is a handle or view over a different artifact that
+should appear in lineage.</p>
+<p>For example, a Spark DataFrame may be backed by a Parquet directory. The
+compute function can keep receiving the DataFrame, while the lineage graph
+records the on-disk dataset:</p>
+<pre><code class="language-python">from pathlib import Path
+
+from eqty_sdk import Dataset
+
+
+class ParquetBackedDataFrame:
+    def __init__(self, dataframe, parquet_path: Path):
+        self.dataframe = dataframe
+        self.parquet_path = parquet_path
+
+    def to_eqty_asset(self) -&gt; Dataset:
+        return Dataset.from_path(self.parquet_path, name=&quot;Training Data&quot;)
+</code></pre>
+<p><code>to_eqty_asset()</code> is recognized only for <code>@compute</code> inputs. It does not hash the
+wrapper object and is not used by <code>from_object(...)</code> or the <code>Computation</code>
+builder. See <a href="../examples/custom-serialize.html">Spark Parquet Input</a> for a
+complete example.</p>
+<h2 id="factory-method-reference">Factory Method Reference</h2>
+<p>The factory methods below are available on every built-in typed asset class,
+including <code>Binary</code>, <code>Dataset</code>, <code>Document</code>, <code>Model</code>, and <code>Prompt</code>.</p>
 
 
 <div class="doc doc-object doc-function">
 
 
-<h3 id="eqty_sdk.asset.Asset._create_eqty_statements" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">_create_eqty_statements</span>
+<h2 id="eqty_sdk.asset.asset.TypedAsset.from_object" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_object</span>
 
 
-</h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">_create_eqty_statements</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Creates DataStatement, MetadataStatement, and VcStatement.</p>
-
-
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Benchmark" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Benchmark</span>
-
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Benchmark</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_object</span><span class="p">(</span>
+    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">_store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypedAssetT</span>
 </code></pre></div>
 
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
+    <div class="doc doc-contents first">
 
+        <p>Create and register this asset type from an in-memory Python object.</p>
 
-        <p>Represents a benchmark asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
 
     </div>
 
 </div>
 
-<div class="doc doc-object doc-class">
+<div class="doc doc-object doc-function">
 
 
+<h2 id="eqty_sdk.asset.asset.TypedAsset.from_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_path</span>
 
-<h2 id="eqty_sdk.asset.BenchmarkResult" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">BenchmarkResult</span>
 
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">BenchmarkResult</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_path</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">_store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypedAssetT</span>
 </code></pre></div>
 
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
+    <div class="doc doc-contents first">
 
+        <p>Create and register this asset type from a file or directory path.</p>
 
-        <p>Represents a benchmark result asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
 
     </div>
 
 </div>
 
-<div class="doc doc-object doc-class">
+<div class="doc doc-object doc-function">
 
 
+<h2 id="eqty_sdk.asset.asset.TypedAsset.from_cid" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_cid</span>
 
-<h2 id="eqty_sdk.asset.Binary" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Binary</span>
 
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Binary</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_cid</span><span class="p">(</span><span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypedAssetT</span>
 </code></pre></div>
 
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
+    <div class="doc doc-contents first">
 
+        <p>Create and register this asset type from an existing content identifier.</p>
 
-        <p>Represents a compiled binary program asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
 
     </div>
 
 </div>
 
-<div class="doc doc-object doc-class">
+<div class="doc doc-object doc-function">
 
 
+<h2 id="eqty_sdk.asset.asset.TypedAsset.with_context" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">with_context</span>
 
-<h2 id="eqty_sdk.asset.Certificate" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Certificate</span>
 
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Certificate</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">with_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </code></pre></div>
 
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
+    <div class="doc doc-contents first">
 
+        <p>Return factory methods that register this asset in <code>ctx</code>.</p>
 
-        <p>Represents a certificate asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Code" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Code</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Code</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a code asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Configuration" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Configuration</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Configuration</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a configuration asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Credential" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Credential</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Credential</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a credential asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Custom" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Custom</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Custom</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="eqty_sdk.asset.asset.Asset" href="#eqty_sdk.asset.Asset">Asset</a></code></p>
-
-
-        <p>Represents a Custom asset with user-specified asset type.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Database" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Database</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Database</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a database asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Dataset" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Dataset</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Dataset</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a dataset asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Document" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Document</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Document</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a document asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Guardrail" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Guardrail</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Guardrail</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a guardrail asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Media" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Media</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Media</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a media asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Model" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Model</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Model</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a model asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Prompt" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Prompt</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Prompt</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a Prompt asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Reasoning" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Reasoning</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Reasoning</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a reasoning asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Skill" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Skill</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Skill</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a skill asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.SystemPrompt" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">SystemPrompt</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">SystemPrompt</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a System Prompt asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Token" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Token</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Token</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a token asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="eqty_sdk.asset.Tool" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Tool</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Tool</span><span class="p">(</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-    <span class="n">asset_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">AssetType</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
-    <span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span>
-    <span class="n">is_dir</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">custom_ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">],</span>
-    <span class="o">**</span><span class="n">kwargs</span>
-<span class="p">)</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="eqty_sdk.asset.asset.TypedAsset">TypedAsset</span></code></p>
-
-
-        <p>Represents a tool asset.</p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-
-
-
-  </div>
 
     </div>
 

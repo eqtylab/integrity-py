@@ -46,6 +46,10 @@
                 <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
                 </li>
               </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../quick-start.html">Quick Start</a>
+                </li>
+              </ul>
               <p class="caption"><span class="caption-text">Install</span></p>
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="min-version.html">Min Version</a>
@@ -163,9 +167,9 @@
 </code></pre>
 <h2 id="install-from-the-source-distribution">Install From The Source Distribution</h2>
 <p>Once Rust is available, install the package with <code>pip</code> and force a source build:</p>
-<pre><code class="language-bash">python -m pip install --index-url https://pypi.eqtylab.io/simple/ --no-binary eqty_sdk eqty_sdk
+<pre><code class="language-bash">python -m pip install --no-binary eqty_sdk eqty_sdk
 </code></pre>
-<p><code>pip</code> will download the source distribution from the Eqty package index, create a build environment, and compile the Rust extension as part of the install.</p>
+<p><code>pip</code> will download the source distribution from PyPI, create a build environment, and compile the Rust extension as part of the install.</p>
 <p>If you are installing from a specific source archive you already downloaded, point <code>pip</code> at that file directly:</p>
 <pre><code class="language-bash">python -m pip install ./eqty_sdk-&lt;version&gt;.tar.gz
 </code></pre>

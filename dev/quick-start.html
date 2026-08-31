@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Quick Start - eqty_sdk Documentation</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="stylesheets/extra.css" rel="stylesheet" />
+        <link href="css/version-select.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Quick Start";
+        var mkdocs_page_input_path = "quick-start.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="index.html" class="icon icon-home"> eqty_sdk Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Quick Start</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#1-install">1. Install</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#2-run-a-complete-example">2. Run a complete example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#3-view-the-manifest-in-explorer">3. View the manifest in Explorer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#assets-type-and-source-are-separate-choices">Assets: type and source are separate choices</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#compute-decorator-or-builder">Compute: decorator or builder</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#decide-whether-to-retain-pre-image-blobs">Decide whether to retain pre-image blobs</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="install/source.html">Source</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="examples/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="examples/basic-workflow.html">Basic Workflow</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="examples/async-compute.html">Async Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="examples/context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="examples/nested-contexts.html">Nested Contexts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="examples/path-backed-assets.html">Path-Backed Assets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="examples/auth-service-signer.html">Auth Service Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="examples/service-registering.html">Service Registering</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="examples/custom-serialize.html">Spark Parquet Input</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="examples/model-signing.html">Model Signing</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="api/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/init-and-config.html">Init And Config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/global-functions.html">Global Functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/cid.html">CID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/did.html">DID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/uuid.html">UUID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/assets.html">Assets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/compute.html">Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/context.html">Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/declaration.html">Declaration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/service.html">Service</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/signer.html">Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/statements.html">Statements</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="api/verification.html">Verification</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">eqty_sdk Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html" class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Quick Start</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="quick-start">Quick Start</h1>
+<p>In about 10 minutes, you will install the SDK, run a small lineage-tracked workflow, export an Integrity Manifest, and open it in Explorer. Along the way, you will create a software DID signer, register data, and record a computation.</p>
+<h2 id="1-install">1. Install</h2>
+<p>The package is published on <a href="https://pypi.org/">PyPI</a>. Install it with:</p>
+<pre><code class="language-bash">python -m pip install eqty_sdk
+</code></pre>
+<p>Verify the installation:</p>
+<pre><code class="language-bash">python -c &quot;import eqty_sdk; print(eqty_sdk.__file__)&quot;
+</code></pre>
+<h2 id="2-run-a-complete-example">2. Run a complete example</h2>
+<p>Create <code>quick_start.py</code> with the following code, then run
+<code>python quick_start.py</code>.</p>
+<pre><code class="language-python">from pathlib import Path
+
+from eqty_sdk import (
+    CID,
+    DID,
+    SIGNER_ALGORITHMS,
+    Computation,
+    Dataset,
+    Signer,
+    compute,
+    init,
+    set_active_signer,
+)
+
+# Configure SDK
+ctx = init().set_store_all_blobs(True).get_default_context()
+
+# Set signer
+signer = Signer.new(SIGNER_ALGORITHMS.SECP256R1)
+set_active_signer(signer)
+did = DID.from_signer(
+    signer, name=&quot;My key&quot;, description=&quot;My Ed25519 signing key for integrity statements.&quot;
+)
+
+# Create sample objects
+my_object = &quot;My Object&quot;
+my_path = &quot;./&quot;
+my_cid = CID(&quot;bafkr4icqw77khu73vgw74jpnlnep37ec3l6jd4lg5kvw2letvqjhgk6jmi&quot;)
+
+# Registering a serializable Python object
+d0 = Dataset.from_object(my_object, name=&quot;My dataset 0&quot;, description=&quot;My description for dataset 0&quot;)
+
+# Registering a file or directory of files from the file system
+d1 = Dataset.from_path(
+    my_path,
+    name=&quot;My dataset 1&quot;,
+    description=&quot;My description for dataset 1&quot;,
+)
+
+# Registering a data asset or collection of assets by its CID
+d2 = Dataset.from_cid(
+    my_cid, name=&quot;My dataset 2&quot;, description=&quot;My description for dataset 2&quot;, foo=&quot;bar&quot;
+)
+
+# Registering a computation with builder
+computation = (
+    Computation.new().add_input_cid(d0.cid).add_input_cid(d1.cid).add_output_cid(d2.cid).finalize()
+)
+
+
+@compute(
+    metadata={
+        &quot;name&quot;: &quot;My computation&quot;,
+        &quot;description&quot;: &quot;My description for the computation&quot;,
+        &quot;foo&quot;: &quot;bar&quot;,
+    }
+)
+def my_function(input_0: Dataset, input_1: Dataset):
+    my_output_object = str(input_0.value) + str(input_1.value)
+    output = Dataset.from_object(
+        my_output_object, name=&quot;My dataset&quot;, description=&quot;My description for the output dataset&quot;
+    )
+    return output
+
+
+my_function(d0, d1)
+
+# Export manifest
+path = Path(&quot;./manifest_simple.json&quot;)
+ctx.export(path)
+ctx.delete_tree()
+## Optionally delete all the created statements
+# purge_statement_store()
+
+## Optionally delete all the stored blobs
+# purge_blob_store()
+
+</code></pre>
+<p>The script prints the formatted prompt and writes <code>manifests/quick-start.json</code>. <code>Signer.load_or_create(...)</code> gives the process a stable, local software key and DID. With that signer active, the SDK attributes and signs the statements it produces; rerunning the script uses the same DID rather than creating a new identity.</p>
+<h2 id="3-view-the-manifest-in-explorer">3. View the manifest in Explorer</h2>
+<p>In <a href="https://explorer.eqtylab.io">Explorer</a>, import or upload <code>manifests/quick-start.json</code>. Open the imported graph and select nodes to inspect their metadata, CIDs, statements, and signing identity.</p>
+<p>The graph is a provenance map, not a control-flow trace:</p>
+<ul>
+<li><strong>Asset nodes</strong> represent the content-addressed inputs and outputs, such as the system prompt, the user prompt, the temperature, the formatter's source code, and its result.</li>
+<li><strong>Compute nodes</strong> represent an execution. Their incoming edges are the inputs used by that execution; their outgoing edges are the assets it produced.</li>
+<li><strong>Statement and metadata nodes</strong> provide the assertions that connect those objects, including the DID-backed signatures.</li>
+</ul>
+<p>Start at <code>Prompt Formatter</code>, follow its input edges to see what informed the result, then follow output edges to see what it created. Select an asset when you need its CID or metadata, and select a statement when you need to inspect the signed provenance assertion.</p>
+<h2 id="assets-type-and-source-are-separate-choices">Assets: type and source are separate choices</h2>
+<p>An asset type describes <em>what</em> content represents. The SDK includes types such as <code>Dataset</code>, <code>Model</code>, <code>Prompt</code>, <code>SystemPrompt</code>, <code>Code</code>, <code>Document</code>, <code>Agent</code>, <code>Tool</code>, <code>Configuration</code>, <code>Guardrail</code>, and <code>Custom</code>; see the complete <a href="api/assets.html#built-in-asset-types">asset reference</a>.</p>
+<p>For nearly every type, choose one of three constructors based on <em>where</em> the content comes from:</p>
+<pre><code class="language-python">from eqty_sdk import CID, Dataset, Document, Model
+
+rows = Dataset.from_object([{&quot;id&quot;: 1, &quot;text&quot;: &quot;hello&quot;}])
+policy = Document.from_path(&quot;policies/retention.md&quot;)
+known_model = Model.from_cid(
+    CID(&quot;bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku&quot;)
+)
+</code></pre>
+<ul>
+<li><code>from_object(...)</code> serializes in-memory content, computes its CID, and registers it.</li>
+<li><code>from_path(...)</code> hashes a file or directory, computes its CID, and registers it.</li>
+<li><code>from_cid(...)</code> registers a typed reference to content already identified by a CID; it does not have a local pre-image to store.</li>
+</ul>
+<p>Use <code>Custom</code> with an <code>asset_type=</code> label when none of the built-in types fits.</p>
+<h2 id="compute-decorator-or-builder">Compute: decorator or builder</h2>
+<p>The example uses <code>@compute</code>, the convenient choice when you want the SDK to capture a normal Python function's source, arguments, return value, and execution relationship.</p>
+<p>Use the <code>Computation</code> builder when the work happens outside a Python function, or when you already have CIDs, paths, or objects for the inputs, output, and computation identity:</p>
+<pre><code class="language-python">from eqty_sdk import Computation
+
+(Computation.new(name=&quot;External Training Job&quot;, _store=False)
+    .add_input_path(&quot;data/train.csv&quot;)
+    .add_output_path(&quot;artifacts/model.bin&quot;)
+    .set_computation_object({&quot;job&quot;: &quot;train-v1&quot;, &quot;runtime&quot;: &quot;remote&quot;})
+    .finalize())
+</code></pre>
+<p>Both approaches create the same essential lineage: the computation links its input CIDs to its output CIDs and receives metadata and signed statements. The builder's <code>_store</code> setting applies to every object and path it hashes.</p>
+<h2 id="decide-whether-to-retain-pre-image-blobs">Decide whether to retain pre-image blobs</h2>
+<p>Every object or path registration computes a CID whether or not its original bytes are retained. Retaining the bytes (the <strong>pre-image blob</strong>) makes the content available for later manifest/service workflows, but it can consume disk space and may be inappropriate for sensitive or large data.</p>
+<p>Choose the default for the whole SDK configuration:</p>
+<pre><code class="language-python">cfg = init()
+cfg.set_store_all_blobs(True)   # retain every newly hashed pre-image by default
+</code></pre>
+<p>Set it to <code>True</code> when you plan to register blobs with a service, need local reproducibility, or want the content available alongside its manifest. Set it to <code>False</code> when only CIDs and provenance are needed locally, or when retaining the source bytes would be too costly or sensitive.</p>
+<p>Override that default for an individual data registration with <code>_store</code>:</p>
+<pre><code class="language-python">public_summary = Dataset.from_object({&quot;count&quot;: 42}, _store=True)
+sensitive_rows = Dataset.from_path(&quot;private/records.csv&quot;, _store=False)
+</code></pre>
+<p>The same override is available when you register a compute with either the builder or decorator. For a decorator, it applies to the code, captured inputs, and outputs it hashes:</p>
+<pre><code class="language-python">@compute(metadata={&quot;name&quot;: &quot;Sensitive transform&quot;}, _store=False)
+def transform(rows: Dataset) -&gt; str:
+    return &quot;redacted summary&quot;
+</code></pre>
+<p>Use per-call <code>_store=True</code> to preserve an important, non-sensitive input or result when the global default is <code>False</code>; use <code>_store=False</code> to opt a specific sensitive or very large registration out when the global default is <code>True</code>. <code>from_cid(...)</code> has no <code>_store</code> option because it only refers to an existing CID and does not provide bytes for the SDK to retain.</p>
+<p>For full configuration and service-registration details, see
+<a href="api/init-and-config.html">Init and Config</a> and
+<a href="examples/service-registering.html">Service Registering</a>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="index.html" class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="install/min-version.html" class="btn btn-neutral float-right" title="Min Version">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="index.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="install/min-version.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="javascripts/theme-toggle.js"></script>
+      <script src="search/main.js"></script>
+      <script src="js/version-select.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
