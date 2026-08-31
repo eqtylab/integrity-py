@@ -63,7 +63,7 @@ jobs:
             exit 1
           fi
           python_abi_tag="${python_major}${python_minor}"
-          build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_x86_64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|dist/auditwheel-show-musllinux-x86_64.txt'
+          build_specs=$'linux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|dist/auditwheel-show-musllinux-x86_64.txt'
 
           while IFS='|' read -r out_dir builder_image compatibility auditwheel_report; do
             [ -n "$out_dir" ] || continue
@@ -205,6 +205,7 @@ jobs:
           find dist -mindepth 2 -type f \( -name '*.whl' -o -name '*.tar.gz' \) -print0 \
             | xargs -0 -r -n1 mv -t dist
           find dist -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
+          find dist -maxdepth 1 -type f -name '*-linux_*.whl' -delete
 
       - name: Publish package distributions to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1

@@ -9,10 +9,10 @@ on:
     tags:
       - v*.*.*
   workflow_dispatch:
+    inputs:
       eqty_sdk_version:
         description: SDK version to publish
-        required: false
-        default: "0.0.0"
+        required: true
 
 jobs:
   build_and_publish:
@@ -72,10 +72,12 @@ jobs:
         run: sed -i '' 's/description = ".*"/description = "'"$(git rev-parse --short=7 HEAD)"'"/' Cargo.toml
 
       - name: Set Python package version (linux/windows)
-        if: runner.os != 'macOS' && github.event_name == 'push' && github.ref_type == 'tag'
+        if: runner.os != 'macOS'
         shell: bash
+        env:
+          VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || github.ref_name }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${VERSION#v}"
           case "$version" in
             ''|*[!0-9A-Za-z.+!_-]*)
               echo "Tag version contains unsupported characters: $version"
@@ -85,9 +87,11 @@ jobs:
           sed -i '/^\[project\]$/,/^\[/{s|^version = ".*"|version = "'"$version"'"|}' pyproject.toml
 
       - name: Set Python package version (macos)
-        if: runner.os == 'macOS' && github.event_name == 'push' && github.ref_type == 'tag'
+        if: runner.os == 'macOS'
+        env:
+          VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || github.ref_name }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${VERSION#v}"
           case "$version" in
             ''|*[!0-9A-Za-z.+!_-]*)
               echo "Tag version contains unsupported characters: $version"
@@ -109,10 +113,10 @@ jobs:
 
           case "${{ matrix.platform }}" in
             ubuntu-latest-large)
-              build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_x86_64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|dist/auditwheel-show-musllinux-x86_64.txt'
+              build_specs=$'linux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|dist/auditwheel-show-musllinux-x86_64.txt'
               ;;
             ubuntu-aarch64)
-              build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_aarch64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_aarch64|manylinux2014|dist/auditwheel-show-linux-aarch64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_aarch64|musllinux_1_2|dist/auditwheel-show-musllinux-aarch64.txt'
+              build_specs=$'linux-manylinux|quay.io/pypa/manylinux2014_aarch64|manylinux2014|dist/auditwheel-show-linux-aarch64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_aarch64|musllinux_1_2|dist/auditwheel-show-musllinux-aarch64.txt'
               ;;
             *)
               echo "Unsupported Linux runner: ${{ matrix.platform }}"
@@ -312,6 +316,7 @@ jobs:
             dist/*.whl
             dist/**/*.whl
             dist/sdist/*.tar.gz
+          if-no-files-found: error
 
   publish_to_pypi:
     needs: build_and_publish
@@ -326,6 +331,14 @@ jobs:
           pattern: package-distributions-*
           path: dist
           merge-multiple: true
+
+      - name: Flatten package distributions
+        shell: bash
+        run: |
+          find dist -mindepth 2 -type f \( -name '*.whl' -o -name '*.tar.gz' \) -print0 \
+            | xargs -0 -r -n1 mv -t dist
+          find dist -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
+          find dist -maxdepth 1 -type f -name '*-linux_*.whl' -delete
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
