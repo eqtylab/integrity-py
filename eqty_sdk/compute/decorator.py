@@ -12,12 +12,12 @@ logger = logging.getLogger("eqty.sdk.decorator")
 def compute(
     metadata: Optional[Dict[str, Any]] = None,
     ctx: Optional[Context] = None,
+    _store: Optional[bool] = None,
     **compute_kwargs,
 ):
     def decorator(func: Callable):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            _store = None
             compute_asset = Compute(func, metadata, _store, ctx, **compute_kwargs)
             result = compute_asset.__call__(*args, **kwargs)
 
