@@ -14,7 +14,7 @@ on:
 
 jobs:
   build_and_publish:
-    runs-on: ubuntu-xlarge
+    runs-on: ubuntu-latest-large
     steps:
       - name: Install Nix
         uses: eqtylab-actions/install-nix-action@v31
@@ -170,7 +170,7 @@ jobs:
 
   publish_to_testpypi:
     needs: build_and_publish
-    runs-on: ubuntu-xlarge
+    runs-on: ubuntu-latest-large
     permissions:
       contents: read
       id-token: write
