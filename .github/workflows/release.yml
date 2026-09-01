@@ -376,9 +376,42 @@ jobs:
               });
             }
 
-  publish_release_docs:
-    if: startsWith(github.ref, 'refs/tags/')
+  release_metadata:
     needs: publish_to_pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      publish_docs: ${{ steps.release.outputs.publish_docs }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Determine GitHub Release status
+        id: release
+        uses: actions/github-script@v8
+        env:
+          RELEASE_IDENTIFIER: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || github.ref_name }}
+        with:
+          script: |
+            const identifier = process.env.RELEASE_IDENTIFIER;
+            const tag = identifier.startsWith('v') ? identifier : `v${identifier}`;
+            try {
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag,
+              });
+              core.setOutput('publish_docs', String(!release.data.prerelease));
+              core.setOutput('version', tag.replace(/^v/, ''));
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              core.warning(`No GitHub Release found for ${tag}; skipping docs publication.`);
+              core.setOutput('publish_docs', 'false');
+              core.setOutput('version', '');
+            }
+
+  publish_release_docs:
+    if: needs.release_metadata.outputs.publish_docs == 'true'
+    needs: release_metadata
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -455,8 +488,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Deploy versioned docs
+        env:
+          VERSION: ${{ needs.release_metadata.outputs.version }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           git fetch origin gh-pages --depth=1 || true
           nix develop . -c poetry run mike deploy --push --update-aliases "$VERSION" latest
           nix develop . -c poetry run mike set-default --push latest
