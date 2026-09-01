@@ -84,7 +84,7 @@ jobs:
               exit 1
               ;;
           esac
-          sed -i '/^\[project\]$/,/^\[/{s|^version = ".*"|version = "'"$version"'"|}' pyproject.toml
+          sed -i '/^\[project\]$/,/^\[/s/^version = ".*"/version = "'"$version"'"/' pyproject.toml
 
       - name: Set Python package version (macos)
         if: runner.os == 'macOS'
@@ -98,7 +98,7 @@ jobs:
               exit 1
               ;;
           esac
-          sed -i '' '/^\[project\]$/,/^\[/{s|^version = ".*"|version = "'"$version"'"|}' pyproject.toml
+          sed -i '' '/^\[project\]$/,/^\[/s/^version = ".*"/version = "'"$version"'"/' pyproject.toml
 
       - name: Build sdist
         if: matrix.platform == 'ubuntu-latest-large'
