@@ -46,7 +46,7 @@ build-backend = "maturin"
 name = "eqty_sdk"
 version = "0.0.0" # replaced from the release tag by release.yml
 description = "Python SDK for generating cryptographically verifiable manifests, modeling asset lineage, signing outputs, and integrating with Governance Studio."
-readme = { file = "README.md", content-type = "text/markdown" }
+readme = { file = "pypi-readme.md", content-type = "text/markdown" }
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
