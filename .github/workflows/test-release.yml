@@ -8,13 +8,18 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Unique version to publish to TestPyPI
-        required: true
+        description: Unique version to publish to TestPyPI (required when building)
+        required: false
+        type: string
+      publish_run_id:
+        description: Existing TestPyPI workflow run ID whose artifacts should be published (leave blank to build)
+        required: false
         type: string
 
 jobs:
   build_and_publish:
-    runs-on: ubuntu-xlarge
+    if: inputs.publish_run_id == ''
+    runs-on: ubuntu-latest-large
     steps:
       - name: Install Nix
         uses: eqtylab-actions/install-nix-action@v31
@@ -49,6 +54,43 @@ jobs:
           esac
           sed -i '/^\[project\]$/,/^\[/{s|^version = ".*"|version = "'"$VERSION"'"|}' pyproject.toml
 
+      - name: Build sdist from clean checkout
+        shell: bash
+        run: |
+          IFS='.' read -r python_major python_minor _ < .python-version
+          if [ -z "${python_major}" ] || [ -z "${python_minor}" ]; then
+            echo "Expected at least major.minor in .python-version"
+            exit 1
+          fi
+          python_abi_tag="${python_major}${python_minor}"
+
+          mkdir -p dist/sdist
+          docker run --rm \
+            -e PYTHON_ABI_TAG="${python_abi_tag}" \
+            -e HOST_UID="$(id -u)" \
+            -e HOST_GID="$(id -g)" \
+            -v "${PWD}:/io" \
+            -w /io \
+            quay.io/pypa/manylinux2014_x86_64 \
+            /bin/sh -lc '
+              set -eu
+              curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+              . "$HOME/.cargo/env"
+              pybin="/opt/python/cp${PYTHON_ABI_TAG}-cp${PYTHON_ABI_TAG}/bin/python"
+              "$pybin" -m pip install --upgrade pip maturin
+              "$pybin" -m maturin sdist --manifest-path Cargo.toml --out dist/sdist
+              chown -R "$HOST_UID:$HOST_GID" dist/sdist
+            '
+
+      - name: Verify sdist size
+        shell: bash
+        run: |
+          sdist="$(find dist/sdist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+          test -n "$sdist"
+          size_bytes="$(stat -c %s "$sdist")"
+          echo "$(basename "$sdist"): ${size_bytes} bytes"
+          test "$size_bytes" -le 104857600
+
       - name: Build Linux Wheels
         shell: bash
         run: |
@@ -58,7 +100,7 @@ jobs:
             exit 1
           fi
           python_abi_tag="${python_major}${python_minor}"
-          build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_x86_64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|dist/auditwheel-show-musllinux-x86_64.txt'
+          build_specs=$'linux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|dist/auditwheel-show-musllinux-x86_64.txt'
 
           while IFS='|' read -r out_dir builder_image compatibility auditwheel_report; do
             [ -n "$out_dir" ] || continue
@@ -126,39 +168,6 @@ jobs:
               '
           done <<< "${build_specs}"
 
-      - name: Build sdist
-        shell: bash
-        run: |
-          IFS='.' read -r python_major python_minor _ < .python-version
-          if [ -z "${python_major}" ] || [ -z "${python_minor}" ]; then
-            echo "Expected at least major.minor in .python-version"
-            exit 1
-          fi
-          python_abi_tag="${python_major}${python_minor}"
-
-          rm -rf dist/sdist
-          mkdir -p dist/sdist
-
-          docker run --rm \
-            -e PYTHON_ABI_TAG="${python_abi_tag}" \
-            -e HOST_UID="$(id -u)" \
-            -e HOST_GID="$(id -g)" \
-            -v "${PWD}:/io" \
-            -w /io \
-            quay.io/pypa/manylinux2014_x86_64 \
-            /bin/sh -lc '
-              set -eu
-
-              curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
-              . "$HOME/.cargo/env"
-
-              pybin="/opt/python/cp${PYTHON_ABI_TAG}-cp${PYTHON_ABI_TAG}/bin/python"
-              "$pybin" -m pip install --upgrade pip maturin
-              "$pybin" -m maturin sdist --manifest-path Cargo.toml --out dist/sdist
-
-              chown -R "$HOST_UID:$HOST_GID" dist/sdist
-            '
-
       - name: Upload package distributions
         uses: actions/upload-artifact@v6
         with:
@@ -167,22 +176,45 @@ jobs:
             dist/*.whl
             dist/**/*.whl
             dist/sdist/*.tar.gz
+          if-no-files-found: error
 
   publish_to_testpypi:
     needs: build_and_publish
-    runs-on: ubuntu-xlarge
+    if: always() && (inputs.publish_run_id != '' || needs.build_and_publish.result == 'success')
+    runs-on: ubuntu-latest-large
     permissions:
+      actions: read
       contents: read
       id-token: write
     steps:
-      - name: Download package distributions
+      - name: Download package distributions from this run
+        if: inputs.publish_run_id == ''
         uses: actions/download-artifact@v7
         with:
           name: package-distributions-linux-x86_64
           path: dist
+
+      - name: Download package distributions from the specified run
+        if: inputs.publish_run_id != ''
+        uses: actions/download-artifact@v7
+        with:
+          name: package-distributions-linux-x86_64
+          path: dist
+          run-id: ${{ inputs.publish_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Flatten package distributions
+        shell: bash
+        run: |
+          find dist -mindepth 2 -type f \( -name '*.whl' -o -name '*.tar.gz' \) -print0 \
+            | xargs -0 -r -n1 mv -t dist
+          find dist -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
+          find dist -maxdepth 1 -type f ! \( -name '*.whl' -o -name '*.tar.gz' \) -delete
+          find dist -maxdepth 1 -type f -name '*-linux_*.whl' -delete
 
       - name: Publish package distributions to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
           packages-dir: dist
+          skip-existing: true

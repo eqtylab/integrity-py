@@ -9,10 +9,10 @@ on:
     tags:
       - v*.*.*
   workflow_dispatch:
+    inputs:
       eqty_sdk_version:
         description: SDK version to publish
-        required: false
-        default: "0.0.0"
+        required: true
 
 jobs:
   build_and_publish:
@@ -72,29 +72,76 @@ jobs:
         run: sed -i '' 's/description = ".*"/description = "'"$(git rev-parse --short=7 HEAD)"'"/' Cargo.toml
 
       - name: Set Python package version (linux/windows)
-        if: runner.os != 'macOS' && github.event_name == 'push' && github.ref_type == 'tag'
+        if: runner.os != 'macOS'
         shell: bash
+        env:
+          VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || github.ref_name }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${VERSION#v}"
           case "$version" in
             ''|*[!0-9A-Za-z.+!_-]*)
               echo "Tag version contains unsupported characters: $version"
               exit 1
               ;;
           esac
-          sed -i '/^\[project\]$/,/^\[/{s|^version = ".*"|version = "'"$version"'"|}' pyproject.toml
+          sed -i '/^\[project\]$/,/^\[/s/^version = ".*"/version = "'"$version"'"/' pyproject.toml
 
       - name: Set Python package version (macos)
-        if: runner.os == 'macOS' && github.event_name == 'push' && github.ref_type == 'tag'
+        if: runner.os == 'macOS'
+        env:
+          VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || github.ref_name }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${VERSION#v}"
           case "$version" in
             ''|*[!0-9A-Za-z.+!_-]*)
               echo "Tag version contains unsupported characters: $version"
               exit 1
               ;;
           esac
-          sed -i '' '/^\[project\]$/,/^\[/{s|^version = ".*"|version = "'"$version"'"|}' pyproject.toml
+          sed -i '' '/^\[project\]$/,/^\[/s/^version = ".*"/version = "'"$version"'"/' pyproject.toml
+
+      - name: Build sdist
+        if: matrix.platform == 'ubuntu-latest-large'
+        shell: bash
+        run: |
+          IFS='.' read -r python_major python_minor _ < .python-version
+          if [ -z "${python_major}" ] || [ -z "${python_minor}" ]; then
+            echo "Expected at least major.minor in .python-version"
+            exit 1
+          fi
+          python_abi_tag="${python_major}${python_minor}"
+
+          rm -rf dist/sdist
+          mkdir -p dist/sdist
+
+          docker run --rm \
+            -e PYTHON_ABI_TAG="${python_abi_tag}" \
+            -e HOST_UID="$(id -u)" \
+            -e HOST_GID="$(id -g)" \
+            -v "${PWD}:/io" \
+            -w /io \
+            quay.io/pypa/manylinux2014_x86_64 \
+            /bin/sh -lc '
+              set -eu
+
+              curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+              . "$HOME/.cargo/env"
+
+              pybin="/opt/python/cp${PYTHON_ABI_TAG}-cp${PYTHON_ABI_TAG}/bin/python"
+              "$pybin" -m pip install --upgrade pip maturin
+              "$pybin" -m maturin sdist --manifest-path Cargo.toml --out dist/sdist
+              chown -R "$HOST_UID:$HOST_GID" dist/sdist
+            '
+
+      - name: Verify sdist size
+        if: matrix.platform == 'ubuntu-latest-large'
+        shell: bash
+        run: |
+          sdist="$(find dist/sdist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+          test -n "$sdist"
+          size_bytes="$(stat -c %s "$sdist")"
+          echo "$(basename "$sdist"): ${size_bytes} bytes"
+          test "$size_bytes" -le 104857600
 
       - name: Build Linux Wheel
         if: runner.os == 'Linux'
@@ -109,10 +156,10 @@ jobs:
 
           case "${{ matrix.platform }}" in
             ubuntu-latest-large)
-              build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_x86_64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|dist/auditwheel-show-musllinux-x86_64.txt'
+              build_specs=$'linux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|dist/auditwheel-show-musllinux-x86_64.txt'
               ;;
             ubuntu-aarch64)
-              build_specs=$'linux-generic|quay.io/pypa/musllinux_1_2_aarch64|off|\nlinux-manylinux|quay.io/pypa/manylinux2014_aarch64|manylinux2014|dist/auditwheel-show-linux-aarch64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_aarch64|musllinux_1_2|dist/auditwheel-show-musllinux-aarch64.txt'
+              build_specs=$'linux-manylinux|quay.io/pypa/manylinux2014_aarch64|manylinux2014|dist/auditwheel-show-linux-aarch64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_aarch64|musllinux_1_2|dist/auditwheel-show-musllinux-aarch64.txt'
               ;;
             *)
               echo "Unsupported Linux runner: ${{ matrix.platform }}"
@@ -185,41 +232,6 @@ jobs:
                 chown -R "$HOST_UID:$HOST_GID" dist
               '
           done <<< "${build_specs}"
-
-      - name: Build sdist
-        if: matrix.platform == 'ubuntu-latest-large'
-        shell: bash
-        run: |
-          IFS='.' read -r python_major python_minor _ < .python-version
-          if [ -z "${python_major}" ] || [ -z "${python_minor}" ]; then
-            echo "Expected at least major.minor in .python-version"
-            exit 1
-          fi
-          python_abi_tag="${python_major}${python_minor}"
-
-          rm -rf dist/sdist
-          mkdir -p dist/sdist
-
-          docker run --rm \
-            -e PYTHON_ABI_TAG="${python_abi_tag}" \
-            -e HOST_UID="$(id -u)" \
-            -e HOST_GID="$(id -g)" \
-            -v "${PWD}:/io" \
-            -w /io \
-            quay.io/pypa/manylinux2014_x86_64 \
-            /bin/sh -lc '
-              set -eu
-
-              curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
-              . "$HOME/.cargo/env"
-
-              pybin="/opt/python/cp${PYTHON_ABI_TAG}-cp${PYTHON_ABI_TAG}/bin/python"
-              "$pybin" -m pip install --upgrade pip maturin
-
-              "$pybin" -m maturin sdist --manifest-path Cargo.toml --out dist/sdist
-
-              chown -R "$HOST_UID:$HOST_GID" dist/sdist
-            '
 
       - name: Upload auditwheel report
         if: runner.os == 'Linux'
@@ -312,6 +324,7 @@ jobs:
             dist/*.whl
             dist/**/*.whl
             dist/sdist/*.tar.gz
+          if-no-files-found: error
 
   publish_to_pypi:
     needs: build_and_publish
@@ -326,6 +339,14 @@ jobs:
           pattern: package-distributions-*
           path: dist
           merge-multiple: true
+
+      - name: Flatten package distributions
+        shell: bash
+        run: |
+          find dist -mindepth 2 -type f \( -name '*.whl' -o -name '*.tar.gz' \) -print0 \
+            | xargs -0 -r -n1 mv -t dist
+          find dist -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
+          find dist -maxdepth 1 -type f -name '*-linux_*.whl' -delete
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -355,9 +376,42 @@ jobs:
               });
             }
 
-  publish_release_docs:
-    if: startsWith(github.ref, 'refs/tags/')
+  release_metadata:
     needs: publish_to_pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      publish_docs: ${{ steps.release.outputs.publish_docs }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Determine GitHub Release status
+        id: release
+        uses: actions/github-script@v8
+        env:
+          RELEASE_IDENTIFIER: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || github.ref_name }}
+        with:
+          script: |
+            const identifier = process.env.RELEASE_IDENTIFIER;
+            const tag = identifier.startsWith('v') ? identifier : `v${identifier}`;
+            try {
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag,
+              });
+              core.setOutput('publish_docs', String(!release.data.prerelease));
+              core.setOutput('version', tag.replace(/^v/, ''));
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              core.warning(`No GitHub Release found for ${tag}; skipping docs publication.`);
+              core.setOutput('publish_docs', 'false');
+              core.setOutput('version', '');
+            }
+
+  publish_release_docs:
+    if: needs.release_metadata.outputs.publish_docs == 'true'
+    needs: release_metadata
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -434,8 +488,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Deploy versioned docs
+        env:
+          VERSION: ${{ needs.release_metadata.outputs.version }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           git fetch origin gh-pages --depth=1 || true
           nix develop . -c poetry run mike deploy --push --update-aliases "$VERSION" latest
           nix develop . -c poetry run mike set-default --push latest
