@@ -68,8 +68,18 @@ impl From<CidIgnoreSettings> for CidIgnoreConfig {
 }
 
 static CFG: Lazy<RwLock<Option<Config>>> = Lazy::new(|| RwLock::new(None));
+#[cfg(test)]
+static TEST_CONFIG_LOCK: Lazy<std::sync::Mutex<()>> = Lazy::new(|| std::sync::Mutex::new(()));
 task_local! {
     static IN_WITH_CFG: bool;
+}
+
+/// Serializes tests that replace the process-wide SDK configuration.
+#[cfg(test)]
+pub(crate) fn lock_test_config() -> std::sync::MutexGuard<'static, ()> {
+    TEST_CONFIG_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 /// Macro to reduce boilerplate for async config operations in pyfunctions.

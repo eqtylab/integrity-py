@@ -49,7 +49,7 @@ mod tests {
     use serde_json;
     use tempfile::tempdir;
 
-    use crate::config::{cfg_async, Config};
+    use crate::config::{cfg_async, lock_test_config, Config};
 
     /// Creates a minimal valid W3C VC for testing
     fn create_test_credential() -> Credential {
@@ -172,6 +172,7 @@ mod tests {
 
     #[test]
     fn test_context_without_signer_returns_none() {
+        let _config_guard = lock_test_config();
         let temp_dir = tempdir().unwrap();
         get_runtime().block_on(async {
             Config::reset_internal().await.unwrap();
@@ -184,6 +185,7 @@ mod tests {
 
     #[test]
     fn test_context_with_signer() {
+        let _config_guard = lock_test_config();
         let temp_dir = tempdir().unwrap();
         get_runtime().block_on(async {
             Config::reset_internal().await.unwrap();

@@ -18,7 +18,7 @@ mod tests {
     use uuid::Uuid;
 
     use crate::{
-        config::Config,
+        config::{lock_test_config, Config},
         indexer::{Context, Sqlite},
     };
 
@@ -53,6 +53,7 @@ mod tests {
         app_dir: &Path,
         f: impl FnOnce(Python<'_>, Config) -> Result<T>,
     ) -> Result<T> {
+        let _config_guard = lock_test_config();
         Python::initialize();
         Python::attach(|py| {
             py.detach(|| get_runtime().block_on(Config::reset_internal()))?;
