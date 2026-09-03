@@ -159,10 +159,10 @@ questions:</p>
   signature over some <em>other</em> subject proves nothing about the statement in hand, so the two checks
   belong together.</li>
 </ul>
-<p>Both run <strong>fully offline</strong>. JSON-LD contexts resolve against documents compiled into the package, and
-credentials are restricted to DID methods that can be resolved from the identifier itself, so
-verification never reaches the network. This is what makes them usable in an air-gapped or
-reproducible pipeline.</p>
+<p>Both run <strong>fully offline</strong>. JSON-LD contexts resolve against documents compiled into the package or
+supplied by you via <code>contexts=</code>, and credentials are restricted to DID methods that can be resolved
+from the identifier itself, so verification never reaches the network. This is what makes them usable
+in an air-gapped or reproducible pipeline.</p>
 <p>There is no manifest-level entry point. Verifying a whole manifest means looping these two functions
 over its <code>statements</code>, which is what the explorer does:</p>
 <pre><code class="language-python">import json
@@ -227,6 +227,11 @@ keys the context does not define.</p>
 </div><h2 id="verify_vc"><code>verify_vc</code></h2>
 <p>Supply <code>statement_id</code> whenever you know which statement the credential is supposed to attest. Without
 it, only the signature is checked.</p>
+<p>Supply <code>contexts</code> whenever the credential's <code>@context</code> references a document this build does not
+embed. Verification re-expands the credential, so an unresolvable context means the proof cannot be
+checked at all — and because nothing is fetched, that surfaces as <code>False</code> rather than an error,
+indistinguishable from a bad signature. If a credential you expect to be valid returns <code>False</code>, an
+unsupplied context is the first thing to check.</p>
 <p>This verifies the cryptographic proof alone. Whether a credential has since been <strong>revoked or
 suspended</strong> lives in its status list, which has to be fetched over the network and is deliberately
 not consulted here.</p>
@@ -245,7 +250,9 @@ not consulted here.</p>
 
 </h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">verify_vc</span><span class="p">(</span>
-    <span class="n">vc_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">statement_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">vc_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">statement_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">contexts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
 </code></pre></div>
 
@@ -263,6 +270,13 @@ network access: only <code>did:key</code>, <code>did:jwk</code> and <code>did:pk
 <p>Checks the cryptographic proof only. Revocation and suspension live in the
 credential's status list, which is fetched over the network and is not
 consulted here.</p>
+<p><code>contexts</code> maps a JSON-LD context URI to its context document, for contexts
+this build does not embed. Values may be dicts or JSON strings, so a
+manifest's <code>contexts</code> field can be passed straight through. Note that a
+supplied context takes precedence over an embedded one of the same URI.</p>
+<p>Runs fully offline. Verifying a credential re-expands it, so a context that
+is neither embedded nor supplied is never fetched — it reports <code>False</code>,
+alongside the other reasons a proof may not check out.</p>
 
 
     </div>
