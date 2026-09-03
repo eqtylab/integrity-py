@@ -520,6 +520,55 @@ impl Sqlite {
         Ok(())
     }
 
+    /// Deletes statements linked directly to a graph while preserving the graph.
+    pub async fn delete_graph_statements(&self, graph_id: &Uuid) -> Result<()> {
+        log::debug!("Deleting statements for graph: {graph_id}");
+        let stmt_rows = sqlx::query(
+            "SELECT DISTINCT statement_id FROM statement_graph_link WHERE graph_id = ?1",
+        )
+        .bind(graph_id.to_string())
+        .fetch_all(&self.pool)
+        .await?;
+
+        let statement_ids: Vec<String> = stmt_rows
+            .into_iter()
+            .map(|row| row.get::<String, _>("statement_id"))
+            .collect();
+
+        sqlx::query("DELETE FROM statement_graph_link WHERE graph_id = ?1")
+            .bind(graph_id.to_string())
+            .execute(&self.pool)
+            .await?;
+
+        if statement_ids.is_empty() {
+            return Ok(());
+        }
+
+        let placeholders = vec!["?"; statement_ids.len()].join(", ");
+        let tables = [
+            "computation_statements",
+            "data_statements",
+            "metadata_statements",
+            "storage_statements",
+            "entity_statements",
+            "association_statements",
+        ];
+
+        for table in tables {
+            let q = format!(
+                "DELETE FROM {table} WHERE id IN ({placeholders}) \
+                 AND id NOT IN (SELECT statement_id FROM statement_graph_link)"
+            );
+            let mut sql = sqlx::query(&q);
+            for statement_id in &statement_ids {
+                sql = sql.bind(statement_id);
+            }
+            sql.execute(&self.pool).await?;
+        }
+
+        Ok(())
+    }
+
     /// Registers a statement in the database, optionally associating it with a graph.
     ///
     /// Graph-specific statements (computation, data, metadata, etc.) are linked to the

@@ -177,6 +177,74 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_delete_graph_statements_preserves_graph() -> Result<()> {
+        let db = setup_db().await?;
+        let graph = Context {
+            id: Uuid::new_v4(),
+            name: "cleanup".to_string(),
+            parent: None,
+        };
+        db.create_graph(&graph).await?;
+
+        let data = DataStatement::create(
+            vec!["urn:cid:input1".to_string()],
+            "did:key:tester".to_string(),
+            None,
+        )
+        .await?;
+        db.register_statement(&Statement::DataRegistration(data), &graph.id)
+            .await?;
+
+        db.delete_graph_statements(&graph.id).await?;
+
+        assert_eq!(graph_count(&db).await?, 1);
+        assert_eq!(data_statement_count(&db).await?, 0);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_delete_graph_statements_preserves_shared_statements() -> Result<()> {
+        let db = setup_db().await?;
+        let first = Context {
+            id: Uuid::new_v4(),
+            name: "first".to_string(),
+            parent: None,
+        };
+        let second = Context {
+            id: Uuid::new_v4(),
+            name: "second".to_string(),
+            parent: None,
+        };
+        db.create_graph(&first).await?;
+        db.create_graph(&second).await?;
+
+        let data = DataStatement::create(
+            vec!["urn:cid:input1".to_string()],
+            "did:key:tester".to_string(),
+            None,
+        )
+        .await?;
+        let statement = Statement::DataRegistration(data);
+        let statement_id = statement.get_id();
+        db.register_statement(&statement, &first.id).await?;
+        db.associate_statement_to_graph(&statement_id, &second.id)
+            .await?;
+
+        db.delete_graph_statements(&first.id).await?;
+
+        assert_eq!(data_statement_count(&db).await?, 1);
+        let link_count: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM statement_graph_link WHERE graph_id = ?1 AND statement_id = ?2",
+        )
+        .bind(second.id.to_string())
+        .bind(statement_id)
+        .fetch_one(db.pool())
+        .await?;
+        assert_eq!(link_count.0, 1);
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_delete_graph_tree() -> Result<()> {
         let db = setup_db().await?;
         let root = Context {

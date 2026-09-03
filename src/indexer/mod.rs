@@ -2,7 +2,13 @@ mod sqlite;
 #[cfg(test)]
 mod sqlite_tests;
 
-use std::{collections::HashMap, env, fmt, fs::File, path::PathBuf, sync::Arc};
+use std::{
+    collections::HashMap,
+    env, fmt,
+    fs::File,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use anyhow::{Context as AnyhowContext, Result};
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
@@ -86,9 +92,21 @@ impl Context {
         context
     }
 
-    #[pyo3(signature = (service))]
+    #[pyo3(signature = (service, *, delete_blobs=false, delete_statements=false))]
     /// Registers this context, its ancestors, statements, and blobs with a service.
-    pub fn register(&self, py: Python, service: Service) -> PyResult<()> {
+    ///
+    /// Set `delete_blobs` to remove the locally stored blobs uploaded for this
+    /// registration, `delete_statements` to remove this context's local statement
+    /// records, or both to remove both after a successful registration. Cleanup is
+    /// only attempted after all registration requests succeed. `delete_blobs` does
+    /// not check whether another local context also references a blob.
+    pub fn register(
+        &self,
+        py: Python,
+        service: Service,
+        delete_blobs: bool,
+        delete_statements: bool,
+    ) -> PyResult<()> {
         log::info!("Registering context {}", self.id);
         with_cfg!(py, |ctx| {
             let graph_id = self.id;
@@ -106,9 +124,18 @@ impl Context {
                 8,
             )
             .await?;
+            let blob_cids: Vec<String> = blob_map.keys().cloned().collect();
             service.register_blobs(blob_map).await?;
 
             service.register_statements(graph_id, statements).await?;
+
+            if delete_blobs {
+                delete_local_blobs(&ctx.app_dir, &blob_cids).await?;
+            }
+
+            if delete_statements {
+                sql_client.delete_graph_statements(&graph_id).await?;
+            }
             Ok::<(), anyhow::Error>(())
         })?;
 
@@ -266,6 +293,22 @@ impl Context {
             None => format!("Context(id={}, name={})", self.id, self.name),
         }
     }
+}
+
+async fn delete_local_blobs(app_dir: &Path, blob_cids: &[String]) -> Result<()> {
+    let blob_dir = app_dir.join("blobs");
+    for cid in blob_cids {
+        let cid_path = Path::new(cid);
+        if cid_path.components().count() != 1 {
+            anyhow::bail!("Refusing to delete blob with invalid CID path: {cid}");
+        }
+
+        let path = blob_dir.join(cid_path);
+        if tokio::fs::try_exists(&path).await? {
+            tokio::fs::remove_file(path).await?;
+        }
+    }
+    Ok(())
 }
 
 /// Factory for creating contexts with an optional parent.
