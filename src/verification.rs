@@ -212,6 +212,7 @@ fn ensure_offline_verifiable(vc: &Value) -> Result<(), VerifyError> {
 async fn vc_verifies(
     vc_json: &str,
     expected_subject_id: Option<&str>,
+    contexts: Option<HashMap<String, String>>,
 ) -> Result<bool, VerifyError> {
     let vc = parse_object(vc_json, "VC")?;
 
@@ -225,7 +226,7 @@ async fn vc_verifies(
         }
     }
 
-    match vc::verify_vc(vc_json).await {
+    match vc::verify_vc(vc_json, contexts).await {
         Ok(_) => Ok(true),
         Err(e) => {
             log::debug!("VC proof did not verify: {e:#}");
@@ -283,10 +284,26 @@ pub fn verify_statement(
 /// Checks the cryptographic proof only. Revocation and suspension live in the
 /// credential's status list, which is fetched over the network and is not
 /// consulted here.
+///
+/// `contexts` maps a JSON-LD context URI to its context document, for contexts
+/// this build does not embed. Values may be dicts or JSON strings, so a
+/// manifest's `contexts` field can be passed straight through. Note that a
+/// supplied context takes precedence over an embedded one of the same URI.
+///
+/// Runs fully offline. Verifying a credential re-expands it, so a context that
+/// is neither embedded nor supplied is never fetched — it reports `False`,
+/// alongside the other reasons a proof may not check out.
 #[pyfunction]
-#[pyo3(signature = (vc_json, statement_id=None))]
-pub fn verify_vc(py: Python<'_>, vc_json: String, statement_id: Option<String>) -> PyResult<bool> {
-    py.detach(|| get_runtime().block_on(vc_verifies(&vc_json, statement_id.as_deref())))
+#[pyo3(signature = (vc_json, statement_id=None, contexts=None))]
+pub fn verify_vc(
+    py: Python<'_>,
+    vc_json: String,
+    statement_id: Option<String>,
+    contexts: Option<HashMap<String, Py<PyAny>>>,
+) -> PyResult<bool> {
+    let contexts = contexts_to_json_text(py, contexts)?;
+
+    py.detach(|| get_runtime().block_on(vc_verifies(&vc_json, statement_id.as_deref(), contexts)))
         .map_err(PyErr::from)
 }
 
@@ -432,7 +449,7 @@ mod tests {
         });
         assert!(matches!(
             get_runtime()
-                .block_on(vc_verifies(&web.to_string(), None))
+                .block_on(vc_verifies(&web.to_string(), None, None))
                 .unwrap_err(),
             VerifyError::Failed(_)
         ));
@@ -440,7 +457,7 @@ mod tests {
         // But a credential with no subject is.
         assert!(matches!(
             get_runtime()
-                .block_on(vc_verifies(r#"{"issuer": "did:key:z6Mk"}"#, None))
+                .block_on(vc_verifies(r#"{"issuer": "did:key:z6Mk"}"#, None, None))
                 .unwrap_err(),
             VerifyError::Malformed(_)
         ));
@@ -493,11 +510,55 @@ mod tests {
     fn verifies_a_credential_and_its_subject_binding() {
         let vc_json = signed_vc();
         get_runtime().block_on(async {
-            assert!(vc_verifies(&vc_json, None).await.unwrap());
-            assert!(vc_verifies(&vc_json, Some(SUBJECT)).await.unwrap());
-            assert!(!vc_verifies(&vc_json, Some("urn:cid:different"))
+            assert!(vc_verifies(&vc_json, None, None).await.unwrap());
+            assert!(vc_verifies(&vc_json, Some(SUBJECT), None).await.unwrap());
+            assert!(!vc_verifies(&vc_json, Some("urn:cid:different"), None)
                 .await
                 .unwrap());
+        });
+    }
+
+    /// A credential whose `@context` this build does not embed verifies only
+    /// when the caller supplies the document. Nothing is fetched, so without it
+    /// there is no vocabulary to expand the custom term against.
+    #[test]
+    fn a_supplied_context_makes_a_credential_verifiable() {
+        const URI: &str = "https://example.invalid/custom-vc-context";
+
+        let signer = SignerType::ED25519(Ed25519Signer::create().unwrap());
+        let issuer = signer.get_did_doc().id;
+        let contexts = HashMap::from([(
+            URI.to_string(),
+            json!({"@context": {"@version": 1.1, "note": "https://example.invalid/terms/note"}})
+                .to_string(),
+        )]);
+
+        let unsigned: core_vc::Credential = serde_json::from_value(json!({
+            // security/v2 defines the Data-Integrity proof terms; without it the
+            // proof configuration itself fails to expand.
+            "@context": ["https://www.w3.org/ns/credentials/v2", "https://w3id.org/security/v2", URI],
+            "type": ["VerifiableCredential"],
+            "id": "urn:uuid:6f1d3f8a-0d2b-4c1f-9a7e-2b5c8d4e1f30",
+            "issuer": issuer,
+            "validFrom": "2026-01-01T00:00:00Z",
+            "credentialSubject": {"id": SUBJECT, "note": "hello"},
+        }))
+        .unwrap();
+
+        let vc_json = get_runtime().block_on(async {
+            let signed = core_vc::sign_vc(unsigned, signer, Some(contexts.clone()))
+                .await
+                .expect("signing needs the same context verification does");
+            serde_json::to_string(&signed).unwrap()
+        });
+
+        get_runtime().block_on(async {
+            assert!(vc_verifies(&vc_json, Some(SUBJECT), Some(contexts))
+                .await
+                .unwrap());
+            // Reports `false` rather than raising: unlike the statement path, the
+            // VC path folds an unresolvable context in with a bad proof.
+            assert!(!vc_verifies(&vc_json, Some(SUBJECT), None).await.unwrap());
         });
     }
 
@@ -508,9 +569,11 @@ mod tests {
         let vc_json = tampered.to_string();
         // Subject no longer matches, and the proof no longer covers the content.
         assert!(!get_runtime()
-            .block_on(vc_verifies(&vc_json, Some(SUBJECT)))
+            .block_on(vc_verifies(&vc_json, Some(SUBJECT), None))
             .unwrap());
-        assert!(!get_runtime().block_on(vc_verifies(&vc_json, None)).unwrap());
+        assert!(!get_runtime()
+            .block_on(vc_verifies(&vc_json, None, None))
+            .unwrap());
     }
 
     #[test]
