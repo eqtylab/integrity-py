@@ -118,6 +118,10 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Context.register">register</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Context.delete_tree">delete_tree</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Context.delete">delete</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Context.export">export</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.Context.import_manifest">import_manifest</a>
@@ -352,6 +356,46 @@
     <div class="doc doc-contents ">
 
         <p>Registers this context, its ancestors, statements, and blobs with a service.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Context.delete_tree" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">delete_tree</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete_tree</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Deletes this context, all descendant contexts, and their local statements.  This only removes local context and statement records; it does not delete blobs from the local blob store. Use this when the context hierarchy is no longer needed locally.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk._rust.Context.delete" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">delete</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">delete</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Deletes this context and its local statements.  Raises an error if this context has child contexts. Use <code>delete_tree()</code> to delete a context together with its descendants. This does not delete blobs from the local blob store.</p>
 
 
     </div>
