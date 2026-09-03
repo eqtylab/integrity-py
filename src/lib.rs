@@ -283,6 +283,7 @@ mod tests {
 
     #[test]
     fn test_init_accepts_default_context_positionally_and_custom_dir_as_keyword() {
+        let _config_guard = crate::config::lock_test_config();
         let temp_dir = tempdir().unwrap();
         Python::initialize();
 
@@ -329,6 +330,7 @@ mod tests {
 
     #[test]
     fn test_init_rejects_custom_dir_as_second_positional_argument() {
+        let _config_guard = crate::config::lock_test_config();
         let temp_dir = tempdir().unwrap();
         Python::initialize();
 

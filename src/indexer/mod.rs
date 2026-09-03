@@ -115,6 +115,11 @@ impl Context {
         Ok(())
     }
 
+    /// Deletes this context, all descendant contexts, and their local statements.
+    ///
+    /// This only removes local context and statement records; it does not delete
+    /// blobs from the local blob store. Use this when the context hierarchy is no
+    /// longer needed locally.
     fn delete_tree(&self, py: Python<'_>) -> PyResult<()> {
         with_cfg!(py, |ctx| {
             ctx.sql_lite.delete_graph_tree(&self.id).await?;
@@ -123,6 +128,11 @@ impl Context {
         Ok(())
     }
 
+    /// Deletes this context and its local statements.
+    ///
+    /// Raises an error if this context has child contexts. Use `delete_tree()` to
+    /// delete a context together with its descendants. This does not delete blobs
+    /// from the local blob store.
     fn delete(&self, py: Python<'_>) -> PyResult<()> {
         with_cfg!(py, |ctx| {
             ctx.sql_lite.delete_graph_no_children(&self.id).await?;

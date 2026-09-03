@@ -43,6 +43,10 @@ lint-docs:
 build-docs:
   poetry run mkdocs build
 
+# Serves the documentation locally with live reload
+serve-docs:
+  poetry run mkdocs serve
+
 # Auto-fix Rust clippy warnings
 fix:
     cargo clippy --fix --allow-dirty -- -Dwarnings --no-deps
