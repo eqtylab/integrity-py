@@ -67,6 +67,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/async-compute.html">Async Compute</a>
                   </li>
+                  <li class="toctree-l1"><a class="" href="../examples/association-and-compute.md">Association and Compute Statements</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/context-linking.html">Context Linking</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/nested-contexts.html">Nested Contexts</a>
@@ -167,6 +169,12 @@
 <p>A context is a logical graph container. It groups related statements, assets, and computations so they can be exported, viewed, or registered together.</p>
 <p>Contexts matter because they define the boundary of a manifest and the unit of organization for a workflow. If you want to keep different projects, runs, customers, or Governance Studio graphs separate, use different contexts. Parent-child contexts are useful when you want multiple runs or subgraphs to roll up under a larger project-level graph.</p>
 <p>Most users should create a context early, pass it to <code>init(default_context=...)</code>, and then let assets and computations attach to that context by default. Use <code>Context.from_uuid(...)</code> when you want the graph to correspond to an existing Governance Studio project, and use <code>export(...)</code>, <code>import_manifest(...)</code>, or <code>register(...)</code> when moving the graph between local state and external systems.</p>
+<p>After a successful registration, <code>register()</code> can remove the local statement records, the blobs uploaded for that registration, or both:</p>
+<pre><code class="language-python">context.register(service, delete_statements=True)
+context.register(service, delete_blobs=True)
+context.register(service, delete_statements=True, delete_blobs=True)
+</code></pre>
+<p>Deleting statements keeps the context itself so it can be reused. Blob cleanup deletes the uploaded blobs without checking whether another local context references the same blob.</p>
 
 
 <div class="doc doc-object doc-class">
@@ -350,12 +358,17 @@
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">register</span><span class="p">(</span><span class="n">service</span><span class="p">:</span> <span class="n">Service</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">register</span><span class="p">(</span>
+    <span class="n">service</span><span class="p">:</span> <span class="n">Service</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">delete_blobs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">delete_statements</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Registers this context, its ancestors, statements, and blobs with a service.</p>
+        <p>Registers this context, its ancestors, statements, and blobs with a service.  Set <code>delete_blobs</code> to remove the locally stored blobs uploaded for this registration, <code>delete_statements</code> to remove this context's local statement records, or both to remove both after a successful registration. Cleanup is only attempted after all registration requests succeed. <code>delete_blobs</code> does not check whether another local context also references a blob.</p>
 
 
     </div>

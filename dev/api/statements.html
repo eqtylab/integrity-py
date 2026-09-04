@@ -67,6 +67,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/async-compute.html">Async Compute</a>
                   </li>
+                  <li class="toctree-l1"><a class="" href="../examples/association-and-compute.md">Association and Compute Statements</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/context-linking.html">Context Linking</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../examples/nested-contexts.html">Nested Contexts</a>
@@ -117,6 +119,20 @@
     <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk._rust.statements.add_association_statement">add_association_statement</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#association-types">Association Types</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#association">Association</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.statements.Association">Association</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#eqty_sdk.statements.Association.new">new</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#eqty_sdk.statements.Association.with_context">with_context</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#eqty_sdk.statements.Association.add_predicate">add_predicate</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#eqty_sdk.statements.Association.finalize">finalize</a>
     </li>
         </ul>
     </li>
@@ -228,7 +244,188 @@
 <p><code>ASSOCIATION_TYPES.CERTIFIES</code></p>
 <p><code>ASSOCIATION_TYPES.INCLUDES</code></p>
 <p><code>ASSOCIATION_TYPES.IS_INSTANCE_OF</code></p>
+<h2 id="association">Association</h2>
+<p>A builder for constructing and finalizing association statements.</p>
 
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="eqty_sdk.statements.Association" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">Association</span>
+
+
+</h2>
+
+
+    <div class="doc doc-contents first">
+
+
+        <p>A builder for constructing and finalizing association statements.</p>
+<p>An association links a subject (a <code>CID</code>, <code>DID</code>, or <code>UUID</code>) to one or more
+predicates via an <code>ASSOCIATION_TYPES</code> relationship. Use <code>Association.new()</code>
+or <code>Association.with_context()</code> to create an instance, attach predicates
+with <code>add_predicate()</code>, and call <code>finalize()</code> to write the association
+statement.</p>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="eqty_sdk.statements.Association.new" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">new</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">new</span><span class="p">(</span>
+    <span class="n">subject</span><span class="p">:</span> <span class="n">CID</span> <span class="o">|</span> <span class="n">DID</span> <span class="o">|</span> <span class="n">UUID</span><span class="p">,</span>
+    <span class="n">association_type</span><span class="p">:</span> <span class="n">PyAssociationType</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Association</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Create a new <code>Association</code> builder for the given subject and type.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>subject</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="eqty_sdk._rust.CID" href="cid.html#eqty_sdk._rust.CID">CID</a> | <a class="autorefs autorefs-internal" title="eqty_sdk._rust.DID" href="did.html#eqty_sdk._rust.DID">DID</a> | <a class="autorefs autorefs-internal" title="eqty_sdk._rust.UUID" href="uuid.html#eqty_sdk._rust.UUID">UUID</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>The <code>CID</code>, <code>DID</code>, or <code>UUID</code> the association is about.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>association_type</code></b>
+                  (<code><span title="eqty_sdk._rust.PyAssociationType">PyAssociationType</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>One of the <code>ASSOCIATION_TYPES</code> values.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="eqty_sdk.statements.Association.with_context" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">with_context</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">with_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return a factory whose <code>new()</code> builds <code>Association</code> instances bound to <code>ctx</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="eqty_sdk.statements.Association.add_predicate" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">add_predicate</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_predicate</span><span class="p">(</span>
+    <span class="n">predicate</span><span class="p">:</span> <span class="n">CID</span>
+    <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="n">CID</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n">DID</span>
+    <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="n">DID</span><span class="p">]</span>
+    <span class="o">|</span> <span class="n">UUID</span>
+    <span class="o">|</span> <span class="n">List</span><span class="p">[</span><span class="n">UUID</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Association</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Add one or more predicates (<code>CID</code>, <code>DID</code>, or <code>UUID</code>) to the association.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="eqty_sdk.statements.Association.finalize" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">finalize</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">finalize</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Association</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Write the association statement and return <code>self</code>.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-function">
 
