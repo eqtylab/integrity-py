@@ -15,6 +15,7 @@ nav:
       - Overview: examples/index.md
       - Basic Workflow: examples/basic-workflow.md
       - Async Compute: examples/async-compute.md
+      - Association and Compute Statements: examples/association-and-compute.md
       - Context Linking: examples/context-linking.md
       - Nested Contexts: examples/nested-contexts.md
       - Path-Backed Assets: examples/path-backed-assets.md
