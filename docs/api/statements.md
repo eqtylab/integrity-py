@@ -21,6 +21,16 @@ These functions are for advanced use only. Prefer the higher-level SDK features 
 
 `ASSOCIATION_TYPES.IS_INSTANCE_OF`
 
+## Association
+
+A builder for constructing and finalizing association statements.
+
+::: eqty_sdk.statements.Association
+    options:
+      show_root_heading: true
+      show_root_toc_entry: true
+      merge_init_into_class: false
+
 ::: eqty_sdk._rust.statements.add_computation_statement
     options:
       show_root_heading: true

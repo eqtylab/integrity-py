@@ -117,8 +117,17 @@ class Context:
         """Creates a new context with the given uuid."""
         ...
 
-    def register(self, service: Service) -> None:
-        """Registers this context, its ancestors, statements, and blobs with a service."""
+    def register(
+        self, service: Service, *, delete_blobs: bool = False, delete_statements: bool = False
+    ) -> None:
+        """Registers this context, its ancestors, statements, and blobs with a service.
+
+        Set `delete_blobs` to remove the locally stored blobs uploaded for this
+        registration, `delete_statements` to remove this context's local statement
+        records, or both to remove both after a successful registration. Cleanup is
+        only attempted after all registration requests succeed. `delete_blobs` does
+        not check whether another local context also references a blob.
+        """
         ...
 
     def delete_tree(self) -> None:

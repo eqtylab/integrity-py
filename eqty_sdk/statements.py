@@ -44,6 +44,15 @@ def _normalize_association_ref(value: object) -> str:
 
 
 class Association:
+    """A builder for constructing and finalizing association statements.
+
+    An association links a subject (a `CID`, `DID`, or `UUID`) to one or more
+    predicates via an `ASSOCIATION_TYPES` relationship. Use `Association.new()`
+    or `Association.with_context()` to create an instance, attach predicates
+    with `add_predicate()`, and call `finalize()` to write the association
+    statement.
+    """
+
     def __init__(self):
         raise TypeError("Use Association.new() to create instances of this class.")
 
@@ -64,6 +73,13 @@ class Association:
     def new(
         cls, subject: CID | DID | UUID, association_type: PyAssociationType, **kwargs
     ) -> "Association":
+        """Create a new `Association` builder for the given subject and type.
+
+        Args:
+            subject: The `CID`, `DID`, or `UUID` the association is about.
+            association_type: One of the `ASSOCIATION_TYPES` values.
+
+        """
         _skip_proof = kwargs.pop("_skip_proof", None)
         instance = object.__new__(cls)
         instance.__init_internal__(None, subject, association_type, _skip_proof)
@@ -71,6 +87,8 @@ class Association:
 
     @staticmethod
     def with_context(ctx: Context):
+        """Return a factory whose `new()` builds `Association` instances bound to `ctx`."""
+
         class _Factory:
             def new(
                 self, subject: object, association_type: PyAssociationType, **kwargs
@@ -85,6 +103,7 @@ class Association:
     def add_predicate(
         self, predicate: CID | List[CID] | DID | List[DID] | UUID | List[UUID]
     ) -> "Association":
+        """Add one or more predicates (`CID`, `DID`, or `UUID`) to the association."""
         if isinstance(predicate, list):
             self._predicates.extend(_normalize_association_ref(item) for item in predicate)
         else:
@@ -92,6 +111,7 @@ class Association:
         return self
 
     def finalize(self) -> "Association":
+        """Write the association statement and return `self`."""
         add_association_statement(
             self._subject,
             self._predicates,
