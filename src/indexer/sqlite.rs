@@ -1076,20 +1076,6 @@ impl Sqlite {
             referenced_cids.extend(stmt.referenced_cids());
         }
 
-        // A credential whose `credential_subject` DID has no other footprint
-        // anywhere else in the graph is still unreachable by this walk alone
-        // -- but `retrieve_statements` now also directly includes anything
-        // explicitly linked to the graph via `statement_graph_link`
-        // (retrieve_directly_linked_statements), which is how such
-        // statements actually get in scope in practice. This walk stays as
-        // an additional (transitive) path for statements not directly
-        // linked to the exported graph, e.g. a credential about some other
-        // graph's entity that happens to be referenced here.
-        //
-        // Credentials may be subject-tagged either by the CID of another
-        // statement (e.g. a VC about a DataRegistration) or by the DID of the
-        // entity they attest to (e.g. an IdentityAttestation). Include `dids`
-        // here too, or the latter can never match and is silently excluded.
         let mut credential_lookup_subjects = credential_subjects.clone();
         credential_lookup_subjects.extend(dids.iter().cloned());
 
