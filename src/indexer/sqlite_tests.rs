@@ -28,6 +28,22 @@ mod tests {
         Ok(db)
     }
 
+    async fn associate_statement_to_graph(
+        db: &Sqlite,
+        statement_id: &str,
+        graph_id: &Uuid,
+    ) -> Result<()> {
+        let mut transaction = db.pool().begin().await?;
+        Sqlite::associate_statement_to_graph_in_transaction(
+            &mut transaction,
+            statement_id,
+            graph_id,
+        )
+        .await?;
+        transaction.commit().await?;
+        Ok(())
+    }
+
     async fn graph_count(db: &Sqlite) -> Result<i64> {
         let row = sqlx::query("SELECT COUNT(*) as count FROM graphs")
             .fetch_one(db.pool())
@@ -227,8 +243,7 @@ mod tests {
         let statement = Statement::DataRegistration(data);
         let statement_id = statement.get_id();
         db.register_statement(&statement, &first.id).await?;
-        db.associate_statement_to_graph(&statement_id, &second.id)
-            .await?;
+        associate_statement_to_graph(&db, &statement_id, &second.id).await?;
 
         db.delete_graph_statements(&first.id).await?;
 
@@ -498,8 +513,7 @@ mod tests {
         .execute(db.pool())
         .await?;
 
-        db.associate_statement_to_graph(computation_id, &graph.id)
-            .await?;
+        associate_statement_to_graph(&db, computation_id, &graph.id).await?;
 
         let statements = db.retrieve_statements(&graph.id).await?;
 
@@ -563,8 +577,7 @@ mod tests {
         .execute(db.pool())
         .await?;
 
-        db.associate_statement_to_graph(computation_id, &graph.id)
-            .await?;
+        associate_statement_to_graph(&db, computation_id, &graph.id).await?;
 
         let statements = db.retrieve_statements(&graph.id).await?;
 
@@ -750,10 +763,8 @@ mod tests {
         .execute(db.pool())
         .await?;
 
-        db.associate_statement_to_graph(computation_id, &graph.id)
-            .await?;
-        db.associate_statement_to_graph(association_id, &graph.id)
-            .await?;
+        associate_statement_to_graph(&db, computation_id, &graph.id).await?;
+        associate_statement_to_graph(&db, association_id, &graph.id).await?;
 
         let statements = db.retrieve_statements(&graph.id).await?;
 
@@ -952,14 +963,10 @@ mod tests {
         .execute(db.pool())
         .await?;
 
-        db.associate_statement_to_graph(computation_id, &graph.id)
-            .await?;
-        db.associate_statement_to_graph(association_id, &graph.id)
-            .await?;
-        db.associate_statement_to_graph(associated_data_id, &graph.id)
-            .await?;
-        db.associate_statement_to_graph(associated_metadata_id, &graph.id)
-            .await?;
+        associate_statement_to_graph(&db, computation_id, &graph.id).await?;
+        associate_statement_to_graph(&db, association_id, &graph.id).await?;
+        associate_statement_to_graph(&db, associated_data_id, &graph.id).await?;
+        associate_statement_to_graph(&db, associated_metadata_id, &graph.id).await?;
 
         let statements = db.retrieve_statements(&graph.id).await?;
 

@@ -841,7 +841,7 @@ impl Sqlite {
         Ok(())
     }
 
-    async fn associate_statement_to_graph_in_transaction(
+    pub(crate) async fn associate_statement_to_graph_in_transaction(
         transaction: &mut Transaction<'_, SqliteDb>,
         statement_id: &str,
         graph_id: &Uuid,
