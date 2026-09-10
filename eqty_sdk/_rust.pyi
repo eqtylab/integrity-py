@@ -118,35 +118,23 @@ class Context:
         ...
 
     def register(
-        self, service: Service, *, delete_blobs: bool = False, delete_statements: bool = False
+        self,
+        service: Service,
+        *,
+        delete_blobs: Optional[bool] = None,
+        delete_statements: Optional[bool] = None,
     ) -> None:
-        """Registers this context, its ancestors, statements, and blobs with a service.
-
-        Set `delete_blobs` to remove the locally stored blobs uploaded for this
-        registration, `delete_statements` to remove this context's local statement
-        records, or both to remove both after a successful registration. Cleanup is
-        only attempted after all registration requests succeed. `delete_blobs` does
-        not check whether another local context also references a blob.
-        """
+        """Registers this context, its ancestors, statements, and blobs with a service.  Set `delete_blobs` to remove the locally stored blobs uploaded for this registration, `delete_statements` to remove this context's local statement records, or both to remove both after a successful registration. Cleanup is only attempted after all registration requests succeed. `delete_blobs` does not check whether another local context also references a blob."""
         ...
 
     def delete_tree(self) -> None:
-        """Deletes this context, all descendant contexts, and their local statements.
-
-        This only removes local context and statement records; it does not delete
-        blobs from the local blob store. Use this when the context hierarchy is no
-        longer needed locally.
-        """
+        """Deletes this context, all descendant contexts, and their local statements.  This only removes local context and statement records; it does not delete blobs from the local blob store. Use this when the context hierarchy is no longer needed locally."""
         ...
 
     def delete(self) -> None:
-        """Deletes this context and its local statements.
-
-        Raises an error if this context has child contexts. Use `delete_tree()` to
-        delete a context together with its descendants. This does not delete blobs
-        from the local blob store.
-        """
+        """Deletes this context and its local statements.  Raises an error if this context has child contexts. Use `delete_tree()` to delete a context together with its descendants. This does not delete blobs from the local blob store."""
         ...
+
     def export(self, path: PathLike[str]) -> None:
         """Exports this context's statements and blobs to a manifest JSON file."""
         ...
