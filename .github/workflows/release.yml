@@ -15,7 +15,22 @@ on:
         required: true
 
 jobs:
+  check_changelog:
+    name: Check release changelog
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: eqtylab-actions/checkout@v4
+
+      - name: Check release changelog
+        env:
+          RELEASE_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.eqty_sdk_version || github.ref_name }}
+        run: ./scripts/check-changelog.sh "v${RELEASE_VERSION#v}"
+
   build_and_publish:
+    needs: check_changelog
     strategy:
       matrix:
         include:

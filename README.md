@@ -9,6 +9,11 @@ User-facing installation instructions, examples, and API reference live in the d
 - Latest release docs: <https://eqtylab.github.io/integrity-py/latest/>
 - Development docs from `main`: <https://eqtylab.github.io/integrity-py/dev/>
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for notable SDK changes and
+[CONTRIBUTING.md](CONTRIBUTING.md) for PR and release instructions.
+
 ## Development
 
 ### Prerequisites
@@ -107,12 +112,14 @@ Releases are handled through GitHub and the `Publish new release` workflow in [r
 
 ### Release Steps
 
-1. Make sure the release commit is merged and pushed.
+1. Prepare the changelog and run the release check as described in
+   [CONTRIBUTING.md](CONTRIBUTING.md#releases), then merge and push the release commit.
 2. In GitHub, create a new release for the repository.
 3. Enter the release tag in semver form with a `v` prefix, for example `v2.0.8`.
 4. Publish the GitHub release. That creates the tag on the remote and triggers the release workflow.
 5. The `Publish new release` workflow will:
-   - build and publish Linux and macOS wheels
+   - check that stable versions have a matching changelog heading
+   - build and publish Linux, macOS, and Windows wheels
    - build and publish the source distribution
    - generate release-specific wheel requirement reports
    - publish versioned docs and update `latest`

@@ -9,3 +9,7 @@ Versioned docs are published from the release workflow:
 - numbered versions such as `1.2.3` map to specific released SDK versions
 
 Use the examples section for end-to-end workflows and the API reference for individual classes and functions. Installation guidance, minimum supported versions, and wheel runtime details are documented in the install guide.
+
+See the [changelog](https://github.com/eqtylab/integrity-py/blob/main/CHANGELOG.md)
+for notable SDK changes and [contributor instructions](https://github.com/eqtylab/integrity-py/blob/main/CONTRIBUTING.md)
+for documenting PRs and preparing releases.
