@@ -841,27 +841,6 @@ impl Sqlite {
         Ok(())
     }
 
-    /// Updates the link table to assign a statement to a graph
-    pub async fn associate_statement_to_graph(
-        &self,
-        statement_id: &str,
-        graph_id: &Uuid,
-    ) -> Result<()> {
-        sqlx::query(
-            r#"
-            INSERT OR IGNORE INTO statement_graph_link
-            (statement_id, graph_id)
-            VALUES (?1, ?2)
-        "#,
-        )
-        .bind(statement_id)
-        .bind(graph_id.to_string())
-        .execute(&self.pool)
-        .await?;
-
-        Ok(())
-    }
-
     async fn associate_statement_to_graph_in_transaction(
         transaction: &mut Transaction<'_, SqliteDb>,
         statement_id: &str,
