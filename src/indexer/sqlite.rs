@@ -592,7 +592,13 @@ impl Sqlite {
             | Statement::CredentialSigstoreBundleRegistration(_)
             | Statement::DidRegistration(_) => {
                 self.register_global_statement(&mut transaction, statement)
-                    .await?
+                    .await?;
+                // Self::associate_statement_to_graph_in_transaction(
+                //     &mut transaction,
+                //     &statement.get_id(),
+                //     graph_id,
+                // )
+                // .await?;
             }
         }
         transaction.commit().await?;
@@ -640,12 +646,71 @@ impl Sqlite {
         Ok(())
     }
 
+    /// Retrieves statements explicitly linked to this graph via `statement_graph_link`,
+    /// regardless of whether anything else in the graph references them.
+    async fn retrieve_directly_linked_statements(
+        &self,
+        graph_id: &Uuid,
+    ) -> Result<Vec<sqlx::sqlite::SqliteRow>> {
+        let query = r#"
+            SELECT statement, NULL as metadata, NULL as vc, NULL as did
+            FROM data_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM metadata_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM storage_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM entity_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM association_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM governance_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM credential_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM dsse_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM sigstore_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM did_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+        "#;
+
+        sqlx::query(query)
+            .bind(graph_id.to_string())
+            .fetch_all(&self.pool)
+            .await
+            .map_err(Into::into)
+    }
+
     /// Retrieves the statements associated to the graph ID.
     ///
     /// Returns the graph with its statements populated, including statements
     /// from parent graphs in the hierarchy.
     pub async fn retrieve_statements(&self, graph_id: &Uuid) -> Result<Vec<Statement>> {
         log::info!("Retrieving statements for graph {graph_id:?}");
+
+        let direct_rows = self.retrieve_directly_linked_statements(graph_id).await?;
+        log::debug!("Found '{}' directly linked statements", direct_rows.len());
+        let mut statements = rows_to_statements(direct_rows)?;
 
         // Create placeholders for the IN clause
         let compute_query_str = r#"
@@ -670,13 +735,14 @@ impl Sqlite {
 
         if compute_rows.is_empty() {
             log::info!("No computation statements found for graph(s) {graph_id:?}");
-            return Ok(vec![]);
+            self.get_global_statements(&mut statements).await?;
+            return Ok(statements.into_values().collect());
         }
 
         let mut subjects: Vec<String> = Vec::new();
 
         log::debug!("Found '{}' compute statements", compute_rows.len());
-        let mut statements = rows_to_statements(compute_rows)?;
+        statements.extend(rows_to_statements(compute_rows)?);
         for statement in statements.values() {
             if let Statement::ComputationRegistration(s) = statement {
                 subjects.extend(s.input.to_vec_string());
@@ -1122,8 +1188,25 @@ impl Sqlite {
             referenced_cids.extend(stmt.referenced_cids());
         }
 
-        log::debug!("Getting credential statements for subjects: {credential_subjects:?}");
-        let placeholders = vec!["?"; credential_subjects.len()].join(", ");
+        // A credential whose `credential_subject` DID has no other footprint
+        // anywhere else in the graph is still unreachable by this walk alone
+        // -- but `retrieve_statements` now also directly includes anything
+        // explicitly linked to the graph via `statement_graph_link`
+        // (retrieve_directly_linked_statements), which is how such
+        // statements actually get in scope in practice. This walk stays as
+        // an additional (transitive) path for statements not directly
+        // linked to the exported graph, e.g. a credential about some other
+        // graph's entity that happens to be referenced here.
+        //
+        // Credentials may be subject-tagged either by the CID of another
+        // statement (e.g. a VC about a DataRegistration) or by the DID of the
+        // entity they attest to (e.g. an IdentityAttestation). Include `dids`
+        // here too, or the latter can never match and is silently excluded.
+        let mut credential_lookup_subjects = credential_subjects.clone();
+        credential_lookup_subjects.extend(dids.iter().cloned());
+
+        log::debug!("Getting credential statements for subjects: {credential_lookup_subjects:?}");
+        let placeholders = vec!["?"; credential_lookup_subjects.len()].join(", ");
         let global_query = format!(
             r#"
             SELECT statement, NULL as metadata, NULL as vc, NULL as did
@@ -1134,7 +1217,7 @@ impl Sqlite {
         );
 
         let mut sql_query = sqlx::query(&global_query);
-        for credential_subject in &credential_subjects {
+        for credential_subject in &credential_lookup_subjects {
             sql_query = sql_query.bind(credential_subject);
         }
 

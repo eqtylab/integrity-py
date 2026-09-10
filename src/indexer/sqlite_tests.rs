@@ -514,6 +514,119 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_retrieve_statements_includes_identity_credential_by_registered_by_did(
+    ) -> Result<()> {
+        let db = setup_db().await?;
+        let graph = Context {
+            id: Uuid::new_v4(),
+            name: "identity-credential-graph".to_string(),
+            parent: None,
+        };
+        db.create_graph(&graph).await?;
+
+        let computation_id = "urn:cid:bagb6qaq6edidcred0000000000000000000000000000000000000000001";
+        let credential_id = "urn:cid:bagb6qaq6edidcred0000000000000000000000000000000000000000002";
+        let did = "did:key:tester";
+
+        // No DidRegistration statement exists for `did` anywhere in this
+        // graph — the credential's only link to the graph is that it is
+        // `registeredBy` the same DID that registered the computation.
+        let computation_statement = format!(
+            r#"{{"@context":"urn:cid:bafkr4ic7ydwk3rtoltyzx4zn3vvu3r7hpzxtmbzmnksotx7k5nbnwclf6m","@id":"{computation_id}","@type":"ComputationRegistration","input":"urn:cid:bafkr4ididcredinput0000000000000000000000000000000000000000","operatedBy":"{did}","output":"urn:cid:bafkr4ididcredoutput000000000000000000000000000000000000000","registeredBy":"{did}","timestamp":"2026-03-18T15:35:04Z"}}"#
+        );
+        let credential_statement = format!(
+            r#"{{"@context":"urn:cid:bafkr4ic7ydwk3rtoltyzx4zn3vvu3r7hpzxtmbzmnksotx7k5nbnwclf6m","@id":"{credential_id}","@type":"CredentialRegistration","credential":{{"@context":["https://www.w3.org/ns/credentials/v2"],"type":["VerifiableCredential","IdentityAttestation"],"issuer":"{did}","validFrom":"2026-03-18T15:35:04Z","credentialSubject":{{"id":"{did}"}}}},"registeredBy":"{did}","timestamp":"2026-03-18T15:35:04Z"}}"#
+        );
+
+        sqlx::query(
+            r#"
+            INSERT INTO computation_statements (id, statement, registered_by)
+            VALUES (?1, ?2, ?3)
+            "#,
+        )
+        .bind(computation_id)
+        .bind(&computation_statement)
+        .bind(did)
+        .execute(db.pool())
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO credential_statements (id, statement, registered_by, credential_subject)
+            VALUES (?1, ?2, ?3, ?4)
+            "#,
+        )
+        .bind(credential_id)
+        .bind(&credential_statement)
+        .bind(did)
+        .bind(did)
+        .execute(db.pool())
+        .await?;
+
+        db.associate_statement_to_graph(computation_id, &graph.id)
+            .await?;
+
+        let statements = db.retrieve_statements(&graph.id).await?;
+
+        assert!(
+            statements
+                .iter()
+                .any(|statement| statement.get_id() == credential_id),
+            "identity-attestation credential subject-tagged by DID should survive export"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_retrieve_statements_includes_orphan_self_attesting_credential() -> Result<()> {
+        // Reproduces the real VComp gap: a CredentialRegistration whose
+        // registeredBy AND credentialSubject are the SAME DID, and that DID
+        // has zero other footprint anywhere else in the graph (it's not
+        // registeredBy/operatedBy/input/output/association on anything
+        // else). Nothing about this credential is reachable through the
+        // subject/DID-matching walk in get_global_statements -- it can only
+        // survive export if register_statement links it directly to the
+        // graph it was actually registered against.
+        let db = setup_db().await?;
+        let graph = Context {
+            id: Uuid::new_v4(),
+            name: "orphan-credential-graph".to_string(),
+            parent: None,
+        };
+        db.create_graph(&graph).await?;
+
+        let computation_registrant = "did:key:computation-registrant";
+        let computation_json = format!(
+            r#"{{"@context":"urn:cid:bafkr4ic7ydwk3rtoltyzx4zn3vvu3r7hpzxtmbzmnksotx7k5nbnwclf6m","@id":"urn:cid:bagb6qaq6eorphancomputation000000000000000000000000000000001","@type":"ComputationRegistration","input":"urn:cid:bafkr4iorphaninput00000000000000000000000000000000000000000","operatedBy":"{computation_registrant}","output":"urn:cid:bafkr4iorphanoutput0000000000000000000000000000000000000000","registeredBy":"{computation_registrant}","timestamp":"2026-03-18T15:35:04Z"}}"#
+        );
+        let computation: Statement = serde_json::from_str(&computation_json)?;
+        db.register_statement(&computation, &graph.id).await?;
+
+        // Not registeredBy/operatedBy on the computation above, not an
+        // input/output/association target -- genuinely orphaned.
+        let attester_did = "did:key:self-attesting-notary";
+        let credential_id = "urn:cid:bagb6qaq6eorphancredential00000000000000000000000000000002";
+        let credential_json = format!(
+            r#"{{"@context":"urn:cid:bafkr4ic7ydwk3rtoltyzx4zn3vvu3r7hpzxtmbzmnksotx7k5nbnwclf6m","@id":"{credential_id}","@type":"CredentialRegistration","credential":{{"@context":["https://www.w3.org/ns/credentials/v2"],"type":["VerifiableCredential","IdentityAttestation"],"issuer":"{attester_did}","validFrom":"2026-03-18T15:35:04Z","credentialSubject":{{"id":"{attester_did}"}}}},"registeredBy":"{attester_did}","timestamp":"2026-03-18T15:35:04Z"}}"#
+        );
+        let credential: Statement = serde_json::from_str(&credential_json)?;
+        db.register_statement(&credential, &graph.id).await?;
+
+        let statements = db.retrieve_statements(&graph.id).await?;
+
+        assert!(
+            statements
+                .iter()
+                .any(|statement| statement.get_id() == credential_id),
+            "credential registered directly against a graph should survive export \
+             even with no other footprint in that graph"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_association_statement_links_items() -> Result<()> {
         let db = setup_db().await?;
         let graph = Context {
