@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Assets - eqty_sdk Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
+        <link href="../css/version-select.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Assets";
+        var mkdocs_page_input_path = "api/assets.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> eqty_sdk Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../quick-start.html">Quick Start</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/basic-workflow.html">Basic Workflow</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/async-compute.html">Async Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="../examples/association-and-compute.md">Association and Compute Statements</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/nested-contexts.html">Nested Contexts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/path-backed-assets.html">Path-Backed Assets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/auth-service-signer.html">Auth Service Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/service-registering.html">Service Registering</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/custom-serialize.html">Spark Parquet Input</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/model-signing.html">Model Signing</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="init-and-config.html">Init And Config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="global-functions.html">Global Functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cid.html">CID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="did.html">DID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="uuid.html">UUID</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Assets</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#built-in-asset-types">Built-In Asset Types</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#public-constructors">Public constructors</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#custom">Custom</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#metadata-via-kwargs">Metadata Via **kwargs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#serialization-notes">Serialization Notes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#adapt-runtime-values-for-compute">Adapt Runtime Values for @compute</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#factory-method-reference">Factory Method Reference</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.asset.TypedAsset.from_object">from_object</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.asset.TypedAsset.from_path">from_path</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.asset.TypedAsset.from_cid">from_cid</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.asset.asset.TypedAsset.with_context">with_context</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compute.html">Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="context.html">Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="declaration.html">Declaration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service.html">Service</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="signer.html">Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="statements.html">Statements</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="verification.html">Verification</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">eqty_sdk Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">API Reference</li>
+      <li class="breadcrumb-item active">Assets</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="assets">Assets</h1>
+<p>Assets are the main way to register inputs, outputs, documents, models, and other tracked objects in the SDK.</p>
+<h2 id="built-in-asset-types">Built-In Asset Types</h2>
+<p>The SDK includes these built-in asset categories:</p>
+<ul>
+<li><code>Agent</code></li>
+<li><code>Benchmark</code></li>
+<li><code>BenchmarkResult</code></li>
+<li><code>Binary</code></li>
+<li><code>Certificate</code></li>
+<li><code>Code</code></li>
+<li><code>Configuration</code></li>
+<li><code>Credential</code></li>
+<li><code>Custom</code></li>
+<li><code>Database</code></li>
+<li><code>Dataset</code></li>
+<li><code>Document</code></li>
+<li><code>Guardrail</code></li>
+<li><code>Media</code></li>
+<li><code>Model</code></li>
+<li><code>Prompt</code></li>
+<li><code>Reasoning</code></li>
+<li><code>Skill</code></li>
+<li><code>SystemPrompt</code></li>
+<li><code>Token</code></li>
+<li><code>Tool</code></li>
+</ul>
+<p>These types all follow the same construction pattern.</p>
+<div class="admonition note">
+<p class="admonition-title">Use factory methods, not direct constructors</p>
+<p>Do not instantiate typed assets directly (for example, do not call
+<code>Binary(...)</code> or <code>Dataset(...)</code>). Their displayed Python constructors are
+internal implementation details. Create assets with <code>from_object(...)</code>,
+<code>from_path(...)</code>, or <code>from_cid(...)</code> instead.</p>
+</div>
+<p><code>Binary</code> is intended for compiled binary programs and similar executable artifacts that you want
+to register as part of a lineage graph.</p>
+<h2 id="public-constructors">Public constructors</h2>
+<p>Most built-in asset types support these constructors:</p>
+<ul>
+<li><code>.from_object(...)</code></li>
+<li><code>.from_path(...)</code></li>
+<li><code>.from_cid(...)</code></li>
+<li><code>.with_context(ctx).from_object(...)</code></li>
+<li><code>.with_context(ctx).from_path(...)</code></li>
+<li><code>.with_context(ctx).from_cid(...)</code></li>
+</ul>
+<p>Conceptually:</p>
+<ul>
+<li><code>from_object(...)</code>: hash and register an in-memory Python object</li>
+<li><code>from_path(...)</code>: hash and register a file or directory on disk</li>
+<li><code>from_cid(...)</code>: create an asset wrapper around an existing CID</li>
+<li><code>with_context(...)</code>: do the same thing, but attach it to a specific context</li>
+</ul>
+<h2 id="custom"><code>Custom</code></h2>
+<p>Use <code>Custom</code> when none of the built-in asset categories fit your domain object.</p>
+<p>You can use the default custom type:</p>
+<pre><code class="language-python">from eqty_sdk import Custom
+
+asset = Custom.from_object({&quot;kind&quot;: &quot;prompt-template&quot;}, name=&quot;Prompt Template&quot;)
+</code></pre>
+<p>Or provide your own asset type label:</p>
+<pre><code class="language-python">from eqty_sdk import Custom
+
+asset = Custom.from_object(
+    {&quot;kind&quot;: &quot;feature-store-table&quot;},
+    asset_type=&quot;FeatureStoreTable&quot;,
+    name=&quot;Customer Features&quot;,
+)
+</code></pre>
+<p>The same pattern works with <code>from_path(...)</code> and <code>from_cid(...)</code>.</p>
+<h2 id="metadata-via-kwargs">Metadata Via <code>**kwargs</code></h2>
+<p>Any extra keyword arguments passed to an asset constructor are stored as metadata on that asset.</p>
+<p>Common examples include:</p>
+<ul>
+<li><code>name</code></li>
+<li><code>description</code></li>
+<li>domain-specific fields like <code>owner</code>, <code>source</code>, <code>version</code>, or <code>input</code></li>
+</ul>
+<pre><code class="language-python">from eqty_sdk import Dataset
+
+dataset = Dataset.from_object(
+    [1, 2, 3],
+    name=&quot;Training Rows&quot;,
+    description=&quot;Rows used for the baseline experiment&quot;,
+    owner=&quot;ml-team&quot;,
+    version=&quot;2026-03-20&quot;,
+)
+</code></pre>
+<p>Those values are included in the metadata statement the SDK creates for the asset.</p>
+<h2 id="serialization-notes">Serialization Notes</h2>
+<p>For <code>from_object(...)</code>, the SDK hashes a serialized representation of the object.</p>
+<p>Built-in support includes:</p>
+<ul>
+<li>strings</li>
+<li>numbers</li>
+<li>lists</li>
+<li>dicts</li>
+<li>filesystem paths</li>
+<li>objects with <code>serialize_for_hashing()</code></li>
+</ul>
+<p>For a complex type that should be registered as its own content, implement
+<code>serialize_for_hashing()</code> and return a stable <code>bytes</code> representation. The SDK
+hashes those bytes to create the asset's CID:</p>
+<pre><code class="language-python">class PromptTemplate:
+    def __init__(self, text: str):
+        self.text = text
+
+    def serialize_for_hashing(self) -&gt; bytes:
+        return self.text.encode(&quot;utf-8&quot;)
+</code></pre>
+<p>Use this with <code>Dataset.from_object(...)</code>, another typed asset's
+<code>from_object(...)</code>, or the <code>Computation</code> builder's object methods.</p>
+<h2 id="adapt-runtime-values-for-compute">Adapt Runtime Values for <code>@compute</code></h2>
+<p><code>to_eqty_asset()</code> is different from <code>serialize_for_hashing()</code>. It is an adapter
+for a value passed to a <code>@compute</code> function, and it must return an SDK <code>Asset</code>.
+Use it when the runtime value is a handle or view over a different artifact that
+should appear in lineage.</p>
+<p>For example, a Spark DataFrame may be backed by a Parquet directory. The
+compute function can keep receiving the DataFrame, while the lineage graph
+records the on-disk dataset:</p>
+<pre><code class="language-python">from pathlib import Path
+
+from eqty_sdk import Dataset
+
+
+class ParquetBackedDataFrame:
+    def __init__(self, dataframe, parquet_path: Path):
+        self.dataframe = dataframe
+        self.parquet_path = parquet_path
+
+    def to_eqty_asset(self) -&gt; Dataset:
+        return Dataset.from_path(self.parquet_path, name=&quot;Training Data&quot;)
+</code></pre>
+<p><code>to_eqty_asset()</code> is recognized only for <code>@compute</code> inputs. It does not hash the
+wrapper object and is not used by <code>from_object(...)</code> or the <code>Computation</code>
+builder. See <a href="../examples/custom-serialize.html">Spark Parquet Input</a> for a
+complete example.</p>
+<h2 id="factory-method-reference">Factory Method Reference</h2>
+<p>The factory methods below are available on every built-in typed asset class,
+including <code>Binary</code>, <code>Dataset</code>, <code>Document</code>, <code>Model</code>, and <code>Prompt</code>.</p>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk.asset.asset.TypedAsset.from_object" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_object</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_object</span><span class="p">(</span>
+    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">_store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypedAssetT</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Create and register this asset type from an in-memory Python object.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk.asset.asset.TypedAsset.from_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_path</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_path</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">_store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypedAssetT</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Create and register this asset type from a file or directory path.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk.asset.asset.TypedAsset.from_cid" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_cid</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_cid</span><span class="p">(</span><span class="n">cid</span><span class="p">:</span> <span class="n">CID</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypedAssetT</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Create and register this asset type from an existing content identifier.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk.asset.asset.TypedAsset.with_context" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">with_context</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">with_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Return factory methods that register this asset in <code>ctx</code>.</p>
+
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="uuid.html" class="btn btn-neutral float-left" title="UUID"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="compute.html" class="btn btn-neutral float-right" title="Compute">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="uuid.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="compute.html" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
+      <script src="../search/main.js"></script>
+      <script src="../js/version-select.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
