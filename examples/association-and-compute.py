@@ -4,17 +4,16 @@ from pathlib import Path
 
 from eqty_sdk import (
     ASSOCIATION_TYPES,
+    DID,
+    UUID,
     Association,
     Computation,
     Dataset,
-    DID,
     Model,
     Signer,
-    UUID,
     init,
     set_active_signer,
 )
-
 
 cfg = init()
 
