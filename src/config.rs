@@ -7,11 +7,11 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use integrity::{
     blob_store::{BlobStore, LocalFs},
     cid::iroh::{CidIgnoreConfig, HashingConfig},
-    signer::SignerType,
+    signer::{SignerType, VCompNotarySigner},
 };
 use once_cell::sync::Lazy;
 use pyo3::prelude::*;
@@ -491,6 +491,71 @@ impl Config {
     }
 }
 
+/// Notary's current signing DID via /get_dids.
+async fn notary_container_did(url: &str) -> Result<String> {
+    let res: serde_json::Value = reqwest::Client::new()
+        .get(format!("{url}/get_dids"))
+        .send()
+        .await?
+        .json()
+        .await?;
+    res.get("registeredBy")
+        .and_then(|d| d.as_str())
+        .map(String::from)
+        .ok_or_else(|| anyhow!("notary /get_dids response missing registeredBy"))
+}
+
+/// Register a signer's DID-registration credentials and blobs into the store.
+pub async fn register_vcomp_credentials(
+    config: &Config,
+    signer: &VCompNotarySigner,
+) -> Result<Vec<CID>> {
+    use integrity::lineage::models::statements::{Statement, StatementTrait};
+    let mut ids = Vec::new();
+    if let Some(statements) = &signer.credentials {
+        for value in statements.values() {
+            let statement: Statement = serde_json::from_value(value.clone())?;
+            ids.push(CID::new(statement.get_id()));
+            config
+                .sql_lite
+                .register_statement(&statement, &config.default_context.id)
+                .await?;
+        }
+    }
+    if let Some(blobs) = &signer.did_blobs {
+        for data in blobs.values() {
+            config.blob_store.put(data.clone(), 0, None).await?;
+        }
+    }
+    Ok(ids)
+}
+
+/// Signer for the next statement; if the notary rotated its key, fetch and store the new credential.
+pub async fn sync_active_notary_signer(config: &Config) -> Result<SignerType> {
+    let active = config
+        .active_signer
+        .clone()
+        .ok_or_else(|| anyhow!("An active signer is not set"))?;
+    let SignerType::VCompNotarySigner(vcomp) = &active.signer else {
+        return Ok(active.signer);
+    };
+    let signing_did = notary_container_did(&vcomp.url).await?;
+    if signing_did == vcomp.did_doc.id {
+        return Ok(active.signer);
+    }
+    let fresh = VCompNotarySigner::create(&vcomp.url, None).await?;
+    if fresh.did_doc.id != signing_did {
+        bail!(
+            "notary signing key {signing_did} does not match fetched credential key {}",
+            fresh.did_doc.id
+        );
+    }
+    register_vcomp_credentials(config, &fresh).await?;
+    let signer = SignerType::VCompNotarySigner(fresh);
+    Config::set_active_signer_async(signer.clone(), None).await?;
+    Ok(signer)
+}
+
 /// Creates a VC statement for the given statement id and registers it to sqlite
 pub async fn create_vc_for_statement(
     config: &Config,
@@ -503,13 +568,10 @@ pub async fn create_vc_for_statement(
         vc,
     };
 
-    let signer = config
-        .active_signer
-        .clone()
-        .ok_or_else(|| anyhow!("An active signer is not set"))?;
+    let signer = sync_active_notary_signer(config).await?;
 
-    let registered_by = signer.signer.get_did_doc().id.clone();
-    let vc = vc::issue_vc(&statement_id.to_string(), signer.signer).await?;
+    let registered_by = signer.get_did_doc().id.clone();
+    let vc = vc::issue_vc(&statement_id.to_string(), signer).await?;
     let vc = serde_json::from_value(serde_json::to_value(vc)?)?;
     let vc_statement =
         Statement::CredentialRegistration(VcStatement::create(vc, registered_by, timestamp).await?);

@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use integrity::{
     lineage::models::statements::{Statement, StatementTrait, VcStatement},
     vc,
@@ -17,12 +16,10 @@ pub fn add_vc_statement(
 ) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(context);
-        let signer = ctx
-            .active_signer
-            .ok_or_else(|| anyhow!("No active signer available"))?;
-        let registered_by = signer.signer.get_did_doc().id.clone();
+        let signer = crate::config::sync_active_notary_signer(&ctx).await?;
+        let registered_by = signer.get_did_doc().id.clone();
 
-        let vc = vc::issue_vc(&subject, signer.signer).await?;
+        let vc = vc::issue_vc(&subject, signer).await?;
         let vc = serde_json::from_value(serde_json::to_value(vc).map_err(anyhow::Error::from)?)
             .map_err(anyhow::Error::from)?;
 
