@@ -506,7 +506,7 @@ async fn notary_container_did(url: &str) -> Result<String> {
 }
 
 /// Register a signer's DID-registration credentials and blobs into the store.
-pub async fn register_vcomp_credentials(
+async fn register_vcomp_credentials(
     config: &Config,
     signer: &VCompNotarySigner,
 ) -> Result<Vec<CID>> {
