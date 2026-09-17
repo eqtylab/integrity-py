@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Verification - eqty_sdk Documentation</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../stylesheets/extra.css" rel="stylesheet" />
+        <link href="../css/version-select.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Verification";
+        var mkdocs_page_input_path = "api/verification.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../index.html" class="icon icon-home"> eqty_sdk Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../quick-start.html">Quick Start</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Install</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/min-version.html">Min Version</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/package-managers.html">Package Managers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../install/source.html">Source</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Examples</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/basic-workflow.html">Basic Workflow</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/async-compute.html">Async Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/association-and-compute.html">Association and Compute Statements</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/context-linking.html">Context Linking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/nested-contexts.html">Nested Contexts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/path-backed-assets.html">Path-Backed Assets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/auth-service-signer.html">Auth Service Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/service-registering.html">Service Registering</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/custom-serialize.html">Spark Parquet Input</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../examples/model-signing.html">Model Signing</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="init-and-config.html">Init And Config</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="global-functions.html">Global Functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cid.html">CID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="did.html">DID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="uuid.html">UUID</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="assets.html">Assets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="compute.html">Compute</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="context.html">Context</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="declaration.html">Declaration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="service.html">Service</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="signer.html">Signer</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="statements.html">Statements</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Verification</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#verify_statement">verify_statement</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.verify_statement">verify_statement</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#verify_vc">verify_vc</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eqty_sdk.verify_vc">verify_vc</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">eqty_sdk Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html" class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">API Reference</li>
+      <li class="breadcrumb-item active">Verification</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="verification">Verification</h1>
+<p>These functions check evidence you have been given, rather than producing any. They are the Python
+counterpart of the checks the Integrity explorer runs in the browser, and they answer two separate
+questions:</p>
+<ul>
+<li><strong>Is this statement still what it says it is?</strong> Every lineage statement is identified by a hash of
+  its own canonicalized content, so recomputing that hash and comparing it with the statement's <code>@id</code>
+  detects any modification after the fact.</li>
+<li><strong>Is this credential's signature good, and is it about the statement I think it is?</strong> A valid
+  signature over some <em>other</em> subject proves nothing about the statement in hand, so the two checks
+  belong together.</li>
+</ul>
+<p>Both run <strong>fully offline</strong>. JSON-LD contexts resolve against documents compiled into the package or
+supplied by you via <code>contexts=</code>, and credentials are restricted to DID methods that can be resolved
+from the identifier itself, so verification never reaches the network. This is what makes them usable
+in an air-gapped or reproducible pipeline.</p>
+<p>There is no manifest-level entry point. Verifying a whole manifest means looping these two functions
+over its <code>statements</code>, which is what the explorer does:</p>
+<pre><code class="language-python">import json
+from eqty_sdk import verify_statement, verify_vc
+
+manifest = json.loads(open(&quot;manifest.json&quot;).read())
+contexts = manifest.get(&quot;contexts&quot;)
+
+for statement in manifest[&quot;statements&quot;].values():
+    if not verify_statement(json.dumps(statement), contexts):
+        print(&quot;modified since it was created:&quot;, statement[&quot;@id&quot;])
+</code></pre>
+<h2 id="verify_statement"><code>verify_statement</code></h2>
+<p>Pass the manifest's <code>contexts</code> map whenever you have one. Statements reference their context by CID
+(<code>"@context": "urn:cid:..."</code>), and while the common contexts ship inside the package, a statement
+written against a custom context cannot be canonicalized without it.</p>
+<p>A <code>True</code> result means every field the statement's <code>@context</code> defines is unmodified. It does not mean
+the bytes are unmodified: the identifier commits to the statement's canonicalized RDF, and JSON-LD
+expansion drops keys the context does not define.</p>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk.verify_statement" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">verify_statement</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">verify_statement</span><span class="p">(</span>
+    <span class="n">statement_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">contexts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Verifies that a lineage statement's content still hashes to its <code>@id</code>.  Canonicalizes the statement as JSON-LD, recomputes its BLAKE3 RDFC CID and compares it with the <code>@id</code> the statement carries. Returns <code>False</code> when they differ, meaning the statement was modified after it was created.  <code>contexts</code> maps a JSON-LD context URI to its context document, for contexts this build does not embed. Values may be dicts or JSON strings, so a manifest's <code>contexts</code> field can be passed straight through. Note that a supplied context takes precedence over an embedded one of the same URI.  Runs fully offline. A context that is neither embedded nor supplied raises rather than being fetched.  A <code>True</code> result means every field the statement's <code>@context</code> defines is unmodified. It does not mean the bytes are unmodified: the identifier commits to the statement's canonicalized RDF, and JSON-LD expansion drops keys the context does not define.  Raises <code>ValueError</code> if the statement is not a JSON object or has no string <code>@id</code>, and <code>RuntimeError</code> if a context cannot be resolved.</p>
+
+
+    </div>
+
+</div><h2 id="verify_vc"><code>verify_vc</code></h2>
+<p>Supply <code>statement_id</code> whenever you know which statement the credential is supposed to attest. Without
+it, only the signature is checked.</p>
+<p>Supply <code>contexts</code> whenever the credential's <code>@context</code> references a document this build does not
+embed. Verification re-expands the credential, so an unresolvable context means the proof cannot be
+checked at all — and because nothing is fetched, that surfaces as <code>False</code> rather than an error,
+indistinguishable from a bad signature. If a credential you expect to be valid returns <code>False</code>, an
+unsupplied context is the first thing to check.</p>
+<p>This verifies the cryptographic proof alone. Whether a credential has since been <strong>revoked or
+suspended</strong> lives in its status list, which has to be fetched over the network and is deliberately
+not consulted here.</p>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="eqty_sdk.verify_vc" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">verify_vc</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">verify_vc</span><span class="p">(</span>
+    <span class="n">vc_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">statement_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">contexts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Verifies a W3C Verifiable Credential's proof offline.  When <code>statement_id</code> is given, also checks that the credential's <code>credentialSubject.id</code> is that statement. A valid signature over some other subject says nothing about the statement in hand.  Returns <code>False</code> when the credential does not verify or is bound to a different subject. Raises <code>ValueError</code> when the input is not a credential, meaning it is not JSON, has no <code>credentialSubject</code>, or has more than one subject. Raises <code>RuntimeError</code> when the credential's DID method would need network access: only <code>did:key</code>, <code>did:jwk</code> and <code>did:pkh</code> resolve offline.  Checks the cryptographic proof only. Revocation and suspension live in the credential's status list, which is fetched over the network and is not consulted here.  <code>contexts</code> maps a JSON-LD context URI to its context document, for contexts this build does not embed. Values may be dicts or JSON strings, so a manifest's <code>contexts</code> field can be passed straight through. Note that a supplied context takes precedence over an embedded one of the same URI.  Runs fully offline. Verifying a credential re-expands it, so a context that is neither embedded nor supplied is never fetched — it reports <code>False</code>, alongside the other reasons a proof may not check out.</p>
+
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="statements.html" class="btn btn-neutral float-left" title="Statements"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="statements.html" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../javascripts/theme-toggle.js"></script>
+      <script src="../search/main.js"></script>
+      <script src="../js/version-select.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
