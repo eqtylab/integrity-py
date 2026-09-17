@@ -530,18 +530,14 @@ async fn register_vcomp_credentials(
     Ok(ids)
 }
 
-/// Signer for the next statement; if the notary rotated its key, fetch and store the new credential.
-pub async fn sync_active_notary_signer(config: &Config) -> Result<SignerType> {
-    let active = config
-        .active_signer
-        .clone()
-        .ok_or_else(|| anyhow!("An active signer is not set"))?;
-    let SignerType::VCompNotarySigner(vcomp) = &active.signer else {
-        return Ok(active.signer);
-    };
+/// Notary signer for the next statement; if the notary rotated its key, fetch and store the new credential.
+pub async fn sync_active_notary_signer(
+    config: &Config,
+    vcomp: &VCompNotarySigner,
+) -> Result<SignerType> {
     let signing_did = notary_container_did(&vcomp.url).await?;
     if signing_did == vcomp.did_doc.id {
-        return Ok(active.signer);
+        return Ok(SignerType::VCompNotarySigner(vcomp.clone()));
     }
     let fresh = VCompNotarySigner::create(&vcomp.url, None).await?;
     if fresh.did_doc.id != signing_did {
@@ -568,7 +564,14 @@ pub async fn create_vc_for_statement(
         vc,
     };
 
-    let signer = sync_active_notary_signer(config).await?;
+    let signer = match &config.active_signer {
+        Some(ActiveSigner {
+            signer: SignerType::VCompNotarySigner(vcomp),
+            ..
+        }) => sync_active_notary_signer(config, vcomp).await?,
+        Some(active) => active.signer.clone(),
+        None => bail!("An active signer is not set"),
+    };
 
     let registered_by = signer.get_did_doc().id.clone();
     let vc = vc::issue_vc(&statement_id.to_string(), signer).await?;
