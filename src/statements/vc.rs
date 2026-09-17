@@ -1,11 +1,12 @@
 use anyhow::anyhow;
 use integrity::{
     lineage::models::statements::{Statement, StatementTrait, VcStatement},
+    signer::SignerType,
     vc,
 };
 use pyo3::{pyfunction, PyResult, Python};
 
-use crate::{with_cfg, Context, CID};
+use crate::{config::ActiveSigner, with_cfg, Context, CID};
 
 #[pyfunction]
 #[pyo3(signature = (subject, *, timestamp=None, context=None))]
@@ -17,12 +18,17 @@ pub fn add_vc_statement(
 ) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(context);
-        let signer = ctx
-            .active_signer
-            .ok_or_else(|| anyhow!("No active signer available"))?;
-        let registered_by = signer.signer.get_did_doc().id.clone();
+        let signer = match &ctx.active_signer {
+            Some(ActiveSigner {
+                signer: SignerType::VCompNotarySigner(vcomp),
+                ..
+            }) => crate::config::sync_active_notary_signer(&ctx, vcomp).await?,
+            Some(active) => active.signer.clone(),
+            None => Err(anyhow!("No active signer available"))?,
+        };
+        let registered_by = signer.get_did_doc().id.clone();
 
-        let vc = vc::issue_vc(&subject, signer.signer).await?;
+        let vc = vc::issue_vc(&subject, signer).await?;
         let vc = serde_json::from_value(serde_json::to_value(vc).map_err(anyhow::Error::from)?)
             .map_err(anyhow::Error::from)?;
 
