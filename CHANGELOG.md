@@ -9,7 +9,7 @@ tag in this repository, with plain `vX.Y.Z` tags. Candidate,
 unofficial, and development builds have no separate entries; upcoming changes
 stay under `Unreleased`.
 
-Entries predating 2026-09-10 were backfilled from Git history. Historical dates
+Release entries through `v2.4.2` were backfilled from Git history. Historical dates
 are the tagged commits' committer dates, not verified package publication dates.
 The first release summarizes the SDK at that tag; subsequent releases describe
 changes since the preceding stable tag.
@@ -19,8 +19,36 @@ changes since the preceding stable tag.
 ### Added
 
 - A changelog and contributor instructions for documenting PRs and releases.
+  ([#83](https://github.com/eqtylab/integrity-py/pull/83))
 - A CI check requiring a matching changelog heading before stable release builds
   and PyPI publication, including manual releases.
+  ([#83](https://github.com/eqtylab/integrity-py/pull/83))
+
+## [2.4.2] - 2026-09-16
+
+### Added
+
+- An example showing computation and association statements with CID, UUID,
+  and DID predicates exported together in a manifest.
+  ([#86](https://github.com/eqtylab/integrity-py/pull/86))
+
+### Fixed
+
+- Refresh the active VComp notary signer after key rotation and store its new
+  DID credentials and blobs before issuing verifiable credentials.
+  ([#88](https://github.com/eqtylab/integrity-py/pull/88))
+
+## [2.4.1] - 2026-09-10
+
+### Changed
+
+- Move Linux release builds to standard GitHub-hosted x86_64 and ARM64 runners,
+  retaining the existing manylinux and musllinux wheel targets.
+  ([#85](https://github.com/eqtylab/integrity-py/pull/85))
+
+## [2.4.0] - 2026-09-10
+
+### Added
 
 - Offline `verify_statement()` and `verify_vc()` APIs for checking statement
   integrity and credential signatures, including caller-supplied JSON-LD contexts.
@@ -43,14 +71,20 @@ changes since the preceding stable tag.
   [#78](https://github.com/eqtylab/integrity-py/pull/78),
   [#79](https://github.com/eqtylab/integrity-py/pull/79))
 - Update the `integrity` dependency from revision `042e6609483e314c31e513bfe948f86f9b6d68a2`
-  to `v0.0.13` for caller-supplied verification contexts.
-  ([#72](https://github.com/eqtylab/integrity-py/pull/72))
+  to `v0.0.17`, including caller-supplied verification contexts introduced by the
+  intermediate update to `v0.0.13`.
+  ([#72](https://github.com/eqtylab/integrity-py/pull/72),
+  [#84](https://github.com/eqtylab/integrity-py/pull/84))
 - Group statement inserts into a single SQLite transaction and add indexes to
   speed up statement lookup.
   ([#73](https://github.com/eqtylab/integrity-py/pull/73))
 
 ### Fixed
 
+- Preserve all statements registered or imported into a context when exporting
+  its manifest, including otherwise unreferenced VComp credentials and statements
+  in contexts without computations.
+  ([#84](https://github.com/eqtylab/integrity-py/pull/84))
 - Include referenced governance declarations when generating manifests.
   ([#73](https://github.com/eqtylab/integrity-py/pull/73))
 - Honor `_store` for computation inputs and outputs, including assets generated
@@ -291,7 +325,10 @@ Initial stable tag in this repository, establishing the Rust-backed Python SDK.
   [#26](https://github.com/eqtylab/integrity-py/pull/26),
   [#27](https://github.com/eqtylab/integrity-py/pull/27))
 
-[Unreleased]: https://github.com/eqtylab/integrity-py/compare/v2.3.0...main
+[Unreleased]: https://github.com/eqtylab/integrity-py/compare/v2.4.2...main
+[2.4.2]: https://github.com/eqtylab/integrity-py/compare/v2.4.1...v2.4.2
+[2.4.1]: https://github.com/eqtylab/integrity-py/compare/v2.4.0...v2.4.1
+[2.4.0]: https://github.com/eqtylab/integrity-py/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/eqtylab/integrity-py/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/eqtylab/integrity-py/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/eqtylab/integrity-py/compare/v2.1.1...v2.1.2
