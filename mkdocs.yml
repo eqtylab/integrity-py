@@ -6,6 +6,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Changelog: https://github.com/eqtylab/integrity-py/blob/main/CHANGELOG.md
   - Quick Start: quick-start.md
   - Install:
       - Min Version: install/min-version.md
