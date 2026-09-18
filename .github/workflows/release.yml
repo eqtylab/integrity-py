@@ -34,9 +34,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - platform: ubuntu-latest-large
+          - platform: ubuntu-latest
             artifact_suffix: linux-x86_64
-          - platform: ubuntu-aarch64
+          - platform: ubuntu-24.04-arm
             artifact_suffix: linux-aarch64
           - platform: macos-15-xlarge
             artifact_suffix: macos-arm64
@@ -116,7 +116,7 @@ jobs:
           sed -i '' '/^\[project\]$/,/^\[/s/^version = ".*"/version = "'"$version"'"/' pyproject.toml
 
       - name: Build sdist
-        if: matrix.platform == 'ubuntu-latest-large'
+        if: matrix.platform == 'ubuntu-latest'
         shell: bash
         run: |
           IFS='.' read -r python_major python_minor _ < .python-version
@@ -149,7 +149,7 @@ jobs:
             '
 
       - name: Verify sdist size
-        if: matrix.platform == 'ubuntu-latest-large'
+        if: matrix.platform == 'ubuntu-latest'
         shell: bash
         run: |
           sdist="$(find dist/sdist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
@@ -170,10 +170,10 @@ jobs:
           python_abi_tag="${python_major}${python_minor}"
 
           case "${{ matrix.platform }}" in
-            ubuntu-latest-large)
+            ubuntu-latest)
               build_specs=$'linux-manylinux|quay.io/pypa/manylinux2014_x86_64|manylinux2014|dist/auditwheel-show-linux-x86_64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_x86_64|musllinux_1_2|dist/auditwheel-show-musllinux-x86_64.txt'
               ;;
-            ubuntu-aarch64)
+            ubuntu-24.04-arm)
               build_specs=$'linux-manylinux|quay.io/pypa/manylinux2014_aarch64|manylinux2014|dist/auditwheel-show-linux-aarch64.txt\nlinux-musllinux|quay.io/pypa/musllinux_1_2_aarch64|musllinux_1_2|dist/auditwheel-show-musllinux-aarch64.txt'
               ;;
             *)
@@ -257,7 +257,7 @@ jobs:
           retention-days: 1
 
       - name: Upload x86_64 wheel for docs
-        if: matrix.platform == 'ubuntu-latest-large'
+        if: matrix.platform == 'ubuntu-latest'
         uses: actions/upload-artifact@v6
         with:
           name: linux-wheel-x86_64
@@ -452,7 +452,7 @@ jobs:
       - name: Download x86_64 auditwheel report
         uses: actions/download-artifact@v7
         with:
-          name: auditwheel-report-ubuntu-latest-large
+          name: auditwheel-report-ubuntu-latest
           path: docs/generated
 
       - name: Download x86_64 wheel
@@ -464,7 +464,7 @@ jobs:
       - name: Download aarch64 auditwheel report
         uses: actions/download-artifact@v7
         with:
-          name: auditwheel-report-ubuntu-aarch64
+          name: auditwheel-report-ubuntu-24.04-arm
           path: docs/generated
 
       - name: Download macOS linkage report

@@ -570,57 +570,278 @@ impl Sqlite {
     }
 
     /// Registers a statement in the database, optionally associating it with a graph.
-    ///
-    /// Graph-specific statements (computation, data, metadata, etc.) are linked to the
-    /// provided graph_id. Global statements (credentials, DIDs) are stored without graph association.
     pub async fn register_statement(&self, statement: &Statement, graph_id: &Uuid) -> Result<()> {
         log::trace!("Registering statement");
         let mut transaction = self.pool.begin().await?;
         match statement {
-            Statement::AssociationRegistration(_)
-            | Statement::ComputationRegistration(_)
-            | Statement::DataRegistration(_)
-            | Statement::EntityRegistration(_)
-            | Statement::GovernanceRegistration(_)
-            | Statement::MetadataRegistration(_)
-            | Statement::StorageRegistration(_) => {
-                self.register_graph_statement(&mut transaction, statement, graph_id)
-                    .await?
+            Statement::ComputationRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let statement_data = serde_json::to_string(&statement)?;
+                log::debug!("Registering computation '{id}'");
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO computation_statements
+                    (id, statement, registered_by) VALUES (?1, ?2, ?3)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(&s.registered_by)
+                .execute(&mut *transaction)
+                .await?;
             }
-            Statement::CredentialDsseRegistration(_)
-            | Statement::CredentialRegistration(_)
-            | Statement::CredentialSigstoreBundleRegistration(_)
-            | Statement::DidRegistration(_) => {
-                self.register_global_statement(&mut transaction, statement)
-                    .await?
+            Statement::DataRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let statement_data = serde_json::to_string(&statement)?;
+                log::debug!("Registering data '{id}'");
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO data_statements
+                    (id, statement, registered_by) VALUES (?1, ?2, ?3)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(&s.registered_by)
+                .execute(&mut *transaction)
+                .await?;
+
+                for data_item in s.data.to_vec_string() {
+                    sqlx::query(
+                        r#"
+                      INSERT OR IGNORE INTO data_statement_subjects
+                      (statement_id, subject) VALUES (?1, ?2)
+                    "#,
+                    )
+                    .bind(&id)
+                    .bind(data_item)
+                    .execute(&mut *transaction)
+                    .await?;
+                }
+            }
+            Statement::MetadataRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let statement_data = serde_json::to_string(&statement)?;
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO metadata_statements
+                    (id, statement, registered_by, subject) VALUES (?1, ?2, ?3, ?4)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(&s.registered_by)
+                .bind(&s.subject)
+                .execute(&mut *transaction)
+                .await?;
+            }
+            Statement::StorageRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let statement_data = serde_json::to_string(&statement)?;
+                log::debug!("Registering storage '{id}'");
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO storage_statements
+                    (id, statement, registered_by, data) VALUES (?1, ?2, ?3, ?4)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(&s.registered_by)
+                .bind(&s.data)
+                .execute(&mut *transaction)
+                .await?;
+            }
+            Statement::EntityRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let statement_data = serde_json::to_string(&statement)?;
+                log::debug!("Registering entity '{id}'");
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO entity_statements
+                    (id, statement, registered_by) VALUES (?1, ?2, ?3)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(&s.registered_by)
+                .execute(&mut *transaction)
+                .await?;
+
+                for entity in s.entity.to_vec_string() {
+                    sqlx::query(
+                        r#"
+                      INSERT OR IGNORE INTO entity_statement_subjects
+                      (statement_id, entity) VALUES (?1, ?2)
+                    "#,
+                    )
+                    .bind(&id)
+                    .bind(entity)
+                    .execute(&mut *transaction)
+                    .await?;
+                }
+            }
+            Statement::AssociationRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let statement_data = serde_json::to_string(&statement)?;
+                let association_type = match s.r#type {
+                    integrity::lineage::models::statements::AssociationType::Certifies => {
+                        "certifies"
+                    }
+                    integrity::lineage::models::statements::AssociationType::Includes => "includes",
+                    integrity::lineage::models::statements::AssociationType::IsInstanceOf => {
+                        "isInstanceOf"
+                    }
+                };
+                log::debug!("Registering association '{id}'");
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO association_statements
+                    (id, statement, registered_by, subject, type) VALUES (?1, ?2, ?3, ?4, ?5)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(&s.registered_by)
+                .bind(&s.subject)
+                .bind(association_type)
+                .execute(&mut *transaction)
+                .await?;
+
+                for item in &s.association {
+                    sqlx::query(
+                        r#"
+                        INSERT OR IGNORE INTO association_statement_items
+                        (statement_id, association_item) VALUES (?1, ?2)
+                    "#,
+                    )
+                    .bind(&id)
+                    .bind(item)
+                    .execute(&mut *transaction)
+                    .await?;
+                }
+            }
+            Statement::GovernanceRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let statement_data = serde_json::to_string(&statement)?;
+                log::debug!("Registering governance '{id}'");
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO governance_statements
+                    (id, statement, registered_by, subject, document) VALUES (?1, ?2, ?3, ?4, ?5)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(&s.registered_by)
+                .bind(&s.subject)
+                .bind(&s.document)
+                .execute(&mut *transaction)
+                .await?;
+            }
+            Statement::CredentialSigstoreBundleRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let statement_data = serde_json::to_string(&statement)?;
+                log::debug!("Registering sigstore bundle '{id}'");
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO sigstore_statements
+                    (id, statement, registered_by, subject) VALUES (?1, ?2, ?3, ?4)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(&s.registered_by)
+                .bind(&s.subject)
+                .execute(&mut *transaction)
+                .await?;
+            }
+            Statement::CredentialRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let statement_data = serde_json::to_string(&statement)?;
+                log::debug!("Registering credential '{id}'");
+                let subject = s.credential.credential_subjects.first().ok_or_else(|| {
+                    anyhow::anyhow!("Credential registration has no credential subjects")
+                })?;
+                let subject_json = serde_json::to_value(subject)
+                    .context("Failed to serialize credential subject")?;
+                let subject_id = extract_credential_subject_id(&subject_json).context(format!(
+                    "Failed to extract subject ID from credential registration '{id}'"
+                ))?;
+
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO credential_statements
+                    (id, statement, registered_by, credential_subject) VALUES (?1, ?2, ?3, ?4)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(&s.registered_by)
+                .bind(&subject_id)
+                .execute(&mut *transaction)
+                .await?;
+            }
+            Statement::CredentialDsseRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let statement_data = serde_json::to_string(&statement)?;
+                log::debug!("Registering dsse '{id}'");
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO dsse_statements
+                    (id, statement, registered_by) VALUES (?1, ?2, ?3)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(&s.registered_by)
+                .execute(&mut *transaction)
+                .await?;
+            }
+            Statement::DidRegistration(s) => {
+                let statement = serde_json::to_value(statement)?;
+                let id = s.get_id();
+                let registered_by = s.get_registered_by();
+                let type_ = s.get_type();
+                let did = s.get_did();
+                let statement_data = serde_json::to_string(&statement)?;
+                log::debug!("Registering {type_} did '{id}'");
+                sqlx::query(
+                    r#"
+                    INSERT OR IGNORE INTO did_statements
+                    (id, statement, registered_by, type, did) VALUES (?1, ?2, ?3, ?4, ?5)
+                "#,
+                )
+                .bind(&id)
+                .bind(&statement_data)
+                .bind(registered_by)
+                .bind(type_)
+                .bind(did)
+                .execute(&mut *transaction)
+                .await?;
             }
         }
+        Self::associate_statement_to_graph_in_transaction(
+            &mut transaction,
+            &statement.get_id(),
+            graph_id,
+        )
+        .await?;
         transaction.commit().await?;
         Ok(())
     }
 
-    /// Updates the link table to assign a statement to a graph
-    pub async fn associate_statement_to_graph(
-        &self,
-        statement_id: &str,
-        graph_id: &Uuid,
-    ) -> Result<()> {
-        sqlx::query(
-            r#"
-            INSERT OR IGNORE INTO statement_graph_link
-            (statement_id, graph_id)
-            VALUES (?1, ?2)
-        "#,
-        )
-        .bind(statement_id)
-        .bind(graph_id.to_string())
-        .execute(&self.pool)
-        .await?;
-
-        Ok(())
-    }
-
-    async fn associate_statement_to_graph_in_transaction(
+    pub(crate) async fn associate_statement_to_graph_in_transaction(
         transaction: &mut Transaction<'_, SqliteDb>,
         statement_id: &str,
         graph_id: &Uuid,
@@ -640,12 +861,71 @@ impl Sqlite {
         Ok(())
     }
 
+    /// Retrieves statements explicitly linked to this graph via `statement_graph_link`,
+    /// regardless of whether anything else in the graph references them.
+    async fn retrieve_directly_linked_statements(
+        &self,
+        graph_id: &Uuid,
+    ) -> Result<Vec<sqlx::sqlite::SqliteRow>> {
+        let query = r#"
+            SELECT statement, NULL as metadata, NULL as vc, NULL as did
+            FROM data_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM metadata_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM storage_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM entity_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM association_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM governance_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM credential_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM dsse_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM sigstore_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+            UNION ALL
+            SELECT statement, NULL, NULL, NULL
+            FROM did_statements s JOIN statement_graph_link l ON s.id = l.statement_id
+            WHERE l.graph_id = ?1
+        "#;
+
+        sqlx::query(query)
+            .bind(graph_id.to_string())
+            .fetch_all(&self.pool)
+            .await
+            .map_err(Into::into)
+    }
+
     /// Retrieves the statements associated to the graph ID.
     ///
     /// Returns the graph with its statements populated, including statements
     /// from parent graphs in the hierarchy.
     pub async fn retrieve_statements(&self, graph_id: &Uuid) -> Result<Vec<Statement>> {
         log::info!("Retrieving statements for graph {graph_id:?}");
+
+        let direct_rows = self.retrieve_directly_linked_statements(graph_id).await?;
+        log::debug!("Found '{}' directly linked statements", direct_rows.len());
+        let mut statements = rows_to_statements(direct_rows)?;
 
         // Create placeholders for the IN clause
         let compute_query_str = r#"
@@ -670,13 +950,14 @@ impl Sqlite {
 
         if compute_rows.is_empty() {
             log::info!("No computation statements found for graph(s) {graph_id:?}");
-            return Ok(vec![]);
+            self.get_global_statements(&mut statements).await?;
+            return Ok(statements.into_values().collect());
         }
 
         let mut subjects: Vec<String> = Vec::new();
 
         log::debug!("Found '{}' compute statements", compute_rows.len());
-        let mut statements = rows_to_statements(compute_rows)?;
+        statements.extend(rows_to_statements(compute_rows)?);
         for statement in statements.values() {
             if let Statement::ComputationRegistration(s) = statement {
                 subjects.extend(s.input.to_vec_string());
@@ -779,333 +1060,6 @@ impl Sqlite {
         Ok(())
     }
 
-    /// Used to register statements associtated with a specific graph_id (aka NON-Global)
-    async fn register_graph_statement(
-        &self,
-        transaction: &mut Transaction<'_, SqliteDb>,
-        statement: &Statement,
-        graph_id: &Uuid,
-    ) -> Result<()> {
-        match statement {
-            Statement::ComputationRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering computation '{id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO computation_statements
-                    (id, statement, registered_by) VALUES (?1, ?2, ?3)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .execute(&mut **transaction)
-                .await?;
-
-                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id).await
-            }
-            Statement::DataRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering data '{id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO data_statements
-                    (id, statement, registered_by) VALUES (?1, ?2, ?3)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .execute(&mut **transaction)
-                .await?;
-
-                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id)
-                    .await?;
-
-                for data_item in s.data.to_vec_string() {
-                    sqlx::query(
-                        r#"
-                      INSERT OR IGNORE INTO data_statement_subjects
-                      (statement_id, subject) VALUES (?1, ?2)
-                    "#,
-                    )
-                    .bind(&id)
-                    .bind(data_item)
-                    .execute(&mut **transaction)
-                    .await?;
-                }
-                Ok(())
-            }
-            Statement::MetadataRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering metadata '{id}' to graph '{graph_id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO metadata_statements
-                    (id, statement, registered_by, subject) VALUES (?1, ?2, ?3, ?4)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .bind(&s.subject)
-                .execute(&mut **transaction)
-                .await?;
-
-                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id).await
-            }
-            Statement::StorageRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering storage '{id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO storage_statements
-                    (id, statement, registered_by, data) VALUES (?1, ?2, ?3, ?4)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .bind(&s.data)
-                .execute(&mut **transaction)
-                .await?;
-
-                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id).await
-            }
-            Statement::EntityRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering entity '{id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO entity_statements
-                    (id, statement, registered_by) VALUES (?1, ?2, ?3)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .execute(&mut **transaction)
-                .await?;
-
-                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id)
-                    .await?;
-
-                for entity in s.entity.to_vec_string() {
-                    sqlx::query(
-                        r#"
-                      INSERT OR IGNORE INTO entity_statement_subjects
-                      (statement_id, entity) VALUES (?1, ?2)
-                    "#,
-                    )
-                    .bind(&id)
-                    .bind(entity)
-                    .execute(&mut **transaction)
-                    .await?;
-                }
-
-                Ok(())
-            }
-            Statement::AssociationRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                let association_type = match s.r#type {
-                    integrity::lineage::models::statements::AssociationType::Certifies => {
-                        "certifies"
-                    }
-                    integrity::lineage::models::statements::AssociationType::Includes => "includes",
-                    integrity::lineage::models::statements::AssociationType::IsInstanceOf => {
-                        "isInstanceOf"
-                    }
-                };
-                log::debug!("Registering association '{id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO association_statements
-                    (id, statement, registered_by, subject, type) VALUES (?1, ?2, ?3, ?4, ?5)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .bind(&s.subject)
-                .bind(association_type)
-                .execute(&mut **transaction)
-                .await?;
-
-                for item in &s.association {
-                    sqlx::query(
-                        r#"
-                        INSERT OR IGNORE INTO association_statement_items
-                        (statement_id, association_item) VALUES (?1, ?2)
-                    "#,
-                    )
-                    .bind(&id)
-                    .bind(item)
-                    .execute(&mut **transaction)
-                    .await?;
-                }
-
-                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id).await
-            }
-            Statement::GovernanceRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering governance '{id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO governance_statements
-                    (id, statement, registered_by, subject, document) VALUES (?1, ?2, ?3, ?4, ?5)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .bind(&s.subject)
-                .bind(&s.document)
-                .execute(&mut **transaction)
-                .await?;
-
-                Self::associate_statement_to_graph_in_transaction(transaction, &id, graph_id).await
-            }
-            Statement::CredentialSigstoreBundleRegistration(_)
-            | Statement::DidRegistration(_)
-            | Statement::CredentialDsseRegistration(_)
-            | Statement::CredentialRegistration(_) => {
-                log::error!(
-                    "Attempted to register a non-graph specific statement '{}' to a graph",
-                    statement.get_type_string().unwrap_or("UNKNOWN".to_owned())
-                );
-                Ok(())
-            }
-        }
-    }
-
-    async fn register_global_statement(
-        &self,
-        transaction: &mut Transaction<'_, SqliteDb>,
-        statement: &Statement,
-    ) -> Result<()> {
-        match statement {
-            Statement::CredentialSigstoreBundleRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering sigstore bundle '{id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO sigstore_statements
-                    (id, statement, registered_by, subject) VALUES (?1, ?2, ?3, ?4)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .bind(&s.subject)
-                .execute(&mut **transaction)
-                .await?;
-
-                Ok(())
-            }
-            Statement::CredentialRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering credential '{id}'");
-                let subject = s.credential.credential_subjects.first().ok_or_else(|| {
-                    anyhow::anyhow!("Credential registration has no credential subjects")
-                })?;
-                let subject_json = serde_json::to_value(subject)
-                    .context("Failed to serialize credential subject")?;
-                let subject_id = extract_credential_subject_id(&subject_json).context(format!(
-                    "Failed to extract subject ID from credential registration '{id}'"
-                ))?;
-
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO credential_statements
-                    (id, statement, registered_by, credential_subject) VALUES (?1, ?2, ?3, ?4)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .bind(&subject_id)
-                .execute(&mut **transaction)
-                .await?;
-
-                Ok(())
-            }
-            Statement::CredentialDsseRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering dsse '{id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO dsse_statements
-                    (id, statement, registered_by) VALUES (?1, ?2, ?3)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(&s.registered_by)
-                .execute(&mut **transaction)
-                .await?;
-
-                Ok(())
-            }
-            Statement::DidRegistration(s) => {
-                let statement = serde_json::to_value(statement)?;
-                let id = s.get_id();
-                let registered_by = s.get_registered_by();
-                let type_ = s.get_type();
-                let did = s.get_did();
-                let statement_data = serde_json::to_string(&statement)?;
-                log::debug!("Registering {type_} did '{id}'");
-                sqlx::query(
-                    r#"
-                    INSERT OR IGNORE INTO did_statements
-                    (id, statement, registered_by, type, did) VALUES (?1, ?2, ?3, ?4, ?5)
-                "#,
-                )
-                .bind(&id)
-                .bind(&statement_data)
-                .bind(registered_by)
-                .bind(type_)
-                .bind(did)
-                .execute(&mut **transaction)
-                .await?;
-
-                Ok(())
-            }
-            Statement::ComputationRegistration(_)
-            | Statement::AssociationRegistration(_)
-            | Statement::DataRegistration(_)
-            | Statement::MetadataRegistration(_)
-            | Statement::StorageRegistration(_)
-            | Statement::GovernanceRegistration(_)
-            | Statement::EntityRegistration(_) => {
-                log::error!(
-                    "Attempted to register a graph specific statement '{}' to the global store",
-                    statement.get_type_string().unwrap_or("UNKNOWN".to_owned())
-                );
-                Ok(())
-            }
-        }
-    }
-
     async fn get_global_statements(
         &self,
         statements: &mut HashMap<String, Statement>,
@@ -1122,8 +1076,11 @@ impl Sqlite {
             referenced_cids.extend(stmt.referenced_cids());
         }
 
-        log::debug!("Getting credential statements for subjects: {credential_subjects:?}");
-        let placeholders = vec!["?"; credential_subjects.len()].join(", ");
+        let mut credential_lookup_subjects = credential_subjects.clone();
+        credential_lookup_subjects.extend(dids.iter().cloned());
+
+        log::debug!("Getting credential statements for subjects: {credential_lookup_subjects:?}");
+        let placeholders = vec!["?"; credential_lookup_subjects.len()].join(", ");
         let global_query = format!(
             r#"
             SELECT statement, NULL as metadata, NULL as vc, NULL as did
@@ -1134,7 +1091,7 @@ impl Sqlite {
         );
 
         let mut sql_query = sqlx::query(&global_query);
-        for credential_subject in &credential_subjects {
+        for credential_subject in &credential_lookup_subjects {
             sql_query = sql_query.bind(credential_subject);
         }
 

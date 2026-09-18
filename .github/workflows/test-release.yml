@@ -19,7 +19,7 @@ on:
 jobs:
   build_and_publish:
     if: inputs.publish_run_id == ''
-    runs-on: ubuntu-latest-large
+    runs-on: ubuntu-latest
     steps:
       - name: Install Nix
         uses: eqtylab-actions/install-nix-action@v31
@@ -181,7 +181,7 @@ jobs:
   publish_to_testpypi:
     needs: build_and_publish
     if: always() && (inputs.publish_run_id != '' || needs.build_and_publish.result == 'success')
-    runs-on: ubuntu-latest-large
+    runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
