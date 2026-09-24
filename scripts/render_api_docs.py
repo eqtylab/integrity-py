@@ -78,19 +78,89 @@ def mdx_safe(markdown: str, heading_ids: dict[str, str]) -> str:
     return ANCHOR.sub(lambda m: f"](#{heading_ids[m.group(1)]})" if m.group(1) in heading_ids else m.group(0), markdown)
 
 
-def main() -> None:
-    pkg = griffe.load("eqty_sdk", search_paths=[str(ROOT)], find_stubs_package=True, allow_inspection=False)
-    directives = json.loads(TABLE.read_text())
-
-    rendered: dict[str, str] = {}
-    for d in directives:
-        target = d["target"]
-        config = {**DEFAULTS, **d.get("options", {})}
+def _objects(obj: griffe.Object, root: str):
+    """The object and every function or class under it, aliases resolved, staying inside
+    `root` so that imports from other modules are not walked."""
+    yield obj
+    for member in obj.members.values():
         try:
-            obj = pkg[target.split(".", 1)[1]]
-        except KeyError as err:
-            raise SystemExit(f"render_api_docs: {target} is not in eqty_sdk") from err
-        rendered[target] = griffe2md.render_object_docs(obj, config).rstrip() + "\n"
+            target = member.final_target if member.is_alias else member
+        except griffe.AliasResolutionError:
+            continue
+        if not target.path.startswith(root):
+            continue
+        if target.is_function:
+            yield target
+        elif target.is_class or target.is_module:
+            yield from _objects(target, root)
+
+
+def _signature_params(o: griffe.Object) -> list:
+    if o.is_class:
+        init = o.members.get("__init__")
+        return list(init.parameters) if init is not None and init.is_function else []
+    return list(o.parameters) if o.is_function else []
+
+
+def _strip_annotation(line: str, prefix: str) -> str:
+    """Drop `: <annotation>` after `prefix` (`**kwargs`), up to a depth-0 `,` or `)`."""
+    j = line.find(prefix + ": ")
+    if j == -1:
+        return line
+    k, depth = j + len(prefix) + 2, 0
+    while k < len(line) and not (depth == 0 and line[k] in ",)"):
+        depth += line[k] in "[("
+        depth -= line[k] in "])"
+        k += 1
+    return line[: j + len(prefix)] + line[k:]
+
+
+def fix_signatures(obj: griffe.Object, markdown: str) -> str:
+    """Rewrite 4. griffe2md's signature template carries the previous parameter's annotation
+    onto an unannotated `*args` or `**kwargs`, and ends merged class signatures in `-> None`.
+    Each signature line `name(...)` is matched to the griffe objects of that name under the
+    target; which parameters are unannotated comes from griffe, never from the text."""
+    by_name: dict[str, list[griffe.Object]] = {}
+    for o in _objects(obj, obj.path):
+        by_name.setdefault(o.name, []).append(o)
+
+    def fix(line: str) -> str:
+        m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\(", line)
+        if not m or m.group(1) not in by_name:
+            return line
+        objs = by_name[m.group(1)]
+        for kind, star in (("variadic keyword", "**"), ("variadic positional", "*")):
+            params = [p for o in objs for p in _signature_params(o) if p.kind.value == kind]
+            # Only when every same-named object agrees the parameter is unannotated.
+            if params and all(p.annotation is None for p in params) and len({p.name for p in params}) == 1:
+                line = _strip_annotation(line, star + params[0].name)
+        if all(o.is_class for o in objs) and line.endswith(") -> None"):
+            line = line[: -len(" -> None")]
+        return line
+
+    return "\n".join(fix(line) for line in markdown.split("\n"))
+
+
+def load_package() -> griffe.Module:
+    return griffe.load("eqty_sdk", search_paths=[str(ROOT)], find_stubs_package=True, allow_inspection=False)
+
+
+def load_table() -> list[dict]:
+    return json.loads(TABLE.read_text())
+
+
+def render(pkg: griffe.Module, target: str, options: dict) -> str:
+    config = {**DEFAULTS, **options}
+    try:
+        obj = pkg[target.split(".", 1)[1]]
+    except KeyError as err:
+        raise SystemExit(f"render_api_docs: {target} is not in eqty_sdk") from err
+    return fix_signatures(obj, griffe2md.render_object_docs(obj, config)).rstrip() + "\n"
+
+
+def main() -> None:
+    pkg = load_package()
+    rendered = {d["target"]: render(pkg, d["target"], d.get("options", {})) for d in load_table()}
 
     # Two passes: every heading's id first, then the links that point at them.
     heading_ids = {m.group(1): slug(m.group(1)) for md in rendered.values() for m in HEADING.finditer(md)}

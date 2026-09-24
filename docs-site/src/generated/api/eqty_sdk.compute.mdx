@@ -22,7 +22,7 @@ export const components = { pre: CodeFenceBridge, a: Link };
 ### `eqty_sdk.compute.compute.Compute`
 
 ```python
-Compute(func: Callable[..., Any], metadata: Optional[Dict[str, Any]] = None, _store: Optional[bool] = None, ctx: Optional[Context] = None, **kwargs: Optional[Context]) -> None
+Compute(func: Callable[..., Any], metadata: Optional[Dict[str, Any]] = None, _store: Optional[bool] = None, ctx: Optional[Context] = None, **kwargs)
 ```
 
 A wrapper class to hold and execute a function.
@@ -141,7 +141,7 @@ Creates the computation statement, and adds a metadata statement for the computa
 ## `eqty_sdk.compute.Compute`
 
 ```python
-Compute(func: Callable[..., Any], metadata: Optional[Dict[str, Any]] = None, _store: Optional[bool] = None, ctx: Optional[Context] = None, **kwargs: Optional[Context]) -> None
+Compute(func: Callable[..., Any], metadata: Optional[Dict[str, Any]] = None, _store: Optional[bool] = None, ctx: Optional[Context] = None, **kwargs)
 ```
 
 A wrapper class to hold and execute a function.
