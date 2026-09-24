@@ -13,9 +13,9 @@ to the page's own content only; an imported .mdx partial renders bare <pre> and 
 
 griffe2md writes Markdown for MkDocs. Three rewrites make it MDX and make it fit this site:
   1. `<https://x>` autolinks are JSX to MDX; they become `[x](x)`.
-  2. `<code>[Name](#anchor)</code>` type cross-references point at anchors MkDocs would have
-     made; here they become plain `Name` in code, since a type with no heading in these
-     partials has nowhere to go.
+  2. `<code>[Name](#anchor)</code>` type cross-references, one or several to a code span,
+     point at anchors MkDocs would have made; here they become plain `Name` in code, since a
+     type with no heading in these partials has nowhere to go.
   3. In-partial links `(#eqty_sdk._rust.Signer.load)` are rewritten to the id the site gives
      that heading. @eqtylab/docs uses github-slugger over the heading text; for these
      headings (letters, digits, underscores, dots) that is lowercase with the dots removed.
@@ -60,6 +60,9 @@ export const components = { pre: CodeFenceBridge, a: Link };
 HEADING = re.compile(r"^#{1,6} `([^`]+)`\s*$", re.M)
 AUTOLINK = re.compile(r"<(https?://[^>\s]+)>")
 CODE_XREF = re.compile(r"<code>\[([^\]]+)\]\(#[^)]*\)</code>")
+# A code span can hold several cross-references, as in `Optional[UUID]`.
+CODE_SPAN = re.compile(r"<code>.*?</code>")
+LINK_IN_CODE = re.compile(r"\[([^\]]+)\]\(#[^)]*\)")
 ANCHOR = re.compile(r"\]\(#([^)\s]+)\)")
 
 
@@ -71,6 +74,7 @@ def slug(text: str) -> str:
 def mdx_safe(markdown: str, heading_ids: dict[str, str]) -> str:
     markdown = AUTOLINK.sub(r"[\1](\1)", markdown)
     markdown = CODE_XREF.sub(r"`\1`", markdown)
+    markdown = CODE_SPAN.sub(lambda m: LINK_IN_CODE.sub(r"\1", m.group(0)), markdown)
     return ANCHOR.sub(lambda m: f"](#{heading_ids[m.group(1)]})" if m.group(1) in heading_ids else m.group(0), markdown)
 
 
