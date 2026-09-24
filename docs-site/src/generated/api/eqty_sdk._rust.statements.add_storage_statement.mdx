@@ -1,0 +1,12 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+### `eqty_sdk._rust.statements.add_storage_statement`
+
+```python
+add_storage_statement(data: str, stored_on: str, *, operated_by: Optional[str] = None, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None) -> List[_CID]
+```
+
+Adds a storage statement linking data to a storage location.

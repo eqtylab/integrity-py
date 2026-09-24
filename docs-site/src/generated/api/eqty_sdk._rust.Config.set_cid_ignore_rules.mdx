@@ -1,0 +1,12 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+### `eqty_sdk._rust.Config.set_cid_ignore_rules`
+
+```python
+set_cid_ignore_rules(include_hidden_files: Optional[bool] = None, gitignore: Optional[bool] = None, include_symlinks: Optional[bool] = None) -> Config
+```
+
+Updates the directory ignore rules used when computing CIDs. - `include_hidden_files`: Include hidden files in directory hashing. - `gitignore`: Respect `.gitignore` rules while hashing directories. - `include_symlinks`: Include symlinks in directory hashing. Returns the updated config instance.

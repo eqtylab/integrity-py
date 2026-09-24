@@ -1,0 +1,20 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+A simple wrapper around a content identifier (CID) string. Provides a typed wrapper for CID strings with property access and string conversion.
+
+**Attributes:**
+
+- [**cid**](#eqty_sdk_rustcidcid) (`str`) – The formatted CID string.
+
+Creates a new CID, ensuring it is prefixed with `urn:cid:`.
+
+## `eqty_sdk._rust.CID.cid`
+
+```python
+cid: str
+```
+
+The formatted CID string.

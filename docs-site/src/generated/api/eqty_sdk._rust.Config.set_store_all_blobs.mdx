@@ -1,0 +1,12 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+### `eqty_sdk._rust.Config.set_store_all_blobs`
+
+```python
+set_store_all_blobs(value: bool) -> Config
+```
+
+Sets whether blobs should be persisted automatically when computing CIDs. Returns the updated config instance.

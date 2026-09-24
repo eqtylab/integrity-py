@@ -1,0 +1,12 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+### `eqty_sdk.set_active_signer`
+
+```python
+set_active_signer(signer: Signer) -> None
+```
+
+Set the active signer used by higher-level SDK operations.

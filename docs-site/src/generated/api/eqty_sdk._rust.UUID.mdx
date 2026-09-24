@@ -1,0 +1,20 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+A simple wrapper around a UUID string. Provides a typed wrapper for UUID strings with property access and string conversion.
+
+**Attributes:**
+
+- [**uuid**](#eqty_sdk_rustuuiduuid) (`str`) – The formatted UUID string.
+
+Creates a new UUID, ensuring it is prefixed with `urn:uuid:`.
+
+## `eqty_sdk._rust.UUID.uuid`
+
+```python
+uuid: str
+```
+
+The formatted UUID string.

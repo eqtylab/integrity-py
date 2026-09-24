@@ -1,0 +1,12 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+### `eqty_sdk.init`
+
+```python
+init(default_context: Optional[Context] = None, *, custom_dir: Optional[PathLike[str]] = None) -> Config
+```
+
+Initializes the sdk config. Must be called before setting individual config values
