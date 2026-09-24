@@ -1,4 +1,11 @@
-# Nested Contexts
+---
+title: "Nested Contexts"
+description: "Use this example when a Governance Studio project should be the root of the graph tree, but you still want local subcontexts below it for project-level state and individual runs."
+---
+
+import CodeFence from '@eqtylab/docs/components/CodeFence.astro';
+import creatingTheModel from '../../../../../examples/creating-the-model.py?raw';
+import usingTheModel from '../../../../../examples/using-the-model.py?raw';
 
 Use this example when a Governance Studio project should be the root of the graph tree, but you still want local subcontexts below it for project-level state and individual runs.
 
@@ -8,17 +15,13 @@ Context graphs are built hierarchically. If data is registered in a parent graph
 
 Source: `examples/creating-the-model.py`
 
-```python
---8<-- "examples/creating-the-model.py"
-```
+<CodeFence code={creatingTheModel} lang="python" />
 
 ## Use The Shared Model In A Child Context
 
 Source: `examples/using-the-model.py`
 
-```python
---8<-- "examples/using-the-model.py"
-```
+<CodeFence code={usingTheModel} lang="python" />
 
 Notes:
 

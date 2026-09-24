@@ -1,4 +1,10 @@
-# Model Signing
+---
+title: "Model Signing"
+description: "When the SDK attempts a model-signing statement, and how to opt in."
+---
+
+import CodeFence from '@eqtylab/docs/components/CodeFence.astro';
+import modelSigning from '../../../../../examples/model-signing.py?raw';
 
 Model signing is explicit. A model-signing statement is only attempted when:
 
@@ -9,9 +15,7 @@ Model signing is explicit. A model-signing statement is only attempted when:
 
 Source: `examples/model-signing.py`
 
-```python
---8<-- "examples/model-signing.py"
-```
+<CodeFence code={modelSigning} lang="python" />
 
 Notes:
 

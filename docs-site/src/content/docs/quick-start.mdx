@@ -1,4 +1,10 @@
-# Quick Start
+---
+title: "Quick Start"
+description: "In about 10 minutes, you will install the SDK, run a small lineage-tracked workflow, export an Integrity Manifest, and open it in Explorer."
+---
+
+import CodeFence from '@eqtylab/docs/components/CodeFence.astro';
+import quickStart from '../../../../examples/quick-start.py?raw';
 
 In about 10 minutes, you will install the SDK, run a small lineage-tracked workflow, export an Integrity Manifest, and open it in Explorer. Along the way, you will create a software DID signer, register data, and record a computation.
 
@@ -21,9 +27,7 @@ python -c "import eqty_sdk; print(eqty_sdk.__file__)"
 Create `quick_start.py` with the following code, then run
 `python quick_start.py`.
 
-```python
---8<-- "examples/quick-start.py"
-```
+<CodeFence code={quickStart} lang="python" />
 
 The script prints the formatted prompt and writes `manifests/quick-start.json`. `Signer.load_or_create(...)` gives the process a stable, local software key and DID. With that signer active, the SDK attributes and signs the statements it produces; rerunning the script uses the same DID rather than creating a new identity.
 
@@ -41,7 +45,7 @@ Start at `Prompt Formatter`, follow its input edges to see what informed the res
 
 ## Assets: type and source are separate choices
 
-An asset type describes *what* content represents. The SDK includes types such as `Dataset`, `Model`, `Prompt`, `SystemPrompt`, `Code`, `Document`, `Agent`, `Tool`, `Configuration`, `Guardrail`, and `Custom`; see the complete [asset reference](api/assets.md#built-in-asset-types).
+An asset type describes *what* content represents. The SDK includes types such as `Dataset`, `Model`, `Prompt`, `SystemPrompt`, `Code`, `Document`, `Agent`, `Tool`, `Configuration`, `Guardrail`, and `Custom`; see the complete [asset reference](./api/assets.mdx#built-in-asset-types).
 
 For nearly every type, choose one of three constructors based on *where* the content comes from:
 
@@ -110,5 +114,5 @@ def transform(rows: Dataset) -> str:
 Use per-call `_store=True` to preserve an important, non-sensitive input or result when the global default is `False`; use `_store=False` to opt a specific sensitive or very large registration out when the global default is `True`. `from_cid(...)` has no `_store` option because it only refers to an existing CID and does not provide bytes for the SDK to retain.
 
 For full configuration and service-registration details, see
-[Init and Config](api/init-and-config.md) and
-[Service Registering](examples/service-registering.md).
+[Init and Config](./api/init-and-config.mdx) and
+[Service Registering](./examples/service-registering.mdx).

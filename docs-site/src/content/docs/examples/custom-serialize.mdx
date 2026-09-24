@@ -1,11 +1,15 @@
-# Spark Parquet Input
+---
+title: "Spark Parquet Input"
+description: "For Spark customers, the recommended pattern is to track the parquet source as the input asset rather than hashing the in-memory Spark DataFrame object."
+---
+
+import CodeFence from '@eqtylab/docs/components/CodeFence.astro';
+import customSerialize from '../../../../../examples/custom-serialize.py?raw';
 
 For Spark customers, the recommended pattern is to track the parquet source as the input asset rather than hashing the in-memory Spark DataFrame object.
 
 Source: `examples/custom-serialize.py`
 
-```python
---8<-- "examples/custom-serialize.py"
-```
+<CodeFence code={customSerialize} lang="python" />
 
 This works because compute inputs that implement `to_eqty_asset()` are converted into SDK assets before the computation is registered.
