@@ -1,4 +1,9 @@
-# CID
+---
+title: "CID"
+description: "Content identifiers for data the SDK has hashed."
+---
+
+import CidRef from '../../../generated/api/eqty_sdk._rust.CID.mdx';
 
 A CID is a content identifier: a stable identifier derived from the content of a file, directory, or serialized object.
 
@@ -6,6 +11,4 @@ In `eqty_sdk`, CIDs are one of the core building blocks of provenance. Assets, c
 
 Most users do not create `CID` objects directly very often. Instead, they usually get them from asset constructors such as `Dataset.from_path(...)`, or from existing manifests and statements.
 
-::: eqty_sdk._rust.CID
-    options:
-      members_order: source
+<CidRef />

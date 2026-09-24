@@ -1,4 +1,10 @@
-# Verification
+---
+title: "Verification"
+description: "These functions check evidence you have been given, rather than producing any."
+---
+
+import VerifyStatementRef from '../../../generated/api/eqty_sdk.verify_statement.mdx';
+import VerifyVcRef from '../../../generated/api/eqty_sdk.verify_vc.mdx';
 
 These functions check evidence you have been given, rather than producing any. They are the Python
 counterpart of the checks the Integrity explorer runs in the browser, and they answer two separate
@@ -41,9 +47,7 @@ A `True` result means every field the statement's `@context` defines is unmodifi
 the bytes are unmodified: the identifier commits to the statement's canonicalized RDF, and JSON-LD
 expansion drops keys the context does not define.
 
-::: eqty_sdk.verify_statement
-    options:
-      show_root_heading: true
+<VerifyStatementRef />
 
 ## `verify_vc`
 
@@ -60,6 +64,4 @@ This verifies the cryptographic proof alone. Whether a credential has since been
 suspended** lives in its status list, which has to be fetched over the network and is deliberately
 not consulted here.
 
-::: eqty_sdk.verify_vc
-    options:
-      show_root_heading: true
+<VerifyVcRef />

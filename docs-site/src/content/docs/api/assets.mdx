@@ -1,4 +1,13 @@
-# Assets
+---
+title: "Assets"
+description: "Assets are the main way to register inputs, outputs, documents, models, and other tracked objects in the SDK."
+---
+
+import FromObjectRef from '../../../generated/api/eqty_sdk.asset.asset.TypedAsset.from_object.mdx';
+import FromPathRef from '../../../generated/api/eqty_sdk.asset.asset.TypedAsset.from_path.mdx';
+import FromCidRef from '../../../generated/api/eqty_sdk.asset.asset.TypedAsset.from_cid.mdx';
+import WithContextRef from '../../../generated/api/eqty_sdk.asset.asset.TypedAsset.with_context.mdx';
+import BuiltInAssetTypes from '../../../generated/built-in-asset-types.mdx';
 
 Assets are the main way to register inputs, outputs, documents, models, and other tracked objects in the SDK.
 
@@ -6,16 +15,16 @@ Assets are the main way to register inputs, outputs, documents, models, and othe
 
 The SDK includes these built-in asset categories:
 
---8<-- "docs/generated/built-in-asset-types.md"
+<BuiltInAssetTypes />
 
 These types all follow the same construction pattern.
 
-!!! note "Use factory methods, not direct constructors"
-
-    Do not instantiate typed assets directly (for example, do not call
-    `Binary(...)` or `Dataset(...)`). Their displayed Python constructors are
-    internal implementation details. Create assets with `from_object(...)`,
-    `from_path(...)`, or `from_cid(...)` instead.
+<Alert variant="primary" title="Use factory methods, not direct constructors">
+Do not instantiate typed assets directly (for example, do not call
+`Binary(...)` or `Dataset(...)`). Their displayed Python constructors are
+internal implementation details. Create assets with `from_object(...)`,
+`from_path(...)`, or `from_cid(...)` instead.
+</Alert>
 
 `Binary` is intended for compiled binary programs and similar executable artifacts that you want
 to register as part of a lineage graph.
@@ -145,7 +154,7 @@ class ParquetBackedDataFrame:
 
 `to_eqty_asset()` is recognized only for `@compute` inputs. It does not hash the
 wrapper object and is not used by `from_object(...)` or the `Computation`
-builder. See [Spark Parquet Input](../examples/custom-serialize.md) for a
+builder. See [Spark Parquet Input](../examples/custom-serialize.mdx) for a
 complete example.
 
 ## Factory Method Reference
@@ -153,22 +162,10 @@ complete example.
 The factory methods below are available on every built-in typed asset class,
 including `Binary`, `Dataset`, `Document`, `Model`, and `Prompt`.
 
-::: eqty_sdk.asset.asset.TypedAsset.from_object
-    options:
-      show_root_heading: true
-      show_if_no_docstring: true
+<FromObjectRef />
 
-::: eqty_sdk.asset.asset.TypedAsset.from_path
-    options:
-      show_root_heading: true
-      show_if_no_docstring: true
+<FromPathRef />
 
-::: eqty_sdk.asset.asset.TypedAsset.from_cid
-    options:
-      show_root_heading: true
-      show_if_no_docstring: true
+<FromCidRef />
 
-::: eqty_sdk.asset.asset.TypedAsset.with_context
-    options:
-      show_root_heading: true
-      show_if_no_docstring: true
+<WithContextRef />

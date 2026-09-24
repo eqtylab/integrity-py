@@ -1,4 +1,9 @@
-# Context
+---
+title: "Context"
+description: "A context is a logical graph container."
+---
+
+import ContextRef from '../../../generated/api/eqty_sdk._rust.Context.mdx';
 
 A context is a logical graph container. It groups related statements, assets, and computations so they can be exported, viewed, or registered together.
 
@@ -16,10 +21,4 @@ context.register(service, delete_statements=True, delete_blobs=True)
 
 Deleting statements keeps the context itself so it can be reused. Blob cleanup deletes the uploaded blobs without checking whether another local context references the same blob.
 
-::: eqty_sdk._rust.Context
-    options:
-      members_order: source
-      show_root_toc_entry: false
-      show_if_no_docstring: true
-    options:
-      members_order: source
+<ContextRef />

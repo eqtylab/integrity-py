@@ -1,18 +1,28 @@
-# Statements
+---
+title: "Statements"
+description: "Low-level statement functions, for when assets, @compute and contexts do not fit."
+---
+
+import AddDataStatementRef from '../../../generated/api/eqty_sdk._rust.statements.add_data_statement.mdx';
+import AddAssociationStatementRef from '../../../generated/api/eqty_sdk._rust.statements.add_association_statement.mdx';
+import AssociationRef from '../../../generated/api/eqty_sdk.statements.Association.mdx';
+import AddComputationStatementRef from '../../../generated/api/eqty_sdk._rust.statements.add_computation_statement.mdx';
+import AddDidStatementRef from '../../../generated/api/eqty_sdk._rust.statements.add_did_statement.mdx';
+import AddEntityStatementRef from '../../../generated/api/eqty_sdk._rust.statements.add_entity_statement.mdx';
+import AddMetadataStatementRef from '../../../generated/api/eqty_sdk._rust.statements.add_metadata_statement.mdx';
+import AddStorageStatementRef from '../../../generated/api/eqty_sdk._rust.statements.add_storage_statement.mdx';
+import AddGovernanceStatementRef from '../../../generated/api/eqty_sdk._rust.statements.add_governance_statement.mdx';
+import AddVcStatementRef from '../../../generated/api/eqty_sdk._rust.statements.add_vc_statement.mdx';
+import AddModelSigningStatementRef from '../../../generated/api/eqty_sdk._rust.statements.add_model_signing_statement.mdx';
 
 These functions are for advanced use only. Prefer the higher-level SDK features such as assets, `@compute`, contexts, services, and signer workflows when those cover your use case. Reach for the low-level statement APIs when you need to construct or attach statements manually.
 
 ## Functions
 
-::: eqty_sdk._rust.statements.add_data_statement
-    options:
-      show_root_heading: true
-      show_root_toc_entry: true
+<AddDataStatementRef />
 
-::: eqty_sdk._rust.statements.add_association_statement
-    options:
-      show_root_heading: true
-      show_root_toc_entry: true
+<AddAssociationStatementRef />
+
 ### Association Types
 
 `ASSOCIATION_TYPES.CERTIFIES`
@@ -25,48 +35,20 @@ These functions are for advanced use only. Prefer the higher-level SDK features 
 
 A builder for constructing and finalizing association statements.
 
-::: eqty_sdk.statements.Association
-    options:
-      show_root_heading: true
-      show_root_toc_entry: true
-      merge_init_into_class: false
+<AssociationRef />
 
-::: eqty_sdk._rust.statements.add_computation_statement
-    options:
-      show_root_heading: true
-      show_root_toc_entry: true
+<AddComputationStatementRef />
 
-::: eqty_sdk._rust.statements.add_did_statement
-    options:
-      show_root_heading: true
-      show_root_toc_entry: true
+<AddDidStatementRef />
 
-::: eqty_sdk._rust.statements.add_entity_statement
-    options:
-      show_root_heading: true
-      show_root_toc_entry: true
+<AddEntityStatementRef />
 
-::: eqty_sdk._rust.statements.add_metadata_statement
-    options:
-      show_root_heading: true
-      show_root_toc_entry: true
+<AddMetadataStatementRef />
 
-::: eqty_sdk._rust.statements.add_storage_statement
-    options:
-      show_root_heading: true
-      show_root_toc_entry: true
+<AddStorageStatementRef />
 
-::: eqty_sdk._rust.statements.add_governance_statement
-    options:
-      show_root_heading: true
-      show_root_toc_entry: true
+<AddGovernanceStatementRef />
 
-::: eqty_sdk._rust.statements.add_vc_statement
-    options:
-      show_root_heading: true
-      show_root_toc_entry: true
+<AddVcStatementRef />
 
-::: eqty_sdk._rust.statements.add_model_signing_statement
-    options:
-      show_root_heading: true
-      show_root_toc_entry: true
+<AddModelSigningStatementRef />

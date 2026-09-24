@@ -1,4 +1,9 @@
-# Compute
+---
+title: "Compute"
+description: "Compute nodes define the roots of a lineage graph in `eqty_sdk`."
+---
+
+import ComputeRef from '../../../generated/api/eqty_sdk.compute.mdx';
 
 Compute nodes define the roots of a lineage graph in `eqty_sdk`. When you use the `@compute` decorator, the SDK records the computation node along with its declared inputs and produced outputs, and that computation becomes the entry point for traversing the rest of the graph.
 
@@ -6,6 +11,4 @@ This matters when exporting or viewing a manifest from a context: the compute no
 
 Most users will interact with compute through the `@compute` decorator, but the `Computation` object is useful when you want to construct or inspect computation metadata directly. Reach for it when you need more explicit control over the computation node itself, such as naming a computation, attaching metadata outside the decorator flow, or working with lineage structures in a more programmatic way.
 
-::: eqty_sdk.compute
-    options:
-      members_order: source
+<ComputeRef />
