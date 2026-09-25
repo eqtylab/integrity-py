@@ -1,0 +1,57 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+### `eqty_sdk.statements.Association`
+
+A builder for constructing and finalizing association statements.
+
+An association links a subject (a `CID`, `DID`, or `UUID`) to one or more
+predicates via an `ASSOCIATION_TYPES` relationship. Use `Association.new()`
+or `Association.with_context()` to create an instance, attach predicates
+with `add_predicate()`, and call `finalize()` to write the association
+statement.
+
+**Functions:**
+
+- [**new**](#eqty_sdkstatementsassociationnew) – Create a new `Association` builder for the given subject and type.
+- [**with_context**](#eqty_sdkstatementsassociationwith_context) – Return a factory whose `new()` builds `Association` instances bound to `ctx`.
+- [**add_predicate**](#eqty_sdkstatementsassociationadd_predicate) – Add one or more predicates (`CID`, `DID`, or `UUID`) to the association.
+- [**finalize**](#eqty_sdkstatementsassociationfinalize) – Write the association statement and return `self`.
+
+#### `eqty_sdk.statements.Association.new`
+
+```python
+new(subject: CID | DID | UUID, association_type: PyAssociationType, **kwargs) -> Association
+```
+
+Create a new `Association` builder for the given subject and type.
+
+Args:
+subject: The `CID`, `DID`, or `UUID` the association is about.
+association_type: One of the `ASSOCIATION_TYPES` values.
+
+#### `eqty_sdk.statements.Association.with_context`
+
+```python
+with_context(ctx: Context)
+```
+
+Return a factory whose `new()` builds `Association` instances bound to `ctx`.
+
+#### `eqty_sdk.statements.Association.add_predicate`
+
+```python
+add_predicate(predicate: CID | List[CID] | DID | List[DID] | UUID | List[UUID]) -> Association
+```
+
+Add one or more predicates (`CID`, `DID`, or `UUID`) to the association.
+
+#### `eqty_sdk.statements.Association.finalize`
+
+```python
+finalize() -> Association
+```
+
+Write the association statement and return `self`.

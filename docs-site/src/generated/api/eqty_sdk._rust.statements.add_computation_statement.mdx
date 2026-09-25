@@ -1,0 +1,10 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+### `eqty_sdk._rust.statements.add_computation_statement`
+
+```python
+add_computation_statement(inputs: List[_CID], outputs: List[_CID], computation: Optional[_CID] = None, *, operated_by: Optional[str] = None, executed_on: Optional[str] = None, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None) -> List[_CID]
+```

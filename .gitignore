@@ -58,3 +58,9 @@ site/
 tmp
 /.secrets
 /manifests/*.json
+
+# Astro docs site (docs-site/)
+docs-site/node_modules/
+docs-site/dist/
+docs-site/.astro/
+.venv-docs/

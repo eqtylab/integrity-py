@@ -1,0 +1,6 @@
+# pnpm 12 refuses to install until each dependency's build script is allowed or denied.
+# esbuild's only checks its platform binary. sharp stays denied, as in vcomp-docs, and
+# uses its prebuilt @img binaries.
+allowBuilds:
+  esbuild: true
+  sharp: false

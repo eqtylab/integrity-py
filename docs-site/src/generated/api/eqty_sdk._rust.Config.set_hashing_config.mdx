@@ -1,0 +1,12 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+### `eqty_sdk._rust.Config.set_hashing_config`
+
+```python
+set_hashing_config(multithread: Optional[bool] = None, memory_map: Optional[bool] = None) -> Config
+```
+
+Updates hashing behavior used when computing CIDs. - `multithread`: Enable multithreaded hashing. - `memory_map`: Enable memory-mapped file reads where supported. Returns the updated config instance.

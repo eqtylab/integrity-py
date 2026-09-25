@@ -1,0 +1,30 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+Service for connecting to the Integrity Service API.
+
+**Functions:**
+
+- [**new**](#eqty_sdk_rustservicenew) – Creates a service client using the provided URL and API key.
+
+**Attributes:**
+
+- [**base_path**](#eqty_sdk_rustservicebase_path) (`str`) – Base URL path for the API (e.g., [https://api.example.com](https://api.example.com)).
+
+## `eqty_sdk._rust.Service.base_path`
+
+```python
+base_path: str
+```
+
+Base URL path for the API (e.g., [https://api.example.com](https://api.example.com)).
+
+## `eqty_sdk._rust.Service.new`
+
+```python
+new(url: str, api_key: Optional[str] = None) -> Service
+```
+
+Creates a service client using the provided URL and API key.

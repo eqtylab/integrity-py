@@ -1,0 +1,10 @@
+dist/
+.astro/
+node_modules/
+pnpm-lock.yaml
+
+# Prose is the SDK team's; formatting would only ever half-apply.
+src/content/
+
+# Written by scripts/render_api_docs.py.
+src/generated/

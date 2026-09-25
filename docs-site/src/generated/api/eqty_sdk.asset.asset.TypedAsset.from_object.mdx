@@ -1,0 +1,12 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+### `eqty_sdk.asset.asset.TypedAsset.from_object`
+
+```python
+from_object(obj: Any, _store: Optional[bool] = None, **kwargs) -> TypedAssetT
+```
+
+Create and register this asset type from an in-memory Python object.

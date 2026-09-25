@@ -1,0 +1,12 @@
+import CodeFenceBridge from '@eqtylab/docs/components/CodeFenceBridge.astro';
+import Link from '@eqtylab/docs/components/Link.astro';
+
+export const components = { pre: CodeFenceBridge, a: Link };
+
+### `eqty_sdk.verify_statement`
+
+```python
+verify_statement(statement_json: str, contexts: Optional[Dict[str, Any]] = None) -> bool
+```
+
+Verifies that a lineage statement's content still hashes to its `@id`. Canonicalizes the statement as JSON-LD, recomputes its BLAKE3 RDFC CID and compares it with the `@id` the statement carries. Returns `False` when they differ, meaning the statement was modified after it was created. `contexts` maps a JSON-LD context URI to its context document, for contexts this build does not embed. Values may be dicts or JSON strings, so a manifest's `contexts` field can be passed straight through. Note that a supplied context takes precedence over an embedded one of the same URI. Runs fully offline. A context that is neither embedded nor supplied raises rather than being fetched. A `True` result means every field the statement's `@context` defines is unmodified. It does not mean the bytes are unmodified: the identifier commits to the statement's canonicalized RDF, and JSON-LD expansion drops keys the context does not define. Raises `ValueError` if the statement is not a JSON object or has no string `@id`, and `RuntimeError` if a context cannot be resolved.
