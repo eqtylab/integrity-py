@@ -1,0 +1,40 @@
+---
+title: "Min Version"
+description: "Minimum supported Python and pip versions, and what the published wheels need at runtime."
+---
+
+import CodeFence from '@eqtylab/docs/components/CodeFence.astro';
+import auditwheelX86 from '../../../../../docs/generated/auditwheel-show-linux-x86_64.txt?raw';
+import auditwheelArm from '../../../../../docs/generated/auditwheel-show-linux-aarch64.txt?raw';
+import otoolArm from '../../../../../docs/generated/otool-show-macos-arm64.txt?raw';
+import otoolX86 from '../../../../../docs/generated/otool-show-macos-x86_64.txt?raw';
+
+- Python: 3.10
+- pip: latest supported release
+- Linux wheel runtime requirements are release- and architecture-specific. See the reports below.
+
+Pre-compiled wheels are available for common systems. If a wheel is not available for your target platform, use [Install From Source](./source.mdx) instead.
+
+## Linux Wheel Requirements
+
+These reports are generated during the release workflow from the actual published Linux wheels and contain the output of `auditwheel show`.
+
+### x86_64
+
+<CodeFence code={auditwheelX86} lang="text" />
+
+### aarch64
+
+<CodeFence code={auditwheelArm} lang="text" />
+
+## macOS Wheel Requirements
+
+These reports are generated during the release workflow from the actual published macOS wheels and contain the output of `otool -L`.
+
+### arm64
+
+<CodeFence code={otoolArm} lang="text" />
+
+### x86_64
+
+<CodeFence code={otoolX86} lang="text" />

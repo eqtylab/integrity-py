@@ -1,0 +1,21 @@
+---
+title: "Basic Workflow"
+description: "The common path: initialize the SDK, activate a signer, create assets, run a computation and export a manifest."
+---
+
+import CodeFence from '@eqtylab/docs/components/CodeFence.astro';
+import basicWorkflow from '../../../../../examples/basic-workflow.py?raw';
+
+This example shows the common path:
+
+1. Initialize the SDK.
+2. Create and activate a signer.
+   - If a signer was created previously, that signer can be re-used on subsequent executions.
+3. Create input assets.
+4. Define a computation with the `@compute` decorator.
+5. Execute the computation with a few arguments.
+6. Export a manifest json file.
+
+Source: `examples/basic-workflow.py`
+
+<CodeFence code={basicWorkflow} lang="python" />

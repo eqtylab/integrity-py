@@ -1,0 +1,18 @@
+---
+title: "Path-Backed Assets"
+description: "Many real SDK integrations register files and directories from disk rather than in-memory Python objects."
+---
+
+import CodeFence from '@eqtylab/docs/components/CodeFence.astro';
+import pathBackedAssets from '../../../../../examples/path-backed-assets.py?raw';
+
+Many real SDK integrations register files and directories from disk rather than in-memory Python objects. This example shows the common `from_path(...)` flow for several asset types.
+
+Source: `examples/path-backed-assets.py`
+
+<CodeFence code={pathBackedAssets} lang="python" />
+
+Notes:
+
+- `from_path(...)` hashes the resolved file or directory contents and uses that CID in the graph.
+- `Code`, `Document`, `Database`, and `Dataset` all support the same basic path-backed pattern.

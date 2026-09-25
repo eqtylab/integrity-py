@@ -1,63 +1,75 @@
-name: docs
+name: Deploy documentation
 
+# Builds docs-site/ (Astro on @eqtylab/docs) and deploys it to GitHub Pages through Actions.
+# The old MkDocs site's version folders are copied from the gh-pages branch into the
+# artifact, so /2.4.2/… and /latest/… keep resolving, frozen, beside the new site.
+# Pages must be set to "GitHub Actions" as its source for this to publish.
 on:
   push:
-    branches: ["main"]
-  workflow_dispatch: {}
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  group: "docs-${{ github.ref }}"
-  cancel-in-progress: true
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Sub-path prefix for the GitHub Pages URL (eqtylab.github.io/integrity-py).
+  # `resolveDocsEnv()` in docs-site/astro.config.mjs reads this and applies it as the
+  # site's `base`. Unset it when the site moves to its own domain.
+  DOCS_BASE: /integrity-py/
 
 jobs:
-  deploy-dev-docs:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Nix
-        uses: eqtylab-actions/install-nix-action@v31
+      - uses: actions/checkout@v4
+      - name: Check out the old site's version folders
+        uses: actions/checkout@v4
         with:
-          nix_path: nixpkgs=channel:nixos-unstable
-
-      - name: Cachix
-        uses: eqtylab-actions/cachix-action@v16
+          ref: gh-pages
+          path: legacy
+      # Third-party actions come through the eqtylab-actions mirrors, as in the other workflows.
+      - uses: eqtylab-actions/setup-pnpm@master
         with:
-          name: eqtylab
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          skipPush: true
-        continue-on-error: true
-
-      - name: Checkout Repo
-        uses: eqtylab-actions/checkout@v4
+          # No package.json at the repo root; the pnpm version is pinned in the site's.
+          package_json_file: docs-site/package.json
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
-
-      - name: Build nix shell
-        run: nix develop . -c true
-
-      - name: Rust Cache
-        uses: eqtylab-actions/rust-cache@v2
-
-      - name: Reset cached Cargo build scripts
-        run: rm -rf target/debug/build target/release/build
-
-      - name: Install dependencies
-        run: nix develop . -c just install
-
-      - name: Build Rust extension
-        run: nix develop . -c just install-package
-
-      - name: Install mike
-        run: nix develop . -c poetry run python -m pip install mike
-
-      - name: Configure Git
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: docs-site/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: docs-site
+      - run: pnpm build
+        working-directory: docs-site
+      - name: Overlay the old versions
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          set -eu
+          for entry in legacy/*/ legacy/versions.json; do
+            name=$(basename "$entry")
+            case "$name" in index.html) continue ;; esac
+            if [ -e "docs-site/dist/$name" ]; then echo "collision: $name exists in both trees"; exit 1; fi
+            cp -RL "$entry" "docs-site/dist/$name"
+          done
+          cp legacy/.nojekyll docs-site/dist/.nojekyll 2>/dev/null || true
+          ls docs-site/dist | sort
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs-site/dist
 
-      - name: Deploy dev docs
-        run: |
-          git fetch origin gh-pages --depth=1 || true
-          nix develop . -c poetry run mike deploy --push dev
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

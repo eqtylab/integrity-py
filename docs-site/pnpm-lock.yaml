@@ -116,8 +116,8 @@ importers:
         specifier: ^5.0.7
         version: 5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1)
       '@eqtylab/docs':
-        specifier: ^0.4.0
-        version: 0.4.0(@astrojs/mdx@5.0.6(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1)))(@astrojs/react@5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@7.3.6(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))
+        specifier: ^0.5.2
+        version: 0.5.2(@astrojs/mdx@5.0.6(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1)))(@astrojs/react@5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@7.3.6(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))
       '@eqtylab/equality':
         specifier: ^4.1.0
         version: 4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -340,8 +340,8 @@ packages:
   '@emnapi/wasi-threads@1.2.3':
     resolution: {integrity: sha512-ELEBe8PsLvvJ6QMr0zLt8ffvOHW/dc1m3CEzNMg7aJUv3bMaoDtw2TXyDAwkYBuroxxuHEwhRTLJSe5sya547g==}
 
-  '@eqtylab/docs@0.4.0':
-    resolution: {integrity: sha512-F1fl4JFvSdSDsKCQcoThgbk+KD3aX0IAeijMOOjkAKZjzPgvw0lHk9VJFZILWzC753wEskwX0f+hZFsD+TSZ7g==}
+  '@eqtylab/docs@0.5.2':
+    resolution: {integrity: sha512-A8HAatYn51bJXhhBiYezP3wivkQqPE6WGNteOXs3cXxzd1ogR6tOKblLWImwYNigrAqDrxQ2tz/5jlhZCwo0+w==}
     engines: {node: '>=22.12'}
     peerDependencies:
       '@astrojs/mdx': ^5.0.2
@@ -3696,7 +3696,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@eqtylab/docs@0.4.0(@astrojs/mdx@5.0.6(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1)))(@astrojs/react@5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@7.3.6(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))':
+  '@eqtylab/docs@0.5.2(@astrojs/mdx@5.0.6(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1)))(@astrojs/react@5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@7.3.6(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))':
     dependencies:
       '@astrojs/mdx': 5.0.6(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1))
       '@astrojs/react': 5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1)
@@ -3704,6 +3704,9 @@ snapshots:
       '@tailwindcss/vite': 4.3.3(vite@7.3.6(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))
       astro: 6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1)
       github-slugger: 2.0.0
+      mdast-util-from-markdown: 2.0.3
+      mdast-util-mdx: 3.0.0
+      micromark-extension-mdxjs: 3.0.0
       pagefind: 1.5.2
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
@@ -3712,6 +3715,7 @@ snapshots:
       unist-util-visit: 5.1.0
       yaml: 2.9.1
     transitivePeerDependencies:
+      - supports-color
       - vite
 
   '@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':

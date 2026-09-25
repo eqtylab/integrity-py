@@ -4,3 +4,5 @@
 allowBuilds:
   esbuild: true
   sharp: false
+minimumReleaseAgeExclude:
+  - "@eqtylab/docs@0.5.0 || 0.5.1 || 0.5.2"

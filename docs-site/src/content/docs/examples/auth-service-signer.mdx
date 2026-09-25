@@ -1,0 +1,18 @@
+---
+title: "Auth Service Signer"
+description: "This example creates or reuses a signer backed by an auth service instead of generating a purely local signer."
+---
+
+import CodeFence from '@eqtylab/docs/components/CodeFence.astro';
+import authServiceSigner from '../../../../../examples/auth-service-signer.py?raw';
+
+This example creates or reuses a signer backed by an auth service instead of generating a purely local signer.
+
+Source: `examples/auth-service-signer.py`
+
+<CodeFence code={authServiceSigner} lang="python" />
+
+Notes:
+
+- `EQTY_API_KEY` must be set before calling `Signer.auth_service(...)`.
+- `_load_if_exists=True` is useful for repeated runs because it reuses the persisted signer configuration instead of creating a new one every time.
