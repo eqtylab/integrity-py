@@ -34,7 +34,8 @@ jobs:
         with:
           ref: gh-pages
           path: legacy
-      - uses: pnpm/action-setup@v4
+      # Third-party actions come through the eqtylab-actions mirrors, as in the other workflows.
+      - uses: eqtylab-actions/setup-pnpm@master
         with:
           # No package.json at the repo root; the pnpm version is pinned in the site's.
           package_json_file: docs-site/package.json
