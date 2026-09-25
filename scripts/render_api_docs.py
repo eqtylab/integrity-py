@@ -20,6 +20,7 @@ griffe2md writes Markdown for MkDocs. Three rewrites make it MDX and make it fit
      that heading. @eqtylab/docs uses github-slugger over the heading text; for these
      headings (letters, digits, underscores, dots) that is lowercase with the dots removed.
 """
+
 from __future__ import annotations
 
 import json
@@ -40,6 +41,10 @@ DEFAULTS = {
     **griffe2md.default_config,
     "filters": ["!^_"],
     "heading_level": 2,
+    # griffe2md wraps any signature longer than this with Black whenever Black is importable,
+    # which the Poetry dev group installs. One line per signature keeps the output the same
+    # in every environment and keeps rewrite 4 on the line it expects.
+    "line_length": 10_000,
     "members_order": "source",
     "merge_init_into_class": True,
     "separate_signature": True,
@@ -75,12 +80,16 @@ def mdx_safe(markdown: str, heading_ids: dict[str, str]) -> str:
     markdown = AUTOLINK.sub(r"[\1](\1)", markdown)
     markdown = CODE_XREF.sub(r"`\1`", markdown)
     markdown = CODE_SPAN.sub(lambda m: LINK_IN_CODE.sub(r"\1", m.group(0)), markdown)
-    return ANCHOR.sub(lambda m: f"](#{heading_ids[m.group(1)]})" if m.group(1) in heading_ids else m.group(0), markdown)
+    return ANCHOR.sub(
+        lambda m: f"](#{heading_ids[m.group(1)]})" if m.group(1) in heading_ids else m.group(0),
+        markdown,
+    )
 
 
 def _objects(obj: griffe.Object, root: str):
     """The object and every function or class under it, aliases resolved, staying inside
-    `root` so that imports from other modules are not walked."""
+    `root` so that imports from other modules are not walked.
+    """
     yield obj
     for member in obj.members.values():
         try:
@@ -119,7 +128,8 @@ def fix_signatures(obj: griffe.Object, markdown: str) -> str:
     """Rewrite 4. griffe2md's signature template carries the previous parameter's annotation
     onto an unannotated `*args` or `**kwargs`, and ends merged class signatures in `-> None`.
     Each signature line `name(...)` is matched to the griffe objects of that name under the
-    target; which parameters are unannotated comes from griffe, never from the text."""
+    target; which parameters are unannotated comes from griffe, never from the text.
+    """
     by_name: dict[str, list[griffe.Object]] = {}
     for o in _objects(obj, obj.path):
         by_name.setdefault(o.name, []).append(o)
@@ -132,7 +142,11 @@ def fix_signatures(obj: griffe.Object, markdown: str) -> str:
         for kind, star in (("variadic keyword", "**"), ("variadic positional", "*")):
             params = [p for o in objs for p in _signature_params(o) if p.kind.value == kind]
             # Only when every same-named object agrees the parameter is unannotated.
-            if params and all(p.annotation is None for p in params) and len({p.name for p in params}) == 1:
+            if (
+                params
+                and all(p.annotation is None for p in params)
+                and len({p.name for p in params}) == 1
+            ):
                 line = _strip_annotation(line, star + params[0].name)
         if all(o.is_class for o in objs) and line.endswith(") -> None"):
             line = line[: -len(" -> None")]
@@ -142,7 +156,9 @@ def fix_signatures(obj: griffe.Object, markdown: str) -> str:
 
 
 def load_package() -> griffe.Module:
-    return griffe.load("eqty_sdk", search_paths=[str(ROOT)], find_stubs_package=True, allow_inspection=False)
+    return griffe.load(
+        "eqty_sdk", search_paths=[str(ROOT)], find_stubs_package=True, allow_inspection=False
+    )
 
 
 def load_table() -> list[dict]:
@@ -163,7 +179,9 @@ def main() -> None:
     rendered = {d["target"]: render(pkg, d["target"], d.get("options", {})) for d in load_table()}
 
     # Two passes: every heading's id first, then the links that point at them.
-    heading_ids = {m.group(1): slug(m.group(1)) for md in rendered.values() for m in HEADING.finditer(md)}
+    heading_ids = {
+        m.group(1): slug(m.group(1)) for md in rendered.values() for m in HEADING.finditer(md)
+    }
 
     if API_OUT.exists():
         shutil.rmtree(API_OUT)
