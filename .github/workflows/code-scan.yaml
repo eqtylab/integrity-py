@@ -30,8 +30,27 @@ jobs:
       - name: Checkout Repo
         uses: eqtylab-actions/checkout@v4
 
+      - name: Checkout scan action
+        uses: actions/checkout@v4
+        with:
+          repository: eqtylab/vbuild-scan-action
+          token: ${{ secrets.VBUILD_ACTION_READ_PAT }}
+          path: .vbuild-actions/vbuild-scan-action
+
+      - name: Checkout vbuild action
+        uses: actions/checkout@v4
+        with:
+          repository: eqtylab/vbuild-action
+          ref: v0.14.0
+          token: ${{ secrets.VBUILD_ACTION_READ_PAT }}
+          path: .vbuild-actions/vbuild-action
+
+      - name: Patch scan action to use local vbuild-action
+        run: |
+          sed -i 's|uses: eqtylab/vbuild-action@v[0-9.]*|uses: ./.vbuild-actions/vbuild-action|' .vbuild-actions/vbuild-scan-action/action.yaml
+
       - name: Code & Security Scan → View results in Summary tab
-        uses: eqtylab/vbuild-scan-action@master
+        uses: ./.vbuild-actions/vbuild-scan-action
         with:
           sarif: false
           attest: false
@@ -42,10 +61,12 @@ jobs:
           veracode-api-id: ${{ secrets.VERACODE_API_ID }}
           veracode-api-key: ${{ secrets.VERACODE_API_KEY }}
           rl-scanner: false
+          # vendor/openssl-src/openssl/external is build-only Perl bundled by OpenSSL (GPL-1.0), not shipped in any built artifact
+          exclude-dirs: .vbuild-actions vendor/openssl-src/openssl/external
 
   # Main branch scans: Full attestation in TEE
   security-scan-main:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: vbuild
 
     permissions:
@@ -56,6 +77,25 @@ jobs:
       - name: Checkout Repo
         uses: eqtylab-actions/checkout@v4
 
+      - name: Checkout scan action
+        uses: actions/checkout@v4
+        with:
+          repository: eqtylab/vbuild-scan-action
+          token: ${{ secrets.VBUILD_ACTION_READ_PAT }}
+          path: .vbuild-actions/vbuild-scan-action
+
+      - name: Checkout vbuild action
+        uses: actions/checkout@v4
+        with:
+          repository: eqtylab/vbuild-action
+          ref: v0.14.0
+          token: ${{ secrets.VBUILD_ACTION_READ_PAT }}
+          path: .vbuild-actions/vbuild-action
+
+      - name: Patch scan action to use local vbuild-action
+        run: |
+          sed -i 's|uses: eqtylab/vbuild-action@v[0-9.]*|uses: ./.vbuild-actions/vbuild-action|' .vbuild-actions/vbuild-scan-action/action.yaml
+
       - name: Install Rust toolchain
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
@@ -63,7 +103,7 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Code & Security Scan → View results in Summary tab
-        uses: eqtylab/vbuild-scan-action@master
+        uses: ./.vbuild-actions/vbuild-scan-action
         with:
           sarif: true
           attest: true
@@ -72,9 +112,11 @@ jobs:
           artifact-name: scan-provenance
           results-artifact-name: scan-results
           license-scanning: true
-          ignored-licenses: Apache-with-LLVM-Exception,blessing
+          ignored-licenses: Apache-with-LLVM-Exception,blessing,BSD-Source-Code,Rijndael-3.0
           cargo-vendor: true
           veracode: true
           veracode-api-id: ${{ secrets.VERACODE_API_ID }}
           veracode-api-key: ${{ secrets.VERACODE_API_KEY }}
           rl-scanner: false
+          # vendor/openssl-src/openssl/external is build-only Perl bundled by OpenSSL (GPL-1.0), not shipped in any built artifact
+          exclude-dirs: .vbuild-actions vendor/openssl-src/openssl/external
