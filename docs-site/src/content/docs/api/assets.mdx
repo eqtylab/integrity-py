@@ -3,28 +3,42 @@ title: "Assets"
 description: "Assets are the main way to register inputs, outputs, documents, models, and other tracked objects in the SDK."
 ---
 
-import FromObjectRef from '../../../generated/api/eqty_sdk.asset.asset.TypedAsset.from_object.mdx';
-import FromPathRef from '../../../generated/api/eqty_sdk.asset.asset.TypedAsset.from_path.mdx';
-import FromCidRef from '../../../generated/api/eqty_sdk.asset.asset.TypedAsset.from_cid.mdx';
-import WithContextRef from '../../../generated/api/eqty_sdk.asset.asset.TypedAsset.with_context.mdx';
-import BuiltInAssetTypes from '../../../generated/built-in-asset-types.mdx';
-
 Assets are the main way to register inputs, outputs, documents, models, and other tracked objects in the SDK.
 
 ## Built-In Asset Types
 
 The SDK includes these built-in asset categories:
 
-<BuiltInAssetTypes />
+{/* generated file docs/generated/built-in-asset-types.md */}
+- `Agent`
+- `Benchmark`
+- `BenchmarkResult`
+- `Binary`
+- `Certificate`
+- `Code`
+- `Configuration`
+- `Credential`
+- `Custom`
+- `Database`
+- `Dataset`
+- `Document`
+- `Guardrail`
+- `Media`
+- `Model`
+- `Prompt`
+- `Reasoning`
+- `Skill`
+- `SystemPrompt`
+- `Token`
+- `Tool`
+{/* end generated */}
 
 These types all follow the same construction pattern.
 
-<Alert variant="primary" title="Use factory methods, not direct constructors">
-Do not instantiate typed assets directly (for example, do not call
-`Binary(...)` or `Dataset(...)`). Their displayed Python constructors are
-internal implementation details. Create assets with `from_object(...)`,
-`from_path(...)`, or `from_cid(...)` instead.
-</Alert>
+> **Use factory methods, not direct constructors.** Do not instantiate typed assets directly
+> (for example, do not call `Binary(...)` or `Dataset(...)`). Their displayed Python
+> constructors are internal implementation details. Create assets with `from_object(...)`,
+> `from_path(...)`, or `from_cid(...)` instead.
 
 `Binary` is intended for compiled binary programs and similar executable artifacts that you want
 to register as part of a lineage graph.
@@ -162,10 +176,42 @@ complete example.
 The factory methods below are available on every built-in typed asset class,
 including `Binary`, `Dataset`, `Document`, `Model`, and `Prompt`.
 
-<FromObjectRef />
+{/* generated api eqty_sdk.asset.asset.TypedAsset.from_object */}
+### `eqty_sdk.asset.asset.TypedAsset.from_object`
 
-<FromPathRef />
+```python
+from_object(obj: Any, _store: Optional[bool] = None, **kwargs) -> TypedAssetT
+```
 
-<FromCidRef />
+Create and register this asset type from an in-memory Python object.
+{/* end generated */}
 
-<WithContextRef />
+{/* generated api eqty_sdk.asset.asset.TypedAsset.from_path */}
+### `eqty_sdk.asset.asset.TypedAsset.from_path`
+
+```python
+from_path(path: Union[str, PathLike[str]], _store: Optional[bool] = None, **kwargs) -> TypedAssetT
+```
+
+Create and register this asset type from a file or directory path.
+{/* end generated */}
+
+{/* generated api eqty_sdk.asset.asset.TypedAsset.from_cid */}
+### `eqty_sdk.asset.asset.TypedAsset.from_cid`
+
+```python
+from_cid(cid: CID, **kwargs) -> TypedAssetT
+```
+
+Create and register this asset type from an existing content identifier.
+{/* end generated */}
+
+{/* generated api eqty_sdk.asset.asset.TypedAsset.with_context */}
+### `eqty_sdk.asset.asset.TypedAsset.with_context`
+
+```python
+with_context(ctx: Context) -> Any
+```
+
+Return factory methods that register this asset in `ctx`.
+{/* end generated */}
