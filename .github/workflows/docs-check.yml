@@ -20,6 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # @eqtylab/docs reads release tags to build older versions; a shallow clone has none.
+          fetch-depth: 0
       # Third-party actions come through the eqtylab-actions mirrors, as in the other workflows.
       - uses: eqtylab-actions/setup-pnpm@master
         with:
