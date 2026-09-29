@@ -19,6 +19,18 @@ ROOT = Path(__file__).resolve().parent.parent
 GH_PAGES = "cb7be3c"
 
 
+class _Follow308(urllib.request.HTTPRedirectHandler):
+    """Vercel's permanent redirects are 308s, which urllib follows only from Python 3.11."""
+
+    http_error_308 = urllib.request.HTTPRedirectHandler.http_error_302
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return super().redirect_request(req, fp, 307 if code == 308 else code, msg, headers, newurl)
+
+
+OPENER = urllib.request.build_opener(_Follow308())
+
+
 def old_addresses() -> list[str]:
     files = subprocess.run(
         ["git", "ls-tree", "-r", "--name-only", GH_PAGES],
@@ -63,7 +75,7 @@ def main() -> int:
     if where.startswith("http"):
         for path in old_addresses():
             try:
-                with urllib.request.urlopen(where.rstrip("/") + path) as resp:
+                with OPENER.open(where.rstrip("/") + path) as resp:
                     if resp.status != 200 or "/404" in resp.url:
                         bad.append(f"{resp.status} {path} → {resp.url}")
             except Exception as err:  # HTTPError included
