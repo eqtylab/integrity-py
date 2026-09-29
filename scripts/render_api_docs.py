@@ -217,8 +217,8 @@ def load_table() -> list[dict]:
     return json.loads(TABLE.read_text())
 
 
-def render(pkg: griffe.Module, target: str, options: dict) -> str:
-    config = {**DEFAULTS, **options}
+def render(pkg: griffe.Module, target: str, options: dict, defaults: dict | None = None) -> str:
+    config = {**(DEFAULTS if defaults is None else defaults), **options}
     try:
         obj = pkg[target.split(".", 1)[1]]
     except KeyError as err:

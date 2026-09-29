@@ -1,0 +1,3 @@
+# Converter output: GitHub folds these away in PR diffs. folders.json is edited by hand.
+docs-site/archive/** linguist-generated=true
+docs-site/archive/folders.json -linguist-generated
