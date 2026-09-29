@@ -3,18 +3,19 @@ title: "Init And Config"
 description: "`init()` is the required entry point for the SDK."
 ---
 
-import InitRef from '../../../generated/api/eqty_sdk.init.mdx';
-import ConfigRef from '../../../generated/api/eqty_sdk._rust.Config.mdx';
-import SetHashingConfigRef from '../../../generated/api/eqty_sdk._rust.Config.set_hashing_config.mdx';
-import SetCidIgnoreRulesRef from '../../../generated/api/eqty_sdk._rust.Config.set_cid_ignore_rules.mdx';
-import SetStoreAllBlobsRef from '../../../generated/api/eqty_sdk._rust.Config.set_store_all_blobs.mdx';
-import GetDefaultContextRef from '../../../generated/api/eqty_sdk._rust.Config.get_default_context.mdx';
-
 `init()` is the required entry point for the SDK. It initializes the local SDK state on disk and returns a `Config` object that you can use to adjust hashing, blob storage, and context behavior.
 
 ## API Reference
 
-<InitRef />
+{/* generated api eqty_sdk.init */}
+### `eqty_sdk.init`
+
+```python
+init(default_context: Optional[Context] = None, *, custom_dir: Optional[PathLike[str]] = None) -> Config
+```
+
+Initializes the sdk config. Must be called before setting individual config values
+{/* end generated */}
 
 ## Initialize The SDK
 
@@ -52,7 +53,9 @@ cfg = init(default_context=ctx, custom_dir=Path(".eqty_sdk_customer"))
 
 ## Config Type
 
-<ConfigRef />
+{/* generated api eqty_sdk._rust.Config */}
+Global application config containing configuration and state. The config stores application-wide settings including storage directories, hashing preferences, and file filtering rules.
+{/* end generated */}
 
 ## Configure Hashing
 
@@ -157,10 +160,42 @@ cfg = cfg.set_store_all_blobs(True)
 ctx = cfg.get_default_context()
 ```
 
-<SetHashingConfigRef />
+{/* generated api eqty_sdk._rust.Config.set_hashing_config */}
+### `eqty_sdk._rust.Config.set_hashing_config`
 
-<SetCidIgnoreRulesRef />
+```python
+set_hashing_config(multithread: Optional[bool] = None, memory_map: Optional[bool] = None) -> Config
+```
 
-<SetStoreAllBlobsRef />
+Updates hashing behavior used when computing CIDs. - `multithread`: Enable multithreaded hashing. - `memory_map`: Enable memory-mapped file reads where supported. Returns the updated config instance.
+{/* end generated */}
 
-<GetDefaultContextRef />
+{/* generated api eqty_sdk._rust.Config.set_cid_ignore_rules */}
+### `eqty_sdk._rust.Config.set_cid_ignore_rules`
+
+```python
+set_cid_ignore_rules(include_hidden_files: Optional[bool] = None, gitignore: Optional[bool] = None, include_symlinks: Optional[bool] = None) -> Config
+```
+
+Updates the directory ignore rules used when computing CIDs. - `include_hidden_files`: Include hidden files in directory hashing. - `gitignore`: Respect `.gitignore` rules while hashing directories. - `include_symlinks`: Include symlinks in directory hashing. Returns the updated config instance.
+{/* end generated */}
+
+{/* generated api eqty_sdk._rust.Config.set_store_all_blobs */}
+### `eqty_sdk._rust.Config.set_store_all_blobs`
+
+```python
+set_store_all_blobs(value: bool) -> Config
+```
+
+Sets whether blobs should be persisted automatically when computing CIDs. Returns the updated config instance.
+{/* end generated */}
+
+{/* generated api eqty_sdk._rust.Config.get_default_context */}
+### `eqty_sdk._rust.Config.get_default_context`
+
+```python
+get_default_context() -> Context
+```
+
+Returns the default context used when no context is supplied explicitly.
+{/* end generated */}

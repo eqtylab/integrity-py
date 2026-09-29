@@ -18,8 +18,8 @@ export default defineConfig({
     // Equality ships CSS modules in its dist, which Node cannot load once Vite
     // externalises the package for SSR. Every npm consumer of @eqtylab/docs needs this.
     resolve: { noExternal: ["@eqtylab/equality"] },
-    // Pages import ../examples/*.py and ../docs/generated/*.txt with `?raw`, which sit
-    // above this project's root. Build allows it; dev needs to be told.
+    // The Min Version page imports ../docs/generated/*.txt with `?raw`, which sits above
+    // this project's root. Build allows it; dev needs to be told.
     server: { fs: { allow: [".."] } },
   },
 
@@ -30,9 +30,11 @@ export default defineConfig({
       description:
         "Documentation for eqty_sdk, the EQTY Integrity Python SDK for tracking data provenance, asset lineage and computation integrity.",
       favicon: "/favicon.ico",
-      // The site documents the current release only. Older releases are served frozen from the
-      // old site's folders, overlaid by .github/workflows/docs.yml.
-      versions: false,
+      // Each release tag vX.Y.Z whose tree has docs-site/ becomes a frozen copy under /vX.Y/.
+      // Tags before the move to this site have none and are skipped with a warning, so this
+      // stays dormant until the first release after it. An archived page keeps only what is
+      // written in it: scripts/render_api_docs.py puts the reference and examples there.
+      versions: { tags: "v*", granularity: "minor" },
       header: {
         links: [
           { label: "GitHub", href: "https://github.com/eqtylab/integrity-py", external: true },

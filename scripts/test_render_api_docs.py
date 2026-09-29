@@ -17,10 +17,6 @@ import render_api_docs as r  # noqa: E402
 
 
 class CodeSpanCrossReferences(unittest.TestCase):
-    def test_every_link_inside_a_code_span_is_unwrapped(self) -> None:
-        out = r.mdx_safe(r"<code>[Optional](#typing.Optional)\[[UUID](#uuid.UUID)\]</code>", {})
-        self.assertEqual(out, r"<code>Optional\[UUID\]</code>")
-
     def test_links_to_headings_in_the_partials_are_rewritten(self) -> None:
         out = r.mdx_safe(
             "[**load**](#eqty_sdk._rust.Signer.load)", {"eqty_sdk._rust.Signer.load": "x"}
@@ -64,6 +60,103 @@ class Signatures(unittest.TestCase):
         fence = re.search(r"```python\n(.*?)\n```", md, re.S)
         assert fence is not None
         self.assertNotIn("\n", fence.group(1))
+
+
+class Blocks(unittest.TestCase):
+    PAGE = (
+        "Intro.\n\n"
+        "{/* generated api eqty_sdk.init */}\n"
+        "stale\n"
+        "{/* end generated */}\n\n"
+        "{/* generated file examples/a.py python */}\n"
+        "{/* end generated */}\n"
+    )
+
+    def test_api_and_file_blocks_are_filled_and_markers_kept(self) -> None:
+        out, used = r.fill(self.PAGE, {"eqty_sdk.init": "### `init`\n"}, lambda p: "x = 1\n")
+        self.assertEqual(
+            out,
+            "Intro.\n\n"
+            "{/* generated api eqty_sdk.init */}\n"
+            "### `init`\n"
+            "{/* end generated */}\n\n"
+            "{/* generated file examples/a.py python */}\n"
+            "```python\nx = 1\n```\n"
+            "{/* end generated */}\n",
+        )
+        self.assertEqual(used, {"eqty_sdk.init"})
+
+    def test_filling_twice_changes_nothing(self) -> None:
+        once, _ = r.fill(self.PAGE, {"eqty_sdk.init": "A\n"}, lambda p: "x\n")
+        twice, _ = r.fill(once, {"eqty_sdk.init": "A\n"}, lambda p: "x\n")
+        self.assertEqual(once, twice)
+
+    def test_file_block_without_lang_is_inserted_as_markdown(self) -> None:
+        page = "{/* generated file docs/generated/list.md */}\n{/* end generated */}\n"
+        out, _ = r.fill(page, {}, lambda p: "- one\n")
+        self.assertIn("\n- one\n{/* end", out)
+
+    def test_unknown_target_fails(self) -> None:
+        page = "{/* generated api eqty_sdk.nope */}\n{/* end generated */}\n"
+        with self.assertRaises(SystemExit) as ctx:
+            r.fill(page, {}, lambda p: "")
+        self.assertIn("eqty_sdk.nope", str(ctx.exception))
+
+    def test_unclosed_marker_fails(self) -> None:
+        with self.assertRaises(SystemExit):
+            r.fill("{/* generated api eqty_sdk.init */}\nno end\n", {"eqty_sdk.init": ""}, str)
+
+    def test_stray_end_marker_fails(self) -> None:
+        with self.assertRaises(SystemExit):
+            r.fill("prose\n{/* end generated */}\n", {}, str)
+
+    def test_missing_repo_file_fails_naming_it(self) -> None:
+        with self.assertRaises(SystemExit) as ctx:
+            r.read_repo_file("examples/does-not-exist.py")
+        self.assertIn("examples/does-not-exist.py", str(ctx.exception))
+
+
+class CheckMode(unittest.TestCase):
+    """main() against a temporary content folder and a one-entry fake API."""
+
+    def setUp(self) -> None:
+        import tempfile
+        from unittest import mock
+
+        self.dir = Path(tempfile.mkdtemp())
+        self.page = self.dir / "p.mdx"
+        self.page.write_text("{/* generated api eqty_sdk.init */}\n{/* end generated */}\n")
+        for name, value in {
+            "CONTENT": self.dir,
+            "load_package": lambda: None,
+            "load_table": lambda: [{"target": "eqty_sdk.init"}],
+            "render": lambda pkg, target, options: "### `eqty_sdk.init`\n",
+        }.items():
+            patcher = mock.patch.object(r, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_check_fails_on_a_stale_page_and_leaves_it_alone(self) -> None:
+        before = self.page.read_text()
+        self.assertEqual(r.main(["--check"]), 1)
+        self.assertEqual(self.page.read_text(), before)
+
+    def test_check_passes_after_a_fill(self) -> None:
+        self.assertEqual(r.main([]), 0)
+        self.assertEqual(r.main(["--check"]), 0)
+
+
+class Fences(unittest.TestCase):
+    def test_fence_outgrows_backticks_in_the_code(self) -> None:
+        out = r.fence('s = """\n```\n"""\n', "python")
+        self.assertTrue(out.startswith("````python\n"))
+        self.assertTrue(out.endswith("\n````\n"))
+
+
+class CodeTags(unittest.TestCase):
+    def test_code_tags_become_backtick_spans(self) -> None:
+        out = r.mdx_safe(r"<code>[Optional](#typing.Optional)\[[UUID](#uuid.UUID)\]</code>", {})
+        self.assertEqual(out, "`Optional[UUID]`")
 
 
 if __name__ == "__main__":
