@@ -1,0 +1,288 @@
+---
+title: "Assets"
+description: "Assets are the main way to register inputs, outputs, documents, models, and other tracked objects in the SDK."
+---
+
+Assets are the main way to register inputs, outputs, documents, models, and other tracked objects in the SDK.
+
+## Built-In Asset Types
+
+The SDK includes these built-in asset categories:
+
+- `Agent`
+- `Attribution`
+- `Benchmark`
+- `BenchmarkResult`
+- `Binary`
+- `Certificate`
+- `Code`
+- `Config`
+- `Custom`
+- `Database`
+- `Dataset`
+- `Document`
+- `Guardrail`
+- `Media`
+- `Model`
+- `Prompt`
+- `Reasoning`
+- `Skill`
+- `SystemPrompt`
+- `Token`
+- `Tool`
+
+These types all follow the same construction pattern.
+
+`Binary` is intended for compiled binary programs and similar executable artifacts that you want
+to register as part of a lineage graph.
+
+## Constructors
+
+Most built-in asset types support these constructors:
+
+- `.from_object(...)`
+- `.from_path(...)`
+- `.from_cid(...)`
+- `.with_context(ctx).from_object(...)`
+- `.with_context(ctx).from_path(...)`
+- `.with_context(ctx).from_cid(...)`
+
+Conceptually:
+
+- `from_object(...)`: hash and register an in-memory Python object
+- `from_path(...)`: hash and register a file or directory on disk
+- `from_cid(...)`: create an asset wrapper around an existing CID
+- `with_context(...)`: do the same thing, but attach it to a specific context
+
+## `Custom`
+
+Use `Custom` when none of the built-in asset categories fit your domain object.
+
+You can use the default custom type:
+
+```python
+from eqty_sdk import Custom
+
+asset = Custom.from_object({"kind": "prompt-template"}, name="Prompt Template")
+```
+
+Or provide your own asset type label:
+
+```python
+from eqty_sdk import Custom
+
+asset = Custom.from_object(
+    {"kind": "feature-store-table"},
+    asset_type="FeatureStoreTable",
+    name="Customer Features",
+)
+```
+
+The same pattern works with `from_path(...)` and `from_cid(...)`.
+
+## Metadata Via `**kwargs`
+
+Any extra keyword arguments passed to an asset constructor are stored as metadata on that asset.
+
+Common examples include:
+
+- `name`
+- `description`
+- domain-specific fields like `owner`, `source`, `version`, or `input`
+
+```python
+from eqty_sdk import Dataset
+
+dataset = Dataset.from_object(
+    [1, 2, 3],
+    name="Training Rows",
+    description="Rows used for the baseline experiment",
+    owner="ml-team",
+    version="2026-03-20",
+)
+```
+
+Those values are included in the metadata statement the SDK creates for the asset.
+
+## Serialization Notes
+
+For `from_object(...)`, the SDK hashes a serialized representation of the object.
+
+Built-in support includes:
+
+- strings
+- numbers
+- lists
+- dicts
+- filesystem paths
+- objects with `serialize_for_hashing()`
+- compute inputs with `to_eqty_asset()`
+
+If you have a complex type that should not be hashed directly, either:
+
+- implement `serialize_for_hashing()` for stable hashing, or
+- implement `to_eqty_asset()` and map the object to a more appropriate asset source
+
+## `eqty_sdk.asset.Agent`
+
+Bases: `TypedAsset`
+
+Represents an AI Agent.
+
+## `eqty_sdk.asset.Attribution`
+
+Bases: `TypedAsset`
+
+Represents an attribution asset.
+
+## `eqty_sdk.asset.Benchmark`
+
+Bases: `TypedAsset`
+
+Represents a benchmark asset.
+
+## `eqty_sdk.asset.Binary`
+
+Bases: `TypedAsset`
+
+Represents a compiled binary program asset.
+
+## `eqty_sdk.asset.Certificate`
+
+Bases: `TypedAsset`
+
+Represents a certificate asset.
+
+## `eqty_sdk.asset.Code`
+
+Bases: `TypedAsset`
+
+Represents a code asset.
+
+## `eqty_sdk.asset.Config`
+
+Bases: `TypedAsset`
+
+Represents a config asset.
+
+## `eqty_sdk.asset.Database`
+
+Bases: `TypedAsset`
+
+Represents a database asset.
+
+## `eqty_sdk.asset.Dataset`
+
+Bases: `TypedAsset`
+
+Represents a dataset asset.
+
+## `eqty_sdk.asset.Document`
+
+Bases: `TypedAsset`
+
+Represents a document asset.
+
+## `eqty_sdk.asset.Guardrail`
+
+Bases: `TypedAsset`
+
+Represents a guardrail asset.
+
+## `eqty_sdk.asset.Media`
+
+Bases: `TypedAsset`
+
+Represents a media asset.
+
+## `eqty_sdk.asset.Prompt`
+
+Bases: `TypedAsset`
+
+Represents a Prompt asset.
+
+## `eqty_sdk.asset.Reasoning`
+
+Bases: `TypedAsset`
+
+Represents a reasoning asset.
+
+## `eqty_sdk.asset.Skill`
+
+Bases: `TypedAsset`
+
+Represents a skill asset.
+
+## `eqty_sdk.asset.SystemPrompt`
+
+Bases: `TypedAsset`
+
+Represents a System Prompt asset.
+
+## `eqty_sdk.asset.Token`
+
+Bases: `TypedAsset`
+
+Represents a token asset.
+
+## `eqty_sdk.asset.Tool`
+
+Bases: `TypedAsset`
+
+Represents a tool asset.
+
+## `eqty_sdk.asset.Model`
+
+Bases: `TypedAsset`
+
+Represents a model asset.
+
+## `eqty_sdk.asset.BenchmarkResult`
+
+Bases: `TypedAsset`
+
+Represents a benchmark result asset.
+
+## `eqty_sdk.asset.Custom`
+
+Bases: `Asset`
+
+Represents a Custom asset with user-specified asset type.
+
+## `eqty_sdk.asset.Asset`
+
+```python
+Asset(obj: Any, asset_type: Union[AssetType, str], cid: CID, is_dir: bool, custom_ctx: Optional[Context], **kwargs)
+```
+
+### `eqty_sdk.asset.Asset.name`
+
+```python
+name: str
+```
+
+Get the name of the asset.
+
+### `eqty_sdk.asset.Asset.cid`
+
+```python
+cid: CID
+```
+
+Get the CID of the asset.
+
+### `eqty_sdk.asset.Asset.asset_type`
+
+```python
+asset_type: str
+```
+
+Get the type of the asset.
+
+### `eqty_sdk.asset.Asset.value`
+
+```python
+value: Any
+```
+
+Get the underlying value.
