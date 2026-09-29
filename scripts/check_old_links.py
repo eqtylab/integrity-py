@@ -4,7 +4,7 @@
     python3 scripts/check_old_links.py https://<preview-url>     # real requests
 
 The list is origin/gh-pages as it stands (commit cb7be3c), less the theme's 404.html pages, so
-it covers every link anyone can hold. Locally, docs-site/vercel.json's redirect rules are applied
+it covers every link anyone can hold. Locally, vercel.json's redirect rules are applied
 as regexes; they are written with literal text and regex groups only so that this is exact.
 """
 
@@ -34,7 +34,7 @@ def old_addresses() -> list[str]:
 
 
 def rules() -> list[tuple[re.Pattern, str]]:
-    config = json.loads((ROOT / "docs-site" / "vercel.json").read_text())
+    config = json.loads((ROOT / "vercel.json").read_text())
     out = []
     for rule in config["redirects"]:
         if re.search(r"/:\w", rule["source"]):
