@@ -1,6 +1,7 @@
 // @ts-check
 import docs, { resolveDocsEnv } from "@eqtylab/docs";
 import { defineConfig } from "astro/config";
+import folders from "./archive/folders.json" with { type: "json" };
 
 // `base` has to be literal in Astro's config at build time, so the GitHub Pages
 // sub-path deploy threads it through the environment as DOCS_BASE. Unset locally
@@ -34,20 +35,20 @@ export default defineConfig({
       // Tags before the move to this site have none and are skipped with a warning, so this
       // stays dormant until the first release after it. An archived page keeps only what is
       // written in it: scripts/render_api_docs.py puts the reference and examples there.
-      versions: { tags: "v*", granularity: "minor" },
+      versions: {
+        tags: "v*",
+        granularity: "minor",
+        // Archived versions: 2.0 to 2.4 converted from MkDocs by scripts/archive_version.py,
+        // later ones saved by release.yml with their wheel reports. The folders are frozen; the
+        // current release's folder waits until a newer release makes it old.
+        folders,
+      },
       header: {
         links: [
           { label: "GitHub", href: "https://github.com/eqtylab/integrity-py", external: true },
           {
             label: "Changelog",
             href: "https://github.com/eqtylab/integrity-py/blob/main/CHANGELOG.md",
-            external: true,
-          },
-          // Absolute: @eqtylab/docs does not prefix header links with `base`, so a
-          // root-relative `/latest/` would leave the /integrity-py/ sub-path.
-          {
-            label: "Older versions",
-            href: "https://eqtylab.github.io/integrity-py/latest/",
             external: true,
           },
         ],

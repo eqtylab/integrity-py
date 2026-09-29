@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "(git fetch --unshallow --tags --quiet || git fetch --tags --quiet) && pnpm build",
+  "redirects": [
+    { "source": "/([0-9.]+|latest|dev)/generated/built-in-asset-types\\.html", "destination": "/api/assets/#built-in-asset-types", "permanent": true },
+    { "source": "/(2\\.0\\.[0-9]+)/search\\.html", "destination": "/v2.0/", "permanent": true },
+    { "source": "/(2\\.1\\.[0-9]+)/search\\.html", "destination": "/v2.1/", "permanent": true },
+    { "source": "/(2\\.2\\.0)/search\\.html", "destination": "/v2.2/", "permanent": true },
+    { "source": "/(2\\.4\\.[0-9]+|latest|dev)/search\\.html", "destination": "/", "permanent": true },
+    { "source": "/(2\\.0\\.7)/api/(config|core)\\.html", "destination": "/v2.0/api/init-and-config/", "permanent": true },
+    { "source": "/(2\\.0\\.[0-9]+)/(.*)index\\.html", "destination": "/v2.0/$2", "permanent": true },
+    { "source": "/(2\\.0\\.[0-9]+)/(.*)\\.html", "destination": "/v2.0/$2/", "permanent": true },
+    { "source": "/(2\\.0\\.[0-9]+)(/?)", "destination": "/v2.0/", "permanent": true },
+    { "source": "/(2\\.1\\.[0-9]+)/(.*)index\\.html", "destination": "/v2.1/$2", "permanent": true },
+    { "source": "/(2\\.1\\.[0-9]+)/(.*)\\.html", "destination": "/v2.1/$2/", "permanent": true },
+    { "source": "/(2\\.1\\.[0-9]+)(/?)", "destination": "/v2.1/", "permanent": true },
+    { "source": "/(2\\.2\\.0)/(.*)index\\.html", "destination": "/v2.2/$2", "permanent": true },
+    { "source": "/(2\\.2\\.0)/(.*)\\.html", "destination": "/v2.2/$2/", "permanent": true },
+    { "source": "/(2\\.2\\.0)(/?)", "destination": "/v2.2/", "permanent": true },
+    { "source": "/(2\\.4\\.[0-9]+|latest|dev)/(.*)index\\.html", "destination": "/$2", "permanent": true },
+    { "source": "/(2\\.4\\.[0-9]+|latest|dev)/(.*)\\.html", "destination": "/$2/", "permanent": true },
+    { "source": "/(2\\.4\\.[0-9]+|latest|dev)(/?)", "destination": "/", "permanent": true }
+  ]
+}

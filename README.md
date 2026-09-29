@@ -6,8 +6,7 @@ Repository for developing the `eqty_sdk` source, native extension, tests, exampl
 
 User-facing installation instructions, examples, and API reference live in the docs site:
 
-- Latest release docs: <https://eqtylab.github.io/integrity-py/latest/>
-- Development docs from `main`: <https://eqtylab.github.io/integrity-py/dev/>
+- <https://integrity-py.docs.eqtylab.io/>, with older releases in its version picker
 
 ## Changelog
 
