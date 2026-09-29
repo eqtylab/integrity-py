@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "(git fetch --unshallow --tags --quiet || git fetch --tags --quiet) && pnpm build",
+  "buildCommand": "cd docs-site && (git fetch --unshallow --tags --quiet || git fetch --tags --quiet) && npx --yes pnpm@12.3.4 build",
   "redirects": [
     { "source": "/([0-9.]+|latest|dev)/generated/built-in-asset-types\\.html", "destination": "/api/assets/#built-in-asset-types", "permanent": true },
     { "source": "/(2\\.0\\.[0-9]+)/search\\.html", "destination": "/v2.0/", "permanent": true },
