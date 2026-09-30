@@ -123,8 +123,8 @@ Releases are handled through GitHub and the `Publish new release` workflow in [r
    - generate release-specific wheel requirement reports
    - publish versioned docs and update `latest`
    - open a `docs: archive the X.Y.Z docs` PR that saves this release's docs, with its reports
-6. Check that PR's Vercel preview and merge it. Merge it before the next minor release ships:
-   until then, main's docs build fails once a newer group exists.
+6. Check that PR's Vercel preview and merge it promptly. Until it merges, every host labels latest
+   as the previous release and does not yet list it as an old version; CI fails a stale folder.
 
 A backport to 2.0 to 2.4 runs the release workflow stored in its tag, which has no archive job.
 Afterwards, rename that version's key in `docs-site/archive/folders.json` to the backport's
