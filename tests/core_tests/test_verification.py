@@ -43,14 +43,10 @@ DATED_VC = {
     "@context": [
         "https://www.w3.org/ns/credentials/v2",
         "https://w3id.org/security/v2",
-        {
-            "@vocab": "https://eqtylab.io/terms/"
-        }
+        {"@vocab": "https://eqtylab.io/terms/"},
     ],
     "id": "urn:uuid:5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
-    "type": [
-        "VerifiableCredential"
-    ],
+    "type": ["VerifiableCredential"],
     "credentialSubject": {
         "id": "urn:cid:bafkr4ibthuzk3zug7ghmx63yjqaiu6rx4hhfdv3453j5bodskgw57bx2ya"
     },
@@ -62,8 +58,8 @@ DATED_VC = {
         "created": "2026-09-30T17:56:58.526089Z",
         "verificationMethod": "did:key:z6MkhLUwSLY6HJW4WUb7Ea2m6aqT2Vaae3n8ge7VxJoDngsh#z6MkhLUwSLY6HJW4WUb7Ea2m6aqT2Vaae3n8ge7VxJoDngsh",
         "proofPurpose": "assertionMethod",
-        "jws": "eyJhbGciOiJFZERTQSIsImNyaXQiOlsiYjY0Il0sImI2NCI6ZmFsc2V9..NbUibkPBT7amG_lj3ouyG0FK3MVn9oZ2jACmJkpS5_3aSOuvogdxkCpAylmHV5YHiylibk634k3vzsmaktbGCg"
-    }
+        "jws": "eyJhbGciOiJFZERTQSIsImNyaXQiOlsiYjY0Il0sImI2NCI6ZmFsc2V9..NbUibkPBT7amG_lj3ouyG0FK3MVn9oZ2jACmJkpS5_3aSOuvogdxkCpAylmHV5YHiylibk634k3vzsmaktbGCg",
+    },
 }
 DATED_FROM, DATED_UNTIL = DATED_VC["validFrom"], DATED_VC["validUntil"]
 DATED_INSIDE = "2026-09-30T18:56:58Z"
@@ -260,7 +256,8 @@ class VerifyVcDetailedTests(unittest.TestCase):
 
     def test_a_valid_credential(self):
         self.assertEqual(
-            verify_vc_detailed(json.dumps(VALID_VC)), {"valid": True, "reason": None, "detail": None}
+            verify_vc_detailed(json.dumps(VALID_VC)),
+            {"valid": True, "reason": None, "detail": None},
         )
         self.assertIsNone(self.reason(DATED_VC, at=DATED_INSIDE))
 

@@ -1,7 +1,6 @@
 """Type stubs for the eqty_sdk package."""
 
 import eqty_sdk._rust as _rust
-
 from eqty_sdk._rust import (
     get_cid_for_bytes,
     get_cid_for_json,
@@ -13,7 +12,6 @@ from eqty_sdk._rust import (
     verify_vc,
     verify_vc_detailed,
 )
-
 from eqty_sdk.asset import (
     Agent,
     Asset,
@@ -39,20 +37,16 @@ from eqty_sdk.asset import (
     Token,
     Tool,
 )
-
 from eqty_sdk.compute import (
     Computation,
     Compute,
     compute,
 )
-
 from eqty_sdk.declaration import Declaration
-
 from eqty_sdk.errors import (
     Error,
     UsageError,
 )
-
 from eqty_sdk.statements import (
     ASSOCIATION_TYPES,
     Association,
