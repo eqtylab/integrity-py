@@ -116,8 +116,8 @@ importers:
         specifier: ^5.0.7
         version: 5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1)
       '@eqtylab/docs':
-        specifier: ^0.7.0
-        version: 0.7.0(@astrojs/mdx@5.0.6(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1)))(@astrojs/react@5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@7.3.6(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))
+        specifier: ^0.9.0
+        version: 0.9.0(@astrojs/mdx@5.0.6(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1)))(@astrojs/react@5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@7.3.6(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))
       '@eqtylab/equality':
         specifier: ^4.1.0
         version: 4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -340,8 +340,8 @@ packages:
   '@emnapi/wasi-threads@1.2.3':
     resolution: {integrity: sha512-ELEBe8PsLvvJ6QMr0zLt8ffvOHW/dc1m3CEzNMg7aJUv3bMaoDtw2TXyDAwkYBuroxxuHEwhRTLJSe5sya547g==}
 
-  '@eqtylab/docs@0.7.0':
-    resolution: {integrity: sha512-5/fQPH/ahJ/kjR6uduhPx+2CsRQ2gP3hPB9Ams+fZMio7kuKGO66xhEpsbuT0RGpLD1alwzHIZJ8G4z+WA94Gg==}
+  '@eqtylab/docs@0.9.0':
+    resolution: {integrity: sha512-CMInpoCA1GEfwBq4v1F2T19ZzlpwMFtq04If1b/BdhGkZZ/5y8CgCyV6NpWjc+lXE7fpAfLsVLp0P15gtyylCQ==}
     engines: {node: '>=22.12'}
     peerDependencies:
       '@astrojs/mdx': ^5.0.2
@@ -3696,7 +3696,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@eqtylab/docs@0.7.0(@astrojs/mdx@5.0.6(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1)))(@astrojs/react@5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@7.3.6(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))':
+  '@eqtylab/docs@0.9.0(@astrojs/mdx@5.0.6(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1)))(@astrojs/react@5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@7.3.6(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.1))':
     dependencies:
       '@astrojs/mdx': 5.0.6(astro@6.4.8(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.4)(yaml@2.9.1))
       '@astrojs/react': 5.0.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(jiti@2.7.0)(lightningcss@1.32.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1)
