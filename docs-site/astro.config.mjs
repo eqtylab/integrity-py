@@ -3,9 +3,9 @@ import docs, { resolveDocsEnv } from "@eqtylab/docs";
 import { defineConfig } from "astro/config";
 import folders from "./archive/folders.json" with { type: "json" };
 
-// `base` has to be literal in Astro's config at build time, so the GitHub Pages
-// sub-path deploy threads it through the environment as DOCS_BASE. Unset locally
-// and on the custom domain, where the site serves from `/`.
+// `base` has to be literal in Astro's config at build time, so a sub-path deploy
+// threads it through the environment as DOCS_BASE. None sets it now: the site
+// serves from `/` locally and on integrity-py.docs.eqtylab.io.
 const env = resolveDocsEnv({ site: process.env.DOCS_SITE ?? "https://eqtylab.github.io" });
 
 export default defineConfig({
