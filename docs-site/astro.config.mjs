@@ -31,16 +31,16 @@ export default defineConfig({
       description:
         "Documentation for eqty_sdk, the EQTY Integrity Python SDK for tracking data provenance, asset lineage and computation integrity.",
       favicon: "/favicon.ico",
-      // Each release tag vX.Y.Z whose tree has docs-site/ becomes a frozen copy under /vX.Y/.
-      // Tags before the move to this site have none and are skipped with a warning, so this
-      // stays dormant until the first release after it. An archived page keeps only what is
-      // written in it: scripts/render_api_docs.py puts the reference and examples there.
+      // Old versions come from the saved folders below, not from release tags, so Vercel's
+      // clone, which has no tags, builds the same site as CI. An archived page keeps only what
+      // is written in it: scripts/render_api_docs.py puts the reference and examples there.
       versions: {
         tags: "v*",
         granularity: "minor",
+        source: "folders",
         // Archived versions: 2.0 to 2.4 converted from MkDocs by scripts/archive_version.py,
         // later ones saved by release.yml with their wheel reports. The folders are frozen; the
-        // current release's folder waits until a newer release makes it old.
+        // highest is the current release, and waits until a newer release makes it old.
         folders,
       },
       header: {
