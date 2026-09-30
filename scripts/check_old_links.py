@@ -3,8 +3,9 @@
     python3 scripts/check_old_links.py docs-site/dist            # rules against a local build
     python3 scripts/check_old_links.py https://<preview-url>     # real requests
 
-The list is origin/gh-pages as it stands (commit cb7be3c), less the theme's 404.html pages, so
-it covers every link anyone can hold. Locally, vercel.json's redirect rules are applied
+The list is origin/gh-pages as it stands (commit cb7be3c), less the theme's 404.html pages,
+plus the bare folder each index.html is served at and PyPI's Asset reference link, so it
+covers every link anyone can hold. Locally, vercel.json's redirect rules are applied
 as regexes; they are written with literal text and regex groups only so that this is exact.
 """
 
@@ -41,8 +42,13 @@ def old_addresses() -> list[str]:
     ).stdout.split()
     # 404.html is the old theme's error page; nothing links to it, so it is not an address to keep.
     pages = [f for f in files if f.endswith(".html") and "/" in f and not f.endswith("/404.html")]
-    latest = [f"latest/{f.split('/', 1)[1]}" for f in pages if f.startswith("2.4.2/")]
-    return sorted({"/" + p for p in pages + latest})
+    # GitHub Pages serves each index.html at its bare folder too, and that is the form links use:
+    # PyPI's Examples link is /latest/examples/.
+    folders = [p.removesuffix("index.html") for p in pages if p.endswith("/index.html")]
+    latest = [f"latest/{f.split('/', 1)[1]}" for f in pages + folders if f.startswith("2.4.2/")]
+    # PyPI's Asset reference link. No page ever stood there, on the old site or the new.
+    assets = ["latest/api/assets/"]
+    return sorted({"/" + p for p in pages + folders + latest + assets})
 
 
 def rules() -> list[tuple[re.Pattern, str]]:
