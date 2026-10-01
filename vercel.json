@@ -2,7 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "cd docs-site && npx --yes pnpm@12.3.4 build",
   "redirects": [
-    { "source": "/([0-9.]+|latest|dev)/generated/built-in-asset-types\\.html", "destination": "/api/assets/#built-in-asset-types", "permanent": true },
+    { "source": "/(2\\.0\\.[0-9]+)/generated/built-in-asset-types\\.html", "destination": "/v2.0/api/assets/#built-in-asset-types", "permanent": true },
+    { "source": "/(2\\.1\\.[0-9]+)/generated/built-in-asset-types\\.html", "destination": "/v2.1/api/assets/#built-in-asset-types", "permanent": true },
+    { "source": "/(2\\.2\\.0)/generated/built-in-asset-types\\.html", "destination": "/v2.2/api/assets/#built-in-asset-types", "permanent": true },
+    { "source": "/(2\\.4\\.[0-9]+|latest|dev)/generated/built-in-asset-types\\.html", "destination": "/api/assets/#built-in-asset-types", "permanent": true },
     { "source": "/(2\\.0\\.[0-9]+)/search\\.html", "destination": "/v2.0/", "permanent": true },
     { "source": "/(2\\.1\\.[0-9]+)/search\\.html", "destination": "/v2.1/", "permanent": true },
     { "source": "/(2\\.2\\.0)/search\\.html", "destination": "/v2.2/", "permanent": true },
