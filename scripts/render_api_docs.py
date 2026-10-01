@@ -218,6 +218,11 @@ def load_table() -> list[dict]:
 
 
 def render(pkg: griffe.Module, target: str, options: dict, defaults: dict | None = None) -> str:
+    """The reference for `target` as griffe2md Markdown, with its signatures fixed.
+
+    `options` are the directive's own and override `defaults`, which are DEFAULTS unless
+    given. archive_version.py passes an old release's.
+    """
     config = {**(DEFAULTS if defaults is None else defaults), **options}
     try:
         obj = pkg[target.split(".", 1)[1]]

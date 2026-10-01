@@ -1,6 +1,8 @@
-"""Checks for archive_version.py.
+"""Tests for archive_version.py.
 
-.venv-docs/bin/python -m unittest scripts/test_archive_version.py
+    .venv-docs/bin/python -m unittest scripts/test_archive_version.py
+
+The RealTag tests convert real release tags, so they need the repo's tags.
 """
 
 import sys
@@ -78,7 +80,7 @@ class Pages(unittest.TestCase):
             a.convert_page(md, "Min", str, {}, reports=["one", "two"])
 
     def test_html_comments_are_dropped_outside_code(self) -> None:
-        # MkDocs never showed them, and MDX rejects them.
+        # MkDocs never showed HTML comments, and MDX can't parse them.
         out = self.convert(
             "# T\n\nx\n\n<!-- TODO: a\n     b -->\n\ny\n\n```html\n<!-- kept -->\n```\n"
         )
@@ -126,8 +128,8 @@ class Nav(unittest.TestCase):
 
 class RealTag(unittest.TestCase):
     def test_package_is_the_tags_not_the_working_trees(self) -> None:
-        # Run from the repo root, where ./eqty_sdk is today's package. v2.0.9 had Attribution and
-        # Config assets, since removed.
+        # Runs from the repo root, which has the current eqty_sdk. v2.0.9 had an Attribution
+        # asset that has since been removed, so finding it proves the package came from the tag.
         import tempfile
 
         tree = Path(tempfile.mkdtemp())
@@ -150,8 +152,8 @@ class RealTag(unittest.TestCase):
         text = "".join(p.read_text() for p in one.rglob("*.mdx"))
         for leftover in (":::", "--8<--", ".md)", ".md#"):
             self.assertNotIn(leftover, text)
-        # mkdocstrings' defaults, not griffe2md's: the old page listed the package's classes,
-        # without submodules or inherited members.
+        # Rendered with mkdocstrings' defaults, as the old site was: the package's classes, with
+        # no submodules (such as skill) and no inherited members (such as __add__).
         assets = (one / "api/assets.mdx").read_text()
         self.assertNotIn("eqty_sdk.asset.skill", assets)
         self.assertNotIn("__add__", assets)
