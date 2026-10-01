@@ -97,14 +97,18 @@ if $BACKPORT; then
 fi
 (cd "$ROOT" && "$PYTHON" scripts/render_api_docs.py >/dev/null)
 
-# The old MkDocs addresses of the release that was current are redirected to latest. Once a newer
-# group ships they belong to that group's archived version; no check fails if they are left, so
-# say it here, where release.yml copies it into the PR.
-jq -r '.redirects[] | select(.destination | test("^/(\\$2/?)?$")) | .source' "$ROOT/vercel.json" |
-  { grep -oE '\(([0-9]+)\\\.([0-9]+)\\\.' || true; } | sort -u |
+# The previous release's old MkDocs addresses are redirected to latest, which now serves $GROUP.
+# They belong in their own group's /vX.Y/ copy, and check_old_links.py fails the PR's docs check
+# until they go there. Name the group here, where release.yml copies it into the PR. Any other
+# destination is latest: a section link such as /api/assets/#…, or a /vX/ or /vX.Y.Z/ stub.
+jq -r '.redirects[] | select(.destination | test("^/v[0-9]+\\.[0-9]+/") | not) | .source' \
+  "$ROOT/vercel.json" |
+  { grep -oE '(^/|[(|])[0-9]+\\\.[0-9]+\\\.' || true; } | sort -u |
   while read -r source; do
-    old=$(sed -E 's/^\(([0-9]+)\\\.([0-9]+)\\\.$/\1.\2/' <<<"$source")
+    old=$(sed -E 's/^.([0-9]+)\\\.([0-9]+)\\\.$/\1.\2/' <<<"$source")
     if [ "$old" != "$GROUP" ]; then
-      echo "archive_release: vercel.json sends /$old.x/ addresses to latest; now that $GROUP is current, send them to /v$old/."
+      echo "archive_release: vercel.json sends /$old.x/ addresses to latest. Now that $GROUP is" \
+        "current, send them to the same pages under /v$old/; where a rule's source also lists" \
+        "latest and dev, split it so those keep their destination."
     fi
   done

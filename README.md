@@ -125,6 +125,9 @@ Releases are handled through GitHub and the `Publish new release` workflow in [r
    - open a `docs: archive the X.Y.Z docs` PR that saves this release's docs, with its reports
 6. Check that PR's Vercel preview and merge it promptly. Until it merges, every host labels latest
    as the previous release and does not yet list it as an old version; CI fails a stale folder.
+   The first release after the 2.4 series also needs `vercel.json` changed: its PR says to send the
+   old `/2.4.x/` addresses to `/v2.4/`, and the docs build check fails until they go there. main
+   does not require that check, so push the fix to the PR's branch before merging.
 
 A backport to 2.0 to 2.4 runs the release workflow stored in its tag, which has no archive job.
 Afterwards, rename that version's key in `docs-site/archive/folders.json` to the backport's

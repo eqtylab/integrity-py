@@ -177,6 +177,31 @@ class ArchiveRelease(unittest.TestCase):
         out = self.repo.run("2.5.1")
         self.assertNotEqual(out.returncode, 0)
 
+    def test_any_redirect_from_the_old_release_into_latest_is_named(self) -> None:
+        into_latest = [
+            ("/(2\\.4\\.[0-9]+|latest|dev)/generated/list\\.html", "/api/assets/#list"),
+            ("/(latest|dev|2\\.4\\.[0-9]+)/(.*)\\.html", "/$2/"),
+            ("/2\\.4\\.2/api/assets\\.html", "/api/assets/"),
+            ("/(2\\.4\\.[0-9]+)(/?)", "/v2/"),
+        ]
+        for source, destination in into_latest:
+            with self.subTest(source=source, destination=destination):
+                repo = Repo()
+                self.addCleanup(shutil.rmtree, repo.root, ignore_errors=True)
+                redirects = [
+                    {"source": source, "destination": destination},
+                    {"source": "/(2\\.0\\.[0-9]+)/(.*)\\.html", "destination": "/v2.0/$2/"},
+                ]
+                repo.write("vercel.json", json.dumps({"redirects": redirects}))
+                repo.commit("redirects")
+                repo.release("2.5.0")
+                repo.reports("2.5.0")
+                out = repo.run("2.5.0")
+                self.assertEqual(out.returncode, 0, out.stderr)
+                # open_archive_pr.sh copies lines with this prefix into the PR.
+                self.assertRegex(out.stdout, r"(?m)^archive_release: vercel\.json sends /2\.4\.x/")
+                self.assertNotIn("/2.0.x/", out.stdout)
+
     def test_no_versioned_redirect_left_to_retarget_is_not_a_failure(self) -> None:
         self.repo.write(
             "vercel.json",
@@ -290,6 +315,16 @@ class OpenArchivePr(unittest.TestCase):
         out = self.run_script(FAKE_LIST_FAILS="1")
         self.assertNotEqual(out.returncode, 0)
         self.assertFalse(self.pushed())
+
+    def test_redirects_to_move_are_a_checklist_to_finish_before_merging(self) -> None:
+        self.archive()
+        with self.log.open("a") as log:
+            log.write("archive_release: vercel.json sends /2.4.x/ addresses to latest.\n")
+        out = self.run_script()
+        self.assertEqual(out.returncode, 0, out.stderr)
+        body = Path(f"{self.gh_log}.body").read_text()
+        self.assertIn("- [ ] vercel.json sends /2.4.x/ addresses to latest.", body)
+        self.assertIn("before merging", body)
 
     def test_a_backport_pr_says_to_merge_promptly(self) -> None:
         self.archive()
