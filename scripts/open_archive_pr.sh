@@ -57,6 +57,8 @@ trap 'rm -f "$BODY"' EXIT
   echo "Opened by release.yml with github.token, so no checks start on their own. The job starts CI and the docs build check on this branch; if either is missing, run it on the branch from the Actions tab, and check the Vercel preview."
   if grep -q '^archive_release: vercel.json' "$LOG"; then
     echo
+    echo "The docs build check fails until these redirects move. main does not require that check, so push the fix to this branch before merging:"
+    echo
     grep '^archive_release: vercel.json' "$LOG" | sed 's/^archive_release: /- [ ] /'
   fi
 } >"$BODY"
