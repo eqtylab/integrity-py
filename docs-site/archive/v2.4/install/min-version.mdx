@@ -1,0 +1,84 @@
+---
+title: "Min Version"
+description: "Pre-compiled wheels are available for common systems."
+---
+
+- Python: 3.10
+- pip: latest supported release
+- Linux wheel runtime requirements are release- and architecture-specific. See the reports below.
+
+Pre-compiled wheels are available for common systems. If a wheel is not available for your target platform, use [Install From Source](./source.mdx) instead.
+
+## Linux Wheel Requirements
+
+These reports are generated during the release workflow from the actual published Linux wheels and contain the output of `auditwheel show`.
+
+### x86_64
+
+```text
+eqty_sdk-2.4.2-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+is consistent with the following platform tag:
+"manylinux_2_17_x86_64".
+
+The wheel references external versioned symbols in these
+system-provided shared libraries: librt.so.1 with versions
+{'GLIBC_2.2.5'}, libm.so.6 with versions {'GLIBC_2.2.5'},
+libcrypto-fc218386.so.3 with versions {'OPENSSL_3.0.0', 'OPENSSL_3.0.3'}, libssl-26b68d81.so.3 with versions
+{'OPENSSL_3.0.0'}, libgcc_s.so.1 with versions {'GCC_3.0', 'GCC_3.3', 'GCC_4.2.0'}, libdl.so.2 with versions {'GLIBC_2.2.5'}, libc.so.6 with
+versions {'GLIBC_2.14', 'GLIBC_2.16', 'GLIBC_2.17', 'GLIBC_2.2.5', 'GLIBC_2.3', 'GLIBC_2.3.2', 'GLIBC_2.3.4', 'GLIBC_2.4', 'GLIBC_2.7', 'GLIBC_2.9'}, libpthread.so.0 with versions {'GLIBC_2.12', 'GLIBC_2.2.5'}
+
+This constrains the platform tag to "manylinux_2_17_x86_64". In order
+to achieve a more compatible tag, you would need to recompile a new
+wheel from source on a system with earlier versions of these
+libraries, such as a recent manylinux image.
+```
+
+### aarch64
+
+```text
+eqty_sdk-2.4.2-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+is consistent with the following platform tag:
+"manylinux_2_17_aarch64".
+
+The wheel references external versioned symbols in these
+system-provided shared libraries: libdl.so.2 with versions
+{'GLIBC_2.17'}, libm.so.6 with versions {'GLIBC_2.17'},
+libcrypto-8b83fee5.so.3 with versions {'OPENSSL_3.0.0', 'OPENSSL_3.0.3'}, libssl-5ea37d3b.so.3 with versions
+{'OPENSSL_3.0.0'}, libc.so.6 with versions {'GLIBC_2.17'},
+libgcc_s.so.1 with versions {'GCC_3.0', 'GCC_3.3', 'GCC_4.2.0'},
+libpthread.so.0 with versions {'GLIBC_2.17'}
+
+The wheel requires no external shared libraries! :)
+```
+
+## macOS Wheel Requirements
+
+These reports are generated during the release workflow from the actual published macOS wheels and contain the output of `otool -L`.
+
+### arm64
+
+```text
+/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/tmp2cqpngek/eqty_sdk/_rust.abi3.so:
+    @rpath/eqty_sdk._rust.abi3.so (compatibility version 0.0.0, current version 0.0.0)
+    /System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration (compatibility version 1.0.0, current version 1351.120.3)
+    /System/Library/Frameworks/Security.framework/Versions/A/Security (compatibility version 1.0.0, current version 61439.120.27)
+    /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 3502.1.255)
+    /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+    /usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)
+    /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (compatibility version 300.0.0, current version 3502.1.255)
+    /usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)
+```
+
+### x86_64
+
+```text
+/var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/tmpc4a6qcqe/eqty_sdk/_rust.abi3.so:
+    @rpath/eqty_sdk._rust.abi3.so (compatibility version 0.0.0, current version 0.0.0)
+    /System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration (compatibility version 1.0.0, current version 1351.120.3)
+    /System/Library/Frameworks/Security.framework/Versions/A/Security (compatibility version 1.0.0, current version 61439.120.27)
+    /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 3502.1.255)
+    /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+    /usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)
+    /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (compatibility version 300.0.0, current version 3502.1.255)
+    /usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)
+```
