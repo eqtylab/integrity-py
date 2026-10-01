@@ -217,18 +217,12 @@ fn ensure_offline_verifiable(vc: &Value) -> Result<(), VerifyError> {
 type Rejection = (&'static str, String);
 
 /// The reason code for each way the core verifier can decline a credential.
-/// Read from the typed error, never from its message.
+/// Read from the typed error, never from its message; an error that is not a
+/// verdict on the credential is `unverifiable`.
 fn rejection_of(error: &anyhow::Error) -> Rejection {
-    use vc::VcVerificationError as E;
-    let reason = match error.downcast_ref::<E>() {
-        Some(E::Expired { .. }) => "expired",
-        Some(E::NotYetValid { .. }) => "not_yet_valid",
-        Some(E::InvalidClaims(_)) => "invalid_claims",
-        Some(E::InvalidSignature) => "invalid_signature",
-        Some(E::InvalidProof(_)) => "invalid_proof",
-        Some(E::Legacy(_)) => "legacy_rejected",
-        Some(E::Unverifiable(_)) | None => "unverifiable",
-    };
+    let reason = error
+        .downcast_ref::<vc::VcVerificationError>()
+        .map_or("unverifiable", vc::VcVerificationError::code);
     (reason, format!("{error:#}"))
 }
 
@@ -385,7 +379,8 @@ pub fn verify_vc(
 ///   checked, because dates are validated first; verify again with `at` inside
 ///   its validity period to check it.
 /// - `invalid_signature`: the signature does not verify under the issuer's key.
-/// - `invalid_proof`: the proof is missing or names the wrong key or algorithm.
+/// - `invalid_proof`: the proof is missing or malformed, or names the wrong key
+///   or algorithm.
 /// - `invalid_claims`: another claim failed validation.
 /// - `subject_mismatch`: the credential is about a subject other than
 ///   `statement_id`.

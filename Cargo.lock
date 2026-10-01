@@ -682,7 +682,7 @@ dependencies = [
 [[package]]
 name = "cacaos"
 version = "0.5.1"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "async-trait",
  "hex",
@@ -795,7 +795,7 @@ dependencies = [
 [[package]]
 name = "cid"
 version = "0.8.6"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "multibase 0.9.2",
  "multihash 0.16.3",
@@ -3277,7 +3277,7 @@ dependencies = [
 [[package]]
 name = "integrity"
 version = "0.0.18"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "integrity-blob",
  "integrity-cid",
@@ -3294,7 +3294,7 @@ dependencies = [
 [[package]]
 name = "integrity-blob"
 version = "0.0.18"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3308,7 +3308,7 @@ dependencies = [
 [[package]]
 name = "integrity-cid"
 version = "0.0.18"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "anyhow",
  "blake3",
@@ -3328,7 +3328,7 @@ dependencies = [
 [[package]]
 name = "integrity-dsse"
 version = "0.0.18"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -3340,7 +3340,7 @@ dependencies = [
 [[package]]
 name = "integrity-intoto-attestation"
 version = "0.0.18"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -3356,7 +3356,7 @@ dependencies = [
 [[package]]
 name = "integrity-jsonld"
 version = "0.0.18"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "anyhow",
  "blake3",
@@ -3380,7 +3380,7 @@ dependencies = [
 [[package]]
 name = "integrity-lineage-models"
 version = "0.0.18"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -3408,7 +3408,7 @@ dependencies = [
 [[package]]
 name = "integrity-model-signing"
 version = "0.0.18"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "anyhow",
  "bs58 0.5.1",
@@ -3428,7 +3428,7 @@ dependencies = [
 [[package]]
 name = "integrity-signer"
 version = "0.0.18"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3451,7 +3451,7 @@ dependencies = [
 [[package]]
 name = "integrity-sigstore"
 version = "0.0.18"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "serde",
  "serde_json",
@@ -3460,7 +3460,7 @@ dependencies = [
 [[package]]
 name = "integrity-vc"
 version = "0.0.18"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "anyhow",
  "chrono",
@@ -4413,7 +4413,7 @@ checksum = "6800badb6cb2082ffd7b6a67e6125bb39f18782f793520caee8cb8846be06112"
 [[package]]
 name = "libipld"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "async-trait",
  "cached",
@@ -4432,7 +4432,7 @@ dependencies = [
 [[package]]
 name = "libipld-cbor"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "byteorder",
  "libipld-core",
@@ -4455,7 +4455,7 @@ dependencies = [
 [[package]]
 name = "libipld-core"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "anyhow",
  "cid 0.8.6",
@@ -4469,7 +4469,7 @@ dependencies = [
 [[package]]
 name = "libipld-json"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "libipld-core",
  "multihash 0.16.3",
@@ -4480,7 +4480,7 @@ dependencies = [
 [[package]]
 name = "libipld-macro"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "libipld-core",
 ]
@@ -4823,7 +4823,7 @@ dependencies = [
 [[package]]
 name = "multihash"
 version = "0.16.3"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "blake2b_simd 1.0.4",
  "blake2s_simd",
@@ -7512,7 +7512,7 @@ dependencies = [
 [[package]]
 name = "ssi"
 version = "0.7.0"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "ssi-caips 0.1.0",
  "ssi-core 0.1.0",
@@ -8296,7 +8296,7 @@ dependencies = [
 [[package]]
 name = "ssi-ucan"
 version = "0.1.1"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "base64 0.12.3",
  "chrono",
@@ -8343,7 +8343,7 @@ dependencies = [
 [[package]]
 name = "ssi-vc"
 version = "0.2.1"
-source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#cf3e09533db6b2ff9ff6823434f56f9bf67bf03c"
+source = "git+https://github.com/eqtylab/integrity?branch=verify-vc-at#1c47754dc0ef42e146ba6291a6755ada90bb1622"
 dependencies = [
  "async-trait",
  "base64 0.12.3",
@@ -9630,7 +9630,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
