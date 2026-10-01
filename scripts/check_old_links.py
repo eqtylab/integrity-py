@@ -1,4 +1,4 @@
-"""Every address the old MkDocs site served must end on a page of the new site.
+"""Every address the old MkDocs site served must end on a page of the new site, in its version.
 
     python3 scripts/check_old_links.py docs-site/dist            # rules against a local build
     python3 scripts/check_old_links.py https://<preview-url>     # real requests
@@ -13,6 +13,7 @@ import json
 import re
 import subprocess
 import sys
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -69,6 +70,19 @@ def resolve(path: str, table) -> str:
     return path
 
 
+def wrong_version(old: str, new: str) -> bool:
+    """An old release's address must land in that release's copy, not merely on a page.
+
+    The highest saved folder is the current release, served at the root with latest and dev.
+    """
+    folders = json.loads((ROOT / "docs-site/archive/folders.json").read_text())
+    current = max(folders, key=lambda v: tuple(map(int, v.split("."))))
+    release = old.split("/")[1]
+    if release in ("latest", "dev") or release.split(".")[:2] == current.split(".")[:2]:
+        return re.match(r"/v\d", new) is not None
+    return not new.startswith("/v{}.{}/".format(*release.split(".")[:2]))
+
+
 def exists(dist: Path, path: str) -> bool:
     page = path.split("#", 1)[0]
     target = dist / page.lstrip("/")
@@ -82,7 +96,8 @@ def main() -> int:
         for path in old_addresses():
             try:
                 with OPENER.open(where.rstrip("/") + path) as resp:
-                    if resp.status != 200 or "/404" in resp.url:
+                    landed = urllib.parse.urlsplit(resp.url).path
+                    if resp.status != 200 or "/404" in resp.url or wrong_version(path, landed):
                         bad.append(f"{resp.status} {path} → {resp.url}")
             except Exception as err:  # HTTPError included
                 bad.append(f"{err} {path}")
@@ -90,7 +105,7 @@ def main() -> int:
         table = rules()
         for path in old_addresses():
             new = resolve(path, table)
-            if new == path or not exists(Path(where), new):
+            if new == path or not exists(Path(where), new) or wrong_version(path, new):
                 bad.append(f"{path} → {new}")
     for line in bad:
         print(line)
