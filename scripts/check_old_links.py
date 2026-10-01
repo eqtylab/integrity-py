@@ -7,6 +7,8 @@ The list is origin/gh-pages as it stands (commit cb7be3c), less the theme's 404.
 plus the bare folder each index.html is served at and PyPI's Asset reference link, so it
 covers every link anyone can hold. Locally, vercel.json's redirect rules are applied
 as regexes; they are written with literal text and regex groups only so that this is exact.
+The current release comes from this checkout's folders.json, so check a preview from the
+branch it was built from.
 """
 
 import json
@@ -16,6 +18,7 @@ import sys
 import urllib.parse
 import urllib.request
 from pathlib import Path
+from typing import Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 GH_PAGES = "cb7be3c"
@@ -34,13 +37,18 @@ OPENER = urllib.request.build_opener(_Follow308())
 
 
 def old_addresses() -> list[str]:
-    files = subprocess.run(
-        ["git", "ls-tree", "-r", "--name-only", GH_PAGES],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.split()
+    try:
+        files = subprocess.run(
+            ["git", "ls-tree", "-r", "--name-only", GH_PAGES],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.split()
+    except subprocess.CalledProcessError:
+        raise SystemExit(
+            f"no commit {GH_PAGES}: fetch the gh-pages branch, which holds the old site"
+        )
     # 404.html is the old theme's error page; nothing links to it, so it is not an address to keep.
     pages = [f for f in files if f.endswith(".html") and "/" in f and not f.endswith("/404.html")]
     # GitHub Pages serves each index.html at its bare folder too, and that is the form links use:
@@ -70,47 +78,72 @@ def resolve(path: str, table) -> str:
     return path
 
 
-def wrong_version(old: str, new: str) -> bool:
+def current_minor() -> str:
+    """The highest saved folder is the current release, served at the root with latest and dev."""
+    folders = json.loads((ROOT / "docs-site/archive/folders.json").read_text())
+    return ".".join(max(folders, key=lambda v: tuple(map(int, v.split(".")))).split(".")[:2])
+
+
+def wrong_version(old: str, new: str, current: str) -> bool:
     """An old release's address must land in that release's copy, not merely on a page.
 
-    The highest saved folder is the current release, served at the root with latest and dev.
+    A copy is /vX.Y/; /vX/ and /vX.Y.Z/ are redirect stubs, and the patch ones exist only in a
+    build that has tags, so they count as wrong for every address.
     """
-    folders = json.loads((ROOT / "docs-site/archive/folders.json").read_text())
-    current = max(folders, key=lambda v: tuple(map(int, v.split("."))))
     release = old.split("/")[1]
-    if release in ("latest", "dev") or release.split(".")[:2] == current.split(".")[:2]:
-        return re.match(r"/v\d", new) is not None
-    return not new.startswith("/v{}.{}/".format(*release.split(".")[:2]))
+    minor = ".".join(release.split(".")[:2])
+    if release in ("latest", "dev") or minor == current:
+        return re.match(r"/v\d+(\.\d+)*/", new) is not None
+    return not new.startswith(f"/v{minor}/")
 
 
-def exists(dist: Path, path: str) -> bool:
+def has_anchor(html: str, url: str) -> bool:
+    fragment = urllib.parse.urlsplit(url).fragment
+    return not fragment or re.search(rf'\sid="{re.escape(fragment)}"', html) is not None
+
+
+def lands(old: str, url: str, html: Optional[str], current: str) -> bool:
+    """The page an old address reaches exists, is in its version, and has the section it names."""
+    path = urllib.parse.urlsplit(url).path
+    return (
+        html is not None
+        and "/404" not in path
+        and not wrong_version(old, path, current)
+        and has_anchor(html, url)
+    )
+
+
+def landed_page(dist: Path, path: str) -> Optional[str]:
     page = path.split("#", 1)[0]
     target = dist / page.lstrip("/")
-    return (target / "index.html").is_file() if page.endswith("/") else target.is_file()
+    target = target / "index.html" if page.endswith("/") else target
+    return target.read_text() if target.is_file() else None
 
 
 def main() -> int:
     where = sys.argv[1]
+    current = current_minor()
+    addresses = old_addresses()
     bad = []
     if where.startswith("http"):
-        for path in old_addresses():
+        for path in addresses:
             try:
                 with OPENER.open(where.rstrip("/") + path) as resp:
-                    landed = urllib.parse.urlsplit(resp.url).path
-                    if resp.status != 200 or "/404" in resp.url or wrong_version(path, landed):
+                    html = resp.read().decode()
+                    if resp.status != 200 or not lands(path, resp.url, html, current):
                         bad.append(f"{resp.status} {path} → {resp.url}")
             except Exception as err:  # HTTPError included
                 bad.append(f"{err} {path}")
     else:
         table = rules()
-        for path in old_addresses():
+        for path in addresses:
             new = resolve(path, table)
-            if new == path or not exists(Path(where), new) or wrong_version(path, new):
+            if new == path or not lands(path, new, landed_page(Path(where), new), current):
                 bad.append(f"{path} → {new}")
     for line in bad:
         print(line)
     print(
-        f"{len(old_addresses()) - len(bad)} of {len(old_addresses())} old addresses land on a page"
+        f"{len(addresses) - len(bad)} of {len(addresses)} old addresses land on their version's page"
     )
     return 1 if bad else 0
 
