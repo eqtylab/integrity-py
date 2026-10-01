@@ -1,13 +1,18 @@
 use std::{collections::HashMap, fmt};
 
 use anyhow::{anyhow, Result};
+use chrono::{DateTime, Utc};
 use integrity::{
     cid::{blake3::blake3_cid, multicodec},
     json_ld::to_nquads::jsonld_to_nquads,
     nquads::canonicalize_nquads,
     vc,
 };
-use pyo3::{exceptions::PyValueError, prelude::*, types::PyAny};
+use pyo3::{
+    exceptions::PyValueError,
+    prelude::*,
+    types::{PyAny, PyDict},
+};
 use pyo3_async_runtimes::tokio::get_runtime;
 use serde_json::Value;
 
@@ -208,12 +213,27 @@ fn ensure_offline_verifiable(vc: &Value) -> Result<(), VerifyError> {
     Ok(())
 }
 
+/// Why a credential was not accepted: a stable reason code and its detail.
+type Rejection = (&'static str, String);
+
+/// The reason code for each way the core verifier can decline a credential.
+/// Read from the typed error, never from its message; an error that is not a
+/// verdict on the credential is `unverifiable`.
+fn rejection_of(error: &anyhow::Error) -> Rejection {
+    let reason = error
+        .downcast_ref::<vc::VcVerificationError>()
+        .map_or("unverifiable", vc::VcVerificationError::code);
+    (reason, format!("{error:#}"))
+}
+
 /// Verifies a credential's proof and, optionally, the subject it is bound to.
-async fn vc_verifies(
+/// `None` means it verified; otherwise, why it did not.
+async fn vc_rejection(
     vc_json: &str,
     expected_subject_id: Option<&str>,
     contexts: Option<HashMap<String, String>>,
-) -> Result<bool, VerifyError> {
+    at: Option<DateTime<Utc>>,
+) -> Result<Option<Rejection>, VerifyError> {
     let vc = parse_object(vc_json, "VC")?;
 
     let subject_id = credential_subject_id(&vc)?;
@@ -222,17 +242,45 @@ async fn vc_verifies(
     if let Some(expected) = expected_subject_id {
         if subject_id != expected {
             log::debug!("VC subject {subject_id:?} does not match expected {expected:?}");
-            return Ok(false);
+            return Ok(Some((
+                "subject_mismatch",
+                format!("the credential is about {subject_id:?}, not {expected:?}"),
+            )));
         }
     }
 
-    match vc::verify_vc(vc_json, contexts).await {
-        Ok(_) => Ok(true),
-        Err(e) => {
-            log::debug!("VC proof did not verify: {e:#}");
-            Ok(false)
-        }
-    }
+    let outcome = match at {
+        Some(at) => vc::verify_vc_at(vc_json, contexts, at).await,
+        None => vc::verify_vc(vc_json, contexts).await,
+    };
+    Ok(outcome.err().map(|e| {
+        log::debug!("VC proof did not verify: {e:#}");
+        rejection_of(&e)
+    }))
+}
+
+/// Verifies a credential's proof and, optionally, the subject it is bound to.
+async fn vc_verifies(
+    vc_json: &str,
+    expected_subject_id: Option<&str>,
+    contexts: Option<HashMap<String, String>>,
+    at: Option<DateTime<Utc>>,
+) -> Result<bool, VerifyError> {
+    Ok(vc_rejection(vc_json, expected_subject_id, contexts, at)
+        .await?
+        .is_none())
+}
+
+/// Parses the `at` argument: an RFC 3339 timestamp, or none for now.
+fn parse_at(at: Option<String>) -> PyResult<Option<DateTime<Utc>>> {
+    at.map(|t| {
+        DateTime::parse_from_rfc3339(&t)
+            .map(|d| d.with_timezone(&Utc))
+            .map_err(|e| {
+                PyValueError::new_err(format!("`at` is not an RFC 3339 timestamp: {t:?}: {e}"))
+            })
+    })
+    .transpose()
 }
 
 /// Verifies that a lineage statement's content still hashes to its `@id`.
@@ -293,18 +341,81 @@ pub fn verify_statement(
 /// Runs fully offline. Verifying a credential re-expands it, so a context that
 /// is neither embedded nor supplied is never fetched — it reports `False`,
 /// alongside the other reasons a proof may not check out.
+///
+/// `at`, an RFC 3339 timestamp, judges the credential's `validFrom` and
+/// `validUntil` at that moment instead of now. Those dates are checked before
+/// the proof, so without it a credential that has since expired returns `False`
+/// with its signature never checked. Pass a time inside its validity period, such
+/// as the proof's `created` when that falls inside it, to learn whether it was
+/// genuinely signed and in force then. Credentials with `issuanceDate` are verified as without `at`.
+/// Raises `ValueError` if `at` is not an RFC 3339 timestamp.
 #[pyfunction]
-#[pyo3(signature = (vc_json, statement_id=None, contexts=None))]
+#[pyo3(signature = (vc_json, statement_id=None, contexts=None, at=None))]
 pub fn verify_vc(
     py: Python<'_>,
     vc_json: String,
     statement_id: Option<String>,
     contexts: Option<HashMap<String, Py<PyAny>>>,
+    at: Option<String>,
 ) -> PyResult<bool> {
     let contexts = contexts_to_json_text(py, contexts)?;
+    let at = parse_at(at)?;
 
-    py.detach(|| get_runtime().block_on(vc_verifies(&vc_json, statement_id.as_deref(), contexts)))
-        .map_err(PyErr::from)
+    py.detach(|| {
+        get_runtime().block_on(vc_verifies(&vc_json, statement_id.as_deref(), contexts, at))
+    })
+    .map_err(PyErr::from)
+}
+
+/// Verifies a W3C Verifiable Credential's proof offline, and says why when it
+/// does not verify.
+///
+/// Takes the same arguments as `verify_vc` and raises in the same cases. Returns
+/// a dict: `valid` (bool), `reason` (None when valid, otherwise a code) and
+/// `detail` (the verifier's message, or None). The reason codes are:
+///
+/// - `expired`, `not_yet_valid`: the credential's `validUntil` / `validFrom`
+///   excludes the time it was judged at (now, or `at`). Its signature was not
+///   checked, because dates are validated first; verify again with `at` inside
+///   its validity period to check it.
+/// - `invalid_signature`: the signature does not verify under the issuer's key.
+/// - `invalid_proof`: the proof is missing or malformed, or names the wrong key
+///   or algorithm.
+/// - `invalid_claims`: another claim failed validation.
+/// - `subject_mismatch`: the credential is about a subject other than
+///   `statement_id`.
+/// - `unverifiable`: the proof could not be checked at all, for example a form
+///   this build does not verify, or a context that is neither embedded nor
+///   supplied. Not a verdict on the credential.
+/// - `legacy_rejected`: a credential with `issuanceDate` failed the legacy
+///   verifier.
+#[pyfunction]
+#[pyo3(signature = (vc_json, statement_id=None, contexts=None, at=None))]
+pub fn verify_vc_detailed<'py>(
+    py: Python<'py>,
+    vc_json: String,
+    statement_id: Option<String>,
+    contexts: Option<HashMap<String, Py<PyAny>>>,
+    at: Option<String>,
+) -> PyResult<Bound<'py, PyDict>> {
+    let contexts = contexts_to_json_text(py, contexts)?;
+    let at = parse_at(at)?;
+
+    let rejection = py
+        .detach(|| {
+            get_runtime().block_on(vc_rejection(
+                &vc_json,
+                statement_id.as_deref(),
+                contexts,
+                at,
+            ))
+        })
+        .map_err(PyErr::from)?;
+    let result = PyDict::new(py);
+    result.set_item("valid", rejection.is_none())?;
+    result.set_item("reason", rejection.as_ref().map(|(reason, _)| *reason))?;
+    result.set_item("detail", rejection.map(|(_, detail)| detail))?;
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -449,7 +560,7 @@ mod tests {
         });
         assert!(matches!(
             get_runtime()
-                .block_on(vc_verifies(&web.to_string(), None, None))
+                .block_on(vc_verifies(&web.to_string(), None, None, None))
                 .unwrap_err(),
             VerifyError::Failed(_)
         ));
@@ -457,7 +568,12 @@ mod tests {
         // But a credential with no subject is.
         assert!(matches!(
             get_runtime()
-                .block_on(vc_verifies(r#"{"issuer": "did:key:z6Mk"}"#, None, None))
+                .block_on(vc_verifies(
+                    r#"{"issuer": "did:key:z6Mk"}"#,
+                    None,
+                    None,
+                    None
+                ))
                 .unwrap_err(),
             VerifyError::Malformed(_)
         ));
@@ -510,11 +626,15 @@ mod tests {
     fn verifies_a_credential_and_its_subject_binding() {
         let vc_json = signed_vc();
         get_runtime().block_on(async {
-            assert!(vc_verifies(&vc_json, None, None).await.unwrap());
-            assert!(vc_verifies(&vc_json, Some(SUBJECT), None).await.unwrap());
-            assert!(!vc_verifies(&vc_json, Some("urn:cid:different"), None)
+            assert!(vc_verifies(&vc_json, None, None, None).await.unwrap());
+            assert!(vc_verifies(&vc_json, Some(SUBJECT), None, None)
                 .await
                 .unwrap());
+            assert!(
+                !vc_verifies(&vc_json, Some("urn:cid:different"), None, None)
+                    .await
+                    .unwrap()
+            );
         });
     }
 
@@ -553,13 +673,64 @@ mod tests {
         });
 
         get_runtime().block_on(async {
-            assert!(vc_verifies(&vc_json, Some(SUBJECT), Some(contexts))
+            assert!(vc_verifies(&vc_json, Some(SUBJECT), Some(contexts), None)
                 .await
                 .unwrap());
             // Reports `false` rather than raising: unlike the statement path, the
             // VC path folds an unresolvable context in with a bad proof.
-            assert!(!vc_verifies(&vc_json, Some(SUBJECT), None).await.unwrap());
+            assert!(!vc_verifies(&vc_json, Some(SUBJECT), None, None)
+                .await
+                .unwrap());
         });
+    }
+
+    /// A credential that has since expired reads `expired`, with its signature
+    /// unchecked; judged at a time inside its validity period it is checked for
+    /// real, so an altered one then reads `invalid_signature`.
+    #[test]
+    fn a_credential_is_judged_at_the_time_given() {
+        let signer = SignerType::ED25519(Ed25519Signer::create().unwrap());
+        let issuer = signer.get_did_doc().id;
+        let now = Utc::now();
+        let unsigned: core_vc::Credential = serde_json::from_value(json!({
+            "@context": ["https://www.w3.org/ns/credentials/v2", "https://w3id.org/security/v2"],
+            "type": ["VerifiableCredential"],
+            "id": "urn:uuid:3a4b5c6d-7e8f-4a1b-9c2d-3e4f5a6b7c8d",
+            "issuer": issuer,
+            "validFrom": (now - chrono::Duration::minutes(5)).to_rfc3339(),
+            "validUntil": (now + chrono::Duration::minutes(5)).to_rfc3339(),
+            "credentialSubject": {"id": SUBJECT},
+        }))
+        .unwrap();
+        let vc_json = get_runtime().block_on(async {
+            serde_json::to_string(&core_vc::sign_vc(unsigned, signer, None).await.unwrap()).unwrap()
+        });
+        let mut tampered: Value = serde_json::from_str(&vc_json).unwrap();
+        tampered["id"] = json!("urn:uuid:00000000-0000-4000-8000-000000000000");
+        let tampered = tampered.to_string();
+
+        let reason = |json: &str, subject: Option<&str>, at| {
+            get_runtime()
+                .block_on(vc_rejection(json, subject, None, at))
+                .unwrap()
+                .map(|(reason, _)| reason)
+        };
+        let later = Some(now + chrono::Duration::hours(1));
+        assert_eq!(reason(&vc_json, None, None), None);
+        assert_eq!(reason(&vc_json, None, later), Some("expired"));
+        assert_eq!(
+            reason(&vc_json, None, Some(now - chrono::Duration::hours(1))),
+            Some("not_yet_valid")
+        );
+        assert_eq!(reason(&tampered, None, later), Some("expired"));
+        assert_eq!(
+            reason(&tampered, None, Some(now)),
+            Some("invalid_signature")
+        );
+        assert_eq!(
+            reason(&vc_json, Some("urn:cid:different"), None),
+            Some("subject_mismatch")
+        );
     }
 
     #[test]
@@ -569,10 +740,10 @@ mod tests {
         let vc_json = tampered.to_string();
         // Subject no longer matches, and the proof no longer covers the content.
         assert!(!get_runtime()
-            .block_on(vc_verifies(&vc_json, Some(SUBJECT), None))
+            .block_on(vc_verifies(&vc_json, Some(SUBJECT), None, None))
             .unwrap());
         assert!(!get_runtime()
-            .block_on(vc_verifies(&vc_json, None, None))
+            .block_on(vc_verifies(&vc_json, None, None, None))
             .unwrap());
     }
 

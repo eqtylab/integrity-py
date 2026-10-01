@@ -2,7 +2,7 @@ import json
 import unittest
 from pathlib import Path
 
-from eqty_sdk import verify_statement, verify_vc
+from eqty_sdk import verify_statement, verify_vc, verify_vc_detailed
 
 MANIFEST_PATH = Path(__file__).parents[2] / "src/indexer/testdata/simple.json"
 
@@ -35,6 +35,34 @@ VALID_VC = {
 }
 
 VC_SUBJECT_ID = VALID_VC["credentialSubject"]["id"]
+
+# A current-format credential (no `issuanceDate`) valid for ten minutes, from
+# DATED_FROM to DATED_UNTIL. Its window has long passed, so it is expired now.
+# Its proof's `created` is an hour before DATED_FROM: the signer backdates it.
+DATED_VC = {
+    "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://w3id.org/security/v2",
+        {"@vocab": "https://eqtylab.io/terms/"},
+    ],
+    "id": "urn:uuid:5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+    "type": ["VerifiableCredential"],
+    "credentialSubject": {
+        "id": "urn:cid:bafkr4ibthuzk3zug7ghmx63yjqaiu6rx4hhfdv3453j5bodskgw57bx2ya"
+    },
+    "issuer": "did:key:z6MkhLUwSLY6HJW4WUb7Ea2m6aqT2Vaae3n8ge7VxJoDngsh",
+    "validFrom": "2026-09-30T18:51:58.524154Z",
+    "validUntil": "2026-09-30T19:01:58.524154Z",
+    "proof": {
+        "type": "Ed25519Signature2018",
+        "created": "2026-09-30T17:56:58.526089Z",
+        "verificationMethod": "did:key:z6MkhLUwSLY6HJW4WUb7Ea2m6aqT2Vaae3n8ge7VxJoDngsh#z6MkhLUwSLY6HJW4WUb7Ea2m6aqT2Vaae3n8ge7VxJoDngsh",
+        "proofPurpose": "assertionMethod",
+        "jws": "eyJhbGciOiJFZERTQSIsImNyaXQiOlsiYjY0Il0sImI2NCI6ZmFsc2V9..NbUibkPBT7amG_lj3ouyG0FK3MVn9oZ2jACmJkpS5_3aSOuvogdxkCpAylmHV5YHiylibk634k3vzsmaktbGCg",
+    },
+}
+DATED_FROM, DATED_UNTIL = DATED_VC["validFrom"], DATED_VC["validUntil"]
+DATED_INSIDE = "2026-09-30T18:56:58Z"
 
 # A context this build does not embed, so it can only be resolved when the
 # caller supplies it.
@@ -197,3 +225,59 @@ class VerifyVcTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class VerifyVcAtTests(unittest.TestCase):
+    """`at` judges validFrom/validUntil at that moment instead of now."""
+
+    def test_expired_now_and_valid_inside_its_window(self):
+        self.assertFalse(verify_vc(json.dumps(DATED_VC)))
+        self.assertTrue(verify_vc(json.dumps(DATED_VC), at=DATED_INSIDE))
+
+    def test_outside_its_window_at_either_end(self):
+        self.assertFalse(verify_vc(json.dumps(DATED_VC), at="2026-10-01T00:00:00Z"))
+        self.assertFalse(verify_vc(json.dumps(DATED_VC), at="2026-09-29T00:00:00Z"))
+
+    def test_the_proof_is_checked_inside_the_window(self):
+        tampered = {**DATED_VC, "id": "urn:uuid:00000000-0000-4000-8000-000000000000"}
+        self.assertFalse(verify_vc(json.dumps(tampered), at=DATED_INSIDE))
+
+    def test_legacy_credentials_are_verified_as_without_at(self):
+        self.assertTrue(verify_vc(json.dumps(VALID_VC), at="2000-01-01T00:00:00Z"))
+
+    def test_at_must_be_rfc3339(self):
+        with self.assertRaises(ValueError):
+            verify_vc(json.dumps(DATED_VC), at="yesterday")
+
+
+class VerifyVcDetailedTests(unittest.TestCase):
+    def reason(self, vc, statement_id=None, at=None):
+        return verify_vc_detailed(json.dumps(vc), statement_id, at=at)["reason"]
+
+    def test_a_valid_credential(self):
+        self.assertEqual(
+            verify_vc_detailed(json.dumps(VALID_VC)),
+            {"valid": True, "reason": None, "detail": None},
+        )
+        self.assertIsNone(self.reason(DATED_VC, at=DATED_INSIDE))
+
+    def test_expired_names_the_date(self):
+        result = verify_vc_detailed(json.dumps(DATED_VC))
+        self.assertEqual((result["valid"], result["reason"]), (False, "expired"))
+        self.assertIn("valid until", result["detail"])
+
+    def test_not_yet_valid(self):
+        self.assertEqual(self.reason(DATED_VC, at=DATED_VC["proof"]["created"]), "not_yet_valid")
+
+    def test_a_bad_signature_is_reached_only_inside_the_window(self):
+        tampered = {**DATED_VC, "id": "urn:uuid:00000000-0000-4000-8000-000000000000"}
+        self.assertEqual(self.reason(tampered, at=DATED_INSIDE), "invalid_signature")
+        self.assertEqual(self.reason(tampered), "expired")
+
+    def test_subject_mismatch(self):
+        self.assertEqual(self.reason(VALID_VC, "urn:cid:some-other-statement"), "subject_mismatch")
+
+    def test_raises_where_verify_vc_raises(self):
+        without = {k: v for k, v in VALID_VC.items() if k != "credentialSubject"}
+        with self.assertRaises(ValueError):
+            verify_vc_detailed(json.dumps(without))
