@@ -57,6 +57,9 @@ export default defineConfig({
         // Ends at the content directory: the route appends the entry's path relative to it.
         editUrl: "https://github.com/eqtylab/integrity-py/edit/main/docs-site/src/content/docs/",
       },
+      // Old links into the API reference name headings by ids this site does not use. The
+      // script finds the heading; it loads on every page, old versions included.
+      clientScripts: ["./src/scripts/old-anchors.js"],
     }),
   ],
 });
