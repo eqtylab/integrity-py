@@ -2,7 +2,9 @@ name: Docs build check
 
 # Builds docs-site/ on pull requests that touch it and attaches the built site, so a
 # reviewer can download and open it. Deploys nothing; .github/workflows/docs.yml owns deploys.
+# release.yml dispatches it on the archive PR's branch, which github.token's push cannot trigger.
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'docs-site/**'
@@ -10,6 +12,8 @@ on:
       - 'examples/**'
       - 'scripts/render_api_docs.py'
       - 'scripts/api-directives.json'
+      - 'scripts/check_old_links.py'
+      - 'vercel.json'
       - '.github/workflows/docs-check.yml'
 
 permissions:
@@ -42,3 +46,8 @@ jobs:
           name: docs-site
           path: docs-site/dist
           retention-days: 7
+      # Every address the old site served must reach its own version's page. Fails an archive PR
+      # whose vercel.json still sends the previous release's addresses to latest. After the upload,
+      # so a failing build can still be opened. The address list is read from gh-pages, which the
+      # full clone above fetches.
+      - run: python3 scripts/check_old_links.py docs-site/dist
