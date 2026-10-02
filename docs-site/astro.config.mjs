@@ -5,8 +5,11 @@ import folders from "./archive/folders.json" with { type: "json" };
 
 // `base` has to be literal in Astro's config at build time, so a sub-path deploy
 // threads it through the environment as DOCS_BASE. None sets it now: the site
-// serves from `/` locally and on integrity-py.docs.eqtylab.io.
-const env = resolveDocsEnv({ site: process.env.DOCS_SITE ?? "https://eqtylab.github.io" });
+// serves from `/` locally and on integrity-py.docs.eqtylab.io. That domain is also the
+// default site, so builds without DOCS_SITE (CI's artifact, local builds) name the real host.
+const env = resolveDocsEnv({
+  site: process.env.DOCS_SITE ?? "https://integrity-py.docs.eqtylab.io",
+});
 
 export default defineConfig({
   site: env.site,
