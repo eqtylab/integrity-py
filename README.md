@@ -134,7 +134,7 @@ Releases are handled through GitHub and the `Publish new release` workflow in [r
 
 A backport, such as 2.4.3 after 2.5.0, runs the release workflow stored in its own tag. Tags from
 2.0 to 2.4 predate the step that saves each release's docs, so main's docs build fails until
-someone saves them by hand. After the release is on PyPI, in a branch of main, on a Mac with
+someone saves them by hand. After the release is on PyPI, on an up-to-date main, on a Mac with
 Docker running:
 
 ```bash
@@ -142,9 +142,9 @@ just archive-backport 2.4.3
 ```
 
 It makes the wheel reports from the published wheels, as release CI would have, and rebuilds
-`docs-site/archive/v2.4/` from the tag with them. If something is missing, it says what. Then
-commit `docs-site/archive/` and open a PR to main. It takes a few minutes, most of them the first
-download of two Docker images.
+`docs-site/archive/v2.4/` from the tag with them. If something is missing, it says what. When it
+finishes, it prints the commands that put the change in a PR. It takes a few minutes, most of
+them the first download of two Docker images.
 
 ### Versioned Docs
 

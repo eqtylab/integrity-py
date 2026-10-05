@@ -388,7 +388,18 @@ class ArchiveBackport(unittest.TestCase):
         self.assertIn("eqty_sdk-2.4.3-cp38-abi3-manylinux_2_17_x86_64", page)
         # The reports are made and read outside the checkout, so local work there survives.
         self.assertEqual(self.repo.changed("docs/generated"), "?? docs/generated/mine.md\n")
-        self.assertIn("open a PR to main", out.stdout)
+        # The commands that publish it, ready to paste, named as the release job names its PR.
+        self.assertTrue(
+            out.stdout.endswith(
+                "archive_backport: done. To publish it, run:\n"
+                "    git switch -c docs/archive-v2.4.3\n"
+                "    git add docs-site/archive/\n"
+                '    git commit -m "docs: archive the 2.4.3 docs"\n'
+                "    git push -u origin docs/archive-v2.4.3\n"
+                "    gh pr create --fill\n"
+            ),
+            out.stdout,
+        )
 
     def test_docker_not_running_fails_first_and_says_so(self) -> None:
         out = self.run_script(FAKE_DOCKER_DOWN="1")
@@ -498,7 +509,7 @@ class ArchiveBackport(unittest.TestCase):
         os.killpg(run.pid, signal.SIGINT)
         out, _ = run.communicate(timeout=20)
         self.assertNotEqual(run.returncode, 0)
-        self.assertNotIn("open a PR", out)
+        self.assertNotIn("To publish it", out)
         self.assertUntouched()
 
     def test_stopping_mid_run_puts_the_archive_back(self) -> None:

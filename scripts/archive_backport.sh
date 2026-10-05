@@ -127,4 +127,11 @@ done
 WRITING=true
 PYTHON=$PYTHON "$ROOT/scripts/archive_release.sh" "$VERSION" "$WORK/reports"
 DONE=true
-echo "archive_backport: commit $ARCHIVE/ and open a PR to main."
+# Publishing is left to the person running this; the branch and message match the release job's.
+echo "archive_backport: done. To publish it, run:"
+printf '    %s\n' \
+  "git switch -c docs/archive-v$VERSION" \
+  "git add $ARCHIVE/" \
+  "git commit -m \"docs: archive the $VERSION docs\"" \
+  "git push -u origin docs/archive-v$VERSION" \
+  "gh pr create --fill"
