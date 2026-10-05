@@ -1,0 +1,90 @@
+---
+title: "Min Version"
+description: "Pre-compiled wheels are available for common systems."
+---
+
+- Python: 3.10
+- pip: latest supported release
+- Linux wheel runtime requirements are release- and architecture-specific. See the reports below.
+
+Pre-compiled wheels are available for common systems. If a wheel is not available for your target platform, use [Install From Source](./source.mdx) instead.
+
+## Linux Wheel Requirements
+
+These reports are generated during the release workflow from the actual published Linux wheels and contain the output of `auditwheel show`.
+
+### x86_64
+
+```text
+eqty_sdk-2.0.9-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+is consistent with the following platform tag:
+"manylinux_2_17_x86_64".
+
+The wheel references external versioned symbols in these
+system-provided shared libraries: librt.so.1 with versions
+{'GLIBC_2.2.5'}, libm.so.6 with versions {'GLIBC_2.2.5'},
+libgcc_s.so.1 with versions {'GCC_3.0', 'GCC_3.3', 'GCC_4.2.0'},
+libpthread.so.0 with versions {'GLIBC_2.12', 'GLIBC_2.2.5'},
+libssl-cd1d6220.so.10 with versions {'libssl.so.10'}, libc.so.6 with
+versions {'GLIBC_2.14', 'GLIBC_2.16', 'GLIBC_2.17', 'GLIBC_2.2.5', 'GLIBC_2.3', 'GLIBC_2.3.2', 'GLIBC_2.3.4', 'GLIBC_2.4', 'GLIBC_2.7', 'GLIBC_2.8', 'GLIBC_2.9'}, libdl.so.2 with versions {'GLIBC_2.2.5'},
+libcrypto-d3570994.so.10 with versions {'OPENSSL_1.0.1_EC', 'OPENSSL_1.0.2', 'libcrypto.so.10'}, libk5crypto-b1f99d5c.so.3 with
+versions {'k5crypto_3_MIT'}, libkrb5support-d0bcff84.so.0 with
+versions {'krb5support_0_MIT'}, libkrb5-fcafa220.so.3 with versions
+{'krb5_3_MIT'}, libresolv.so.2 with versions {'GLIBC_2.2.5'},
+libkeyutils-dfe70bd6.so.1 with versions {'KEYUTILS_0.3', 'KEYUTILS_1.0', 'KEYUTILS_1.5'}
+
+This constrains the platform tag to "manylinux_2_17_x86_64". In order
+to achieve a more compatible tag, you would need to recompile a new
+wheel from source on a system with earlier versions of these
+libraries, such as a recent manylinux image.
+```
+
+### aarch64
+
+```text
+eqty_sdk-2.0.9-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+is consistent with the following platform tag:
+"manylinux_2_17_aarch64".
+
+The wheel references external versioned symbols in these
+system-provided shared libraries: libm.so.6 with versions
+{'GLIBC_2.17'}, libdl.so.2 with versions {'GLIBC_2.17'}, libgcc_s.so.1
+with versions {'GCC_3.0', 'GCC_3.3', 'GCC_4.2.0'}, libpthread.so.0
+with versions {'GLIBC_2.17'}, libssl-e50c59ab.so.10 with versions
+{'libssl.so.10'}, libc.so.6 with versions {'GLIBC_2.17'},
+libcrypto-13880bfc.so.10 with versions {'OPENSSL_1.0.1_EC', 'OPENSSL_1.0.2', 'libcrypto.so.10'}, libk5crypto-47ac5e52.so.3 with
+versions {'k5crypto_3_MIT'}, libkrb5support-73f3f43d.so.0 with
+versions {'krb5support_0_MIT'}, libkrb5-90a0ef7c.so.3 with versions
+{'krb5_3_MIT'}, libresolv.so.2 with versions {'GLIBC_2.17'},
+libkeyutils-19c64d08.so.1 with versions {'KEYUTILS_0.3', 'KEYUTILS_1.0', 'KEYUTILS_1.5'}
+
+The wheel requires no external shared libraries! :)
+```
+
+## macOS Wheel Requirements
+
+These reports are generated during the release workflow from the actual published macOS wheels and contain the output of `otool -L`.
+
+### arm64
+
+```text
+/var/folders/tb/y368xp_x10s3ty1b_mtl5mxr0000gn/T/tmp_cyqdcne/eqty_sdk/_rust.abi3.so:
+    @rpath/eqty_sdk._rust.abi3.so (compatibility version 0.0.0, current version 0.0.0)
+    /System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration (compatibility version 1.0.0, current version 1351.120.3)
+    /System/Library/Frameworks/Security.framework/Versions/A/Security (compatibility version 1.0.0, current version 61439.120.27)
+    /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 3502.1.255)
+    /usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)
+    /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+```
+
+### x86_64
+
+```text
+/var/folders/kk/699g20m50k56v2wnfvqxt3mm0000gn/T/tmph6o_3qi2/eqty_sdk/_rust.abi3.so:
+    @rpath/eqty_sdk._rust.abi3.so (compatibility version 0.0.0, current version 0.0.0)
+    /System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration (compatibility version 1.0.0, current version 1351.120.3)
+    /System/Library/Frameworks/Security.framework/Versions/A/Security (compatibility version 1.0.0, current version 61439.120.27)
+    /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 3502.1.255)
+    /usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)
+    /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+```
