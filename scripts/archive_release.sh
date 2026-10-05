@@ -1,22 +1,25 @@
 #!/usr/bin/env bash
 # Save one release's docs, with its real wheel reports, as docs-site/archive/vX.Y/.
 #
-#     scripts/archive_release.sh 2.5.0
+#     scripts/archive_release.sh 2.5.0 [reports-folder]
 #
 # Run from a checkout of main with the release's four reports in docs/generated/, as release.yml
-# does after publishing. A tag is pushed before its reports exist, so the tag's own copy of the
-# docs can only hold placeholders; this folder replaces it. The newest patch replaces its
-# group's folder. Latest is re-rendered too, so it shows the same reports, unless the release is
-# a backport to an older group. Tests: scripts/test_archive_release.py.
+# does after publishing, or in the folder given, as archive_backport.sh does. A tag is pushed
+# before its reports exist, so the tag's own copy of the docs can only hold placeholders; this
+# folder replaces it. The newest patch replaces its group's folder. Latest is re-rendered too, so
+# it shows the same reports, unless the release is a backport to an older group.
+# Tests: scripts/test_archive_release.py.
 set -euo pipefail
 
-VERSION=${1:?usage: archive_release.sh X.Y.Z}
+VERSION=${1:?usage: archive_release.sh X.Y.Z [reports-folder]}
 if [[ ! $VERSION =~ ^([0-9]+)\.([0-9]+)\.[0-9]+$ ]]; then
   echo "archive_release: $VERSION is not X.Y.Z" >&2
   exit 1
 fi
 GROUP="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
 ROOT=$(git rev-parse --show-toplevel)
+GENERATED="$ROOT/docs/generated"
+REPORTS_DIR=${2:-$GENERATED}
 PYTHON=${PYTHON:-python3}
 REPORTS=(
   auditwheel-show-linux-x86_64.txt
@@ -44,16 +47,16 @@ BACKPORT=false
 [ "$VERSION" != "$NEWEST" ] && BACKPORT=true
 
 for report in "${REPORTS[@]}"; do
-  if [ ! -f "$ROOT/docs/generated/$report" ]; then
-    echo "archive_release: docs/generated/$report is missing" >&2
+  if [ ! -f "$REPORTS_DIR/$report" ]; then
+    echo "archive_release: $REPORTS_DIR/$report is missing" >&2
     exit 1
   fi
 done
 # main already holds the previous release's reports, so a download that silently did nothing
 # would archive those under this version. The Linux reports name their wheel; the macOS ones don't.
 for report in auditwheel-show-linux-x86_64.txt auditwheel-show-linux-aarch64.txt; do
-  if ! grep -qF "eqty_sdk-$VERSION-" "$ROOT/docs/generated/$report"; then
-    echo "archive_release: docs/generated/$report is not the $VERSION report" >&2
+  if ! grep -qF "eqty_sdk-$VERSION-" "$REPORTS_DIR/$report"; then
+    echo "archive_release: $REPORTS_DIR/$report is not the $VERSION report" >&2
     exit 1
   fi
 done
@@ -66,7 +69,7 @@ if git -C "$ROOT" cat-file -e "v$VERSION:docs-site/src/content/docs" 2>/dev/null
   # The tag's pages, filled by the tag's own render script, with the real reports. Each render
   # runs from its own tree: griffe would otherwise find ./eqty_sdk in the working directory first.
   for report in "${REPORTS[@]}"; do
-    cp "$ROOT/docs/generated/$report" "$TAG_TREE/docs/generated/$report"
+    cp "$REPORTS_DIR/$report" "$TAG_TREE/docs/generated/$report"
   done
   (cd "$TAG_TREE" && "$PYTHON" scripts/render_api_docs.py >/dev/null)
   rm -rf "${DEST:?}"
@@ -76,7 +79,7 @@ else
   # older versions were. release.yml never gets here: such a tag runs its own release.yml, which
   # has no archive job. scripts/archive_backport.sh runs this by hand, with the reports.
   "$PYTHON" "$ROOT/scripts/archive_version.py" "v$VERSION" "$DEST" \
-    --reports "$ROOT/docs/generated" >/dev/null
+    --reports "$REPORTS_DIR" >/dev/null
 fi
 
 jq -S --arg version "$VERSION" --arg group "$GROUP." --arg dir "archive/v$GROUP" \
@@ -85,12 +88,20 @@ jq -S --arg version "$VERSION" --arg group "$GROUP." --arg dir "archive/v$GROUP"
 mv "$FOLDERS.tmp" "$FOLDERS"
 echo "archive_release: $VERSION → docs-site/archive/v$GROUP"
 
-# Latest documents $NEWEST, so a backport's reports stay out of it.
+# Latest documents $NEWEST, so a backport's reports stay out of it. Only reports downloaded into
+# docs/generated need taking out; a folder given elsewhere left it alone.
 if $BACKPORT; then
-  git -C "$ROOT" checkout HEAD -- docs/generated
-  git -C "$ROOT" clean -fdq -- docs/generated
+  if [ "$REPORTS_DIR" = "$GENERATED" ]; then
+    git -C "$ROOT" checkout HEAD -- docs/generated
+    git -C "$ROOT" clean -fdq -- docs/generated
+  fi
   echo "archive_release: backport; latest's pages and reports are unchanged."
   exit 0
+fi
+if [ "$REPORTS_DIR" != "$GENERATED" ]; then
+  for report in "${REPORTS[@]}"; do
+    cp "$REPORTS_DIR/$report" "$GENERATED/$report"
+  done
 fi
 (cd "$ROOT" && "$PYTHON" scripts/render_api_docs.py >/dev/null)
 

@@ -36,14 +36,22 @@ REPORTS = [
     "otool-show-macos-x86_64.txt",
 ]
 # Writes its tag, its folder and one report it was given, so a test sees how it was called.
-FAKE_CONVERTER = """import sys
+# With $FAKE_CONVERTER_FAILS it replaces the folder with a partial page and fails, as the real
+# one can; with $FAKE_CONVERTER_PAUSES it writes that page, then waits to be stopped.
+FAKE_CONVERTER = """import os
+import shutil
+import sys
+import time
 from pathlib import Path
-
-import os
 
 tag, out, flag, reports = sys.argv[1:]
 assert flag == "--reports"
-if os.environ.get("FAKE_CONVERTER_FAILS"):
+if os.environ.get("FAKE_CONVERTER_FAILS") or os.environ.get("FAKE_CONVERTER_PAUSES"):
+    shutil.rmtree(out, ignore_errors=True)
+    Path(out).mkdir(parents=True)
+    (Path(out) / "partial.mdx").write_text("partial")
+    if os.environ.get("FAKE_CONVERTER_PAUSES"):
+        time.sleep(30)
     sys.exit("archive_version: failed")
 Path(out).mkdir(parents=True, exist_ok=True)
 report = (Path(reports) / "auditwheel-show-linux-x86_64.txt").read_text()
@@ -104,9 +112,11 @@ class Repo:
     def changed(self, path: str) -> str:
         return self.git("status", "--porcelain", path)
 
-    def run(self, version: str, python: str = sys.executable) -> subprocess.CompletedProcess:
+    def run(
+        self, version: str, python: str = sys.executable, reports: str = ""
+    ) -> subprocess.CompletedProcess:
         return subprocess.run(
-            ["bash", "scripts/archive_release.sh", version],
+            ["bash", "scripts/archive_release.sh", version, *([reports] if reports else [])],
             cwd=self.root,
             capture_output=True,
             text=True,
@@ -185,6 +195,34 @@ class ArchiveRelease(unittest.TestCase):
         self.assertIn(f"eqty_sdk-2.4.3-cp38-abi3-{REPORTS[0]}", page)
         self.assertEqual(self.repo.changed("docs/generated"), "")
 
+    def test_a_backport_s_reports_from_another_folder_leave_docs_generated_alone(self) -> None:
+        self.repo.write("docs-site/archive/folders.json", json.dumps({"2.4.2": "archive/v2.4"}))
+        self.repo.commit("2.4.2 archived")
+        self.repo.release("2.5.0")
+        self.repo.release("2.4.3", with_docs=False)
+        reports = Path(tempfile.mkdtemp(prefix="reports-"))
+        self.addCleanup(shutil.rmtree, reports, ignore_errors=True)
+        for name in REPORTS:
+            (reports / name).write_text(f"eqty_sdk-2.4.3-cp38-abi3-{name}\n")
+        self.repo.write("docs/generated/mine.md", "work in progress\n")
+        out = self.repo.run("2.4.3", reports=str(reports))
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertEqual(self.repo.folders(), {"2.4.3": "archive/v2.4"})
+        page = (self.repo.root / "docs-site/archive/v2.4/index.mdx").read_text()
+        self.assertIn(f"eqty_sdk-2.4.3-cp38-abi3-{REPORTS[0]}", page)
+        self.assertEqual(self.repo.changed("docs/generated"), "?? docs/generated/mine.md\n")
+
+    def test_the_newest_release_s_reports_from_another_folder_reach_latest(self) -> None:
+        self.repo.release("2.5.0")
+        reports = Path(tempfile.mkdtemp(prefix="reports-"))
+        self.addCleanup(shutil.rmtree, reports, ignore_errors=True)
+        for name in REPORTS:
+            (reports / name).write_text(f"eqty_sdk-2.5.0-cp38-abi3-{name}\n")
+        out = self.repo.run("2.5.0", reports=str(reports))
+        self.assertEqual(out.returncode, 0, out.stderr)
+        for name in REPORTS:
+            self.assertIn("2.5.0", (self.repo.root / "docs/generated" / name).read_text())
+
     def test_reports_from_another_version_are_refused(self) -> None:
         self.repo.release("2.5.0")
         out = self.repo.run("2.5.0")
@@ -251,11 +289,12 @@ PYPI_WHEELS = [
 ]
 # Serves files from $FAKE_PYPI by the last part of the URL: `curl -fsSL URL` prints the file,
 # `curl -fsSL -o FILE URL` saves it, and fails when $FAKE_DOWNLOAD_FAILS is set. Every URL is
-# logged to $FAKE_CURL_LOG.
+# logged to $FAKE_CURL_LOG; with $FAKE_CURL_EXIT every call exits with that code.
 FAKE_CURL = """#!/usr/bin/env bash
 out=; url=
 while [ $# -gt 0 ]; do case "$1" in -o) out=$2; shift ;; -*) ;; *) url=$1 ;; esac; shift; done
 echo "$url" >> "$FAKE_CURL_LOG"
+[ -z "$FAKE_CURL_EXIT" ] || exit "$FAKE_CURL_EXIT"
 src="$FAKE_PYPI/${url##*/}"
 [ -f "$src" ] || exit 22
 if [ -n "$out" ]; then [ -z "$FAKE_DOWNLOAD_FAILS" ] || exit 22; cp "$src" "$out"
@@ -263,13 +302,15 @@ else cat "$src"; fi
 """
 # `docker info` fails when $FAKE_DOCKER_DOWN is set. `docker run` fails when $FAKE_RUN_FAILS is
 # set, or writes the report its command names, for the wheel its command names, into the folder
-# mounted at /work.
+# mounted at /work. With $FAKE_RUN_STARTED it creates that file, then finishes its work despite
+# Ctrl-C, as real docker does when the container's shell is waiting on pip or auditwheel.
 FAKE_DOCKER = """#!/usr/bin/env bash
 if [ "$1" = info ]; then [ -z "$FAKE_DOCKER_DOWN" ]; exit; fi
 [ -z "$FAKE_RUN_FAILS" ] || exit 1
+if [ -n "$FAKE_RUN_STARTED" ]; then trap '' INT; touch "$FAKE_RUN_STARTED"; sleep 2; fi
 for arg in "$@"; do case "$arg" in *:/work) work=${arg%:/work} ;; esac; done
 wheel=$(grep -oE 'eqty_sdk-[^ ]+[.]whl' <<<"$*" | head -n 1)
-report=$(grep -oE '/work/[^ /]+[.]txt' <<<"$*" | head -n 1)
+report=$(grep -oE '/work/[^ ]+[.]txt' <<<"$*" | head -n 1)
 echo "$wheel" > "$work/${report#/work/}"
 """
 FAKE_OTOOL = """#!/usr/bin/env bash
@@ -338,13 +379,15 @@ class ArchiveBackport(unittest.TestCase):
         )
 
     def test_a_backport_is_archived_with_reports_made_from_its_published_wheels(self) -> None:
+        self.repo.write("docs/generated/mine.md", "work in progress\n")
         out = self.run_script()
         self.assertEqual(out.returncode, 0, out.stderr)
         self.assertEqual(self.repo.folders(), {"2.4.3": "archive/v2.4"})
         # The fake converter copies the x86_64 Linux report into the page.
         page = (self.repo.root / "docs-site/archive/v2.4/index.mdx").read_text()
         self.assertIn("eqty_sdk-2.4.3-cp38-abi3-manylinux_2_17_x86_64", page)
-        self.assertEqual(self.repo.changed("docs/generated"), "")
+        # The reports are made and read outside the checkout, so local work there survives.
+        self.assertEqual(self.repo.changed("docs/generated"), "?? docs/generated/mine.md\n")
         self.assertIn("open a PR to main", out.stdout)
 
     def test_docker_not_running_fails_first_and_says_so(self) -> None:
@@ -393,31 +436,96 @@ class ArchiveBackport(unittest.TestCase):
         self.assertFalse(self.curl_log.exists())
         self.assertUntouched()
 
-    def test_local_changes_in_the_folders_it_rewrites_are_refused_and_kept(self) -> None:
-        self.repo.write("docs/generated/mine.md", "work in progress\n")
+    def test_local_changes_in_the_archive_are_refused_before_any_download_and_kept(self) -> None:
+        # Untracked even where git status hides untracked files, modified, and staged.
+        changes = {
+            "untracked": "docs-site/archive/mine.mdx",
+            "modified": "docs-site/archive/v2.4/index.mdx",
+            "staged": "docs-site/archive/staged.mdx",
+        }
+        for kind, rel in changes.items():
+            with self.subTest(kind):
+                self.setUp()
+                self.repo.git("config", "status.showUntrackedFiles", "no")
+                self.repo.write(rel, "work in progress\n")
+                if kind == "staged":
+                    self.repo.git("add", rel)
+                out = self.run_script()
+                self.assertNotEqual(out.returncode, 0)
+                self.assertIn("docs-site/archive", out.stderr)
+                self.assertFalse(self.curl_log.exists())
+                self.assertEqual((self.repo.root / rel).read_text(), "work in progress\n")
+
+    def test_the_newest_release_is_refused_as_not_a_backport(self) -> None:
+        self.repo.git("tag", "-d", "v2.5.0")
         out = self.run_script()
         self.assertNotEqual(out.returncode, 0)
-        self.assertIn("docs/generated", out.stderr)
-        self.assertEqual(
-            (self.repo.root / "docs/generated/mine.md").read_text(), "work in progress\n"
+        self.assertIn("newest release", out.stderr)
+        self.assertFalse(self.curl_log.exists())
+        self.assertUntouched()
+
+    def test_a_newer_patch_its_release_workflow_archives_is_not_suggested(self) -> None:
+        self.repo.release("2.4.4")
+        out = self.run_script("2.4.3")
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("release workflow", out.stderr)
+        self.assertNotIn("just archive-backport 2.4.4", out.stderr)
+
+    def test_pypi_unreachable_is_not_reported_as_a_missing_release(self) -> None:
+        out = self.run_script(FAKE_CURL_EXIT="6")
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("could not reach PyPI", out.stderr)
+        self.assertNotIn("PyPI has no", out.stderr)
+
+    def test_ctrl_c_while_docker_runs_stops_before_anything_is_written(self) -> None:
+        import signal
+        import time
+
+        started = self.curl_log.parent / "docker-started"
+        run = subprocess.Popen(
+            ["bash", "scripts/archive_backport.sh", "2.4.3"],
+            cwd=self.repo.root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env={**self.env, "FAKE_RUN_STARTED": str(started)},
+            start_new_session=True,
         )
-
-    def test_a_failed_download_fails_naming_the_wheel(self) -> None:
-        out = self.run_script(FAKE_DOWNLOAD_FAILS="1")
-        self.assertNotEqual(out.returncode, 0)
-        self.assertIn("could not download eqty_sdk-2.4.3-", out.stderr)
+        deadline = time.monotonic() + 20
+        while not started.exists() and time.monotonic() < deadline:
+            time.sleep(0.1)
+        self.assertTrue(started.exists(), "docker never ran")
+        os.killpg(run.pid, signal.SIGINT)
+        out, _ = run.communicate(timeout=20)
+        self.assertNotEqual(run.returncode, 0)
+        self.assertNotIn("open a PR", out)
         self.assertUntouched()
 
-    def test_a_failed_docker_run_fails_naming_the_report(self) -> None:
-        out = self.run_script(FAKE_RUN_FAILS="1")
-        self.assertNotEqual(out.returncode, 0)
-        self.assertIn("x86_64 Linux report", out.stderr)
-        self.assertUntouched()
+    def test_stopping_mid_run_puts_the_archive_back(self) -> None:
+        # A closed terminal, Ctrl-C and kill, each while the converter is writing the archive.
+        import signal
+        import time
 
-    def test_a_failure_after_the_reports_are_made_puts_the_tree_back(self) -> None:
-        out = self.run_script(FAKE_CONVERTER_FAILS="1")
-        self.assertNotEqual(out.returncode, 0)
-        self.assertUntouched()
+        for sig in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM):
+            with self.subTest(sig.name):
+                self.setUp()
+                run = subprocess.Popen(
+                    ["bash", "scripts/archive_backport.sh", "2.4.3"],
+                    cwd=self.repo.root,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env={**self.env, "FAKE_CONVERTER_PAUSES": "1"},
+                    start_new_session=True,
+                )
+                partial = self.repo.root / "docs-site/archive/v2.4/partial.mdx"
+                deadline = time.monotonic() + 20
+                while not partial.exists() and time.monotonic() < deadline:
+                    time.sleep(0.1)
+                self.assertTrue(partial.exists(), "the converter never started")
+                os.killpg(run.pid, sig)
+                run.communicate(timeout=20)
+                self.assertNotEqual(run.returncode, 0)
+                self.assertUntouched()
 
 
 class OpenArchivePr(unittest.TestCase):
