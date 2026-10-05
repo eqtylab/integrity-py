@@ -86,6 +86,10 @@ generate-stubs:
   @echo "Linting generated files"
   just lint
 
+# Save a 2.0 to 2.4 backport's docs after it ships (macOS, Docker)
+archive-backport version:
+  scripts/archive_backport.sh {{version}}
+
 # Update README.md with auto-generated content (Justfile commands, etc.)
 readme-update:
   present --in-place README.md

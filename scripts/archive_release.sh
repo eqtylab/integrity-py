@@ -75,7 +75,7 @@ if [ -d "$TAG_TREE/docs-site/src/content/docs" ]; then
 else
   # A backport cut from 2.0 to 2.4 has only the old MkDocs pages, so they are converted as the
   # older versions were. release.yml never gets here: such a tag runs its own release.yml, which
-  # has no archive job. README's "Releasing" section says how to run this by hand.
+  # has no archive job. scripts/archive_backport.sh runs this by hand, with the reports.
   "$PYTHON" "$ROOT/scripts/archive_version.py" "v$VERSION" "$DEST" \
     --reports "$ROOT/docs/generated" >/dev/null
 fi

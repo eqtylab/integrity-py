@@ -64,26 +64,27 @@ Run `just` to see all available commands.
 
 ```present just --list
 Available recipes:
-    build                  # Build the Rust/Python wheel using maturin
-    build-docs             # Builds HTML docs for the sdk
-    ci                     # Run full CI pipeline: format check, lint, type check, build, and test
-    fix                    # Auto-fix Rust clippy warnings
-    fmt                    # Auto-format code (Rust + Python)
-    fmt-check              # Check code formatting without changes (Rust + Python)
-    generate-stubs         # Generate type stubs from Rust code
-    init                   # Set up git hooks for prek
-    install                # Install all Python dependencies via poetry
-    install-package        # Install the local build of the wheel into the venv
-    lint                   # Run linters and auto-fix issues (Rust clippy + Python ruff)
-    lint-check             # Run linters without auto-fixing (Rust clippy + Python ruff)
-    lint-docs              # Check that all public items have documentation
-    readme-check           # Check if README.md is up to date with auto-generated content
-    readme-update          # Update README.md with auto-generated content (Justfile commands, etc.)
-    serve-docs             # Serves the documentation locally with live reload
-    test-example-manifests # Run example scripts and compare normalized manifests to expected outputs
-    test-py                # Run Python unit tests
-    test-rs                # Run rust unit tests
-    type-check             # Run mypy type checking on the Python SDK
+    archive-backport version # Save a 2.0 to 2.4 backport's docs after it ships (macOS, Docker)
+    build                    # Build the Rust/Python wheel using maturin
+    build-docs               # Builds HTML docs for the sdk
+    ci                       # Run full CI pipeline: format check, lint, type check, build, and test
+    fix                      # Auto-fix Rust clippy warnings
+    fmt                      # Auto-format code (Rust + Python)
+    fmt-check                # Check code formatting without changes (Rust + Python)
+    generate-stubs           # Generate type stubs from Rust code
+    init                     # Set up git hooks for prek
+    install                  # Install all Python dependencies via poetry
+    install-package          # Install the local build of the wheel into the venv
+    lint                     # Run linters and auto-fix issues (Rust clippy + Python ruff)
+    lint-check               # Run linters without auto-fixing (Rust clippy + Python ruff)
+    lint-docs                # Check that all public items have documentation
+    readme-check             # Check if README.md is up to date with auto-generated content
+    readme-update            # Update README.md with auto-generated content (Justfile commands, etc.)
+    serve-docs               # Serves the documentation locally with live reload
+    test-example-manifests   # Run example scripts and compare normalized manifests to expected outputs
+    test-py                  # Run Python unit tests
+    test-rs                  # Run rust unit tests
+    type-check               # Run mypy type checking on the Python SDK
 ```
 
 ### Project Structure
@@ -129,32 +130,21 @@ Releases are handled through GitHub and the `Publish new release` workflow in [r
    old `/2.4.x/` addresses to `/v2.4/`, and the docs build check fails until they go there. main
    does not require that check, so push the fix to the PR's branch before merging.
 
-A backport to 2.0 to 2.4 runs the release workflow stored in its tag, which has no archive job,
-and main's docs build fails until its docs are archived by hand. On a Mac with Docker running, in
-a branch of main, with `X.Y.Z` the backport's version:
+#### Backports to 2.0 to 2.4
 
-1. From the release's PyPI page, download its two `manylinux` and two `macosx` wheels into
-   `wheels/`.
-2. Make the Linux reports in the image release CI builds them with, then again with `aarch64` in
-   place of each `x86_64`:
-   ```bash
-   docker run --rm -v "$PWD:/io" -w /io quay.io/pypa/manylinux2014_x86_64 sh -c \
-     'py=/opt/python/cp312-cp312/bin/python && $py -m pip install -q auditwheel &&
-      $py scripts/generate_auditwheel_report.py wheels/eqty_sdk-X.Y.Z-*manylinux*_x86_64.whl \
-        docs/generated/auditwheel-show-linux-x86_64.txt'
-   ```
-3. Make the macOS reports:
-   ```bash
-   for arch in arm64 x86_64; do
-     dir=$(mktemp -d) && unzip -q wheels/eqty_sdk-X.Y.Z-*macosx*_$arch.whl -d "$dir"
-     otool -L "$dir"/eqty_sdk/*.so > docs/generated/otool-show-macos-$arch.txt
-   done
-   ```
-4. With a Python that has `griffe==1.14.0`, `griffe2md==1.2.5` and `pyyaml`, run
-   `PYTHON=<that python> scripts/archive_release.sh X.Y.Z`. It converts the tag's pages, with these
-   reports, into `docs-site/archive/vX.Y/`, renames the group's key in `folders.json` and puts
-   latest's reports back.
-5. Commit `docs-site/archive/` and open a PR to main.
+A backport, such as 2.4.3 after 2.5.0, runs the release workflow stored in its own tag. Tags from
+2.0 to 2.4 predate the step that saves each release's docs, so main's docs build fails until
+someone saves them by hand. After the release is on PyPI, in a branch of main, on a Mac with
+Docker running:
+
+```bash
+just archive-backport 2.4.3
+```
+
+It makes the wheel reports from the published wheels, as release CI would have, and rebuilds
+`docs-site/archive/v2.4/` from the tag with them. If something is missing, it says what. Then
+commit `docs-site/archive/` and open a PR to main. It takes a few minutes, most of them the first
+download of two Docker images.
 
 ### Versioned Docs
 

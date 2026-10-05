@@ -238,6 +238,137 @@ class ArchiveRelease(unittest.TestCase):
         self.assertNotEqual(out.returncode, 0)
 
 
+PYPI_WHEELS = [
+    "cp38-abi3-macosx_10_12_x86_64.whl",
+    "cp38-abi3-macosx_11_0_arm64.whl",
+    "cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl",
+    "cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+    "cp38-abi3-win_amd64.whl",
+]
+# Serves files from $FAKE_PYPI by the last part of the URL: `curl -fsSL URL` prints the file,
+# `curl -fsSL -o FILE URL` saves it.
+FAKE_CURL = """#!/usr/bin/env bash
+out=; url=
+while [ $# -gt 0 ]; do case "$1" in -o) out=$2; shift ;; -*) ;; *) url=$1 ;; esac; shift; done
+src="$FAKE_PYPI/${url##*/}"
+[ -f "$src" ] || exit 22
+if [ -n "$out" ]; then cp "$src" "$out"; else cat "$src"; fi
+"""
+# `docker info` fails when $FAKE_DOCKER_DOWN is set. `docker run` writes the report its command
+# names, for the wheel its command names, into the folder mounted at /io.
+FAKE_DOCKER = """#!/usr/bin/env bash
+if [ "$1" = info ]; then [ -z "$FAKE_DOCKER_DOWN" ]; exit; fi
+for arg in "$@"; do case "$arg" in *:/io) root=${arg%:/io} ;; esac; done
+wheel=$(grep -oE 'eqty_sdk-[^ ]+[.]whl' <<<"$*" | head -n 1)
+report=$(grep -oE 'docs/generated/[^ ]+[.]txt' <<<"$*" | head -n 1)
+echo "$wheel" > "$root/$report"
+"""
+FAKE_OTOOL = """#!/usr/bin/env bash
+printf '%s:\\n\\t/usr/lib/libSystem.B.dylib\\n' "$2"
+"""
+
+
+class ArchiveBackport(unittest.TestCase):
+    """archive_backport.sh, with PyPI, Docker and otool faked."""
+
+    def setUp(self) -> None:
+        self.repo = Repo()
+        self.addCleanup(shutil.rmtree, self.repo.root, ignore_errors=True)
+        shutil.copy(SCRIPTS / "archive_backport.sh", self.repo.root / "scripts")
+        self.repo.write("docs-site/archive/folders.json", json.dumps({"2.4.2": "archive/v2.4"}))
+        self.repo.write("docs-site/archive/v2.4/index.mdx", "2.4.2\n")
+        self.repo.commit("2.4.2 archived")
+        self.repo.release("2.5.0")
+        self.repo.release("2.4.3", with_docs=False)
+
+        side = Path(tempfile.mkdtemp(prefix="archive-backport-"))
+        self.addCleanup(shutil.rmtree, side, ignore_errors=True)
+        self.pypi = side / "pypi"
+        self.pypi.mkdir()
+        for tail in PYPI_WHEELS:
+            self.publish(f"eqty_sdk-2.4.3-{tail}")
+        # Empty modules, so the script's dependency check passes without them installed.
+        modules = side / "modules"
+        modules.mkdir()
+        for name in ("griffe", "griffe2md", "yaml"):
+            (modules / f"{name}.py").write_text("")
+        bin_dir = side / "bin"
+        bin_dir.mkdir()
+        for name, text in (("curl", FAKE_CURL), ("docker", FAKE_DOCKER), ("otool", FAKE_OTOOL)):
+            (bin_dir / name).write_text(text)
+            (bin_dir / name).chmod(0o755)
+        self.env = {
+            **os.environ,
+            "PATH": f"{bin_dir}:{os.environ['PATH']}",
+            "FAKE_PYPI": str(self.pypi),
+            "PYTHONPATH": str(modules),
+            "PYTHON": sys.executable,
+        }
+
+    def publish(self, name: str) -> None:
+        import zipfile
+
+        with zipfile.ZipFile(self.pypi / name, "w") as wheel:
+            wheel.writestr("eqty_sdk/_rust.abi3.so", "")
+        urls = json.loads((self.pypi / "json").read_text())["urls"] if self.has_json() else []
+        urls.append({"filename": name, "url": f"https://files.example/{name}"})
+        (self.pypi / "json").write_text(json.dumps({"urls": urls}))
+
+    def has_json(self) -> bool:
+        return (self.pypi / "json").is_file()
+
+    def run_script(self, version: str = "2.4.3", **env: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["bash", "scripts/archive_backport.sh", version],
+            cwd=self.repo.root,
+            capture_output=True,
+            text=True,
+            env={**self.env, **env},
+        )
+
+    def test_a_backport_is_archived_with_reports_made_from_its_published_wheels(self) -> None:
+        out = self.run_script()
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertEqual(self.repo.folders(), {"2.4.3": "archive/v2.4"})
+        # The fake converter copies the x86_64 Linux report into the page.
+        page = (self.repo.root / "docs-site/archive/v2.4/index.mdx").read_text()
+        self.assertIn("eqty_sdk-2.4.3-cp38-abi3-manylinux_2_17_x86_64", page)
+        self.assertEqual(self.repo.changed("docs/generated"), "")
+        self.assertIn("open a PR to main", out.stdout)
+
+    def test_docker_not_running_fails_first_and_says_so(self) -> None:
+        out = self.run_script(FAKE_DOCKER_DOWN="1")
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("Docker", out.stderr)
+        self.assertEqual(self.repo.changed("docs-site"), "")
+
+    def test_a_python_without_the_renderer_fails_naming_what_to_install(self) -> None:
+        # Shadows any installed griffe2md, so the test holds under whichever Python runs it.
+        missing = Path(self.env["PYTHONPATH"]).parent / "missing"
+        missing.mkdir()
+        (missing / "griffe2md.py").write_text("raise ImportError\n")
+        out = self.run_script(PYTHONPATH=f"{missing}:{self.env['PYTHONPATH']}")
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("griffe2md==1.2.5", out.stderr)
+
+    def test_a_release_with_docs_site_is_left_to_its_release_workflow(self) -> None:
+        out = self.run_script("2.5.0")
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("release workflow", out.stderr)
+        self.assertEqual(self.repo.changed("docs-site"), "")
+
+    def test_a_wheel_missing_from_pypi_fails_naming_it(self) -> None:
+        (self.pypi / "json").unlink()
+        for tail in PYPI_WHEELS:
+            if "arm64" not in tail:
+                self.publish(f"eqty_sdk-2.4.3-{tail}")
+        out = self.run_script()
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("macosx", out.stderr)
+        self.assertIn("arm64", out.stderr)
+        self.assertEqual(self.repo.changed("docs-site"), "")
+
+
 class OpenArchivePr(unittest.TestCase):
     def setUp(self) -> None:
         self.repo = Repo()
