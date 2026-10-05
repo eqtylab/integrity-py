@@ -52,8 +52,7 @@ RELEASES=$(git -C "$ROOT" tag --list 'v*.*.*' | sed -nE 's/^v([0-9]+\.[0-9]+\.[0
 GROUP_NEWEST=$(awk -F. -v g="${VERSION%.*}" '$1"."$2 == g' <<<"$RELEASES" | tail -n 1)
 if [ "$GROUP_NEWEST" != "$VERSION" ]; then
   has_docs_site "$GROUP_NEWEST" &&
-    fail "$GROUP_NEWEST is newer than $VERSION, and its release workflow saves the" \
-      "${VERSION%.*} docs; nothing to do by hand"
+    fail "$GROUP_NEWEST's release workflow saves the ${VERSION%.*} docs; nothing to do by hand"
   fail "$GROUP_NEWEST is newer than $VERSION, and only the newest patch is saved." \
     "just archive-backport $GROUP_NEWEST"
 fi

@@ -624,7 +624,8 @@ class ArchiveBackport(unittest.TestCase):
         out = self.run_script("2.4.3")
         self.assertNotEqual(out.returncode, 0)
         self.assertIn("release workflow", out.stderr)
-        self.assertNotIn("just archive-backport 2.4.4", out.stderr)
+        # The whole message is one line, with no command to paste.
+        self.assertNotIn("\n    ", out.stderr)
 
     def test_pypi_unreachable_is_not_reported_as_a_missing_release(self) -> None:
         out = self.run_script(FAKE_CURL_EXIT="6")
