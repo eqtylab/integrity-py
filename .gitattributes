@@ -1,0 +1,4 @@
+# Archived versions are generated, so GitHub collapses them in PR diffs. folders.json, the list
+# of archived versions, stays expanded: a change to it is worth reading.
+docs-site/archive/** linguist-generated=true
+docs-site/archive/folders.json -linguist-generated
