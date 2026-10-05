@@ -35,6 +35,16 @@ REPORTS = [
     "otool-show-macos-arm64.txt",
     "otool-show-macos-x86_64.txt",
 ]
+# Writes its tag, its folder and one report it was given, so a test sees how it was called.
+FAKE_CONVERTER = """import sys
+from pathlib import Path
+
+tag, out, flag, reports = sys.argv[1:]
+assert flag == "--reports"
+Path(out).mkdir(parents=True, exist_ok=True)
+report = (Path(reports) / "auditwheel-show-linux-x86_64.txt").read_text()
+(Path(out) / "index.mdx").write_text(f"{tag} {out}\\n{report}")
+"""
 REDIRECT_TO_LATEST = {"source": "/(2\\.4\\.[0-9]+|latest|dev)/(.*)\\.html", "destination": "/$2/"}
 
 
@@ -49,6 +59,7 @@ class Repo:
         self.write("docs-site/src/content/docs/index.mdx", "latest\n")
         self.write("docs-site/archive/folders.json", "{}\n")
         self.write("scripts/render_api_docs.py", "")
+        self.write("scripts/archive_version.py", FAKE_CONVERTER)
         self.write("vercel.json", json.dumps({"redirects": [REDIRECT_TO_LATEST]}))
         shutil.copy(SCRIPT, self.root / "scripts/archive_release.sh")
         self.reports("main")
@@ -154,16 +165,21 @@ class ArchiveRelease(unittest.TestCase):
         self.assertEqual(out.returncode, 0, out.stderr)
         self.assertEqual(self.repo.changed("docs/generated"), "")
 
-    def test_a_backport_whose_tag_has_no_docs_site_fails_and_names_the_fix(self) -> None:
+    def test_a_backport_whose_tag_has_no_docs_site_is_converted_with_its_reports(self) -> None:
         self.repo.write("docs-site/archive/folders.json", json.dumps({"2.4.2": "archive/v2.4"}))
+        self.repo.write("docs-site/archive/v2.4/index.mdx", "2.4.2\n")
         self.repo.commit("2.4.2 archived")
         self.repo.release("2.5.0")
         self.repo.release("2.4.3", with_docs=False)
         self.repo.reports("2.4.3")
         out = self.repo.run("2.4.3")
-        self.assertNotEqual(out.returncode, 0)
-        self.assertIn("2.4.2", out.stderr)
-        self.assertEqual(self.repo.changed("docs-site"), "")
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertEqual(self.repo.folders(), {"2.4.3": "archive/v2.4"})
+        page = (self.repo.root / "docs-site/archive/v2.4/index.mdx").read_text()
+        dest = self.repo.root.resolve() / "docs-site/archive/v2.4"
+        self.assertTrue(page.startswith(f"v2.4.3 {dest}\n"), page)
+        self.assertIn(f"eqty_sdk-2.4.3-cp38-abi3-{REPORTS[0]}", page)
+        self.assertEqual(self.repo.changed("docs/generated"), "")
 
     def test_reports_from_another_version_are_refused(self) -> None:
         self.repo.release("2.5.0")

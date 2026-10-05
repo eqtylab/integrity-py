@@ -62,25 +62,23 @@ TAG_TREE=$(mktemp -d)
 git -C "$ROOT" worktree add --quiet --detach "$TAG_TREE" "v$VERSION"
 trap 'git -C "$ROOT" worktree remove --force "$TAG_TREE"' EXIT
 
-# A backport cut from a release before docs-site/ has no pages to save, and its tag now outranks
-# the group's folder, which fails the docs build until the folder is re-keyed by hand.
-if [ ! -d "$TAG_TREE/docs-site/src/content/docs" ]; then
-  old=$(jq -r --arg group "$GROUP." 'keys[] | select(startswith($group))' "$FOLDERS")
-  echo "archive_release: v$VERSION has no docs-site/ to archive. In folders.json, rename the" \
-    "\"${old:-$GROUP.x}\" key to \"$VERSION\", or the docs build fails." >&2
-  exit 1
-fi
-
-# The tag's pages, filled by the tag's own render script, with the real reports. Each render runs
-# from its own tree: griffe would otherwise find ./eqty_sdk in the working directory first.
-for report in "${REPORTS[@]}"; do
-  cp "$ROOT/docs/generated/$report" "$TAG_TREE/docs/generated/$report"
-done
-(cd "$TAG_TREE" && "$PYTHON" scripts/render_api_docs.py >/dev/null)
-
 DEST="$ROOT/docs-site/archive/v$GROUP"
-rm -rf "${DEST:?}"
-cp -R "$TAG_TREE/docs-site/src/content/docs" "$DEST"
+if [ -d "$TAG_TREE/docs-site/src/content/docs" ]; then
+  # The tag's pages, filled by the tag's own render script, with the real reports. Each render
+  # runs from its own tree: griffe would otherwise find ./eqty_sdk in the working directory first.
+  for report in "${REPORTS[@]}"; do
+    cp "$ROOT/docs/generated/$report" "$TAG_TREE/docs/generated/$report"
+  done
+  (cd "$TAG_TREE" && "$PYTHON" scripts/render_api_docs.py >/dev/null)
+  rm -rf "${DEST:?}"
+  cp -R "$TAG_TREE/docs-site/src/content/docs" "$DEST"
+else
+  # A backport cut from 2.0 to 2.4 has only the old MkDocs pages, so they are converted as the
+  # older versions were. release.yml never gets here: such a tag runs its own release.yml, which
+  # has no archive job. README's "Releasing" section says how to run this by hand.
+  "$PYTHON" "$ROOT/scripts/archive_version.py" "v$VERSION" "$DEST" \
+    --reports "$ROOT/docs/generated" >/dev/null
+fi
 
 jq -S --arg version "$VERSION" --arg group "$GROUP." --arg dir "archive/v$GROUP" \
   'with_entries(select(.key | startswith($group) | not)) + {($version): $dir}' \

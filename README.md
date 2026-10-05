@@ -129,9 +129,32 @@ Releases are handled through GitHub and the `Publish new release` workflow in [r
    old `/2.4.x/` addresses to `/v2.4/`, and the docs build check fails until they go there. main
    does not require that check, so push the fix to the PR's branch before merging.
 
-A backport to 2.0 to 2.4 runs the release workflow stored in its tag, which has no archive job.
-Afterwards, rename that version's key in `docs-site/archive/folders.json` to the backport's
-version (for example `"2.4.2"` to `"2.4.3"`) in a PR to main, or main's docs build fails.
+A backport to 2.0 to 2.4 runs the release workflow stored in its tag, which has no archive job,
+and main's docs build fails until its docs are archived by hand. On a Mac with Docker running, in
+a branch of main, with `X.Y.Z` the backport's version:
+
+1. From the release's PyPI page, download its two `manylinux` and two `macosx` wheels into
+   `wheels/`.
+2. Make the Linux reports in the image release CI builds them with, then again with `aarch64` in
+   place of each `x86_64`:
+   ```bash
+   docker run --rm -v "$PWD:/io" -w /io quay.io/pypa/manylinux2014_x86_64 sh -c \
+     'py=/opt/python/cp312-cp312/bin/python && $py -m pip install -q auditwheel &&
+      $py scripts/generate_auditwheel_report.py wheels/eqty_sdk-X.Y.Z-*manylinux*_x86_64.whl \
+        docs/generated/auditwheel-show-linux-x86_64.txt'
+   ```
+3. Make the macOS reports:
+   ```bash
+   for arch in arm64 x86_64; do
+     dir=$(mktemp -d) && unzip -q wheels/eqty_sdk-X.Y.Z-*macosx*_$arch.whl -d "$dir"
+     otool -L "$dir"/eqty_sdk/*.so > docs/generated/otool-show-macos-$arch.txt
+   done
+   ```
+4. With a Python that has `griffe==1.14.0`, `griffe2md==1.2.5` and `pyyaml`, run
+   `PYTHON=<that python> scripts/archive_release.sh X.Y.Z`. It converts the tag's pages, with these
+   reports, into `docs-site/archive/vX.Y/`, renames the group's key in `folders.json` and puts
+   latest's reports back.
+5. Commit `docs-site/archive/` and open a PR to main.
 
 ### Versioned Docs
 
