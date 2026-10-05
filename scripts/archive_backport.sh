@@ -4,11 +4,13 @@
 #     just archive-backport 2.4.3
 #
 # Such a tag runs the release.yml stored in it, which has no archive job, so main's docs build
-# fails until this runs. It does that job's work by hand: downloads the release's wheels from
-# PyPI, makes the four wheel reports release CI makes, then runs archive_release.sh, which
-# converts the tag's pages with them. Needs macOS, for otool, and Docker, because auditwheel runs
-# only on Linux. Everything that can be checked is checked before anything is downloaded. The
-# reports never enter the checkout, and if the run stops early docs-site/archive is put back.
+# fails until this runs. It does that job's work by hand: downloads the release's wheels from the
+# index the tag's workflow published them to, makes the four wheel reports release CI makes, then
+# runs archive_release.sh, which converts the tag's pages with them. 2.0.0 to 2.3.0 publish only
+# to EQTY Lab's index, which needs a login in ~/.netrc. Needs macOS, for otool, and Docker, because
+# auditwheel runs only on Linux. Everything that can be checked is checked before any wheel is
+# downloaded. The reports never enter the checkout, and if the run stops early docs-site/archive
+# is put back.
 # Tests: scripts/test_archive_release.py.
 set -euo pipefail
 
@@ -59,6 +61,7 @@ fi
   fail "this rewrites $ARCHIVE, which has uncommitted changes. Commit or stash them first:" \
     "git status --untracked-files=all -- $ARCHIVE"
 command -v otool >/dev/null || fail "otool not found; the macOS reports need a Mac"
+# archive_release.sh, at the end, writes folders.json with it.
 command -v jq >/dev/null || fail "jq not found; install it, then run this again:" "brew install jq"
 docker info >/dev/null 2>&1 || fail "Docker isn't running; start Docker Desktop and run this again"
 "$PYTHON" -c 'import griffe, griffe2md, yaml' 2>/dev/null ||
@@ -67,20 +70,73 @@ docker info >/dev/null 2>&1 || fail "Docker isn't running; start Docker Desktop 
     ".venv-docs/bin/pip install griffe==1.14.0 griffe2md==1.2.5 pyyaml" \
     "just archive-backport $VERSION"
 
+# The index the tag's own workflow uploads to: 2.0.0 to 2.3.0 upload with twine to EQTY Lab's
+# alone, later tags to PyPI. Both serve the standard file list, which is all this reads.
+WORKFLOW=.github/workflows/release.yml
+UPLOAD='repository-url="https://pypi.eqtylab.io/'
+git -C "$ROOT" cat-file -e "v$VERSION:$WORKFLOW" 2>/dev/null ||
+  fail "v$VERSION has no $WORKFLOW, so where it published is unknown"
+if git -C "$ROOT" grep -qF -e "$UPLOAD" "v$VERSION" -- "$WORKFLOW"; then
+  INDEX=pypi.eqtylab.io HOST=pypi.eqtylab.io LOGIN=true
+else
+  INDEX=PyPI HOST=pypi.org LOGIN=false
+fi
+PAGE=https://$HOST/simple/eqty-sdk/
+# curl without ~/.curlrc, whose options could change what it reports. Only EQTY Lab's index gets
+# the login in ~/.netrc, which curl reads itself, so it is never on a command line.
+fetch() {
+  if $LOGIN; then curl -q --netrc-optional "$@"; else curl -q "$@"; fi
+}
 status=0
-JSON=$(curl -fsSL "https://pypi.org/pypi/eqty-sdk/$VERSION/json") || status=$?
-case $status in
-  0) ;;
-  22) fail "PyPI has no eqty-sdk $VERSION yet; run this again once its release has published" ;;
-  *) fail "could not reach PyPI (curl exit $status); check the network and run this again" ;;
+ANSWER=$(fetch -sSL -w '\n%{http_code}' "$PAGE") || status=$?
+[ $status -eq 0 ] ||
+  fail "could not reach $INDEX (curl exit $status); check the network and run this again"
+code=${ANSWER##*$'\n'}
+BODY=${ANSWER%$'\n'*}
+case $code in
+  200) ;;
+  # No eqty-sdk there at all, so no files, as for a version not yet published.
+  404) BODY= ;;
+  # A login in ~/.netrc was sent if it names the host, so this answer refused it.
+  401 | 403)
+    grep -qsF "$HOST" "$HOME/.netrc" &&
+      fail "$HOST refused the login in ~/.netrc ($code); correct it there and run this again"
+    fail "$HOST needs a login for v$VERSION's wheels. Add this line to ~/.netrc, in an editor:" \
+      "machine $HOST login YOUR_NAME password YOUR_PASSWORD" ;;
+  *) fail "$INDEX answered $code for $PAGE; check it's up and run this again" ;;
 esac
-FILES=$(jq -r '.urls[] | "\(.filename) \(.url)"' <<<"$JSON") ||
-  fail "PyPI's answer for $VERSION is not the JSON expected"
+# This version's files, each with its address. pypi.org's links are absolute; a private
+# index's may be relative to the page.
+FILES=$("$PYTHON" -c '
+import sys
+from html.parser import HTMLParser
+from urllib.parse import urldefrag, urljoin
+
+page, prefix = sys.argv[1:]
+
+class Links(HTMLParser):
+    href = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            self.href = dict(attrs).get("href")
+
+    def handle_data(self, data):
+        name = data.strip()
+        if self.href and name.startswith(prefix):
+            print(name, urldefrag(urljoin(page, self.href))[0])
+        self.href = None
+
+Links().feed(sys.stdin.read())
+' "$PAGE" "eqty_sdk-$VERSION-" <<<"$BODY") ||
+  fail "$INDEX's file list for eqty-sdk is not the page expected"
+[ -n "$FILES" ] ||
+  fail "$INDEX has no eqty-sdk $VERSION yet; run this again once its release has published"
 # Each platform's wheel, found before any is downloaded.
 WANTED=()
 while read -r platform arch docker_platform report; do
   found=$(awk -v p="$platform.*_${arch}[.]whl$" '$1 ~ p { print $1, $2; exit }' <<<"$FILES")
-  [ -n "$found" ] || fail "PyPI has no $platform $arch wheel for $VERSION"
+  [ -n "$found" ] || fail "$INDEX has no $platform $arch wheel for $VERSION"
   WANTED+=("$platform $arch $docker_platform $report $found")
 done <<<"$PLATFORMS"
 
@@ -105,7 +161,7 @@ trap 'exit 130' INT
 mkdir "$WORK/reports"
 for row in "${WANTED[@]}"; do
   read -r platform arch docker_platform report name url <<<"$row"
-  curl -fsSL -o "$WORK/$name" "$url" || fail "could not download $name from $url"
+  fetch -fsSL -o "$WORK/$name" "$url" || fail "could not download $name from $url"
 done
 for row in "${WANTED[@]}"; do
   read -r platform arch docker_platform report name url <<<"$row"

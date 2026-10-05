@@ -57,6 +57,11 @@ Path(out).mkdir(parents=True, exist_ok=True)
 report = (Path(reports) / "auditwheel-show-linux-x86_64.txt").read_text()
 (Path(out) / "index.mdx").write_text(f"{tag} {out}\\n{report}")
 """
+# What 2.4's release.yml publishes with: PyPI. A mention of EQTY Lab's index is not an upload.
+PYPI_WORKFLOW = """\
+# Before 2.4, releases went to https://pypi.eqtylab.io/ instead.
+uses: pypa/gh-action-pypi-publish@release/v1
+"""
 REDIRECT_TO_LATEST = {"source": "/(2\\.4\\.[0-9]+|latest|dev)/(.*)\\.html", "destination": "/$2/"}
 
 
@@ -73,6 +78,7 @@ class Repo:
         self.write("scripts/render_api_docs.py", "")
         self.write("scripts/archive_version.py", FAKE_CONVERTER)
         self.write("vercel.json", json.dumps({"redirects": [REDIRECT_TO_LATEST]}))
+        self.write(".github/workflows/release.yml", PYPI_WORKFLOW)
         shutil.copy(SCRIPT, self.root / "scripts/archive_release.sh")
         self.reports("main")
         self.commit("main")
@@ -95,13 +101,16 @@ class Repo:
         self.git("add", "-A")
         self.git("commit", "-q", "-m", message)
 
-    def release(self, version: str, with_docs: bool = True) -> None:
-        """Tag a release. `with_docs=False` tags a tree without docs-site/, like 2.4.x."""
+    def release(self, version: str, with_docs: bool = True, workflow: str = "") -> None:
+        """Tag a release. `with_docs=False` tags a tree without docs-site/, like 2.4.x, with
+        `workflow` as its release.yml."""
         if with_docs:
             self.git("tag", f"v{version}")
             return
         self.git("switch", "-q", "--detach")
         self.git("rm", "-q", "-r", "docs-site")
+        if workflow:
+            self.write(".github/workflows/release.yml", workflow)
         self.commit(f"{version} without docs-site")
         self.git("tag", f"v{version}")
         self.git("switch", "-q", "main")
@@ -287,19 +296,44 @@ PYPI_WHEELS = [
     "cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
     "cp38-abi3-win_amd64.whl",
 ]
-# Serves files from $FAKE_PYPI by the last part of the URL: `curl -fsSL URL` prints the file,
-# `curl -fsSL -o FILE URL` saves it, and fails when $FAKE_DOWNLOAD_FAILS is set. Every URL is
-# logged to $FAKE_CURL_LOG; with $FAKE_CURL_EXIT every call exits with that code.
+# Answers https://HOST/PATH from $FAKE_PYPI/HOST/PATH, a PATH ending in / from its index.html.
+# A HOST with a .login file answers 401 unless curl is told to read ~/.netrc and it holds the
+# file's line; $FAKE_PAGE_STATUS replaces the status of every page. `-o FILE` saves the answer,
+# `-w` prints its status after it, and `-f` fails on anything but 200, as on any wheel when
+# $FAKE_DOWNLOAD_FAILS is set. Every URL is logged to $FAKE_CURL_LOG, followed by " netrc" when
+# curl was told to read it; with $FAKE_CURL_EXIT every call exits with that code.
 FAKE_CURL = """#!/usr/bin/env bash
-out=; url=
-while [ $# -gt 0 ]; do case "$1" in -o) out=$2; shift ;; -*) ;; *) url=$1 ;; esac; shift; done
-echo "$url" >> "$FAKE_CURL_LOG"
+out=; url=; format=; fail=false; netrc=false
+while [ $# -gt 0 ]; do case "$1" in
+  -o) out=$2; shift ;;
+  -w) format=$2; shift ;;
+  --netrc-optional) netrc=true ;;
+  -*f*) fail=true ;;
+  -*) ;;
+  *) url=$1 ;;
+esac; shift; done
+echo "$url$($netrc && echo ' netrc')" >> "$FAKE_CURL_LOG"
 [ -z "$FAKE_CURL_EXIT" ] || exit "$FAKE_CURL_EXIT"
-src="$FAKE_PYPI/${url##*/}"
-[ -f "$src" ] || exit 22
-if [ -n "$out" ]; then [ -z "$FAKE_DOWNLOAD_FAILS" ] || exit 22; cp "$src" "$out"
-else cat "$src"; fi
+path=${url#https://}; host=${path%%/*}
+case $path in */) path+=index.html; page=true ;; *) page=false ;; esac
+login="$FAKE_PYPI/$host/.login"
+if [ -f "$login" ] && ! { $netrc && grep -qxF "$(cat "$login")" "$HOME/.netrc"; }; then code=401
+elif [ ! -f "$FAKE_PYPI/$path" ]; then code=404
+elif [ -n "$FAKE_DOWNLOAD_FAILS" ] && [[ $path == *.whl ]]; then code=500
+else code=200; fi
+! $page || code=${FAKE_PAGE_STATUS:-$code}
+if [ $code != 200 ]; then ! $fail || exit 22
+elif [ -n "$out" ]; then cp "$FAKE_PYPI/$path" "$out"
+else cat "$FAKE_PYPI/$path"; fi
+status='%{http_code}'
+[ -z "$format" ] || printf "${format//"$status"/$code}"
 """
+# What 2.0.0 to 2.3.0's release.yml publishes with: EQTY Lab's index, and no other.
+LEGACY_WORKFLOW = """\
+python3 -m twine upload --repository-url="https://pypi.eqtylab.io/" "${files[@]}"
+"""
+# The login EQTY Lab's fake index takes.
+LOGIN = "machine pypi.eqtylab.io login me password secret"
 # `docker info` fails when $FAKE_DOCKER_DOWN is set. `docker run` fails when $FAKE_RUN_FAILS is
 # set, or writes the report its command names, for the wheel its command names, into the folder
 # mounted at /work. With $FAKE_RUN_STARTED it creates that file, then finishes its work despite
@@ -319,7 +353,7 @@ printf '%s:\\n\\t/usr/lib/libSystem.B.dylib\\n' "$2"
 
 
 class ArchiveBackport(unittest.TestCase):
-    """archive_backport.sh, with PyPI, Docker and otool faked."""
+    """archive_backport.sh, with the package indexes, Docker and otool faked."""
 
     def setUp(self) -> None:
         self.repo = Repo()
@@ -347,9 +381,13 @@ class ArchiveBackport(unittest.TestCase):
         for name, text in (("curl", FAKE_CURL), ("docker", FAKE_DOCKER), ("otool", FAKE_OTOOL)):
             (bin_dir / name).write_text(text)
             (bin_dir / name).chmod(0o755)
+        # Its own home, so a real ~/.netrc never answers for a test.
+        self.home = side / "home"
+        self.home.mkdir()
         self.env = {
             **os.environ,
             "PATH": f"{bin_dir}:{os.environ['PATH']}",
+            "HOME": str(self.home),
             "FAKE_PYPI": str(self.pypi),
             "PYTHONPATH": str(modules),
             "PYTHON": sys.executable,
@@ -357,17 +395,35 @@ class ArchiveBackport(unittest.TestCase):
         }
         self.curl_log = side / "curl.log"
 
-    def publish(self, name: str) -> None:
+    def publish(self, name: str, private: bool = False) -> None:
+        """List a wheel on PyPI, whose links are absolute, or on EQTY Lab's index, with a link
+        relative to the page, as private indexes often give."""
         import zipfile
 
-        with zipfile.ZipFile(self.pypi / name, "w") as wheel:
-            wheel.writestr("eqty_sdk/_rust.abi3.so", "")
-        urls = json.loads((self.pypi / "json").read_text())["urls"] if self.has_json() else []
-        urls.append({"filename": name, "url": f"https://files.example/{name}"})
-        (self.pypi / "json").write_text(json.dumps({"urls": urls}))
+        host = "pypi.eqtylab.io" if private else "pypi.org"
+        wheel = self.pypi / (f"{host}/packages" if private else "files.example") / name
+        wheel.parent.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(wheel, "w") as whl:
+            whl.writestr("eqty_sdk/_rust.abi3.so", "")
+        href = f"../../packages/{name}" if private else f"https://files.example/{name}"
+        self.page(host).parent.mkdir(parents=True, exist_ok=True)
+        with self.page(host).open("a") as page:
+            page.write(f'<a href="{href}#sha256=0">{name}</a><br />\n')
 
-    def has_json(self) -> bool:
-        return (self.pypi / "json").is_file()
+    def page(self, host: str = "pypi.org") -> Path:
+        return self.pypi / host / "simple/eqty-sdk/index.html"
+
+    def publish_only_to_eqty_lab_s_index(self) -> None:
+        """Re-tag 2.4.3 as 2.0 to 2.3 publish: to EQTY Lab's index alone, which needs a login and
+        lists older versions' wheels too."""
+        self.repo.git("tag", "-d", "v2.4.3")
+        self.repo.release("2.4.3", with_docs=False, workflow=LEGACY_WORKFLOW)
+        shutil.rmtree(self.pypi)
+        (self.pypi / "pypi.eqtylab.io").mkdir(parents=True)
+        (self.pypi / "pypi.eqtylab.io/.login").write_text(LOGIN)
+        for version in ("2.4.2", "2.4.3"):
+            for tail in PYPI_WHEELS:
+                self.publish(f"eqty_sdk-{version}-{tail}", private=True)
 
     def run_script(self, version: str = "2.4.3", **env: str) -> subprocess.CompletedProcess:
         return subprocess.run(
@@ -422,8 +478,96 @@ class ArchiveBackport(unittest.TestCase):
         self.assertIn("release workflow", out.stderr)
         self.assertEqual(self.repo.changed("docs-site"), "")
 
+    def test_a_backport_published_only_to_eqty_lab_s_index_is_archived_with_a_login(self) -> None:
+        self.publish_only_to_eqty_lab_s_index()
+        (self.home / ".netrc").write_text(f"{LOGIN}\n")
+        out = self.run_script()
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertEqual(self.repo.folders(), {"2.4.3": "archive/v2.4"})
+        # This version's wheels, not 2.4.2's listed beside them.
+        page = (self.repo.root / "docs-site/archive/v2.4/index.mdx").read_text()
+        self.assertIn("eqty_sdk-2.4.3-cp38-abi3-manylinux_2_17_x86_64", page)
+        log = self.curl_log.read_text()
+        self.assertNotIn("pypi.org", log)
+        # Relative links resolved against the page, each download logged in as well.
+        self.assertIn(
+            "https://pypi.eqtylab.io/packages/eqty_sdk-2.4.3-cp38-abi3-macosx_11_0_arm64.whl"
+            " netrc\n",
+            log,
+        )
+        self.assertNotIn("secret", out.stdout + out.stderr)
+
+    def test_eqty_lab_s_index_without_a_login_says_how_to_add_one(self) -> None:
+        # nginx answers 401 to no login; an index that hides itself answers 403.
+        for status in ("", "403"):
+            with self.subTest(status=status or "401"):
+                self.setUp()
+                self.publish_only_to_eqty_lab_s_index()
+                out = self.run_script(FAKE_PAGE_STATUS=status)
+                self.assertNotEqual(out.returncode, 0)
+                self.assertIn("pypi.eqtylab.io needs a login", out.stderr)
+                # The one indented line is the one to add, not a command with the password in it.
+                indented = [line for line in out.stderr.splitlines() if line.startswith("    ")]
+                self.assertEqual(
+                    indented, ["    machine pypi.eqtylab.io login YOUR_NAME password YOUR_PASSWORD"]
+                )
+                self.assertNotIn(".whl", self.curl_log.read_text())
+                self.assertUntouched()
+
+    def test_a_refused_login_says_to_correct_it_not_to_add_another(self) -> None:
+        # curl uses the first entry for a host, so a second one added below would never be read.
+        self.publish_only_to_eqty_lab_s_index()
+        (self.home / ".netrc").write_text("machine pypi.eqtylab.io login me password old\n")
+        out = self.run_script()
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("pypi.eqtylab.io refused the login in ~/.netrc", out.stderr)
+        self.assertNotIn("Add this line", out.stderr)
+        self.assertNotIn(".whl", self.curl_log.read_text())
+        self.assertUntouched()
+
+    def test_pypi_is_never_sent_the_login_in_netrc(self) -> None:
+        # A `default` entry would answer for every host, PyPI and its file host included.
+        (self.home / ".netrc").write_text("default login me password secret\n")
+        out = self.run_script()
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertNotIn(" netrc", self.curl_log.read_text())
+
+    def test_an_unexpected_answer_from_the_index_is_named(self) -> None:
+        out = self.run_script(FAKE_PAGE_STATUS="500")
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("PyPI answered 500", out.stderr)
+        self.assertNotIn(".whl", self.curl_log.read_text())
+        self.assertUntouched()
+
+    def test_a_tag_without_a_release_workflow_is_refused_before_any_download(self) -> None:
+        self.repo.git("tag", "-d", "v2.4.3")
+        self.repo.git("switch", "-q", "--detach", "v2.5.0")
+        self.repo.git("rm", "-q", "-r", "docs-site", ".github")
+        self.repo.commit("2.4.3 without docs-site or a workflow")
+        self.repo.git("tag", "v2.4.3")
+        self.repo.git("switch", "-q", "main")
+        out = self.run_script()
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("where it published is unknown", out.stderr)
+        self.assertFalse(self.curl_log.exists())
+        self.assertUntouched()
+
+    def test_a_release_not_yet_on_pypi_says_to_run_again_once_it_is(self) -> None:
+        # PyPI answers 404 for a project with no files at all, and lists only older versions
+        # for one without this release's.
+        for older_only in (False, True):
+            with self.subTest(older_only=older_only):
+                self.setUp()
+                shutil.rmtree(self.pypi / "pypi.org")
+                if older_only:
+                    self.publish(f"eqty_sdk-2.4.2-{PYPI_WHEELS[0]}")
+                out = self.run_script()
+                self.assertNotEqual(out.returncode, 0)
+                self.assertIn("PyPI has no eqty-sdk 2.4.3 yet", out.stderr)
+                self.assertUntouched()
+
     def test_a_wheel_missing_from_pypi_fails_naming_it(self) -> None:
-        (self.pypi / "json").unlink()
+        self.page().unlink()
         for tail in PYPI_WHEELS:
             if "arm64" not in tail:
                 self.publish(f"eqty_sdk-2.4.3-{tail}")

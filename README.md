@@ -134,8 +134,8 @@ Releases are handled through GitHub and the `Publish new release` workflow in [r
 
 A backport, such as 2.4.3 after 2.5.0, runs the release workflow stored in its own tag. Tags from
 2.0 to 2.4 predate the step that saves each release's docs, so main's docs build fails until
-someone saves them by hand. After the release is on PyPI, on an up-to-date main, on a Mac with
-Docker running:
+someone saves them by hand. After the release has published, on an up-to-date main, on a Mac
+with Docker running:
 
 ```bash
 just archive-backport 2.4.3
@@ -145,6 +145,15 @@ It makes the wheel reports from the published wheels, as release CI would have, 
 `docs-site/archive/v2.4/` from the tag with them. If something is missing, it says what. When it
 finishes, it prints the commands that put the change in a PR. It takes a few minutes, most of
 them the first download of two Docker images.
+
+It reads the wheels from the index the tag's workflow uploaded them to. Tags up to 2.3.0 upload
+only to EQTY Lab's index, `pypi.eqtylab.io`, so a backport cut from one of them does too; later
+tags upload to PyPI. EQTY Lab's index needs a login, which curl reads from `~/.netrc`. Add it
+with an editor, not `echo`, so the password stays out of your shell history:
+
+```text
+machine pypi.eqtylab.io login YOUR_NAME password YOUR_PASSWORD
+```
 
 ### Versioned Docs
 
