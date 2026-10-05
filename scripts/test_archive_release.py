@@ -39,8 +39,12 @@ REPORTS = [
 FAKE_CONVERTER = """import sys
 from pathlib import Path
 
+import os
+
 tag, out, flag, reports = sys.argv[1:]
 assert flag == "--reports"
+if os.environ.get("FAKE_CONVERTER_FAILS"):
+    sys.exit("archive_version: failed")
 Path(out).mkdir(parents=True, exist_ok=True)
 report = (Path(reports) / "auditwheel-show-linux-x86_64.txt").read_text()
 (Path(out) / "index.mdx").write_text(f"{tag} {out}\\n{report}")
@@ -246,22 +250,27 @@ PYPI_WHEELS = [
     "cp38-abi3-win_amd64.whl",
 ]
 # Serves files from $FAKE_PYPI by the last part of the URL: `curl -fsSL URL` prints the file,
-# `curl -fsSL -o FILE URL` saves it.
+# `curl -fsSL -o FILE URL` saves it, and fails when $FAKE_DOWNLOAD_FAILS is set. Every URL is
+# logged to $FAKE_CURL_LOG.
 FAKE_CURL = """#!/usr/bin/env bash
 out=; url=
 while [ $# -gt 0 ]; do case "$1" in -o) out=$2; shift ;; -*) ;; *) url=$1 ;; esac; shift; done
+echo "$url" >> "$FAKE_CURL_LOG"
 src="$FAKE_PYPI/${url##*/}"
 [ -f "$src" ] || exit 22
-if [ -n "$out" ]; then cp "$src" "$out"; else cat "$src"; fi
+if [ -n "$out" ]; then [ -z "$FAKE_DOWNLOAD_FAILS" ] || exit 22; cp "$src" "$out"
+else cat "$src"; fi
 """
-# `docker info` fails when $FAKE_DOCKER_DOWN is set. `docker run` writes the report its command
-# names, for the wheel its command names, into the folder mounted at /io.
+# `docker info` fails when $FAKE_DOCKER_DOWN is set. `docker run` fails when $FAKE_RUN_FAILS is
+# set, or writes the report its command names, for the wheel its command names, into the folder
+# mounted at /work.
 FAKE_DOCKER = """#!/usr/bin/env bash
 if [ "$1" = info ]; then [ -z "$FAKE_DOCKER_DOWN" ]; exit; fi
-for arg in "$@"; do case "$arg" in *:/io) root=${arg%:/io} ;; esac; done
+[ -z "$FAKE_RUN_FAILS" ] || exit 1
+for arg in "$@"; do case "$arg" in *:/work) work=${arg%:/work} ;; esac; done
 wheel=$(grep -oE 'eqty_sdk-[^ ]+[.]whl' <<<"$*" | head -n 1)
-report=$(grep -oE 'docs/generated/[^ ]+[.]txt' <<<"$*" | head -n 1)
-echo "$wheel" > "$root/$report"
+report=$(grep -oE '/work/[^ /]+[.]txt' <<<"$*" | head -n 1)
+echo "$wheel" > "$work/${report#/work/}"
 """
 FAKE_OTOOL = """#!/usr/bin/env bash
 printf '%s:\\n\\t/usr/lib/libSystem.B.dylib\\n' "$2"
@@ -303,7 +312,9 @@ class ArchiveBackport(unittest.TestCase):
             "FAKE_PYPI": str(self.pypi),
             "PYTHONPATH": str(modules),
             "PYTHON": sys.executable,
+            "FAKE_CURL_LOG": str(side / "curl.log"),
         }
+        self.curl_log = side / "curl.log"
 
     def publish(self, name: str) -> None:
         import zipfile
@@ -366,7 +377,47 @@ class ArchiveBackport(unittest.TestCase):
         self.assertNotEqual(out.returncode, 0)
         self.assertIn("macosx", out.stderr)
         self.assertIn("arm64", out.stderr)
+        self.assertUntouched()
+        # Found from PyPI's file list, before any wheel is downloaded.
+        self.assertEqual(self.curl_log.read_text().count("files.example"), 0)
+
+    def assertUntouched(self) -> None:
+        self.assertEqual(self.repo.changed("docs/generated"), "")
         self.assertEqual(self.repo.changed("docs-site"), "")
+
+    def test_an_older_patch_is_refused_before_any_download_naming_the_newer(self) -> None:
+        self.repo.release("2.4.4", with_docs=False)
+        out = self.run_script("2.4.3")
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("2.4.4", out.stderr)
+        self.assertFalse(self.curl_log.exists())
+        self.assertUntouched()
+
+    def test_local_changes_in_the_folders_it_rewrites_are_refused_and_kept(self) -> None:
+        self.repo.write("docs/generated/mine.md", "work in progress\n")
+        out = self.run_script()
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("docs/generated", out.stderr)
+        self.assertEqual(
+            (self.repo.root / "docs/generated/mine.md").read_text(), "work in progress\n"
+        )
+
+    def test_a_failed_download_fails_naming_the_wheel(self) -> None:
+        out = self.run_script(FAKE_DOWNLOAD_FAILS="1")
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("could not download eqty_sdk-2.4.3-", out.stderr)
+        self.assertUntouched()
+
+    def test_a_failed_docker_run_fails_naming_the_report(self) -> None:
+        out = self.run_script(FAKE_RUN_FAILS="1")
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("x86_64 Linux report", out.stderr)
+        self.assertUntouched()
+
+    def test_a_failure_after_the_reports_are_made_puts_the_tree_back(self) -> None:
+        out = self.run_script(FAKE_CONVERTER_FAILS="1")
+        self.assertNotEqual(out.returncode, 0)
+        self.assertUntouched()
 
 
 class OpenArchivePr(unittest.TestCase):
