@@ -2,9 +2,9 @@
 
     .venv-docs/bin/python scripts/archive_version.py v2.2.0 docs-site/archive/v2.2
 
-Everything comes from the release tag, never from the working tree: the pages in docs/,
-mkdocs.yml, the files the pages include, and the eqty_sdk source. So the API reference
-describes that release, not the current code.
+Everything but the wheel reports comes from the release tag, never from the working tree: the
+pages in docs/, mkdocs.yml, the files the pages include, and the eqty_sdk source. So the API
+reference describes that release, not the current code.
 
 Each page gets the changes the current pages got when they moved to the new site:
 
@@ -300,13 +300,12 @@ def main(argv: list[str] | None = None) -> int:
             dest.parent.mkdir(parents=True, exist_ok=True)
             # A page that includes wheel reports takes them from --reports, through read(), or
             # else from the old site's copy of it.
-            if args.reports:
-                reports = None
-            elif any(REPORT_PATH.match(m.group(2)) for m in FENCED_SNIPPET.finditer(md)):
+            reports = None
+            if not args.reports and any(
+                REPORT_PATH.match(m.group(2)) for m in FENCED_SNIPPET.finditer(md)
+            ):
                 page = old_page_html(args.tag, rel)
                 reports = report_blocks(page) if page else []
-            else:
-                reports = None
             dest.write_text(convert_page(md, titles[rel], read, api, reports=reports))
         # The sidebar's labels and order, from the old nav.
         for folder, text in groups.items():

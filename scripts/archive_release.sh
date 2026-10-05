@@ -58,12 +58,11 @@ for report in auditwheel-show-linux-x86_64.txt auditwheel-show-linux-aarch64.txt
   fi
 done
 
-TAG_TREE=$(mktemp -d)
-git -C "$ROOT" worktree add --quiet --detach "$TAG_TREE" "v$VERSION"
-trap 'git -C "$ROOT" worktree remove --force "$TAG_TREE"' EXIT
-
 DEST="$ROOT/docs-site/archive/v$GROUP"
-if [ -d "$TAG_TREE/docs-site/src/content/docs" ]; then
+if git -C "$ROOT" cat-file -e "v$VERSION:docs-site/src/content/docs" 2>/dev/null; then
+  TAG_TREE=$(mktemp -d)
+  git -C "$ROOT" worktree add --quiet --detach "$TAG_TREE" "v$VERSION"
+  trap 'git -C "$ROOT" worktree remove --force "$TAG_TREE"' EXIT
   # The tag's pages, filled by the tag's own render script, with the real reports. Each render
   # runs from its own tree: griffe would otherwise find ./eqty_sdk in the working directory first.
   for report in "${REPORTS[@]}"; do
