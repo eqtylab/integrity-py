@@ -2,9 +2,9 @@
 
     .venv-docs/bin/python scripts/archive_version.py v2.2.0 docs-site/archive/v2.2
 
-Everything comes from the release tag, never from the working tree: the pages in docs/,
-mkdocs.yml, the files the pages include, and the eqty_sdk source. So the API reference
-describes that release, not the current code.
+Everything but the wheel reports comes from the release tag, never from the working tree: the
+pages in docs/, mkdocs.yml, the files the pages include, and the eqty_sdk source. So the API
+reference describes that release, not the current code.
 
 Each page gets the changes the current pages got when they moved to the new site:
 
@@ -14,8 +14,9 @@ Each page gets the changes the current pages got when they moved to the new site
 - `:::` directives are replaced by the API reference, rendered with griffe2md
 
 Wheel reports are the exception: a tag only has placeholders, so the real reports come from
-the old published site (see GH_PAGES). Each folder also gets a `_group.yaml`, so the sidebar
-keeps the old nav's labels and order.
+the old published site (see GH_PAGES). A backport released after that site stopped has none
+there, so archive_release.sh passes `--reports` with the four made from its published wheels.
+Each folder also gets a `_group.yaml`, so the sidebar keeps the old nav's labels and order.
 
 The pages have no `{/* generated */}` markers, so render_api_docs.py never refills them with
 the current API. The output is committed, and running the script again on the same tag
@@ -153,9 +154,10 @@ def convert_page(
 ) -> str:
     """Convert one old Markdown page into an MDX page for the new site.
 
-    `read` returns a file from the tag, for snippet includes. `api` holds the rendered
-    reference for each directive's target. `reports` is the old page's <pre> blocks, used for
-    wheel reports; it's None when the page has none.
+    `read` returns a file for a snippet include: from the tag, or a wheel report from
+    --reports. `api` holds the rendered reference for each directive's target. `reports` is
+    the old page's <pre> blocks, used for wheel reports; it's None when the page has none, or
+    when `read` supplies them.
     """
     body = H1.sub("", md, count=1)
     # Wheel reports come from the old published page. It has one <pre> per code block, in the
@@ -229,6 +231,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
     parser.add_argument("tag")
     parser.add_argument("out", type=Path)
+    parser.add_argument(
+        "--reports",
+        type=Path,
+        help="a folder holding the release's wheel reports, read in place of the old site's",
+    )
     args = parser.parse_args(argv)
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -250,7 +257,14 @@ def main(argv: list[str] | None = None) -> int:
         titles, groups = nav_index(mkdocs["nav"])
 
         def read(rel: str) -> str:
-            """A file from the tag, for a snippet include. A missing file fails the run."""
+            """A file from the tag, or a wheel report from --reports, for a snippet include. A
+            missing file fails the run.
+            """
+            if args.reports and REPORT_PATH.match(rel):
+                path = args.reports / Path(rel).name
+                if not path.is_file():
+                    raise SystemExit(f"archive_version: {path} is missing")
+                return path.read_text()
             path = tree / rel
             if not path.is_file():
                 raise SystemExit(f"archive_version: {args.tag} has no {rel}")
@@ -285,12 +299,14 @@ def main(argv: list[str] | None = None) -> int:
                 raise SystemExit(f"archive_version: {rel} is not in {args.tag}'s nav")
             dest = args.out / Path(rel).with_suffix(".mdx")
             dest.parent.mkdir(parents=True, exist_ok=True)
-            # A page that includes wheel reports takes them from the old site's copy of it.
-            if any(REPORT_PATH.match(m.group(2)) for m in FENCED_SNIPPET.finditer(md)):
+            # A page that includes wheel reports takes them from --reports, through read(), or
+            # else from the old site's copy of it.
+            reports = None
+            if not args.reports and any(
+                REPORT_PATH.match(m.group(2)) for m in FENCED_SNIPPET.finditer(md)
+            ):
                 page = old_page_html(args.tag, rel)
                 reports = report_blocks(page) if page else []
-            else:
-                reports = None
             dest.write_text(convert_page(md, titles[rel], read, api, reports=reports))
         # The sidebar's labels and order, from the old nav.
         for folder, text in groups.items():

@@ -158,3 +158,34 @@ class RealTag(unittest.TestCase):
         self.assertNotIn("eqty_sdk.asset.skill", assets)
         self.assertNotIn("__add__", assets)
         self.assertIn("Agent`", assets)
+
+    def test_reports_given_by_hand_replace_the_old_site_s(self) -> None:
+        # A backport released after the old site stopped has no page on cb7be3c to read from.
+        import tempfile
+
+        reports, out = Path(tempfile.mkdtemp()), Path(tempfile.mkdtemp())
+        for name in REPORTS:
+            (reports / name).write_text(f"by hand: {name}\n")
+        a.main(["v2.4.2", str(out), "--reports", str(reports)])
+        page = (out / "install/min-version.mdx").read_text()
+        for name in REPORTS:
+            self.assertIn(f"```text\nby hand: {name}\n```", page)
+        self.assertNotIn("manylinux_2_17_x86_64", page)
+
+    def test_a_missing_report_given_by_hand_fails_naming_it(self) -> None:
+        import tempfile
+
+        reports, out = Path(tempfile.mkdtemp()), Path(tempfile.mkdtemp())
+        for name in REPORTS[1:]:
+            (reports / name).write_text("by hand\n")
+        with self.assertRaises(SystemExit) as ctx:
+            a.main(["v2.4.2", str(out), "--reports", str(reports)])
+        self.assertIn(REPORTS[0], str(ctx.exception))
+
+
+REPORTS = [
+    "auditwheel-show-linux-x86_64.txt",
+    "auditwheel-show-linux-aarch64.txt",
+    "otool-show-macos-arm64.txt",
+    "otool-show-macos-x86_64.txt",
+]
