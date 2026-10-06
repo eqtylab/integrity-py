@@ -33,11 +33,6 @@ model-signing = "1.1.1"
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.2"
 
-[tool.poetry.group.docs.dependencies]
-mkdocs = "^1.6.1"
-mkdocstrings = { extras = ["python"], version = "^0.28.2" }
-pymdown-extensions = "^10.21"
-
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"

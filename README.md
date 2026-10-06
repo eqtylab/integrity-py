@@ -66,7 +66,7 @@ Run `just` to see all available commands.
 Available recipes:
     archive-backport version # Save a 2.0 to 2.4 backport's docs after it ships (macOS, Docker)
     build                    # Build the Rust/Python wheel using maturin
-    build-docs               # Builds HTML docs for the sdk
+    build-docs               # Build the docs site into docs-site/dist (needs Node and pnpm)
     ci                       # Run full CI pipeline: format check, lint, type check, build, and test
     fix                      # Auto-fix Rust clippy warnings
     fmt                      # Auto-format code (Rust + Python)
@@ -80,7 +80,7 @@ Available recipes:
     lint-docs                # Check that all public items have documentation
     readme-check             # Check if README.md is up to date with auto-generated content
     readme-update            # Update README.md with auto-generated content (Justfile commands, etc.)
-    serve-docs               # Serves the documentation locally with live reload
+    serve-docs               # Serve the docs site locally with live reload (needs Node and pnpm)
     test-example-manifests   # Run example scripts and compare normalized manifests to expected outputs
     test-py                  # Run Python unit tests
     test-rs                  # Run rust unit tests
@@ -100,7 +100,8 @@ Available recipes:
 ├── tests/                 # Python unit tests
 ├── integration-tests/     # Integration test assets and runners
 ├── examples/              # Example scripts used by docs and testing
-├── docs/                  # MkDocs documentation
+├── docs-site/             # Documentation site
+├── docs/generated/        # Generated reports and lists, copied into the docs pages
 ├── scripts/               # Development utilities
 ├── flake.nix              # Recommended dev environment
 └── Justfile               # Common development commands
@@ -157,7 +158,7 @@ machine pypi.eqtylab.io login YOUR_NAME password YOUR_PASSWORD
 ### Versioned Docs
 
 The docs site is `docs-site/`, which Vercel builds from `main` and serves at
-<https://integrity-py.docs.eqtylab.io/>. Run it locally with `pnpm install && pnpm dev` in that folder.
+<https://integrity-py.docs.eqtylab.io/>. Run it locally with `just serve-docs`, which needs Node and pnpm.
 
 - `/` is the newest release.
 - Older minor releases are saved folders under `docs-site/archive/`, listed in
@@ -166,3 +167,5 @@ The docs site is `docs-site/`, which Vercel builds from `main` and serves at
 - Old `eqtylab.github.io/integrity-py/` links still work. GitHub Pages serves only
   `docs-site/forwarder/`, which sends each path to the same path on the new domain, and
   [vercel.json](vercel.json) redirects the old addresses there to their pages.
+- Keep the `gh-pages` branch, though Pages no longer publishes it. Its commit `cb7be3c` holds the
+  old site, which `scripts/check_old_links.py` and `scripts/archive_version.py` read.

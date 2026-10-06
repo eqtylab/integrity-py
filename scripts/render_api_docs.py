@@ -48,7 +48,7 @@ ROOT = Path(__file__).resolve().parent.parent
 TABLE = ROOT / "scripts" / "api-directives.json"
 CONTENT = ROOT / "docs-site" / "src" / "content" / "docs"
 
-# The handler defaults from mkdocs.yml. Anything a directive does not override.
+# The options every directive starts from; a directive's own options override them.
 DEFAULTS = {
     **griffe2md.default_config,
     "filters": ["!^_"],
