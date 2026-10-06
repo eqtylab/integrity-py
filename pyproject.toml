@@ -18,7 +18,7 @@ rich = "^13.7.1"
 pydantic = "^2.6.4"
 dill = "^0.3.8"
 types-requests = "<2.32.0"
-urllib3 = ">=2.7.0,<3"
+urllib3 = ">=2.8.0,<3"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.0.0"
@@ -59,7 +59,7 @@ dependencies = [
   "pydantic>=2.6.4",
   "dill>=0.3.8",
   "types-requests<2.32.0",
-  "urllib3>=2.7.0,<3",
+  "urllib3>=2.8.0,<3",
 ]
 classifiers = [
   "Programming Language :: Rust",
