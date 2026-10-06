@@ -41,11 +41,11 @@ lint-docs:
 
 # Build the docs site into docs-site/dist (needs Node and pnpm)
 build-docs:
-  cd docs-site && pnpm install && pnpm build
+  cd ./docs-site && pnpm install && pnpm build
 
 # Serve the docs site locally with live reload (needs Node and pnpm)
 serve-docs:
-  cd docs-site && pnpm install && pnpm dev
+  cd ./docs-site && pnpm install && pnpm dev
 
 # Auto-fix Rust clippy warnings
 fix:
