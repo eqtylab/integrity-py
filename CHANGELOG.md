@@ -24,6 +24,10 @@ changes since the preceding stable tag.
   and PyPI publication, including manual releases.
   ([#83](https://github.com/eqtylab/integrity-py/pull/83))
 
+### Security
+
+- Raise the minimum `urllib3` version from `2.7.0` to `2.8.0` for security fixes.
+
 ## [2.4.2] - 2026-09-16
 
 ### Added
