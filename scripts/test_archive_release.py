@@ -103,7 +103,8 @@ class Repo:
 
     def release(self, version: str, with_docs: bool = True, workflow: str = "") -> None:
         """Tag a release. `with_docs=False` tags a tree without docs-site/, like 2.4.x, with
-        `workflow` as its release.yml."""
+        `workflow` as its release.yml.
+        """
         if with_docs:
             self.git("tag", f"v{version}")
             return
@@ -397,7 +398,8 @@ class ArchiveBackport(unittest.TestCase):
 
     def publish(self, name: str, private: bool = False) -> None:
         """List a wheel on PyPI, whose links are absolute, or on EQTY Lab's index, with a link
-        relative to the page, as private indexes often give."""
+        relative to the page, as private indexes often give.
+        """
         import zipfile
 
         host = "pypi.eqtylab.io" if private else "pypi.org"
@@ -415,7 +417,8 @@ class ArchiveBackport(unittest.TestCase):
 
     def publish_only_to_eqty_lab_s_index(self) -> None:
         """Re-tag 2.4.3 as 2.0 to 2.3 publish: to EQTY Lab's index alone, which needs a login and
-        lists older versions' wheels too."""
+        lists older versions' wheels too.
+        """
         self.repo.git("tag", "-d", "v2.4.3")
         self.repo.release("2.4.3", with_docs=False, workflow=LEGACY_WORKFLOW)
         shutil.rmtree(self.pypi)

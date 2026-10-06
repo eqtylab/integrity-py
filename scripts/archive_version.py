@@ -258,7 +258,8 @@ def main(argv: list[str] | None = None) -> int:
 
         def read(rel: str) -> str:
             """A file from the tag, or a wheel report from --reports, for a snippet include. A
-            missing file fails the run."""
+            missing file fails the run.
+            """
             if args.reports and REPORT_PATH.match(rel):
                 path = args.reports / Path(rel).name
                 if not path.is_file():
