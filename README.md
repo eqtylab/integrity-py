@@ -122,9 +122,8 @@ Releases are handled through GitHub and the `Publish new release` workflow in [r
    - build and publish Linux, macOS, and Windows wheels
    - build and publish the source distribution
    - generate release-specific wheel requirement reports
-   - publish versioned docs and update `latest`
    - open a `docs: archive the X.Y.Z docs` PR that saves this release's docs, with its reports
-6. Check that PR's Vercel preview and merge it promptly. Until it merges, every host labels latest
+6. Check that PR's Vercel preview and merge it promptly. Until it merges, the site labels latest
    as the previous release and does not yet list it as an old version; CI fails a stale folder.
    The first release after the 2.4 series also needs `vercel.json` changed: its PR says to send the
    old `/2.4.x/` addresses to `/v2.4/`, and the docs build check fails until they go there. main
@@ -157,8 +156,13 @@ machine pypi.eqtylab.io login YOUR_NAME password YOUR_PASSWORD
 
 ### Versioned Docs
 
-The docs site is versioned:
+The docs site is `docs-site/`, which Vercel builds from `main` and serves at
+<https://integrity-py.docs.eqtylab.io/>. Run it locally with `pnpm install && pnpm dev` in that folder.
 
-- `latest` points to the newest release
-- `dev` tracks `main`
-- numbered versions such as `2.0.7` map to specific releases
+- `/` is the newest release.
+- Older minor releases are saved folders under `docs-site/archive/`, listed in
+  `docs-site/archive/folders.json` and served at `/v2.3/`, `/v2.2/` and so on. A patch address
+  such as `/v2.1.2/` redirects to its minor.
+- Old `eqtylab.github.io/integrity-py/` links still work. GitHub Pages serves only
+  `docs-site/forwarder/`, which sends each path to the same path on the new domain, and
+  [vercel.json](vercel.json) redirects the old addresses there to their pages.
