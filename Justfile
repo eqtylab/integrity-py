@@ -10,7 +10,7 @@ _poetry-config:
 # Install all Python dependencies via poetry
 install: _poetry-config
   @echo "Installing dependencies"
-  poetry install --with docs
+  poetry install
 
 # Set up git hooks for prek
 init: install
@@ -39,13 +39,13 @@ lint:
 lint-docs:
   cargo rustdoc --lib -- -D missing_docs -D rustdoc::broken_intra_doc_links
 
-# Builds HTML docs for the sdk
+# Build the docs site into docs-site/dist (needs Node and pnpm)
 build-docs:
-  poetry run mkdocs build
+  cd ./docs-site && pnpm install && pnpm build
 
-# Serves the documentation locally with live reload
+# Serve the docs site locally with live reload (needs Node and pnpm)
 serve-docs:
-  poetry run mkdocs serve
+  cd ./docs-site && pnpm install && pnpm dev
 
 # Auto-fix Rust clippy warnings
 fix:
