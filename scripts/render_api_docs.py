@@ -1,4 +1,4 @@
-"""Render each mkdocstrings directive of the docs with griffe2md, into the pages.
+"""Fill the docs pages' generated blocks: the API reference, via griffe2md, and repo files.
 
     python3 -m venv .venv-docs && .venv-docs/bin/pip install griffe==1.14.0 griffe2md==1.2.5
     .venv-docs/bin/python scripts/render_api_docs.py
@@ -15,7 +15,7 @@ Output is written into the pages under docs-site/src/content/docs/, between mark
     {/* end generated */}
 
 The content is in the page, not imported, because @eqtylab/docs builds each older version
-from `git archive <tag>:docs-site/src/content/docs` and strips every import, component and
+from its saved copy under docs-site/archive/ and strips every import, component and
 expression from it. Anything imported would vanish from the archived copy. --check exits 1
 when a page no longer matches what the script would write, and changes nothing.
 
