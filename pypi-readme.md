@@ -39,8 +39,8 @@ Import `manifest.json` into [Eqty Explorer](https://explorer.eqtylab.io) to insp
 
 ## Learn more
 
-- [Quick start and guides](https://eqtylab.github.io/integrity-py/latest/)
-- [Asset reference](https://eqtylab.github.io/integrity-py/latest/api/assets/)
-- [Examples](https://eqtylab.github.io/integrity-py/latest/examples/)
+- [Quick start and guides](https://integrity-py.docs.eqtylab.io/)
+- [Asset reference](https://integrity-py.docs.eqtylab.io/api/assets/)
+- [Examples](https://integrity-py.docs.eqtylab.io/examples/)
 
 For contributing to the SDK itself, see the repository's [developer README](https://github.com/eqtylab/integrity-py#readme).
