@@ -1,0 +1,11 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Moved to integrity-py.docs.eqtylab.io</title>
+<script>
+  // Old links: eqtylab.github.io/integrity-py/<path> → the same path on the new domain,
+  // where vercel.json maps old version addresses onto their pages. Deployed by docs.yml
+  // as both index.html and 404.html, so every path on GitHub Pages runs this.
+  var path = location.pathname.replace(/^\/integrity-py(?=\/|$)/, "") || "/";
+  location.replace("https://integrity-py.docs.eqtylab.io" + path + location.search + location.hash);
+</script>
+<p>These docs moved to <a href="https://integrity-py.docs.eqtylab.io/">integrity-py.docs.eqtylab.io</a>.</p>
