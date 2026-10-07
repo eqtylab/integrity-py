@@ -22,9 +22,6 @@ export default defineConfig({
     // Equality ships CSS modules in its dist, which Node cannot load once Vite
     // externalises the package for SSR. Every npm consumer of @eqtylab/docs needs this.
     resolve: { noExternal: ["@eqtylab/equality"] },
-    // The Min Version page imports ../docs/generated/*.txt with `?raw`, which sits above
-    // this project's root. Build allows it; dev needs to be told.
-    server: { fs: { allow: [".."] } },
   },
 
   integrations: [
