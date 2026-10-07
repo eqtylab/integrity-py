@@ -83,7 +83,7 @@ Available recipes:
     install-package          # Install the local build of the wheel into the venv
     lint                     # Run linters and auto-fix issues (Rust clippy + Python ruff)
     lint-check               # Run linters without auto-fixing (Rust clippy + Python ruff)
-    lint-docs                # Check that all public items have documentation
+    lint-docs                # Check that all public Rust items have doc comments
     readme-check             # Check if README.md is up to date with auto-generated content
     readme-update            # Update README.md with auto-generated content (Justfile commands, etc.)
     serve-docs               # Refresh the docs pages and serve the site locally with live reload (needs Node and pnpm)

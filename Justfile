@@ -35,7 +35,7 @@ lint:
   ruff check . --fix
   cargo clippy --fix --allow-dirty --all-targets --all-features -- -Dwarnings --no-deps
 
-# Check that all public items have documentation
+# Check that all public Rust items have doc comments
 lint-docs:
   cargo rustdoc --lib -- -D missing_docs -D rustdoc::broken_intra_doc_links
 
