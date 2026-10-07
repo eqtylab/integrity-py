@@ -223,7 +223,7 @@ class RenderAdvice(unittest.TestCase):
             r.render(pkg, "fake.gone", {}, advise=True)
         msg = str(ctx.exception)
         self.assertIn("Could not resolve alias fake.gone", msg)
-        self.assertIn("update that import", msg)
+        self.assertIn("update that import to the new name, then run `just generate-stubs`", msg)
 
     def test_a_path_through_a_renamed_re_export_says_to_fix_the_import(self) -> None:
         pkg = fake_package(
@@ -237,7 +237,7 @@ class RenderAdvice(unittest.TestCase):
             r.render(pkg, "fake.Gone.load", {}, advise=True)
         msg = str(ctx.exception)
         self.assertIn("Could not resolve alias fake.Gone", msg)
-        self.assertIn("update that import", msg)
+        self.assertIn("update that import to the new name, then run `just generate-stubs`", msg)
 
     def test_a_renamed_re_export_inside_a_module_fails(self) -> None:
         pkg = fake_package(
@@ -257,7 +257,7 @@ class RenderAdvice(unittest.TestCase):
             r.render(pkg, "fake.sub", {}, advise=True)
         msg = str(ctx.exception)
         self.assertIn("fake.sub.Gone2", msg)
-        self.assertIn("update that import", msg)
+        self.assertIn("update that import to the new name, then run `just generate-stubs`", msg)
 
     def test_imports_from_other_packages_are_not_checked(self) -> None:
         pkg = fake_package(

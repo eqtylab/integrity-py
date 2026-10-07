@@ -59,7 +59,10 @@ FIX_DOCS = (
     "update its entry in scripts/api-directives.json and the {/* generated api ... */} "
     "marker in the page that shows it"
 )
-FIX_IMPORT = "If that name was renamed in the code, update that import to the new name."
+FIX_IMPORT = (
+    "If that name was renamed in the code, update that import to the new name, then run "
+    "`just generate-stubs`, which rebuilds the package stub from it."
+)
 
 # The options every directive starts from; a directive's own options override them.
 DEFAULTS = {
