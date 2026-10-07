@@ -17,3 +17,19 @@
 **Effort:** S
 **Priority:** P3
 **Depends on:** nothing. Build it when the first backport to 2.0 to 2.4 ships, or before, if one is planned.
+
+### Fail a PR whose docs pages are out of date
+
+**What:** A step in `.github/workflows/docs-check.yml` that runs `scripts/render_api_docs.py --check`, with `eqty_sdk/**` added to the workflow's paths so SDK changes trigger it.
+
+**Why:** The API reference and examples are copied into the pages. `just generate-stubs`, `just serve-docs` and `just ci` refresh them, but nothing stops a PR whose author ran none of them, and the live site then documents the old API.
+
+**Pros:** A stale page fails the PR that made it stale, and the check names the page.
+
+**Cons:** The docs check runs on every SDK change and needs Python, griffe and griffe2md on the runner.
+
+**Context:** `--check` exits 1 and names each stale page without changing it. Left out on 2026-09-25 as extra scope; recorded once the docs commands started refreshing the pages.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** nothing.
