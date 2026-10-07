@@ -9,8 +9,10 @@ collected by `just test-py`, which discovers under tests/ only.
 import re
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -126,17 +128,16 @@ class CheckMode(unittest.TestCase):
     """main() against a temporary content folder and a one-entry fake API."""
 
     def setUp(self) -> None:
-        import tempfile
-        from unittest import mock
-
-        self.dir = Path(tempfile.mkdtemp())
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.dir = Path(tmp.name)
         self.page = self.dir / "p.mdx"
         self.page.write_text("{/* generated api eqty_sdk.init */}\n{/* end generated */}\n")
         for name, value in {
             "CONTENT": self.dir,
             "load_package": lambda: None,
             "load_table": lambda: [{"target": "eqty_sdk.init"}],
-            "render": lambda pkg, target, options: "### `eqty_sdk.init`\n",
+            "render": lambda pkg, target, options, **kw: "### `eqty_sdk.init`\n",
         }.items():
             patcher = mock.patch.object(r, name, value)
             patcher.start()
@@ -151,24 +152,19 @@ class CheckMode(unittest.TestCase):
         self.assertEqual(r.main([]), 0)
         self.assertEqual(r.main(["--check"]), 0)
 
-    def test_a_target_missing_from_the_code_says_how_to_fix(self) -> None:
-        from unittest import mock
+    def test_main_asks_render_for_the_docs_advice(self) -> None:
+        seen = []
 
-        def gone(pkg, target, options):
-            raise r.MissingTarget(f"render_api_docs: {target} is not in eqty_sdk")
+        def spy(pkg, target, options, **kw):
+            seen.append(kw)
+            return "### `eqty_sdk.init`\n"
 
-        with mock.patch.object(r, "render", gone):
-            with self.assertRaises(SystemExit) as ctx:
-                r.main([])
-        msg = str(ctx.exception)
-        self.assertIn("eqty_sdk.init is not in eqty_sdk. If it was renamed or removed", msg)
-        self.assertIn("scripts/api-directives.json", msg)
-        self.assertIn("{/* generated api ... */} marker", msg)
+        with mock.patch.object(r, "render", spy):
+            r.main([])
+        self.assertEqual(seen, [{"advise": True}])
 
-    def test_other_render_errors_keep_their_own_advice(self) -> None:
-        from unittest import mock
-
-        def unresolved(pkg, target, options):
+    def test_render_errors_pass_through_unchanged(self) -> None:
+        def unresolved(pkg, target, options, **kw):
             raise SystemExit("render_api_docs: own advice")
 
         with mock.patch.object(r, "render", unresolved):
@@ -176,9 +172,8 @@ class CheckMode(unittest.TestCase):
                 r.main([])
         self.assertEqual(str(ctx.exception), "render_api_docs: own advice")
 
-    def test_an_unused_directive_says_how_to_fix(self) -> None:
-        from unittest import mock
-
+    def test_an_unused_directive_says_how_to_fix_and_writes_nothing(self) -> None:
+        before = self.page.read_text()
         table = [{"target": "eqty_sdk.init"}, {"target": "eqty_sdk.extra"}]
         with mock.patch.object(r, "load_table", lambda: table):
             with self.assertRaises(SystemExit) as ctx:
@@ -186,6 +181,7 @@ class CheckMode(unittest.TestCase):
         msg = str(ctx.exception)
         self.assertIn("no page uses eqty_sdk.extra", msg)
         self.assertIn("remove the entry from scripts/api-directives.json", msg)
+        self.assertEqual(self.page.read_text(), before)
 
     def test_a_broken_page_is_named(self) -> None:
         (self.dir / "broken.mdx").write_text("prose\n{/* end generated */}\n")
@@ -193,27 +189,117 @@ class CheckMode(unittest.TestCase):
             r.main([])
         self.assertIn("broken.mdx", str(ctx.exception))
 
+    def test_a_broken_page_leaves_every_page_as_it_was(self) -> None:
+        before = self.page.read_text()
+        (self.dir / "q.mdx").write_text("prose\n{/* end generated */}\n")
+        with self.assertRaises(SystemExit):
+            r.main([])
+        self.assertEqual(self.page.read_text(), before)
 
-class UnresolvedAlias(unittest.TestCase):
-    """A re-export whose target was renamed, as after `generate_stubs.py` rebuilds the stub."""
+
+def fake_package(test: unittest.TestCase, files: dict[str, str]):
+    """Load a throwaway package from `files` (path: source); removed after the test."""
+    tmp = tempfile.TemporaryDirectory()
+    test.addCleanup(tmp.cleanup)
+    for rel, source in files.items():
+        path = Path(tmp.name) / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(source)
+    return r.griffe.load("fake", search_paths=[tmp.name], allow_inspection=False)
+
+
+class RenderAdvice(unittest.TestCase):
+    """Names the stub no longer has, as after `generate_stubs.py` rebuilds it."""
 
     def test_a_re_export_of_a_renamed_name_says_to_fix_the_import(self) -> None:
-        import tempfile
-
-        tmp = Path(tempfile.mkdtemp())
-        (tmp / "fake").mkdir()
-        (tmp / "fake" / "__init__.py").write_text("from fake._impl import gone\n")
-        (tmp / "fake" / "_impl.py").write_text("def renamed() -> None: ...\n")
-        pkg = r.griffe.load("fake", search_paths=[str(tmp)], allow_inspection=False)
+        pkg = fake_package(
+            self,
+            {
+                "fake/__init__.py": "from fake._impl import gone\n",
+                "fake/_impl.py": "def renamed() -> None: ...\n",
+            },
+        )
         with self.assertRaises(SystemExit) as ctx:
-            r.render(pkg, "fake.gone", {})
+            r.render(pkg, "fake.gone", {}, advise=True)
         msg = str(ctx.exception)
         self.assertIn("Could not resolve alias fake.gone", msg)
         self.assertIn("update that import", msg)
 
+    def test_a_path_through_a_renamed_re_export_says_to_fix_the_import(self) -> None:
+        pkg = fake_package(
+            self,
+            {
+                "fake/__init__.py": "from fake._impl import Gone\n",
+                "fake/_impl.py": "class Renamed:\n    def load(self) -> None: ...\n",
+            },
+        )
+        with self.assertRaises(SystemExit) as ctx:
+            r.render(pkg, "fake.Gone.load", {}, advise=True)
+        msg = str(ctx.exception)
+        self.assertIn("Could not resolve alias fake.Gone", msg)
+        self.assertIn("update that import", msg)
+
+    def test_a_renamed_re_export_inside_a_module_fails(self) -> None:
+        pkg = fake_package(
+            self,
+            {
+                "fake/__init__.py": "",
+                "fake/sub.py": (
+                    "from fake._impl import Gone2\n\n"
+                    "__all__ = ['Gone2', 'f']\n\n\n"
+                    "def f() -> None:\n"
+                    '    """Do f."""\n'
+                ),
+                "fake/_impl.py": "class Renamed2: ...\n",
+            },
+        )
+        with self.assertRaises(SystemExit) as ctx:
+            r.render(pkg, "fake.sub", {}, advise=True)
+        msg = str(ctx.exception)
+        self.assertIn("fake.sub.Gone2", msg)
+        self.assertIn("update that import", msg)
+
+    def test_imports_from_other_packages_are_not_checked(self) -> None:
+        pkg = fake_package(
+            self,
+            {
+                "fake/__init__.py": "",
+                "fake/sub.py": (
+                    "from elsewhere import Thing\n\n"
+                    "__all__ = ['Thing', 'f']\n\n\n"
+                    "def f() -> None:\n"
+                    '    """Do f."""\n'
+                ),
+            },
+        )
+        self.assertIn("Do f.", r.render(pkg, "fake.sub", {}, advise=True))
+
+    def test_a_missing_target_says_how_to_fix_the_docs(self) -> None:
+        pkg = fake_package(self, {"fake/__init__.py": ""})
+        with self.assertRaises(SystemExit) as ctx:
+            r.render(pkg, "fake.nope", {}, advise=True)
+        msg = str(ctx.exception)
+        self.assertIn("fake.nope is not in fake", msg)
+        self.assertIn("scripts/api-directives.json", msg)
+
+    def test_old_releases_get_no_advice_about_this_repo(self) -> None:
+        pkg = fake_package(
+            self,
+            {
+                "fake/__init__.py": "from fake._impl import gone\n",
+                "fake/_impl.py": "def renamed() -> None: ...\n",
+            },
+        )
+        for target in ("fake.gone", "fake.nope"):
+            with self.subTest(target=target):
+                with self.assertRaises(SystemExit) as ctx:
+                    r.render(pkg, target, {})
+                self.assertNotIn("api-directives.json", str(ctx.exception))
+                self.assertNotIn("update that import", str(ctx.exception))
+
 
 class MissingRenderer(unittest.TestCase):
-    def test_a_missing_griffe_says_to_run_just_install(self) -> None:
+    def test_a_missing_griffe_keeps_the_error_and_says_to_run_just_install(self) -> None:
         script = Path(__file__).resolve().parent / "render_api_docs.py"
         code = (
             "import runpy, sys; sys.modules['griffe'] = None; "
@@ -221,7 +307,8 @@ class MissingRenderer(unittest.TestCase):
         )
         out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
         self.assertEqual(out.returncode, 1)
-        self.assertIn("griffe is not installed. Run `just install`", out.stderr)
+        self.assertIn("import of griffe halted", out.stderr)
+        self.assertIn("Run `just install`", out.stderr)
 
 
 class Fences(unittest.TestCase):
