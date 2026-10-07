@@ -4,7 +4,7 @@
 
 `just generate-stubs`, `just serve-docs` and `just build-docs` run it; `just install` puts
 griffe and griffe2md in the Poetry env. griffe reads eqty_sdk/_rust.pyi statically
-(find_stubs_package), so no compiled extension is needed; `just generate-stubs` rebuilds that
+(find_stubs_package), so no compiled extension is needed; each of those commands rebuilds that
 stub from the Rust doc comments first. Output is committed, so the site build needs Node alone.
 
 Output is written into the pages under docs-site/src/content/docs/, between marker comments:

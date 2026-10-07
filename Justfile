@@ -39,16 +39,16 @@ lint:
 lint-docs:
   cargo rustdoc --lib -- -D missing_docs -D rustdoc::broken_intra_doc_links
 
-# Refresh the docs pages and build the site into docs-site/dist (needs `just install`, Node and pnpm)
+# Refresh the stubs and docs pages and build the site into docs-site/dist (needs `just install`, ruff, Node and pnpm)
 build-docs: _render-docs
   cd ./docs-site && pnpm install && pnpm build
 
-# Refresh the docs pages and serve the site locally with live reload (needs `just install`, Node and pnpm)
+# Refresh the stubs and docs pages and serve the site locally with live reload (needs `just install`, ruff, Node and pnpm)
 serve-docs: _render-docs
   cd ./docs-site && pnpm install && pnpm dev
 
-# Fill the docs pages' generated blocks from the code and examples
-_render-docs:
+# Rebuild the stubs, then fill the docs pages' generated blocks from the code and examples
+_render-docs: _stub-files
   @echo "Refreshing the docs pages"
   poetry run python ./scripts/render_api_docs.py
 
@@ -87,13 +87,20 @@ generate-stubs: _stubs _render-docs
 
 # Build the type stubs from Rust code, then format and lint them. install-package runs only
 # this, so a docs error never stops the build or the tests.
-_stubs:
-  @echo "Generating stubs"
-  poetry run python ./scripts/generate_stubs.py
+_stubs: _stub-files
   @echo "Formatting generated files"
   just fmt
   @echo "Linting generated files"
   just lint
+
+# Write the type stubs and the built-in asset list from the source, without compiling the Rust,
+# then sort the package stub's imports and format both stubs. Checks for ruff before writing.
+_stub-files:
+  @command -v ruff >/dev/null || { echo "The stubs need ruff: https://docs.astral.sh/ruff/" >&2; exit 1; }
+  @echo "Generating stubs"
+  poetry run python ./scripts/generate_stubs.py
+  ruff check --select I --fix eqty_sdk/__init__.pyi
+  ruff format eqty_sdk/_rust.pyi eqty_sdk/__init__.pyi
 
 # Save a 2.0 to 2.4 backport's docs after it ships (macOS, Docker)
 archive-backport version:

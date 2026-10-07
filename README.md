@@ -30,7 +30,8 @@ If you are not using Nix, install the required dependencies manually:
 - Python `3.10`
 - Rust toolchain
 - [maturin](https://www.maturin.rs/), to build the extension
-- [ruff](https://docs.astral.sh/ruff/), which `just generate-stubs` and `just lint` run
+- [ruff](https://docs.astral.sh/ruff/), which `just generate-stubs`, `just serve-docs`,
+  `just build-docs` and `just lint` run
 - [present](https://github.com/terror/present), which `just ci` runs to check this README
 - [Node.js](https://nodejs.org/) 22 and [pnpm](https://pnpm.io/), for the docs site
 
@@ -72,7 +73,7 @@ Run `just` to see all available commands.
 Available recipes:
     archive-backport version # Save a 2.0 to 2.4 backport's docs after it ships (macOS, Docker)
     build                    # Build the Rust/Python wheel using maturin
-    build-docs               # Refresh the docs pages and build the site into docs-site/dist (needs `just install`, Node and pnpm)
+    build-docs               # Refresh the stubs and docs pages and build the site into docs-site/dist (needs `just install`, ruff, Node and pnpm)
     ci                       # Run full CI pipeline: format check, lint, type check, build, test, and refresh the docs pages
     fix                      # Auto-fix Rust clippy warnings
     fmt                      # Auto-format code (Rust + Python)
@@ -86,7 +87,7 @@ Available recipes:
     lint-docs                # Check that all public Rust items have doc comments
     readme-check             # Check if README.md is up to date with auto-generated content
     readme-update            # Update README.md with auto-generated content (Justfile commands, etc.)
-    serve-docs               # Refresh the docs pages and serve the site locally with live reload (needs `just install`, Node and pnpm)
+    serve-docs               # Refresh the stubs and docs pages and serve the site locally with live reload (needs `just install`, ruff, Node and pnpm)
     test-example-manifests   # Run example scripts and compare normalized manifests to expected outputs
     test-py                  # Run Python unit tests
     test-rs                  # Run rust unit tests
@@ -165,8 +166,8 @@ machine pypi.eqtylab.io login YOUR_NAME password YOUR_PASSWORD
 
 The docs site is `docs-site/`, which Vercel builds from `main` and serves at
 <https://integrity-py.docs.eqtylab.io/>. Run it locally with `just serve-docs`, which needs
-`just install`, Node and pnpm. Without Python and Poetry, `cd docs-site && pnpm install && pnpm dev`
-serves the pages as committed.
+`just install`, ruff, Node and pnpm. Without Python and Poetry,
+`cd docs-site && pnpm install && pnpm dev` serves the pages as committed.
 
 - `/` is the newest release.
 - Older minor releases are saved folders under `docs-site/archive/`, listed in
