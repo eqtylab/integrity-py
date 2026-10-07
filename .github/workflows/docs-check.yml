@@ -1,7 +1,8 @@
 name: Docs build check
 
 # Builds docs-site/ on pull requests that touch it and attaches the built site, so a
-# reviewer can download and open it. Deploys nothing; .github/workflows/docs.yml owns deploys.
+# reviewer can download and open it. Deploys nothing: Vercel deploys the site, and
+# .github/workflows/docs.yml the GitHub Pages forwarder.
 # release.yml dispatches it on the archive PR's branch, which github.token's push cannot trigger.
 on:
   workflow_dispatch:
@@ -25,7 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # @eqtylab/docs reads release tags to build older versions; a shallow clone has none.
+          # Full history: check_old_links.py reads the old site from gh-pages, and @eqtylab/docs
+          # checks the archive folders against the release tags. A shallow clone has neither.
           fetch-depth: 0
       # Third-party actions come through the eqtylab-actions mirrors, as in the other workflows.
       - uses: eqtylab-actions/setup-pnpm@master

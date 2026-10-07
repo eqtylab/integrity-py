@@ -1,4 +1,4 @@
-name: Deploy documentation
+name: Deploy the GitHub Pages forwarder
 
 # The docs live at integrity-py.docs.eqtylab.io (Vercel). GitHub Pages serves only a forwarder,
 # as index.html and 404.html, so every old eqtylab.github.io/integrity-py/<path> link, including
