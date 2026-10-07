@@ -41,12 +41,24 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-import griffe
-import griffe2md
+try:
+    import griffe
+    import griffe2md
+except ImportError as err:  # an env set up before griffe joined the Poetry dev group
+    raise SystemExit(
+        f"render_api_docs: {err.name} is not installed. Run `just install`, then try again."
+    ) from err
 
 ROOT = Path(__file__).resolve().parent.parent
 TABLE = ROOT / "scripts" / "api-directives.json"
 CONTENT = ROOT / "docs-site" / "src" / "content" / "docs"
+
+# How to fix the docs when a reference target has left the code. render() leaves it out,
+# since archive_version.py renders old releases, where it would be wrong.
+RENAMED = (
+    "If it was renamed or removed, update its entry in scripts/api-directives.json and the "
+    "{/* generated api ... */} marker in the page that shows it."
+)
 
 # The options every directive starts from; a directive's own options override them.
 DEFAULTS = {
@@ -115,7 +127,10 @@ def fill(page: str, api: dict[str, str], read: Callable[[str], str]) -> tuple[st
         kind, key, lang = m.group("kind"), m.group("key"), m.group("lang")
         if kind == "api":
             if key not in api:
-                raise SystemExit(f"render_api_docs: {key} is not in api-directives.json")
+                raise SystemExit(
+                    f"render_api_docs: a page shows {key}, which is not in "
+                    "scripts/api-directives.json. Add it there, or fix the page's marker."
+                )
             used.add(key)
             content = api[key]
         else:
@@ -127,14 +142,20 @@ def fill(page: str, api: dict[str, str], read: Callable[[str], str]) -> tuple[st
     # Every opener needs an end and every end an opener; a stray one would otherwise pass.
     blocks = len(BLOCK.findall(page))
     if len(OPEN.findall(page)) != blocks or len(END.findall(page)) != blocks:
-        raise SystemExit("render_api_docs: a {/* generated */} marker has no partner")
+        raise SystemExit(
+            "render_api_docs: a {/* generated */} marker has no partner. Each "
+            "{/* generated ... */} line needs a {/* end generated */} line after it."
+        )
     return BLOCK.sub(body, page), used
 
 
 def read_repo_file(rel: str) -> str:
     path = ROOT / rel
     if not path.is_file():
-        raise SystemExit(f"render_api_docs: {rel} does not exist")
+        raise SystemExit(
+            f"render_api_docs: {rel} does not exist. If it was renamed or moved, update the "
+            "generated file marker that names it."
+        )
     return path.read_text()
 
 
@@ -237,7 +258,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     pkg = load_package()
-    rendered = {d["target"]: render(pkg, d["target"], d.get("options", {})) for d in load_table()}
+    try:
+        rendered = {
+            d["target"]: render(pkg, d["target"], d.get("options", {})) for d in load_table()
+        }
+    except SystemExit as err:  # render() names the missing target; add the docs fix
+        raise SystemExit(f"{err}. {RENAMED}") from err
     # Two passes: every heading's id first, then the links that point at them.
     heading_ids = {
         m.group(1): slug(m.group(1)) for md in rendered.values() for m in HEADING.finditer(md)
@@ -248,7 +274,10 @@ def main(argv: list[str] | None = None) -> int:
     stale = []
     for page in sorted(CONTENT.rglob("*.mdx")):
         before = page.read_text()
-        after, targets = fill(before, api, read_repo_file)
+        try:
+            after, targets = fill(before, api, read_repo_file)
+        except SystemExit as err:
+            raise SystemExit(f"{err} Page: {page.relative_to(CONTENT)}") from err
         used |= targets
         if after != before:
             stale.append(page.relative_to(CONTENT))
@@ -257,7 +286,11 @@ def main(argv: list[str] | None = None) -> int:
 
     unused = sorted(set(api) - used)
     if unused:
-        raise SystemExit(f"render_api_docs: no page uses {', '.join(unused)}")
+        raise SystemExit(
+            f"render_api_docs: no page uses {', '.join(unused)}. Add a "
+            "{/* generated api ... */} marker to a page, or remove the entry from "
+            "scripts/api-directives.json."
+        )
     if args.check:
         for p in stale:
             print(f"out of date: {p}", file=sys.stderr)

@@ -7,6 +7,7 @@ which discovers under tests/ only.
 """
 
 import re
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -100,11 +101,14 @@ class Blocks(unittest.TestCase):
         page = "{/* generated api eqty_sdk.nope */}\n{/* end generated */}\n"
         with self.assertRaises(SystemExit) as ctx:
             r.fill(page, {}, lambda p: "")
-        self.assertIn("eqty_sdk.nope", str(ctx.exception))
+        msg = str(ctx.exception)
+        self.assertIn("eqty_sdk.nope", msg)
+        self.assertIn("not in scripts/api-directives.json. Add it there", msg)
 
     def test_unclosed_marker_fails(self) -> None:
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(SystemExit) as ctx:
             r.fill("{/* generated api eqty_sdk.init */}\nno end\n", {"eqty_sdk.init": ""}, str)
+        self.assertIn("needs a {/* end generated */} line after it", str(ctx.exception))
 
     def test_stray_end_marker_fails(self) -> None:
         with self.assertRaises(SystemExit):
@@ -113,7 +117,9 @@ class Blocks(unittest.TestCase):
     def test_missing_repo_file_fails_naming_it(self) -> None:
         with self.assertRaises(SystemExit) as ctx:
             r.read_repo_file("examples/does-not-exist.py")
-        self.assertIn("examples/does-not-exist.py", str(ctx.exception))
+        msg = str(ctx.exception)
+        self.assertIn("examples/does-not-exist.py", msg)
+        self.assertIn("If it was renamed or moved, update the generated file marker", msg)
 
 
 class CheckMode(unittest.TestCase):
@@ -144,6 +150,49 @@ class CheckMode(unittest.TestCase):
     def test_check_passes_after_a_fill(self) -> None:
         self.assertEqual(r.main([]), 0)
         self.assertEqual(r.main(["--check"]), 0)
+
+    def test_a_target_missing_from_the_code_says_how_to_fix(self) -> None:
+        from unittest import mock
+
+        def gone(pkg, target, options):
+            raise SystemExit(f"render_api_docs: {target} is not in eqty_sdk")
+
+        with mock.patch.object(r, "render", gone):
+            with self.assertRaises(SystemExit) as ctx:
+                r.main([])
+        msg = str(ctx.exception)
+        self.assertIn("eqty_sdk.init is not in eqty_sdk. If it was renamed or removed", msg)
+        self.assertIn("scripts/api-directives.json", msg)
+        self.assertIn("{/* generated api ... */} marker", msg)
+
+    def test_an_unused_directive_says_how_to_fix(self) -> None:
+        from unittest import mock
+
+        table = [{"target": "eqty_sdk.init"}, {"target": "eqty_sdk.extra"}]
+        with mock.patch.object(r, "load_table", lambda: table):
+            with self.assertRaises(SystemExit) as ctx:
+                r.main([])
+        msg = str(ctx.exception)
+        self.assertIn("no page uses eqty_sdk.extra", msg)
+        self.assertIn("remove the entry from scripts/api-directives.json", msg)
+
+    def test_a_broken_page_is_named(self) -> None:
+        (self.dir / "broken.mdx").write_text("prose\n{/* end generated */}\n")
+        with self.assertRaises(SystemExit) as ctx:
+            r.main([])
+        self.assertIn("broken.mdx", str(ctx.exception))
+
+
+class MissingRenderer(unittest.TestCase):
+    def test_a_missing_griffe_says_to_run_just_install(self) -> None:
+        script = Path(__file__).resolve().parent / "render_api_docs.py"
+        code = (
+            "import runpy, sys; sys.modules['griffe'] = None; "
+            f"runpy.run_path({str(script)!r}, run_name='__main__')"
+        )
+        out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+        self.assertEqual(out.returncode, 1)
+        self.assertIn("griffe is not installed. Run `just install`", out.stderr)
 
 
 class Fences(unittest.TestCase):
