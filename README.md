@@ -29,6 +29,10 @@ If you are not using Nix, install the required dependencies manually:
 - [poetry](https://python-poetry.org/docs/)
 - Python `3.10`
 - Rust toolchain
+- [maturin](https://www.maturin.rs/), to build the extension
+- [ruff](https://docs.astral.sh/ruff/), which `just generate-stubs` and `just lint` run
+- [present](https://github.com/terror/present), which `just ci` runs to check this README
+- [Node.js](https://nodejs.org/) 22 and [pnpm](https://pnpm.io/), for the docs site
 
 ### Environment Setup
 
