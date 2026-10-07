@@ -22,7 +22,7 @@ build:
   maturin build
 
 # Install the local build of the wheel into the venv
-install-package: generate-stubs
+install-package: _stubs
   poetry run maturin develop
 
 # Run linters without auto-fixing (Rust clippy + Python ruff)
@@ -83,14 +83,17 @@ test-rs:
   cargo test
 
 # Generate type stubs from Rust code and refresh the docs pages
-generate-stubs:
+generate-stubs: _stubs _render-docs
+
+# Build the type stubs from Rust code, then format and lint them. install-package runs only
+# this, so a docs error never stops the build or the tests.
+_stubs:
   @echo "Generating stubs"
   poetry run python ./scripts/generate_stubs.py
   @echo "Formatting generated files"
   just fmt
   @echo "Linting generated files"
   just lint
-  just _render-docs
 
 # Save a 2.0 to 2.4 backport's docs after it ships (macOS, Docker)
 archive-backport version:
@@ -109,5 +112,5 @@ readme-check: _tmp
 _tmp:
   mkdir -p tmp
 
-# Run full CI pipeline: format check, lint, type check, build, and test
-ci: fmt-check readme-check lint-docs lint-check type-check install-package test-py test-example-manifests test-rs
+# Run full CI pipeline: format check, lint, type check, build, test, and refresh the docs pages
+ci: fmt-check readme-check lint-docs lint-check type-check install-package test-py test-example-manifests test-rs _render-docs

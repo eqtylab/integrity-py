@@ -73,7 +73,7 @@ Available recipes:
     archive-backport version # Save a 2.0 to 2.4 backport's docs after it ships (macOS, Docker)
     build                    # Build the Rust/Python wheel using maturin
     build-docs               # Refresh the docs pages and build the site into docs-site/dist (needs `just install`, Node and pnpm)
-    ci                       # Run full CI pipeline: format check, lint, type check, build, and test
+    ci                       # Run full CI pipeline: format check, lint, type check, build, test, and refresh the docs pages
     fix                      # Auto-fix Rust clippy warnings
     fmt                      # Auto-format code (Rust + Python)
     fmt-check                # Check code formatting without changes (Rust + Python)
