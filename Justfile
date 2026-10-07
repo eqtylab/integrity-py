@@ -39,13 +39,18 @@ lint:
 lint-docs:
   cargo rustdoc --lib -- -D missing_docs -D rustdoc::broken_intra_doc_links
 
-# Build the docs site into docs-site/dist (needs Node and pnpm)
-build-docs:
+# Refresh the docs pages and build the site into docs-site/dist (needs Node and pnpm)
+build-docs: _render-docs
   cd ./docs-site && pnpm install && pnpm build
 
-# Serve the docs site locally with live reload (needs Node and pnpm)
-serve-docs:
+# Refresh the docs pages and serve the site locally with live reload (needs Node and pnpm)
+serve-docs: _render-docs
   cd ./docs-site && pnpm install && pnpm dev
+
+# Fill the docs pages' generated blocks from the code and examples
+_render-docs:
+  @echo "Refreshing the docs pages"
+  poetry run python ./scripts/render_api_docs.py
 
 # Auto-fix Rust clippy warnings
 fix:
@@ -77,7 +82,7 @@ test-example-manifests:
 test-rs:
   cargo test
 
-# Generate type stubs from Rust code
+# Generate type stubs from Rust code and refresh the docs pages
 generate-stubs:
   @echo "Generating stubs"
   poetry run python ./scripts/generate_stubs.py
@@ -85,6 +90,7 @@ generate-stubs:
   just fmt
   @echo "Linting generated files"
   just lint
+  just _render-docs
 
 # Save a 2.0 to 2.4 backport's docs after it ships (macOS, Docker)
 archive-backport version:

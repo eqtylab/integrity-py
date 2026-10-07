@@ -1,11 +1,11 @@
 """Fill the docs pages' generated blocks: the API reference, via griffe2md, and repo files.
 
-    python3 -m venv .venv-docs && .venv-docs/bin/pip install griffe==1.14.0 griffe2md==1.2.5
-    .venv-docs/bin/python scripts/render_api_docs.py
+    poetry run python scripts/render_api_docs.py [--check]
 
-griffe reads eqty_sdk/_rust.pyi statically (find_stubs_package), so no compiled extension
-is needed; run `just generate-stubs` first if the Rust doc comments changed. Output is
-committed, so the site build needs Node alone.
+`just generate-stubs`, `just serve-docs` and `just build-docs` run it; `just install` puts
+griffe and griffe2md in the Poetry env. griffe reads eqty_sdk/_rust.pyi statically
+(find_stubs_package), so no compiled extension is needed; `just generate-stubs` rebuilds that
+stub from the Rust doc comments first. Output is committed, so the site build needs Node alone.
 
 Output is written into the pages under docs-site/src/content/docs/, between marker comments:
 

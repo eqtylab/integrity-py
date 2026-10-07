@@ -45,7 +45,9 @@ The Poetry virtualenv is configured in-project at `.venv/`.
 ### Local Workflow
 
 1. Make changes in `src/` for Rust or `eqty_sdk/` for Python.
-2. Regenerate stubs and docs snippets when API-facing behavior changes:
+2. Regenerate the type stubs and the docs pages when API-facing behavior changes, then commit
+   the pages it changed. The text between a page's `{/* generated ... */}` and
+   `{/* end generated */}` lines is rewritten each time, so change the code, not that text:
    ```sh
    just generate-stubs
    ```
@@ -66,12 +68,12 @@ Run `just` to see all available commands.
 Available recipes:
     archive-backport version # Save a 2.0 to 2.4 backport's docs after it ships (macOS, Docker)
     build                    # Build the Rust/Python wheel using maturin
-    build-docs               # Build the docs site into docs-site/dist (needs Node and pnpm)
+    build-docs               # Refresh the docs pages and build the site into docs-site/dist (needs Node and pnpm)
     ci                       # Run full CI pipeline: format check, lint, type check, build, and test
     fix                      # Auto-fix Rust clippy warnings
     fmt                      # Auto-format code (Rust + Python)
     fmt-check                # Check code formatting without changes (Rust + Python)
-    generate-stubs           # Generate type stubs from Rust code
+    generate-stubs           # Generate type stubs from Rust code and refresh the docs pages
     init                     # Set up git hooks for prek
     install                  # Install all Python dependencies via poetry
     install-package          # Install the local build of the wheel into the venv
@@ -80,7 +82,7 @@ Available recipes:
     lint-docs                # Check that all public items have documentation
     readme-check             # Check if README.md is up to date with auto-generated content
     readme-update            # Update README.md with auto-generated content (Justfile commands, etc.)
-    serve-docs               # Serve the docs site locally with live reload (needs Node and pnpm)
+    serve-docs               # Refresh the docs pages and serve the site locally with live reload (needs Node and pnpm)
     test-example-manifests   # Run example scripts and compare normalized manifests to expected outputs
     test-py                  # Run Python unit tests
     test-rs                  # Run rust unit tests

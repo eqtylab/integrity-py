@@ -1,9 +1,9 @@
 """Checks for the rewrites in render_api_docs.py.
 
-    .venv-docs/bin/python -m unittest scripts/test_render_api_docs.py
+    poetry run python -m unittest scripts/test_render_api_docs.py
 
-Needs the same griffe and griffe2md as the render script. Not collected by `just test-py`,
-which discovers under tests/ only.
+Needs the same griffe and griffe2md as the render script, which `just install` provides. Not
+collected by `just test-py`, which discovers under tests/ only.
 """
 
 import re
