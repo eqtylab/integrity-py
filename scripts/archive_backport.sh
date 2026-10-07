@@ -63,9 +63,12 @@ command -v otool >/dev/null || fail "otool not found; the macOS reports need a M
 # archive_release.sh, at the end, writes folders.json with it.
 command -v jq >/dev/null || fail "jq not found; install it, then run this again:" "brew install jq"
 docker info >/dev/null 2>&1 || fail "Docker isn't running; start Docker Desktop and run this again"
-"$PYTHON" -c 'import griffe, griffe2md, yaml' 2>/dev/null ||
-  fail "$PYTHON lacks the API renderer. Install it once in .venv-docs, then run this again:" \
-    "python3 -m venv .venv-docs" \
+# griffe2md formats the pages with mdformat, so its version is release CI's, which needs 3.10.
+"$PYTHON" -c 'import griffe, griffe2md, yaml, mdformat; exit(mdformat.__version__ != "1.0.0")' \
+  2>/dev/null ||
+  fail "$PYTHON lacks release CI's API renderer, on Python 3.10 or newer. Install it as CI does:" \
+    "brew install python@3.12" \
+    "python3.12 -m venv --clear .venv-docs" \
     ".venv-docs/bin/pip install griffe==1.14.0 griffe2md==1.2.5 mdformat==1.0.0 pyyaml" \
     "just archive-backport $VERSION"
 
