@@ -165,7 +165,7 @@ machine pypi.eqtylab.io login YOUR_NAME password YOUR_PASSWORD
 
 The docs site is `docs-site/`, which Vercel builds from `main` and serves at
 <https://integrity-py.docs.eqtylab.io/>. Run it locally with `just serve-docs`, which needs
-`just install`, Node and pnpm. Without the Rust toolchain, `cd docs-site && pnpm install && pnpm dev`
+`just install`, Node and pnpm. Without Python and Poetry, `cd docs-site && pnpm install && pnpm dev`
 serves the pages as committed.
 
 - `/` is the newest release.
