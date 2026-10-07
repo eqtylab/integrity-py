@@ -39,11 +39,11 @@ lint:
 lint-docs:
   cargo rustdoc --lib -- -D missing_docs -D rustdoc::broken_intra_doc_links
 
-# Refresh the docs pages and build the site into docs-site/dist (needs Node and pnpm)
+# Refresh the docs pages and build the site into docs-site/dist (needs `just install`, Node and pnpm)
 build-docs: _render-docs
   cd ./docs-site && pnpm install && pnpm build
 
-# Refresh the docs pages and serve the site locally with live reload (needs Node and pnpm)
+# Refresh the docs pages and serve the site locally with live reload (needs `just install`, Node and pnpm)
 serve-docs: _render-docs
   cd ./docs-site && pnpm install && pnpm dev
 
