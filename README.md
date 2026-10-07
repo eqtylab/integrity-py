@@ -29,6 +29,11 @@ If you are not using Nix, install the required dependencies manually:
 - [poetry](https://python-poetry.org/docs/)
 - Python `3.10`
 - Rust toolchain
+- [maturin](https://www.maturin.rs/), to build the extension
+- [ruff](https://docs.astral.sh/ruff/), which `just generate-stubs`, `just serve-docs`,
+  `just build-docs` and `just lint` run
+- [present](https://github.com/terror/present), which `just ci` runs to check this README
+- [Node.js](https://nodejs.org/) 22 and [pnpm](https://pnpm.io/), for the docs site
 
 ### Environment Setup
 
@@ -45,7 +50,9 @@ The Poetry virtualenv is configured in-project at `.venv/`.
 ### Local Workflow
 
 1. Make changes in `src/` for Rust or `eqty_sdk/` for Python.
-2. Regenerate stubs and docs snippets when API-facing behavior changes:
+2. Regenerate the type stubs and the docs pages when API-facing behavior changes, then commit
+   the pages it changed. The text between a page's `{/* generated ... */}` and
+   `{/* end generated */}` lines is rewritten each time, so change the code, not that text:
    ```sh
    just generate-stubs
    ```
@@ -66,21 +73,21 @@ Run `just` to see all available commands.
 Available recipes:
     archive-backport version # Save a 2.0 to 2.4 backport's docs after it ships (macOS, Docker)
     build                    # Build the Rust/Python wheel using maturin
-    build-docs               # Build the docs site into docs-site/dist (needs Node and pnpm)
-    ci                       # Run full CI pipeline: format check, lint, type check, build, and test
+    build-docs               # Refresh the stubs and docs pages and build the site into docs-site/dist (needs `just install`, ruff, Node and pnpm)
+    ci                       # Run full CI pipeline: format check, lint, type check, build, test, and refresh the docs pages
     fix                      # Auto-fix Rust clippy warnings
     fmt                      # Auto-format code (Rust + Python)
     fmt-check                # Check code formatting without changes (Rust + Python)
-    generate-stubs           # Generate type stubs from Rust code
+    generate-stubs           # Generate type stubs from Rust code and refresh the docs pages
     init                     # Set up git hooks for prek
     install                  # Install all Python dependencies via poetry
     install-package          # Install the local build of the wheel into the venv
     lint                     # Run linters and auto-fix issues (Rust clippy + Python ruff)
     lint-check               # Run linters without auto-fixing (Rust clippy + Python ruff)
-    lint-docs                # Check that all public items have documentation
+    lint-docs                # Check that all public Rust items have doc comments
     readme-check             # Check if README.md is up to date with auto-generated content
     readme-update            # Update README.md with auto-generated content (Justfile commands, etc.)
-    serve-docs               # Serve the docs site locally with live reload (needs Node and pnpm)
+    serve-docs               # Refresh the stubs and docs pages and serve the site locally with live reload (needs `just install`, ruff, Node and pnpm)
     test-example-manifests   # Run example scripts and compare normalized manifests to expected outputs
     test-py                  # Run Python unit tests
     test-rs                  # Run rust unit tests
@@ -158,7 +165,9 @@ machine pypi.eqtylab.io login YOUR_NAME password YOUR_PASSWORD
 ### Versioned Docs
 
 The docs site is `docs-site/`, which Vercel builds from `main` and serves at
-<https://integrity-py.docs.eqtylab.io/>. Run it locally with `just serve-docs`, which needs Node and pnpm.
+<https://integrity-py.docs.eqtylab.io/>. Run it locally with `just serve-docs`, which needs
+`just install`, ruff, Node and pnpm. Without Python and Poetry,
+`cd docs-site && pnpm install && pnpm dev` serves the pages as committed.
 
 - `/` is the newest release.
 - Older minor releases are saved folders under `docs-site/archive/`, listed in

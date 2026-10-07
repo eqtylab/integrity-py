@@ -377,6 +377,7 @@ class ArchiveBackport(unittest.TestCase):
         modules.mkdir()
         for name in ("griffe", "griffe2md", "yaml"):
             (modules / f"{name}.py").write_text("")
+        (modules / "mdformat.py").write_text('__version__ = "1.0.0"\n')
         bin_dir = side / "bin"
         bin_dir.mkdir()
         for name, text in (("curl", FAKE_CURL), ("docker", FAKE_DOCKER), ("otool", FAKE_OTOOL)):
@@ -473,7 +474,19 @@ class ArchiveBackport(unittest.TestCase):
         (missing / "griffe2md.py").write_text("raise ImportError\n")
         out = self.run_script(PYTHONPATH=f"{missing}:{self.env['PYTHONPATH']}")
         self.assertNotEqual(out.returncode, 0)
-        self.assertIn("griffe2md==1.2.5", out.stderr)
+        self.assertIn("python3.12 -m venv --clear .venv-docs", out.stderr)
+        self.assertIn("griffe2md==1.2.5 mdformat==1.0.0", out.stderr)
+
+    def test_an_older_mdformat_fails_naming_a_newer_python(self) -> None:
+        # What a .venv-docs made with Python 3.9 has, since mdformat 1.0.0 needs 3.10.
+        old = Path(self.env["PYTHONPATH"]).parent / "old"
+        old.mkdir()
+        (old / "mdformat.py").write_text('__version__ = "0.7.22"\n')
+        out = self.run_script(PYTHONPATH=f"{old}:{self.env['PYTHONPATH']}")
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("Python 3.10 or newer", out.stderr)
+        self.assertIn("python3.12 -m venv --clear .venv-docs", out.stderr)
+        self.assertEqual(self.repo.changed("docs-site"), "")
 
     def test_a_release_with_docs_site_is_left_to_its_release_workflow(self) -> None:
         out = self.run_script("2.5.0")

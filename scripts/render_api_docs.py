@@ -1,11 +1,11 @@
 """Fill the docs pages' generated blocks: the API reference, via griffe2md, and repo files.
 
-    python3 -m venv .venv-docs && .venv-docs/bin/pip install griffe==1.14.0 griffe2md==1.2.5
-    .venv-docs/bin/python scripts/render_api_docs.py
+    poetry run python scripts/render_api_docs.py [--check]
 
-griffe reads eqty_sdk/_rust.pyi statically (find_stubs_package), so no compiled extension
-is needed; run `just generate-stubs` first if the Rust doc comments changed. Output is
-committed, so the site build needs Node alone.
+`just generate-stubs`, `just serve-docs` and `just build-docs` run it; `just install` puts
+griffe and griffe2md in the Poetry env. griffe reads eqty_sdk/_rust.pyi statically
+(find_stubs_package), so no compiled extension is needed; each of those commands rebuilds that
+stub from the Rust doc comments first. Output is committed, so the site build needs Node alone.
 
 Output is written into the pages under docs-site/src/content/docs/, between marker comments:
 
@@ -39,14 +39,30 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Callable
+from typing import Callable, NoReturn
 
-import griffe
-import griffe2md
+try:
+    import griffe
+    import griffe2md
+except ImportError as err:  # an env set up before griffe joined the Poetry dev group
+    raise SystemExit(
+        f"render_api_docs: {err}. Run `just install` to install the docs renderer's packages, "
+        "then try again."
+    ) from err
 
 ROOT = Path(__file__).resolve().parent.parent
 TABLE = ROOT / "scripts" / "api-directives.json"
 CONTENT = ROOT / "docs-site" / "src" / "content" / "docs"
+
+# How to fix this repo after a rename, added to render()'s errors when main() asks for advice.
+FIX_DOCS = (
+    "update its entry in scripts/api-directives.json and the {/* generated api ... */} "
+    "marker in the page that shows it"
+)
+FIX_IMPORT = (
+    "If that name was renamed in the code, update that import to the new name, then run "
+    "`just generate-stubs`, which rebuilds the package stub from it."
+)
 
 # The options every directive starts from; a directive's own options override them.
 DEFAULTS = {
@@ -115,7 +131,10 @@ def fill(page: str, api: dict[str, str], read: Callable[[str], str]) -> tuple[st
         kind, key, lang = m.group("kind"), m.group("key"), m.group("lang")
         if kind == "api":
             if key not in api:
-                raise SystemExit(f"render_api_docs: {key} is not in api-directives.json")
+                raise SystemExit(
+                    f"render_api_docs: a page shows {key}, which is not in "
+                    "scripts/api-directives.json. Add it there, or fix the page's marker."
+                )
             used.add(key)
             content = api[key]
         else:
@@ -127,14 +146,20 @@ def fill(page: str, api: dict[str, str], read: Callable[[str], str]) -> tuple[st
     # Every opener needs an end and every end an opener; a stray one would otherwise pass.
     blocks = len(BLOCK.findall(page))
     if len(OPEN.findall(page)) != blocks or len(END.findall(page)) != blocks:
-        raise SystemExit("render_api_docs: a {/* generated */} marker has no partner")
+        raise SystemExit(
+            "render_api_docs: a {/* generated */} marker has no partner. Each "
+            "{/* generated ... */} line needs a {/* end generated */} line after it."
+        )
     return BLOCK.sub(body, page), used
 
 
 def read_repo_file(rel: str) -> str:
     path = ROOT / rel
     if not path.is_file():
-        raise SystemExit(f"render_api_docs: {rel} does not exist")
+        raise SystemExit(
+            f"render_api_docs: {rel} does not exist. If it was renamed or moved, update the "
+            "generated file marker that names it."
+        )
     return path.read_text()
 
 
@@ -217,17 +242,61 @@ def load_table() -> list[dict]:
     return json.loads(TABLE.read_text())
 
 
-def render(pkg: griffe.Module, target: str, options: dict, defaults: dict | None = None) -> str:
+def _broken_reexports(obj: griffe.Object, config: dict):
+    """The errors for public members under `obj` that re-export a name of this package that
+    no longer exists. griffe2md leaves such members out without a word. Imports from other
+    packages are skipped: griffe does not load them, so they never resolve.
+    """
+    package = obj.path.split(".", 1)[0] + "."
+    hidden = [re.compile(f[1:]) for f in config.get("filters", []) if f.startswith("!")]
+    for member in obj.members.values():
+        if any(h.search(member.name) for h in hidden):
+            continue
+        if member.is_alias:
+            if not member.target_path.startswith(package) or not member.is_public:
+                continue
+            try:
+                member.final_target
+            except (griffe.AliasResolutionError, griffe.CyclicAliasError) as err:
+                yield err
+        elif (member.is_module or member.is_class) and member.path.startswith(obj.path + "."):
+            yield from _broken_reexports(member, config)
+
+
+def render(
+    pkg: griffe.Module,
+    target: str,
+    options: dict,
+    defaults: dict | None = None,
+    advise: bool = False,
+) -> str:
     """The reference for `target` as griffe2md Markdown, with its signatures fixed.
 
     `options` are the directive's own and override `defaults`, which are DEFAULTS unless
-    given. archive_version.py passes an old release's.
+    given. archive_version.py passes an old release's. `advise` adds how to fix this repo to
+    the errors; main() sets it, and archive_version.py does not, since an old release cannot
+    be fixed by editing today's code or pages.
     """
     config = {**(DEFAULTS if defaults is None else defaults), **options}
+
+    def fail(problem: str, advice: str) -> NoReturn:
+        raise SystemExit(f"render_api_docs: {problem}." + (f" {advice}" if advise else ""))
+
+    # A re-export of a name the stub no longer has is an alias that cannot resolve; griffe2md
+    # would fail on it with a missing-template error. griffe's message names the import.
     try:
         obj = pkg[target.split(".", 1)[1]]
-    except KeyError as err:
-        raise SystemExit(f"render_api_docs: {target} is not in eqty_sdk") from err
+        if obj.is_alias:
+            obj.final_target
+    except KeyError:
+        fail(f"{target} is not in {pkg.name}", f"If it was renamed or removed, {FIX_DOCS}.")
+    except (griffe.AliasResolutionError, griffe.CyclicAliasError) as err:
+        fail(
+            str(err).rstrip("."),
+            f"{FIX_IMPORT} If {target} itself was renamed too, also {FIX_DOCS}.",
+        )
+    for err in _broken_reexports(obj, config):
+        fail(str(err).rstrip("."), FIX_IMPORT)
     return fix_signatures(obj, griffe2md.render_object_docs(obj, config)).rstrip() + "\n"
 
 
@@ -237,7 +306,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     pkg = load_package()
-    rendered = {d["target"]: render(pkg, d["target"], d.get("options", {})) for d in load_table()}
+    rendered = {
+        d["target"]: render(pkg, d["target"], d.get("options", {}), advise=True)
+        for d in load_table()
+    }
     # Two passes: every heading's id first, then the links that point at them.
     heading_ids = {
         m.group(1): slug(m.group(1)) for md in rendered.values() for m in HEADING.finditer(md)
@@ -245,23 +317,31 @@ def main(argv: list[str] | None = None) -> int:
     api = {target: mdx_safe(md, heading_ids) for target, md in rendered.items()}
 
     used: set[str] = set()
-    stale = []
+    stale: dict[Path, str] = {}
     for page in sorted(CONTENT.rglob("*.mdx")):
         before = page.read_text()
-        after, targets = fill(before, api, read_repo_file)
+        try:
+            after, targets = fill(before, api, read_repo_file)
+        except SystemExit as err:
+            raise SystemExit(f"{err} Page: {page.relative_to(CONTENT)}") from err
         used |= targets
         if after != before:
-            stale.append(page.relative_to(CONTENT))
-            if not args.check:
-                page.write_text(after)
+            stale[page] = after
 
     unused = sorted(set(api) - used)
     if unused:
-        raise SystemExit(f"render_api_docs: no page uses {', '.join(unused)}")
+        raise SystemExit(
+            f"render_api_docs: no page uses {', '.join(unused)}. Add a "
+            "{/* generated api ... */} marker to a page, or remove the entry from "
+            "scripts/api-directives.json."
+        )
     if args.check:
-        for p in stale:
-            print(f"out of date: {p}", file=sys.stderr)
+        for page in stale:
+            print(f"out of date: {page.relative_to(CONTENT)}", file=sys.stderr)
         return 1 if stale else 0
+    # Written only once every page has filled, so a failure leaves every page as it was.
+    for page, text in stale.items():
+        page.write_text(text)
     print(f"filled {len(used)} API blocks; rewrote {len(stale)} pages")
     return 0
 
