@@ -66,7 +66,7 @@ docker info >/dev/null 2>&1 || fail "Docker isn't running; start Docker Desktop 
 "$PYTHON" -c 'import griffe, griffe2md, yaml' 2>/dev/null ||
   fail "$PYTHON lacks the API renderer. Install it once in .venv-docs, then run this again:" \
     "python3 -m venv .venv-docs" \
-    ".venv-docs/bin/pip install griffe==1.14.0 griffe2md==1.2.5 pyyaml" \
+    ".venv-docs/bin/pip install griffe==1.14.0 griffe2md==1.2.5 mdformat==1.0.0 pyyaml" \
     "just archive-backport $VERSION"
 
 # The index the tag's own workflow uploads to: 2.0.0 to 2.3.0 upload with twine to EQTY Lab's

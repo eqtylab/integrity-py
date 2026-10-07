@@ -477,7 +477,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install the API renderer
-        run: python -m pip install griffe==1.14.0 griffe2md==1.2.5
+        run: python -m pip install griffe==1.14.0 griffe2md==1.2.5 mdformat==1.0.0
 
       - name: Save the release's docs
         # bash, not the default `bash -e`, so pipefail keeps the script's exit status through tee.

@@ -473,7 +473,7 @@ class ArchiveBackport(unittest.TestCase):
         (missing / "griffe2md.py").write_text("raise ImportError\n")
         out = self.run_script(PYTHONPATH=f"{missing}:{self.env['PYTHONPATH']}")
         self.assertNotEqual(out.returncode, 0)
-        self.assertIn("griffe2md==1.2.5", out.stderr)
+        self.assertIn("griffe2md==1.2.5 mdformat==1.0.0", out.stderr)
 
     def test_a_release_with_docs_site_is_left_to_its_release_workflow(self) -> None:
         out = self.run_script("2.5.0")
