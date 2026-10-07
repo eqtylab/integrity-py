@@ -60,6 +60,11 @@ RENAMED = (
     "{/* generated api ... */} marker in the page that shows it."
 )
 
+
+class MissingTarget(SystemExit):
+    """render() found nothing at a directive's target; main() adds RENAMED to the message."""
+
+
 # The options every directive starts from; a directive's own options override them.
 DEFAULTS = {
     **griffe2md.default_config,
@@ -248,7 +253,19 @@ def render(pkg: griffe.Module, target: str, options: dict, defaults: dict | None
     try:
         obj = pkg[target.split(".", 1)[1]]
     except KeyError as err:
-        raise SystemExit(f"render_api_docs: {target} is not in eqty_sdk") from err
+        raise MissingTarget(f"render_api_docs: {target} is not in eqty_sdk") from err
+    # A re-export of a name the stub no longer has is an alias that cannot resolve, which
+    # griffe2md would fail on with a missing-template error. griffe's message names the import.
+    if obj.is_alias:
+        try:
+            obj.final_target
+        except griffe.AliasResolutionError as err:
+            raise SystemExit(
+                f"render_api_docs: {err}. If that name was renamed in the code, update that "
+                f"import to the new name. If {target} itself was renamed too, also update its "
+                "entry in scripts/api-directives.json and the {/* generated api ... */} marker "
+                "in the page that shows it."
+            ) from err
     return fix_signatures(obj, griffe2md.render_object_docs(obj, config)).rstrip() + "\n"
 
 
@@ -262,7 +279,7 @@ def main(argv: list[str] | None = None) -> int:
         rendered = {
             d["target"]: render(pkg, d["target"], d.get("options", {})) for d in load_table()
         }
-    except SystemExit as err:  # render() names the missing target; add the docs fix
+    except MissingTarget as err:  # render() names the missing target; add the docs fix
         raise SystemExit(f"{err}. {RENAMED}") from err
     # Two passes: every heading's id first, then the links that point at them.
     heading_ids = {

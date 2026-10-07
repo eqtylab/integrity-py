@@ -155,7 +155,7 @@ class CheckMode(unittest.TestCase):
         from unittest import mock
 
         def gone(pkg, target, options):
-            raise SystemExit(f"render_api_docs: {target} is not in eqty_sdk")
+            raise r.MissingTarget(f"render_api_docs: {target} is not in eqty_sdk")
 
         with mock.patch.object(r, "render", gone):
             with self.assertRaises(SystemExit) as ctx:
@@ -164,6 +164,17 @@ class CheckMode(unittest.TestCase):
         self.assertIn("eqty_sdk.init is not in eqty_sdk. If it was renamed or removed", msg)
         self.assertIn("scripts/api-directives.json", msg)
         self.assertIn("{/* generated api ... */} marker", msg)
+
+    def test_other_render_errors_keep_their_own_advice(self) -> None:
+        from unittest import mock
+
+        def unresolved(pkg, target, options):
+            raise SystemExit("render_api_docs: own advice")
+
+        with mock.patch.object(r, "render", unresolved):
+            with self.assertRaises(SystemExit) as ctx:
+                r.main([])
+        self.assertEqual(str(ctx.exception), "render_api_docs: own advice")
 
     def test_an_unused_directive_says_how_to_fix(self) -> None:
         from unittest import mock
@@ -181,6 +192,24 @@ class CheckMode(unittest.TestCase):
         with self.assertRaises(SystemExit) as ctx:
             r.main([])
         self.assertIn("broken.mdx", str(ctx.exception))
+
+
+class UnresolvedAlias(unittest.TestCase):
+    """A re-export whose target was renamed, as after `generate_stubs.py` rebuilds the stub."""
+
+    def test_a_re_export_of_a_renamed_name_says_to_fix_the_import(self) -> None:
+        import tempfile
+
+        tmp = Path(tempfile.mkdtemp())
+        (tmp / "fake").mkdir()
+        (tmp / "fake" / "__init__.py").write_text("from fake._impl import gone\n")
+        (tmp / "fake" / "_impl.py").write_text("def renamed() -> None: ...\n")
+        pkg = r.griffe.load("fake", search_paths=[str(tmp)], allow_inspection=False)
+        with self.assertRaises(SystemExit) as ctx:
+            r.render(pkg, "fake.gone", {})
+        msg = str(ctx.exception)
+        self.assertIn("Could not resolve alias fake.gone", msg)
+        self.assertIn("update that import", msg)
 
 
 class MissingRenderer(unittest.TestCase):
