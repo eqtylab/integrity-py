@@ -43,19 +43,21 @@ export default defineConfig({
         // highest is the current release, and waits until a newer release makes it old.
         folders,
       },
+      repository: { url: "https://github.com/eqtylab/integrity-py" },
       header: {
         links: [
-          { label: "GitHub", href: "https://github.com/eqtylab/integrity-py", external: true },
+          {
+            label: "GitHub",
+            href: "https://github.com/eqtylab/integrity-py",
+            icon: "simple-icons:github",
+            external: true,
+          },
           {
             label: "Changelog",
             href: "https://github.com/eqtylab/integrity-py/blob/main/CHANGELOG.md",
             external: true,
           },
         ],
-      },
-      footer: {
-        // Ends at the content directory: the route appends the entry's path relative to it.
-        editUrl: "https://github.com/eqtylab/integrity-py/edit/main/docs-site/src/content/docs/",
       },
       // Old links into the API reference name headings by ids this site does not use. The
       // script finds the heading; it loads on every page, old versions included.
