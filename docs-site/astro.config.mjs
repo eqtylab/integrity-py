@@ -44,6 +44,7 @@ export default defineConfig({
         folders,
       },
       repository: { url: "https://github.com/eqtylab/integrity-py" },
+      license: "Apache 2.0",
       header: {
         links: [
           {
@@ -55,6 +56,22 @@ export default defineConfig({
           {
             label: "Changelog",
             href: "https://github.com/eqtylab/integrity-py/blob/main/CHANGELOG.md",
+            external: true,
+          },
+        ],
+      },
+      footer: {
+        links: [
+          {
+            label: "GitHub",
+            href: "https://github.com/eqtylab/integrity-py",
+            icon: "simple-icons:github",
+            external: true,
+          },
+          {
+            label: "PyPI",
+            href: "https://pypi.org/project/eqty-sdk/",
+            icon: "simple-icons:pypi",
             external: true,
           },
         ],
