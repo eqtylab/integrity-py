@@ -217,8 +217,8 @@ fn ensure_offline_verifiable(vc: &Value) -> Result<(), VerifyError> {
 type Rejection = (&'static str, String);
 
 /// The reason code for each way the core verifier can decline a credential.
-/// Read from the typed error, never from its message; an error that is not a
-/// verdict on the credential is `unverifiable`.
+/// Read from the typed error, never from its message; an error that carries no
+/// typed reason is `unverifiable`.
 fn rejection_of(error: &anyhow::Error) -> Rejection {
     let reason = error
         .downcast_ref::<vc::VcVerificationError>()
@@ -379,14 +379,21 @@ pub fn verify_vc(
 ///   checked, because dates are validated first; verify again with `at` inside
 ///   its validity period to check it.
 /// - `invalid_signature`: the signature does not verify under the issuer's key.
-/// - `invalid_proof`: the proof is missing or malformed, or names the wrong key
-///   or algorithm.
+/// - `missing_proof`: the credential has no proof.
+/// - `invalid_proof`: the proof does not fit the key or algorithm it names.
+/// - `malformed`: the credential does not parse as a credential, for example a
+///   signature that is not a JWS. Not a verdict on the credential.
 /// - `invalid_claims`: another claim failed validation.
 /// - `subject_mismatch`: the credential is about a subject other than
 ///   `statement_id`.
-/// - `unverifiable`: the proof could not be checked at all, for example a form
-///   this build does not verify, or a context that is neither embedded nor
-///   supplied. Not a verdict on the credential.
+/// - `unsupported_suite`: the proof's cryptographic suite is not one this build
+///   verifies. Not a verdict on the credential.
+/// - `unresolved_context`: a JSON-LD context the credential names is neither
+///   embedded nor supplied in `contexts`. Not a verdict on the credential.
+/// - `unresolved_key`: the issuer's DID did not resolve, or its document has no
+///   such key. Not a verdict on the credential.
+/// - `unverifiable`: the proof could not be checked at all, for a reason none of
+///   the above names. Not a verdict on the credential.
 /// - `legacy_rejected`: a credential with `issuanceDate` failed the legacy
 ///   verifier.
 #[pyfunction]

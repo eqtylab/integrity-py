@@ -277,6 +277,35 @@ class VerifyVcDetailedTests(unittest.TestCase):
     def test_subject_mismatch(self):
         self.assertEqual(self.reason(VALID_VC, "urn:cid:some-other-statement"), "subject_mismatch")
 
+    def test_a_proof_that_could_not_be_checked_says_why(self):
+        # Inside the window, so the dates are not what stops the check.
+        def edited(edit):
+            vc = json.loads(json.dumps(DATED_VC))
+            edit(vc)
+            return self.reason(vc, at=DATED_INSIDE)
+
+        def set_suite(vc):
+            vc["proof"]["type"] = "NoSuchSignature2099"
+
+        def add_context(vc):
+            vc["@context"].append("https://example.invalid/unsupplied-context")
+
+        def set_missing_key(vc):
+            did = vc["proof"]["verificationMethod"].split("#")[0]
+            vc["proof"]["verificationMethod"] = did + "#no-such-key"
+
+        self.assertEqual(edited(set_suite), "unsupported_suite")
+        self.assertEqual(edited(add_context), "unresolved_context")
+        self.assertEqual(edited(set_missing_key), "unresolved_key")
+
+    def test_a_signature_that_is_not_a_jws_is_malformed(self):
+        def garble(vc):
+            vc["proof"]["jws"] = "not-a-jws"
+
+        vc = json.loads(json.dumps(DATED_VC))
+        garble(vc)
+        self.assertEqual(self.reason(vc, at=DATED_INSIDE), "malformed")
+
     def test_raises_where_verify_vc_raises(self):
         without = {k: v for k, v in VALID_VC.items() if k != "credentialSubject"}
         with self.assertRaises(ValueError):
