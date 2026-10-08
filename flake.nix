@@ -39,8 +39,10 @@
             cargo
             just
             maturin
+            nodejs_22
             openssl
             pkg-config
+            pnpm
             poetry
             present-cli
             python
