@@ -73,17 +73,25 @@ class Compute:
         self._store = _store
 
         # source code is created as an input asset to the compute node
-        self._code_asset = Asset._from_object(
-            obj=self._source_code,
-            asset_type=AssetType.CODE,
-            ctx=self._ctx,
-            _store=_store,
-            _skip_proof=self._skip_proof,
-            name=self._func.__name__,
-            **(
-                {"description": self._func.__doc__} if self._func.__doc__ is not None else {}
-            ),  # only include 'description' if the fn doc string exists
-        )
+        if self._func.__doc__ is not None:
+            self._code_asset = Asset._from_object(
+                obj=self._source_code,
+                asset_type=AssetType.CODE,
+                ctx=self._ctx,
+                _store=_store,
+                _skip_proof=self._skip_proof,
+                name=self._func.__name__,
+                description=self._func.__doc__,
+            )
+        else:
+            self._code_asset = Asset._from_object(
+                obj=self._source_code,
+                asset_type=AssetType.CODE,
+                ctx=self._ctx,
+                _store=_store,
+                _skip_proof=self._skip_proof,
+                name=self._func.__name__,
+            )
 
     def __create_asset__(self, output_type: Optional[str], item: Any) -> Any:
         """Creates an Eqty Asset from `item` of type=output_type."""
