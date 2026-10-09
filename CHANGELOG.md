@@ -18,6 +18,18 @@ changes since the preceding stable tag.
 
 ### Added
 
+- `verify_vc(..., at=...)`: judges a credential's `validFrom` / `validUntil` at an
+  RFC 3339 time instead of now. They are checked before the proof, so without it a
+  credential that has since expired returns `False` with its signature never
+  checked; at a time inside its validity period the signature is checked for real.
+  ([#99](https://github.com/eqtylab/integrity-py/pull/99))
+- `verify_vc_detailed`: the same check, returning `{"valid", "reason", "detail"}`
+  instead of a bool. `reason` is `expired`, `not_yet_valid`, `invalid_signature`,
+  `missing_proof`, `invalid_proof`, `malformed`, `invalid_claims`,
+  `subject_mismatch`, `unsupported_suite`, `unresolved_context`, `unresolved_key`
+  (the last three: the proof could not be checked), `unverifiable` (could not be
+  checked, for another reason) or `legacy_rejected`.
+  ([#99](https://github.com/eqtylab/integrity-py/pull/99))
 - A changelog and contributor instructions for documenting PRs and releases.
   ([#83](https://github.com/eqtylab/integrity-py/pull/83))
 - A CI check requiring a matching changelog heading before stable release builds

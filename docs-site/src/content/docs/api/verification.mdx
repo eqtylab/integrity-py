@@ -62,8 +62,15 @@ it, only the signature is checked.
 Supply `contexts` whenever the credential's `@context` references a document this build does not
 embed. Verification re-expands the credential, so an unresolvable context means the proof cannot be
 checked at all — and because nothing is fetched, that surfaces as `False` rather than an error,
-indistinguishable from a bad signature. If a credential you expect to be valid returns `False`, an
-unsupplied context is the first thing to check.
+alongside a bad signature. If a credential you expect to be valid returns `False`, call
+[`verify_vc_detailed`](#eqty_sdkverify_vc_detailed) to see why; an unsupplied context reads
+`unresolved_context`.
+
+A credential's `validFrom` and `validUntil` are judged against **now**, before its proof. One that
+has since expired therefore returns `False` without its signature ever being checked, which is the
+usual state of a short-lived credential by the time anyone verifies the lineage it vouches for. Pass
+`at=` an RFC 3339 time inside its validity period to check the signature as of then. A credential
+with `issuanceDate` takes the older verifier, which has no check time, and `at` does not reach it.
 
 This verifies the cryptographic proof alone. Whether a credential has since been **revoked or
 suspended** lives in its status list, which has to be fetched over the network and is deliberately
@@ -73,8 +80,41 @@ not consulted here.
 ### `eqty_sdk.verify_vc`
 
 ```python
-verify_vc(vc_json: str, statement_id: Optional[str] = None, contexts: Optional[Dict[str, Any]] = None) -> bool
+verify_vc(vc_json: str, statement_id: Optional[str] = None, contexts: Optional[Dict[str, Any]] = None, at: Optional[str] = None) -> bool
 ```
 
-Verifies a W3C Verifiable Credential's proof offline. When `statement_id` is given, also checks that the credential's `credentialSubject.id` is that statement. A valid signature over some other subject says nothing about the statement in hand. Returns `False` when the credential does not verify or is bound to a different subject. Raises `ValueError` when the input is not a credential, meaning it is not JSON, has no `credentialSubject`, or has more than one subject. Raises `RuntimeError` when the credential's DID method would need network access: only `did:key`, `did:jwk` and `did:pkh` resolve offline. Checks the cryptographic proof only. Revocation and suspension live in the credential's status list, which is fetched over the network and is not consulted here. `contexts` maps a JSON-LD context URI to its context document, for contexts this build does not embed. Values may be dicts or JSON strings, so a manifest's `contexts` field can be passed straight through. Note that a supplied context takes precedence over an embedded one of the same URI. Runs fully offline. Verifying a credential re-expands it, so a context that is neither embedded nor supplied is never fetched — it reports `False`, alongside the other reasons a proof may not check out.
+Verifies a W3C Verifiable Credential's proof offline. When `statement_id` is given, also checks that the credential's `credentialSubject.id` is that statement. A valid signature over some other subject says nothing about the statement in hand. Returns `False` when the credential does not verify or is bound to a different subject. Raises `ValueError` when the input is not a credential, meaning it is not JSON, has no `credentialSubject`, or has more than one subject. Raises `RuntimeError` when the credential's DID method would need network access: only `did:key`, `did:jwk` and `did:pkh` resolve offline. Checks the cryptographic proof only. Revocation and suspension live in the credential's status list, which is fetched over the network and is not consulted here. `contexts` maps a JSON-LD context URI to its context document, for contexts this build does not embed. Values may be dicts or JSON strings, so a manifest's `contexts` field can be passed straight through. Note that a supplied context takes precedence over an embedded one of the same URI. Runs fully offline. Verifying a credential re-expands it, so a context that is neither embedded nor supplied is never fetched — it reports `False`, alongside the other reasons a proof may not check out. `at`, an RFC 3339 timestamp, judges the credential's `validFrom` and `validUntil` at that moment instead of now. Those dates are checked before the proof, so without it a credential that has since expired returns `False` with its signature never checked. Pass a time inside its validity period, such as the proof's `created` when that falls inside it, to learn whether it was genuinely signed and in force then. Credentials with `issuanceDate` are verified as without `at`. Raises `ValueError` if `at` is not an RFC 3339 timestamp.
+{/* end generated */}
+
+## `verify_vc_detailed`
+
+The same check as `verify_vc`, with the same arguments and the same exceptions, returning a dict
+instead of a bool: `valid`, `reason` (`None` when valid, otherwise a code) and `detail`. Use it
+whenever `False` is not enough, for example to tell an expired credential from a forged one:
+
+```python
+import json
+from eqty_sdk import verify_vc_detailed
+
+result = verify_vc_detailed(json.dumps(credential), statement_id, contexts)
+if result["reason"] == "expired":
+    # The signature was not checked. Judge it as of a time inside its validity period.
+    result = verify_vc_detailed(json.dumps(credential), statement_id, contexts, at=when_it_was_used)
+```
+
+`expired` and `not_yet_valid` mean the dates excluded the time it was judged at and the signature
+was **not checked**. `invalid_signature` is a verdict on the signature. `unsupported_suite`,
+`unresolved_context`, `unresolved_key` and `unverifiable` are not verdicts at all: the proof could
+not be checked, because its suite is not supported here, a context did not resolve, the issuer's key
+did not resolve, or for another reason. `malformed` means the input does not parse as a credential.
+The reason is read from the verifier's typed error, never from its message.
+
+{/* generated api eqty_sdk.verify_vc_detailed */}
+### `eqty_sdk.verify_vc_detailed`
+
+```python
+verify_vc_detailed(vc_json: str, statement_id: Optional[str] = None, contexts: Optional[Dict[str, Any]] = None, at: Optional[str] = None) -> Dict[str, Any]
+```
+
+Verifies a W3C Verifiable Credential's proof offline, and says why when it does not verify. Takes the same arguments as `verify_vc` and raises in the same cases. Returns a dict: `valid` (bool), `reason` (None when valid, otherwise a code) and `detail` (the verifier's message, or None). The reason codes are: - `expired`, `not_yet_valid`: the credential's `validUntil` / `validFrom` excludes the time it was judged at (now, or `at`). Its signature was not checked, because dates are validated first; verify again with `at` inside its validity period to check it. - `invalid_signature`: the signature does not verify under the issuer's key. - `missing_proof`: the credential has no proof. - `invalid_proof`: the proof does not fit the key or algorithm it names. - `malformed`: the credential does not parse as a credential, for example a signature that is not a JWS. Not a verdict on the credential. - `invalid_claims`: another claim failed validation. - `subject_mismatch`: the credential is about a subject other than `statement_id`. - `unsupported_suite`: the proof's cryptographic suite is not one this build verifies. Not a verdict on the credential. - `unresolved_context`: a JSON-LD context the credential names is neither embedded nor supplied in `contexts`. Not a verdict on the credential. - `unresolved_key`: the issuer's DID did not resolve, or its document has no such key. Not a verdict on the credential. - `unverifiable`: the proof could not be checked at all, for a reason none of the above names. Not a verdict on the credential. - `legacy_rejected`: a credential with `issuanceDate` failed the legacy verifier.
 {/* end generated */}

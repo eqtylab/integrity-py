@@ -119,6 +119,7 @@ fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(purge_blob_store, m)?)?;
     m.add_function(wrap_pyfunction!(verification::verify_statement, m)?)?;
     m.add_function(wrap_pyfunction!(verification::verify_vc, m)?)?;
+    m.add_function(wrap_pyfunction!(verification::verify_vc_detailed, m)?)?;
     Ok(())
 }
 
