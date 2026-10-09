@@ -45,6 +45,10 @@ export default defineConfig({
       },
       // No `repository`: reports go to the support portal, the same as the other EQTY Lab docs sites
       feedback: "https://support.eqtylab.io",
+      license: {
+        name: "Apache 2.0",
+        href: "https://github.com/eqtylab/integrity-py/blob/main/LICENSE",
+      },
       header: {
         links: [
           {

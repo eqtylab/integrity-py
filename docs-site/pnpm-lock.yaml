@@ -116,8 +116,8 @@ importers:
         specifier: ^7.0.1
         version: 7.0.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1)
       '@eqtylab/docs':
-        specifier: ^0.13.0
-        version: 0.13.0(@astrojs/mdx@8.0.3(@astrojs/markdown-remark@7.3.2)(@astrojs/markdown-satteri@0.4.3)(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1)))(@astrojs/react@7.0.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@8.3.3(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+        specifier: ^0.14.0
+        version: 0.14.0(@astrojs/mdx@8.0.3(@astrojs/markdown-remark@7.3.2)(@astrojs/markdown-satteri@0.4.3)(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1)))(@astrojs/react@7.0.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@8.3.3(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       '@eqtylab/equality':
         specifier: ^4.1.0
         version: 4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -409,8 +409,8 @@ packages:
   '@emnapi/wasi-threads@1.2.3':
     resolution: {integrity: sha512-ELEBe8PsLvvJ6QMr0zLt8ffvOHW/dc1m3CEzNMg7aJUv3bMaoDtw2TXyDAwkYBuroxxuHEwhRTLJSe5sya547g==}
 
-  '@eqtylab/docs@0.13.0':
-    resolution: {integrity: sha512-xx0y4nHQ0dRwkLo2ZGEbvgOyU3yyuRB51VQ2tfkIeQRBBNa/phVtOr0pHexCVtj1qpiMM4GhJbjzpbq8NFgVrQ==}
+  '@eqtylab/docs@0.14.0':
+    resolution: {integrity: sha512-/Vpi81Tekj+pLC665UFg5JLxsV4j/WyEtFufEBy3l4GcXUqAIHIG7iECkpsNjA2NAROFnCNPUDzA285lL3mu4Q==}
     engines: {node: '>=22.12'}
     peerDependencies:
       '@astrojs/mdx': ^8.0.0
@@ -3720,7 +3720,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@eqtylab/docs@0.13.0(@astrojs/mdx@8.0.3(@astrojs/markdown-remark@7.3.2)(@astrojs/markdown-satteri@0.4.3)(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1)))(@astrojs/react@7.0.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@8.3.3(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
+  '@eqtylab/docs@0.14.0(@astrojs/mdx@8.0.3(@astrojs/markdown-remark@7.3.2)(@astrojs/markdown-satteri@0.4.3)(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1)))(@astrojs/react@7.0.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.2.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@8.3.3(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
     dependencies:
       '@astrojs/markdown-remark': 7.3.2
       '@astrojs/mdx': 8.0.3(@astrojs/markdown-remark@7.3.2)(@astrojs/markdown-satteri@0.4.3)(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1))
