@@ -1,16 +1,41 @@
 ---
 title: "Integrity Python SDK"
 description: "Track data provenance, asset lineage and computation integrity from Python."
+template: landing
+sections:
+  - heading: Get Started
+    cards:
+      - title: Quick Start
+        description: "Install the SDK, run a small lineage-tracked workflow, export an Integrity Manifest, and open it in Explorer."
+        links:
+          - [Quick Start, /quick-start/]
+      - title: Install
+        description: "Supported Python and pip versions, installing from PyPI with pip, uv or Poetry, and building from source."
+        links:
+          - [Min Version, /install/min-version/]
+          - [Package Managers, /install/package-managers/]
+          - [Source, /install/source/]
+  - heading: Guides & Reference
+    cards:
+      - title: Examples
+        description: "End-to-end workflows: tracking lineage, async compute, linking contexts, signing models and registering services."
+        links:
+          - [Overview, /examples/]
+          - [Basic Workflow, /examples/basic-workflow/]
+          - [Async Compute, /examples/async-compute/]
+          - [Model Signing, /examples/model-signing/]
+      - title: API Reference
+        description: "Every class and function in eqty_sdk, from assets and compute to signers and verification."
+        links:
+          - [Overview, /api/]
+          - [Init and Config, /api/init-and-config/]
+          - [Global Functions, /api/global-functions/]
+          - [Verification, /api/verification/]
+  - heading: Releases
+    cards:
+      - title: Release Info
+        description: "What changed in each release, and where to download it."
+        links:
+          - [Changelog, https://github.com/eqtylab/integrity-py/blob/main/CHANGELOG.md]
+          - [PyPI Releases, https://pypi.org/project/eqty-sdk/#history]
 ---
-
-`eqty_sdk` is the EQTY Integrity SDK for Python. It records what data went into a
-computation, what came out, and who signed it, as statements you can export,
-verify and register.
-
-This site documents the current release. Pick an older release from the version menu.
-
-Use the examples section for end-to-end workflows and the API reference for individual classes and functions. Installation guidance, minimum supported versions, and wheel runtime details are documented in the install guide.
-
-See the [changelog](https://github.com/eqtylab/integrity-py/blob/main/CHANGELOG.md)
-for notable SDK changes and [contributor instructions](https://github.com/eqtylab/integrity-py/blob/main/CONTRIBUTING.md)
-for documenting PRs and preparing releases.
