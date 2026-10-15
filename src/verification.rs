@@ -227,13 +227,14 @@ fn rejection_of(error: &anyhow::Error) -> Rejection {
 }
 
 /// Verifies a credential's proof and, optionally, the subject it is bound to.
-/// `None` means it verified; otherwise, why it did not.
+/// The rejection is `None` when it verified, otherwise why it did not; the flag
+/// says whether its dates were judged at `at` (see `vc::at_applied`).
 async fn vc_rejection(
     vc_json: &str,
     expected_subject_id: Option<&str>,
     contexts: Option<HashMap<String, String>>,
     at: Option<DateTime<Utc>>,
-) -> Result<Option<Rejection>, VerifyError> {
+) -> Result<(Option<Rejection>, bool), VerifyError> {
     let vc = parse_object(vc_json, "VC")?;
 
     let subject_id = credential_subject_id(&vc)?;
@@ -242,21 +243,24 @@ async fn vc_rejection(
     if let Some(expected) = expected_subject_id {
         if subject_id != expected {
             log::debug!("VC subject {subject_id:?} does not match expected {expected:?}");
-            return Ok(Some((
-                "subject_mismatch",
-                format!("the credential is about {subject_id:?}, not {expected:?}"),
-            )));
+            // The proof was never checked, so neither were its dates.
+            return Ok((
+                Some((
+                    "subject_mismatch",
+                    format!("the credential is about {subject_id:?}, not {expected:?}"),
+                )),
+                false,
+            ));
         }
     }
 
-    let outcome = match at {
-        Some(at) => vc::verify_vc_at(vc_json, contexts, at).await,
-        None => vc::verify_vc(vc_json, contexts).await,
-    };
-    Ok(outcome.err().map(|e| {
+    let outcome = vc::verify_vc_with_date_time(vc_json, contexts, at).await;
+    let at_applied = vc::at_applied(vc_json, at, &outcome);
+    let rejection = outcome.err().map(|e| {
         log::debug!("VC proof did not verify: {e:#}");
         rejection_of(&e)
-    }))
+    });
+    Ok((rejection, at_applied))
 }
 
 /// Verifies a credential's proof and, optionally, the subject it is bound to.
@@ -268,6 +272,7 @@ async fn vc_verifies(
 ) -> Result<bool, VerifyError> {
     Ok(vc_rejection(vc_json, expected_subject_id, contexts, at)
         .await?
+        .0
         .is_none())
 }
 
@@ -347,7 +352,9 @@ pub fn verify_statement(
 /// the proof, so without it a credential that has since expired returns `False`
 /// with its signature never checked. Pass a time inside its validity period, such
 /// as the proof's `created` when that falls inside it, to learn whether it was
-/// genuinely signed and in force then. Credentials with `issuanceDate` are verified as without `at`.
+/// genuinely signed and in force then. Credentials with `issuanceDate` are verified as without
+/// `at`, because their verifier has no check time; `verify_vc_detailed` reports that as
+/// `at_applied: False`.
 /// Raises `ValueError` if `at` is not an RFC 3339 timestamp.
 #[pyfunction]
 #[pyo3(signature = (vc_json, statement_id=None, contexts=None, at=None))]
@@ -371,8 +378,17 @@ pub fn verify_vc(
 /// does not verify.
 ///
 /// Takes the same arguments as `verify_vc` and raises in the same cases. Returns
-/// a dict: `valid` (bool), `reason` (None when valid, otherwise a code) and
-/// `detail` (the verifier's message, or None). The reason codes are:
+/// a dict: `valid` (bool), `reason` (None when valid, otherwise a code), `detail`
+/// (the verifier's message, or None) and `at_applied` (bool). `at_applied` says
+/// whether the credential's dates were judged at `at` (or now, without `at`). It
+/// is False when the credential was never checked (`malformed`,
+/// `subject_mismatch`), and when `at` was given but the credential has
+/// `issuanceDate`: its verifier judges dates only now, so `valid: True` then means
+/// valid now, not at `at`.
+///
+/// Every reason is a rejection, never "not checked": a credential's suite,
+/// contexts, key and shape are part of it, so an altered credential can produce
+/// any of these codes. The reason codes are:
 ///
 /// - `expired`, `not_yet_valid`: the credential's `validUntil` / `validFrom`
 ///   excludes the time it was judged at (now, or `at`). Its signature was not
@@ -381,19 +397,19 @@ pub fn verify_vc(
 /// - `invalid_signature`: the signature does not verify under the issuer's key.
 /// - `missing_proof`: the credential has no proof.
 /// - `invalid_proof`: the proof does not fit the key or algorithm it names.
-/// - `malformed`: the credential does not parse as a credential, for example a
-///   signature that is not a JWS. Not a verdict on the credential.
+/// - `malformed`: the credential does not parse as a credential (for example a
+///   signature that is not a JWS), or its JSON-LD does not expand.
 /// - `invalid_claims`: another claim failed validation.
 /// - `subject_mismatch`: the credential is about a subject other than
 ///   `statement_id`.
 /// - `unsupported_suite`: the proof's cryptographic suite is not one this build
-///   verifies. Not a verdict on the credential.
+///   verifies, so the proof could not be completed.
 /// - `unresolved_context`: a JSON-LD context the credential names is neither
-///   embedded nor supplied in `contexts`. Not a verdict on the credential.
+///   embedded nor supplied in `contexts`, so it did not load.
 /// - `unresolved_key`: the issuer's DID did not resolve, or its document has no
-///   such key. Not a verdict on the credential.
-/// - `unverifiable`: the proof could not be checked at all, for a reason none of
-///   the above names. Not a verdict on the credential.
+///   such key.
+/// - `unverifiable`: the proof could not be completed, for a reason none of the
+///   above names.
 /// - `legacy_rejected`: a credential with `issuanceDate` failed the legacy
 ///   verifier.
 #[pyfunction]
@@ -408,7 +424,7 @@ pub fn verify_vc_detailed<'py>(
     let contexts = contexts_to_json_text(py, contexts)?;
     let at = parse_at(at)?;
 
-    let rejection = py
+    let (rejection, at_applied) = py
         .detach(|| {
             get_runtime().block_on(vc_rejection(
                 &vc_json,
@@ -422,6 +438,7 @@ pub fn verify_vc_detailed<'py>(
     result.set_item("valid", rejection.is_none())?;
     result.set_item("reason", rejection.as_ref().map(|(reason, _)| *reason))?;
     result.set_item("detail", rejection.map(|(_, detail)| detail))?;
+    result.set_item("at_applied", at_applied)?;
     Ok(result)
 }
 
@@ -720,6 +737,7 @@ mod tests {
             get_runtime()
                 .block_on(vc_rejection(json, subject, None, at))
                 .unwrap()
+                .0
                 .map(|(reason, _)| reason)
         };
         let later = Some(now + chrono::Duration::hours(1));
@@ -738,6 +756,17 @@ mod tests {
             reason(&vc_json, Some("urn:cid:different"), None),
             Some("subject_mismatch")
         );
+
+        // Judged at `at` when the proof was checked; not when it never was.
+        let at_applied = |json: &str, subject: Option<&str>, at| {
+            get_runtime()
+                .block_on(vc_rejection(json, subject, None, at))
+                .unwrap()
+                .1
+        };
+        assert!(at_applied(&vc_json, None, Some(now)));
+        assert!(at_applied(&tampered, None, Some(now)));
+        assert!(!at_applied(&vc_json, Some("urn:cid:different"), Some(now)));
     }
 
     #[test]

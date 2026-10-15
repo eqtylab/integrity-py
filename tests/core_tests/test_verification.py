@@ -257,7 +257,7 @@ class VerifyVcDetailedTests(unittest.TestCase):
     def test_a_valid_credential(self):
         self.assertEqual(
             verify_vc_detailed(json.dumps(VALID_VC)),
-            {"valid": True, "reason": None, "detail": None},
+            {"valid": True, "reason": None, "detail": None, "at_applied": True},
         )
         self.assertIsNone(self.reason(DATED_VC, at=DATED_INSIDE))
 
@@ -277,7 +277,7 @@ class VerifyVcDetailedTests(unittest.TestCase):
     def test_subject_mismatch(self):
         self.assertEqual(self.reason(VALID_VC, "urn:cid:some-other-statement"), "subject_mismatch")
 
-    def test_a_proof_that_could_not_be_checked_says_why(self):
+    def test_a_proof_that_could_not_be_completed_is_rejected_with_its_reason(self):
         # Inside the window, so the dates are not what stops the check.
         def edited(edit):
             vc = json.loads(json.dumps(DATED_VC))
@@ -305,6 +305,23 @@ class VerifyVcDetailedTests(unittest.TestCase):
         vc = json.loads(json.dumps(DATED_VC))
         garble(vc)
         self.assertEqual(self.reason(vc, at=DATED_INSIDE), "malformed")
+
+    def test_at_applied_says_whether_the_dates_were_judged_at_at(self):
+        def at_applied(vc, statement_id=None, at=None):
+            return verify_vc_detailed(json.dumps(vc), statement_id, at=at)["at_applied"]
+
+        # Checked at `at`, whether accepted or rejected.
+        self.assertTrue(at_applied(DATED_VC, at=DATED_INSIDE))
+        self.assertTrue(at_applied(DATED_VC))
+        # A credential with `issuanceDate` is judged now: valid, but not at `at`.
+        legacy = verify_vc_detailed(json.dumps(VALID_VC), at="2000-01-01T00:00:00Z")
+        self.assertEqual((legacy["valid"], legacy["at_applied"]), (True, False))
+        self.assertTrue(at_applied(VALID_VC))
+        # Never checked: the dates were not judged at all.
+        garbled = json.loads(json.dumps(DATED_VC))
+        garbled["proof"]["jws"] = "not-a-jws"
+        self.assertFalse(at_applied(garbled, at=DATED_INSIDE))
+        self.assertFalse(at_applied(VALID_VC, "urn:cid:some-other-statement"))
 
     def test_raises_where_verify_vc_raises(self):
         without = {k: v for k, v in VALID_VC.items() if k != "credentialSubject"}
