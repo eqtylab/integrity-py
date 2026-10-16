@@ -40,6 +40,16 @@ changes since the preceding stable tag.
   and PyPI publication, including manual releases.
   ([#83](https://github.com/eqtylab/integrity-py/pull/83))
 
+### Changed
+
+- The `integrity` dependency moves from `v0.0.17` to `v0.0.19`, which brings
+  `verify_vc_at` and the typed verification reasons above, and drops iroh's
+  networking stack from the build.
+  ([#99](https://github.com/eqtylab/integrity-py/pull/99))
+- The pinned Rust toolchain moves from 1.89.0 to 1.94.1, to match `integrity`. The
+  Nix shell now takes `cargo` and `clippy` from that toolchain rather than from
+  nixpkgs. ([#99](https://github.com/eqtylab/integrity-py/pull/99))
+
 ### Security
 
 - Raise the minimum `urllib3` version from `2.7.0` to `2.8.0` for security fixes.
