@@ -352,9 +352,9 @@ pub fn verify_statement(
 /// the proof, so without it a credential that has since expired returns `False`
 /// with its signature never checked. Pass a time inside its validity period, such
 /// as the proof's `created` when that falls inside it, to learn whether it was
-/// genuinely signed and in force then. Credentials with `issuanceDate` are verified as without
-/// `at`, because their verifier has no check time; `verify_vc_detailed` reports that as
-/// `at_applied: False`.
+/// genuinely signed and in force then. `at` has no effect on credentials with `issuanceDate`:
+/// they are checked by an older verifier that always judges dates at the current time, so the
+/// result is the same as without `at`. `verify_vc_detailed` reports this as `at_applied: False`.
 /// Raises `ValueError` if `at` is not an RFC 3339 timestamp.
 #[pyfunction]
 #[pyo3(signature = (vc_json, statement_id=None, contexts=None, at=None))]

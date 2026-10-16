@@ -30,8 +30,9 @@ changes since the preceding stable tag.
   `unresolved_context`, `unresolved_key` (the last three: the proof could not be
   completed), `unverifiable` (could not be completed, for another reason) or
   `legacy_rejected`. Every reason is a rejection, never "not checked".
-  `at_applied` is `False` when `at` was given to a credential with `issuanceDate`,
-  which is judged now, or when the credential was never checked.
+  `at_applied` is `False` when the credential was never checked, and when `at` was
+  given to a credential with `issuanceDate`: `at` has no effect on those, because
+  an older verifier checks them and always judges dates at the current time.
   ([#99](https://github.com/eqtylab/integrity-py/pull/99))
 - A changelog and contributor instructions for documenting PRs and releases.
   ([#83](https://github.com/eqtylab/integrity-py/pull/83))
