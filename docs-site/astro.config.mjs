@@ -43,24 +43,13 @@ export default defineConfig({
         // highest is the current release, and waits until a newer release makes it old.
         folders,
       },
-      repository: { url: "https://github.com/eqtylab/integrity-py" },
-      license: "Apache 2.0",
-      header: {
-        links: [
-          {
-            label: "GitHub",
-            href: "https://github.com/eqtylab/integrity-py",
-            icon: "simple-icons:github",
-            external: true,
-          },
-          {
-            label: "Changelog",
-            href: "https://github.com/eqtylab/integrity-py/blob/main/CHANGELOG.md",
-            external: true,
-          },
-        ],
+      // No `repository`: reports go to the support portal, the same as the other EQTY Lab docs sites
+      feedback: "https://support.eqtylab.io",
+      license: {
+        name: "Apache 2.0",
+        href: "https://github.com/eqtylab/integrity-py/blob/main/LICENSE",
       },
-      footer: {
+      header: {
         links: [
           {
             label: "GitHub",

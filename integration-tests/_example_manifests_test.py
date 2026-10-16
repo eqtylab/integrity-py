@@ -101,6 +101,7 @@ def normalize_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
 def _run_example(example: ExampleCase, workdir: Path) -> None:
     env = os.environ.copy()
     env.pop("PYTHONPATH", None)
+    env["EQTY_TIMESTAMP"] = "2021-10-01T00:00:00Z"
     # Deliberately do NOT pre-create workdir/manifests. Examples export into
     # ./manifests/, and Context.export() is responsible for creating it. Creating
     # it here hid the fact that export() did not, so every example worked in CI
