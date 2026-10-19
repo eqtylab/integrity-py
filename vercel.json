@@ -23,9 +23,11 @@
     { "source": "/(2\\.2\\.0)/(.*)\\.html", "destination": "/v2.2/$2/", "permanent": true },
     { "source": "/(2\\.2\\.0)/(.*/)", "destination": "/v2.2/$2", "permanent": true },
     { "source": "/(2\\.2\\.0)(/?)", "destination": "/v2.2/", "permanent": true },
+    { "source": "/(2\\.4\\.[0-9]+|latest|dev)/install/min-version\\.html", "destination": "/install/requirements/", "permanent": true },
     { "source": "/(2\\.4\\.[0-9]+|latest|dev)/(.*)index\\.html", "destination": "/$2", "permanent": true },
     { "source": "/(2\\.4\\.[0-9]+|latest|dev)/(.*)\\.html", "destination": "/$2/", "permanent": true },
     { "source": "/(2\\.4\\.[0-9]+|latest|dev)/(.*/)", "destination": "/$2", "permanent": true },
-    { "source": "/(2\\.4\\.[0-9]+|latest|dev)(/?)", "destination": "/", "permanent": true }
+    { "source": "/(2\\.4\\.[0-9]+|latest|dev)(/?)", "destination": "/", "permanent": true },
+    { "source": "/install/min-version(/?)", "destination": "/install/requirements/", "permanent": true }
   ]
 }

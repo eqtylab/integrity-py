@@ -1,5 +1,5 @@
 label: Install
 order:
-  - min-version
+  - requirements
   - package-managers
   - source
