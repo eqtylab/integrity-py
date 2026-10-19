@@ -13,8 +13,8 @@
   "dependencies": {
     "@astrojs/mdx": "^8.0.3",
     "@astrojs/react": "^7.0.1",
-    "@eqtylab/docs": "^0.14.1",
-    "@eqtylab/equality": "^4.1.0",
+    "@eqtylab/docs": "^0.15.0",
+    "@eqtylab/equality": "^4.13.1",
     "astro": "^7.3.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
