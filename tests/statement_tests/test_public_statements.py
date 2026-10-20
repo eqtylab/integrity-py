@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import unittest
 
 from eqty_sdk import (
@@ -10,6 +11,7 @@ from eqty_sdk import (
     Association,
     Signer,
     set_active_signer,
+    verify_statement,
 )
 from eqty_sdk._rust import PyAssociationType, get_cid_for_path, statements
 from tests import get_config_dir, setup_sdk
@@ -121,6 +123,21 @@ class PublicStatementTests(unittest.TestCase):
         )
         self.assertEqual(1, len(ids))
         self.assertTrue(ids[0].startswith("urn:cid:"))
+
+    def test_add_storage_statement_keeps_urns_and_dids(self):
+        entity = "urn:uuid:7f9c2ad4-34f0-4c3e-9a51-1d2b8f6e0c11"
+        did = "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"
+        for data, stored_on in [("bafkr-stored-data", entity), (entity, did)]:
+            ids = statements.add_storage_statement(data, stored_on, _skip_proof=True)
+            with sqlite3.connect(get_config_dir() / "graphs.db") as conn:
+                row = conn.execute(
+                    "SELECT statement FROM storage_statements WHERE id = ?", (str(ids[0]),)
+                ).fetchone()
+            self.assertTrue(verify_statement(row[0]))
+            statement = json.loads(row[0])
+            expected_data = data if data.startswith("urn:") else f"urn:cid:{data}"
+            self.assertEqual(expected_data, statement["data"])
+            self.assertEqual(stored_on, statement["storedOn"])
 
     def test_add_vc_statement(self):
         statement_id = statements.add_vc_statement("urn:cid:vc-subject")

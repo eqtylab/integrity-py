@@ -24,6 +24,13 @@ changes since the preceding stable tag.
   and PyPI publication, including manual releases.
   ([#83](https://github.com/eqtylab/integrity-py/pull/83))
 
+### Fixed
+
+- `add_storage_statement()` keeps a `data` or `stored_on` value that is already a
+  URN or DID, such as an entity's `urn:uuid:`, as association and metadata
+  statements do. It previously stored `urn:cid:urn:uuid:…`, so the statement no
+  longer pointed at the entity.
+
 ### Security
 
 - Raise the minimum `urllib3` version from `2.7.0` to `2.8.0` for security fixes.
