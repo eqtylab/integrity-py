@@ -54,7 +54,6 @@ changes since the preceding stable tag.
 - The pinned Rust toolchain moves from 1.89.0 to 1.94.1, to match `integrity`. The
   Nix shell now takes `cargo` and `clippy` from that toolchain rather than from
   nixpkgs. ([#99](https://github.com/eqtylab/integrity-py/pull/99))
-
 - The SDK docs moved to https://integrity-py.docs.eqtylab.io/, with the 2.0 to 2.4
   docs in its version picker. Links to the old GitHub Pages site redirect there.
   ([#91](https://github.com/eqtylab/integrity-py/pull/91),
