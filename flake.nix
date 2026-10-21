@@ -36,7 +36,6 @@
       {
         devShells.default = pkgs.mkShellNoCC {
           packages = with pkgs; [
-            cargo
             just
             maturin
             nodejs_22
@@ -49,7 +48,6 @@
             ruff
             rustfmt-nightly
             rust
-            rustPackages.clippy
             auditwheel
           ] ++ [
             pkgs-rust.prek
