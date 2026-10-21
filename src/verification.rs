@@ -9,7 +9,7 @@ use integrity::{
     vc,
 };
 use pyo3::{
-    exceptions::PyValueError,
+    exceptions::{PyTypeError, PyValueError},
     prelude::*,
     types::{PyAny, PyDict},
 };
@@ -255,7 +255,9 @@ async fn vc_rejection(
     }
 
     let outcome = vc::verify_vc_with_date_time(vc_json, contexts, at).await;
-    let at_applied = vc::at_applied(vc_json, at, &outcome);
+    // integrity's `at_applied` with no time is just "was it checked", and parses
+    // nothing; the legacy half is read from the value parsed above.
+    let at_applied = vc::at_applied(vc_json, None, &outcome) && !(at.is_some() && is_legacy(&vc));
     let rejection = outcome.err().map(|e| {
         log::debug!("VC proof did not verify: {e:#}");
         rejection_of(&e)
@@ -276,17 +278,58 @@ async fn vc_verifies(
         .is_none())
 }
 
-/// Parses the `at` argument: an RFC 3339 timestamp, or none for now.
-fn parse_at(at: Option<String>) -> PyResult<Option<DateTime<Utc>>> {
-    at.map(|t| {
-        DateTime::parse_from_rfc3339(&t)
-            .map(|d| d.with_timezone(&Utc))
-            .map_err(|e| {
-                PyValueError::new_err(format!("`at` is not an RFC 3339 timestamp: {t:?}: {e}"))
+/// integrity's `vc::is_legacy_vc`, read from an already-parsed credential: it has
+/// `issuanceDate` and names the W3C VC 2.0 context in an `@context` array. Such a
+/// credential is judged at the current time, whatever `at` says. A test pins
+/// this against `vc::is_legacy_vc`.
+fn is_legacy(vc: &Value) -> bool {
+    vc.get("issuanceDate").is_some()
+        && vc
+            .get("@context")
+            .and_then(Value::as_array)
+            .is_some_and(|contexts| {
+                contexts
+                    .iter()
+                    .any(|c| c.as_str() == Some("https://www.w3.org/ns/credentials/v2"))
             })
-    })
-    .transpose()
 }
+
+/// The `at` argument: an RFC 3339 string or a timezone-aware `datetime`.
+pub struct CheckTime(DateTime<Utc>);
+
+impl<'a, 'py> FromPyObject<'a, 'py> for CheckTime {
+    type Error = PyErr;
+
+    fn extract(obj: Borrowed<'a, 'py, PyAny>) -> PyResult<Self> {
+        let obj = obj.to_owned();
+        let text = if let Ok(text) = obj.extract::<String>() {
+            text
+        } else if obj.is_instance(&obj.py().import("datetime")?.getattr("datetime")?)? {
+            if obj.call_method0("utcoffset")?.is_none() {
+                return Err(PyValueError::new_err(
+                    "`at` is a naive datetime: give it a timezone, for example \
+                     datetime.now(timezone.utc)",
+                ));
+            }
+            // An aware datetime's ISO format is an RFC 3339 timestamp.
+            obj.call_method0("isoformat")?.extract::<String>()?
+        } else {
+            return Err(PyTypeError::new_err(format!(
+                "`at` must be an RFC 3339 string or a datetime, not {}",
+                obj.get_type().name()?
+            )));
+        };
+        DateTime::parse_from_rfc3339(&text)
+            .map(|d| CheckTime(d.with_timezone(&Utc)))
+            .map_err(|e| {
+                PyValueError::new_err(format!("`at` is not an RFC 3339 timestamp: {text:?}: {e}"))
+            })
+    }
+}
+
+/// What `verify_vc_detailed` returns: a dict with `valid`, `reason`, `detail` and
+/// `at_applied`, typed as the `VcVerification` TypedDict in the stubs.
+pub type VcVerification<'py> = Bound<'py, PyDict>;
 
 /// Verifies that a lineage statement's content still hashes to its `@id`.
 ///
@@ -347,15 +390,16 @@ pub fn verify_statement(
 /// is neither embedded nor supplied is never fetched — it reports `False`,
 /// alongside the other reasons a proof may not check out.
 ///
-/// `at`, an RFC 3339 timestamp, judges the credential's `validFrom` and
-/// `validUntil` at that moment instead of now. Those dates are checked before
+/// `at`, an RFC 3339 timestamp or a timezone-aware `datetime`, judges the credential's
+/// `validFrom` and `validUntil` at that moment instead of now. Those dates are checked before
 /// the proof, so without it a credential that has since expired returns `False`
 /// with its signature never checked. Pass a time inside its validity period, such
 /// as the proof's `created` when that falls inside it, to learn whether it was
 /// genuinely signed and in force then. `at` has no effect on credentials with `issuanceDate`:
 /// they are checked by an older verifier that always judges dates at the current time, so the
 /// result is the same as without `at`. `verify_vc_detailed` reports this as `at_applied: False`.
-/// Raises `ValueError` if `at` is not an RFC 3339 timestamp.
+/// Raises `ValueError` if `at` is a string that is not an RFC 3339 timestamp or a naive
+/// `datetime`, and `TypeError` if it is neither a string nor a `datetime`.
 #[pyfunction]
 #[pyo3(signature = (vc_json, statement_id=None, contexts=None, at=None))]
 pub fn verify_vc(
@@ -363,10 +407,10 @@ pub fn verify_vc(
     vc_json: String,
     statement_id: Option<String>,
     contexts: Option<HashMap<String, Py<PyAny>>>,
-    at: Option<String>,
+    at: Option<CheckTime>,
 ) -> PyResult<bool> {
     let contexts = contexts_to_json_text(py, contexts)?;
-    let at = parse_at(at)?;
+    let at = at.map(|t| t.0);
 
     py.detach(|| {
         get_runtime().block_on(vc_verifies(&vc_json, statement_id.as_deref(), contexts, at))
@@ -382,7 +426,8 @@ pub fn verify_vc(
 /// (the verifier's message, or None) and `at_applied` (bool). `at_applied` says
 /// whether the credential's dates were judged at `at` (or now, without `at`). It
 /// is False when the credential was never checked (`malformed`,
-/// `subject_mismatch`), and when `at` was given but the credential has
+/// `subject_mismatch`, or `unverifiable` when verification failed for an
+/// internal reason before any check), and when `at` was given but the credential has
 /// `issuanceDate`: its verifier judges dates only now, so `valid: True` then means
 /// valid now, not at `at`.
 ///
@@ -419,10 +464,10 @@ pub fn verify_vc_detailed<'py>(
     vc_json: String,
     statement_id: Option<String>,
     contexts: Option<HashMap<String, Py<PyAny>>>,
-    at: Option<String>,
-) -> PyResult<Bound<'py, PyDict>> {
+    at: Option<CheckTime>,
+) -> PyResult<VcVerification<'py>> {
     let contexts = contexts_to_json_text(py, contexts)?;
-    let at = parse_at(at)?;
+    let at = at.map(|t| t.0);
 
     let (rejection, at_applied) = py
         .detach(|| {
@@ -781,6 +826,25 @@ mod tests {
         assert!(!get_runtime()
             .block_on(vc_verifies(&vc_json, None, None, None))
             .unwrap());
+    }
+
+    #[test]
+    fn the_legacy_check_matches_integrity() {
+        let v2 = "https://www.w3.org/ns/credentials/v2";
+        for vc in [
+            json!({"@context": [v2], "issuanceDate": "2026-05-14T13:43:44Z"}),
+            json!({"@context": [v2, {"x": "urn:x"}], "issuanceDate": "2026-05-14T13:43:44Z"}),
+            json!({"@context": ["https://www.w3.org/2018/credentials/v1"], "issuanceDate": "x"}),
+            json!({"@context": v2, "issuanceDate": "2026-05-14T13:43:44Z"}),
+            json!({"@context": [v2], "validFrom": "2026-05-14T13:43:44Z"}),
+            json!({"issuanceDate": "2026-05-14T13:43:44Z"}),
+        ] {
+            assert_eq!(
+                is_legacy(&vc),
+                core_vc::is_legacy_vc(&vc.to_string()),
+                "{vc}"
+            );
+        }
     }
 
     #[test]

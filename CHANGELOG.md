@@ -18,13 +18,16 @@ changes since the preceding stable tag.
 
 ### Added
 
-- `verify_vc(..., at=...)`: judges a credential's `validFrom` / `validUntil` at an
-  RFC 3339 time instead of now. They are checked before the proof, so without it a
-  credential that has since expired returns `False` with its signature never
-  checked; at a time inside its validity period the signature is checked for real.
+- `verify_vc(..., at=...)`: judges a credential's `validFrom` / `validUntil` at a
+  given time instead of now, as an RFC 3339 string or a timezone-aware `datetime`
+  (a naive `datetime` raises `ValueError`). They are checked before the proof, so
+  without it a credential that has since expired returns `False` with its signature
+  never checked; at a time inside its validity period the signature is checked for
+  real.
   ([#99](https://github.com/eqtylab/integrity-py/pull/99))
 - `verify_vc_detailed`: the same check, returning
-  `{"valid", "reason", "detail", "at_applied"}` instead of a bool. `reason` is
+  `{"valid", "reason", "detail", "at_applied"}` instead of a bool, typed as the
+  `VcVerification` TypedDict in the stubs. `reason` is
   `expired`, `not_yet_valid`, `invalid_signature`, `missing_proof`, `invalid_proof`,
   `malformed`, `invalid_claims`, `subject_mismatch`, `unsupported_suite`,
   `unresolved_context`, `unresolved_key` (the last three: the proof could not be

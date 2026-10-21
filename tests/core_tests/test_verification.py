@@ -1,5 +1,6 @@
 import json
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 from eqty_sdk import verify_statement, verify_vc, verify_vc_detailed
@@ -223,10 +224,6 @@ class VerifyVcTests(unittest.TestCase):
             verify_vc(json.dumps(non_offline))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class VerifyVcAtTests(unittest.TestCase):
     """`at` judges validFrom/validUntil at that moment instead of now."""
 
@@ -248,6 +245,21 @@ class VerifyVcAtTests(unittest.TestCase):
     def test_at_must_be_rfc3339(self):
         with self.assertRaises(ValueError):
             verify_vc(json.dumps(DATED_VC), at="yesterday")
+
+    def test_at_takes_a_timezone_aware_datetime(self):
+        inside = datetime.fromisoformat(DATED_INSIDE.replace("Z", "+00:00"))
+        self.assertTrue(verify_vc(json.dumps(DATED_VC), at=inside))
+        self.assertTrue(verify_vc(json.dumps(DATED_VC), at=inside.astimezone()))
+        self.assertFalse(verify_vc(json.dumps(DATED_VC), at=datetime.now(timezone.utc)))
+
+    def test_a_naive_datetime_is_rejected(self):
+        naive = datetime.fromisoformat(DATED_INSIDE.replace("Z", ""))
+        with self.assertRaisesRegex(ValueError, "naive datetime"):
+            verify_vc(json.dumps(DATED_VC), at=naive)
+
+    def test_at_of_another_type_is_a_type_error(self):
+        with self.assertRaises(TypeError):
+            verify_vc(json.dumps(DATED_VC), at=1759258618)
 
 
 class VerifyVcDetailedTests(unittest.TestCase):
@@ -327,3 +339,7 @@ class VerifyVcDetailedTests(unittest.TestCase):
         without = {k: v for k, v in VALID_VC.items() if k != "credentialSubject"}
         with self.assertRaises(ValueError):
             verify_vc_detailed(json.dumps(without))
+
+
+if __name__ == "__main__":
+    unittest.main()
