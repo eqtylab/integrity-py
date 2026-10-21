@@ -33,5 +33,6 @@
   { "target": "eqty_sdk._rust.statements.add_vc_statement", "options": { "show_root_heading": true, "heading_level": 3 } },
   { "target": "eqty_sdk._rust.statements.add_model_signing_statement", "options": { "show_root_heading": true, "heading_level": 3 } },
   { "target": "eqty_sdk.verify_statement", "options": { "show_root_heading": true, "heading_level": 3 } },
-  { "target": "eqty_sdk.verify_vc", "options": { "show_root_heading": true, "heading_level": 3 } }
+  { "target": "eqty_sdk.verify_vc", "options": { "show_root_heading": true, "heading_level": 3 } },
+  { "target": "eqty_sdk.verify_vc_detailed", "options": { "show_root_heading": true, "heading_level": 3 } }
 ]
