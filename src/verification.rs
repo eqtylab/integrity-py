@@ -278,10 +278,12 @@ async fn vc_verifies(
         .is_none())
 }
 
-/// integrity's `vc::is_legacy_vc`, read from an already-parsed credential: it has
-/// `issuanceDate` and names the W3C VC 2.0 context in an `@context` array. Such a
-/// credential is judged at the current time, whatever `at` says. A test pins
-/// this against `vc::is_legacy_vc`.
+/// Whether a credential is a legacy (pre-ssi-0.16) one, checked on the
+/// already-parsed value: it has `issuanceDate` and lists the W3C VC 2.0 context
+/// in an `@context` array. This is the same rule as integrity's
+/// `vc::is_legacy_vc`, and a test checks that the two agree. A legacy
+/// credential's dates are always judged at the current time, so `at` has no
+/// effect on it.
 fn is_legacy(vc: &Value) -> bool {
     vc.get("issuanceDate").is_some()
         && vc
