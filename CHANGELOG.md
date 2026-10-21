@@ -16,6 +16,8 @@ changes since the preceding stable tag.
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-10-21
+
 ### Added
 
 - `verify_vc(..., at=...)`: judges a credential's `validFrom` / `validUntil` at a
@@ -52,6 +54,11 @@ changes since the preceding stable tag.
 - The pinned Rust toolchain moves from 1.89.0 to 1.94.1, to match `integrity`. The
   Nix shell now takes `cargo` and `clippy` from that toolchain rather than from
   nixpkgs. ([#99](https://github.com/eqtylab/integrity-py/pull/99))
+- The SDK docs moved to https://integrity-py.docs.eqtylab.io/, with the 2.0 to 2.4
+  docs in its version picker. Links to the old GitHub Pages site redirect there.
+  ([#91](https://github.com/eqtylab/integrity-py/pull/91),
+  [#97](https://github.com/eqtylab/integrity-py/pull/97),
+  [#100](https://github.com/eqtylab/integrity-py/pull/100))
 
 ### Security
 
@@ -359,7 +366,8 @@ Initial stable tag in this repository, establishing the Rust-backed Python SDK.
   [#26](https://github.com/eqtylab/integrity-py/pull/26),
   [#27](https://github.com/eqtylab/integrity-py/pull/27))
 
-[Unreleased]: https://github.com/eqtylab/integrity-py/compare/v2.4.2...main
+[Unreleased]: https://github.com/eqtylab/integrity-py/compare/v2.5.0...main
+[2.5.0]: https://github.com/eqtylab/integrity-py/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/eqtylab/integrity-py/compare/v2.4.1...v2.4.2
 [2.4.1]: https://github.com/eqtylab/integrity-py/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/eqtylab/integrity-py/compare/v2.3.0...v2.4.0
