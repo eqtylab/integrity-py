@@ -12,6 +12,7 @@ from eqty_sdk._rust import (
 add_data_statement = eqty_core_statements.add_data_statement
 add_association_statement = eqty_core_statements.add_association_statement
 add_computation_statement = eqty_core_statements.add_computation_statement
+otel_span_urn = eqty_core_statements.otel_span_urn
 add_did_statement = eqty_core_statements.add_did_statement
 add_entity_statement = eqty_core_statements.add_entity_statement
 add_metadata_statement = eqty_core_statements.add_metadata_statement
@@ -134,4 +135,5 @@ __all__ = [
     "add_metadata_statement",
     "add_storage_statement",
     "add_vc_statement",
+    "otel_span_urn",
 ]

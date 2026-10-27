@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
@@ -12,7 +13,7 @@ from eqty_sdk.asset import serialize_for_hashing
 from eqty_sdk.context import get_active_context
 from eqty_sdk.errors import UsageError
 from eqty_sdk.metadata import Metadata
-from eqty_sdk.statements import add_computation_statement
+from eqty_sdk.statements import add_computation_statement, otel_span_urn
 
 logger = logging.getLogger("eqty.sdk.computation")
 
@@ -31,6 +32,15 @@ def __cid_path__(path: Union[str, Path], _store: Optional[bool] = None) -> CID:
             raise UsageError(f"The input path '{resolved_path}' was not found.")
 
 
+def __rfc3339__(time: Union[datetime, str]) -> str:
+    """Formats a timezone-aware datetime as RFC 3339; a string is passed through as given."""
+    if isinstance(time, str):
+        return time
+    if time.tzinfo is None or time.utcoffset() is None:
+        raise ValueError("Computation times must be timezone-aware.")
+    return time.isoformat()
+
+
 class Computation:
     def __init__(self):
         raise TypeError("Use Computation.new() to create instances of this class.")
@@ -47,6 +57,11 @@ class Computation:
         self._input_cids: List[CID] = []
         self._output_cids: List[CID] = []
         self._computation_cid: Union[CID, None] = None
+        self._start_time: Optional[str] = None
+        self._end_time: Optional[str] = None
+        self._span: Optional[str] = None
+        self._parent_span: Optional[str] = None
+        self._statement_id: Optional[CID] = None
         self._skip_proof = _skip_proof
         self._store = _store
 
@@ -175,15 +190,51 @@ class Computation:
         self._computation_cid = cid
         return self
 
+    def set_start_time(self, time: Union[datetime, str]) -> "Computation":
+        """Sets when the computation started, as a timezone-aware datetime or an RFC 3339 string.
+
+        This is when the work began, not when the statement is registered.
+        """
+        self._start_time = __rfc3339__(time)
+        return self
+
+    def set_end_time(self, time: Union[datetime, str]) -> "Computation":
+        """Sets when the computation ended, as a timezone-aware datetime or an RFC 3339 string."""
+        self._end_time = __rfc3339__(time)
+        return self
+
+    def set_span(
+        self, trace_id: str, span_id: str, parent_span_id: Optional[str] = None
+    ) -> "Computation":
+        """Records which OpenTelemetry span this computation was, and the span it ran inside.
+
+        Takes the W3C trace-context hex IDs (32 and 16 digits) and stores each span as a
+        `urn:uuid` derived from the trace and span ID (see `otel_span_urn`). A child names
+        its parent, so it can be finalized as soon as it ends, before its parent has.
+        """
+        self._span = otel_span_urn(trace_id, span_id)
+        self._parent_span = otel_span_urn(trace_id, parent_span_id) if parent_span_id else None
+        return self
+
+    @property
+    def statement_id(self) -> Optional[CID]:
+        """The ComputationRegistration statement ID, once finalized."""
+        return self._statement_id
+
     def finalize(self) -> "Computation":
         """Creates the computation statement, and adds a metadata statement for the computation statement."""
         statement_ids = add_computation_statement(
             inputs=self._input_cids,
             outputs=self._output_cids,
             computation=self._computation_cid,
+            start_time=self._start_time,
+            end_time=self._end_time,
+            span=self._span,
+            parent_span=self._parent_span,
             _skip_proof=self._skip_proof,
             context=self._ctx,
         )
+        self._statement_id = statement_ids[0]
 
         self._metadata.create_statement(statement_ids[0], self._skip_proof, context=self._ctx)
 
