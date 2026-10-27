@@ -579,7 +579,6 @@ checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
 [[package]]
 name = "cacaos"
 version = "0.5.1"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "async-trait",
  "hex",
@@ -681,7 +680,6 @@ dependencies = [
 [[package]]
 name = "cid"
 version = "0.8.6"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "multibase 0.9.2",
  "multihash 0.16.3",
@@ -2724,7 +2722,6 @@ dependencies = [
 [[package]]
 name = "integrity"
 version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "integrity-blob",
  "integrity-cid",
@@ -2741,7 +2738,6 @@ dependencies = [
 [[package]]
 name = "integrity-blob"
 version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2755,7 +2751,6 @@ dependencies = [
 [[package]]
 name = "integrity-cid"
 version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "anyhow",
  "blake3",
@@ -2774,7 +2769,6 @@ dependencies = [
 [[package]]
 name = "integrity-dsse"
 version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2786,7 +2780,6 @@ dependencies = [
 [[package]]
 name = "integrity-intoto-attestation"
 version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2802,7 +2795,6 @@ dependencies = [
 [[package]]
 name = "integrity-jsonld"
 version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "anyhow",
  "blake3",
@@ -2826,7 +2818,6 @@ dependencies = [
 [[package]]
 name = "integrity-lineage-models"
 version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2849,12 +2840,12 @@ dependencies = [
  "serde_json",
  "ssi 0.16.0",
  "utoipa",
+ "uuid",
 ]
 
 [[package]]
 name = "integrity-model-signing"
 version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "anyhow",
  "bs58 0.5.1",
@@ -2874,7 +2865,6 @@ dependencies = [
 [[package]]
 name = "integrity-signer"
 version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2897,7 +2887,6 @@ dependencies = [
 [[package]]
 name = "integrity-sigstore"
 version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "serde",
  "serde_json",
@@ -2906,7 +2895,6 @@ dependencies = [
 [[package]]
 name = "integrity-vc"
 version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3585,7 +3573,6 @@ checksum = "6800badb6cb2082ffd7b6a67e6125bb39f18782f793520caee8cb8846be06112"
 [[package]]
 name = "libipld"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "async-trait",
  "cached",
@@ -3604,7 +3591,6 @@ dependencies = [
 [[package]]
 name = "libipld-cbor"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "byteorder",
  "libipld-core",
@@ -3627,7 +3613,6 @@ dependencies = [
 [[package]]
 name = "libipld-core"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "anyhow",
  "cid 0.8.6",
@@ -3641,7 +3626,6 @@ dependencies = [
 [[package]]
 name = "libipld-json"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "libipld-core",
  "multihash 0.16.3",
@@ -3652,7 +3636,6 @@ dependencies = [
 [[package]]
 name = "libipld-macro"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "libipld-core",
 ]
@@ -3941,7 +3924,6 @@ dependencies = [
 [[package]]
 name = "multihash"
 version = "0.16.3"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "blake2b_simd 1.0.4",
  "blake2s_simd",
@@ -5543,6 +5525,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha1_smol"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbfa15b3dddfee50a0fff136974b3e1bde555604ba463834a7eb7deb6417705d"
+
+[[package]]
 name = "sha2"
 version = "0.9.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5972,7 +5960,6 @@ dependencies = [
 [[package]]
 name = "ssi"
 version = "0.7.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "ssi-caips 0.1.0",
  "ssi-core 0.1.0",
@@ -6756,7 +6743,6 @@ dependencies = [
 [[package]]
 name = "ssi-ucan"
 version = "0.1.1"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "base64 0.12.3",
  "chrono",
@@ -6803,7 +6789,6 @@ dependencies = [
 [[package]]
 name = "ssi-vc"
 version = "0.2.1"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
 dependencies = [
  "async-trait",
  "base64 0.12.3",
@@ -7618,6 +7603,7 @@ dependencies = [
  "getrandom 0.4.2",
  "js-sys",
  "serde_core",
+ "sha1_smol",
  "wasm-bindgen",
 ]
 

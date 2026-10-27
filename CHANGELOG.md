@@ -16,6 +16,18 @@ changes since the preceding stable tag.
 
 ## [Unreleased]
 
+### Added
+
+- `Computation.set_start_time`, `Computation.set_end_time` and `Computation.set_span`,
+  and the matching `start_time`, `end_time`, `span` and `parent_span` arguments of
+  `add_computation_statement`. A computation can record when it ran (separate from
+  when its statement was registered), which OpenTelemetry span it was, and the span
+  it ran inside. `set_span` takes the trace, span and parent span IDs and stores each
+  span as a `urn:uuid` derived from the trace and span ID (`eqty_sdk.statements.otel_span_urn`).
+  A child names its parent, so every computation can be finalized as soon as it ends.
+  `Computation.statement_id` exposes a finalized computation's statement ID. Requires
+  the integrity computation context, which exports embed in the manifest's `contexts`.
+
 ## [2.5.0] - 2026-10-21
 
 ### Added

@@ -374,9 +374,17 @@ class statements:
         *,
         operated_by: Optional[str] = None,
         executed_on: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        span: Optional[str] = None,
+        parent_span: Optional[str] = None,
         _skip_proof: Optional[bool] = None,
         context: Optional[_Context] = None,
     ) -> List[_CID]: ...
+    @staticmethod
+    def otel_span_urn(trace_id: str, span_id: str) -> str:
+        """The `urn:uuid` that identifies an OpenTelemetry span: a version 5 UUID of `"{trace_id}/{span_id}"`, so a parent's is known from the `traceparent` alone."""
+        ...
     @staticmethod
     def add_data_statement(
         data: List[_CID], *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None
