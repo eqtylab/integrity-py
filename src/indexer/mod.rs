@@ -6,6 +6,7 @@ use std::{
     collections::HashMap,
     env, fmt,
     fs::File,
+    io::BufReader,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -230,12 +231,13 @@ impl Context {
     pub fn import_manifest(&self, py: Python, path: PathBuf) -> PyResult<()> {
         log::info!("importing manifest {}", self.id);
         with_cfg!(py, |ctx| {
-            let bytes = std::fs::read(&path)
+            let file = File::open(&path)
                 .map_err(|e| anyhow::anyhow!("Failed to open manifest file: {e}"))?;
-            let manifest: Manifest = serde_json::from_slice(&bytes).context(format!(
-                "Failed to deserialize manifest from file: {}",
-                path.clone().display()
-            ))?;
+            let manifest: Manifest =
+                serde_json::from_reader(BufReader::new(file)).context(format!(
+                    "Failed to deserialize manifest from file: {}",
+                    path.clone().display()
+                ))?;
 
             log::debug!(
                 "Importing manifest version {} with {} statements and {} blobs into graph {}",
@@ -268,15 +270,9 @@ impl Context {
                     .with_context(|| format!("Failed to store manifest blob '{cid}'"))?;
             }
 
-            for statement in manifest.statements.into_values() {
-                let statement_id = statement.get_id();
-                ctx.sql_lite
-                    .register_statement(&statement, &self.id)
-                    .await
-                    .with_context(|| {
-                        format!("Failed to register manifest statement '{statement_id}'")
-                    })?;
-            }
+            ctx.sql_lite
+                .register_statements_batch(manifest.statements.into_values(), &self.id)
+                .await?;
 
             log::info!("Manifest imported from {}", path.display());
             Ok::<_, anyhow::Error>(())
