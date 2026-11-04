@@ -16,6 +16,13 @@ changes since the preceding stable tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- `Context.import_manifest` reads the manifest file in one call instead of one
+  byte per read syscall, so large manifests import about 50x faster: a 13 MB
+  manifest dropped from 11.7 s to 0.22 s. The imported statements and blobs are
+  unchanged.
+
 ## [2.5.0] - 2026-10-21
 
 ### Added
