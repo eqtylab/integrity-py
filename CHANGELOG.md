@@ -16,6 +16,8 @@ changes since the preceding stable tag.
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-11-05
+
 ### Changed
 
 - `Context.import_manifest` is atomic for statements: if any statement fails to
@@ -27,12 +29,13 @@ changes since the preceding stable tag.
 
 - `Context.import_manifest` registers all statements in one SQLite transaction
   instead of committing once per statement, so imports with many statements are
-  about 20x faster: a manifest with 15,000 statements dropped from 21 s to 1 s.
+  about 20x faster: a manifest with 15,000 statements dropped from 21 s to 1 s,
+  and a 13 MB manifest with 135 statements from 0.21 s to 0.02 s.
   ([#117](https://github.com/eqtylab/integrity-py/pull/117))
 - `Context.import_manifest` reads the manifest file in one call instead of one
   byte per read syscall, so large manifests import about 50x faster: a 13 MB
   manifest dropped from 11.7 s to 0.22 s. The imported statements and blobs are
-  unchanged.
+  unchanged. ([#116](https://github.com/eqtylab/integrity-py/pull/116))
 
 ## [2.5.0] - 2026-10-21
 
@@ -384,7 +387,8 @@ Initial stable tag in this repository, establishing the Rust-backed Python SDK.
   [#26](https://github.com/eqtylab/integrity-py/pull/26),
   [#27](https://github.com/eqtylab/integrity-py/pull/27))
 
-[Unreleased]: https://github.com/eqtylab/integrity-py/compare/v2.5.0...main
+[Unreleased]: https://github.com/eqtylab/integrity-py/compare/v2.5.1...main
+[2.5.1]: https://github.com/eqtylab/integrity-py/compare/v2.5.0...v2.5.1
 [2.5.0]: https://github.com/eqtylab/integrity-py/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/eqtylab/integrity-py/compare/v2.4.1...v2.4.2
 [2.4.1]: https://github.com/eqtylab/integrity-py/compare/v2.4.0...v2.4.1
