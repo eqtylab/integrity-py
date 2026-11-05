@@ -6,7 +6,6 @@ use std::{
     collections::HashMap,
     env, fmt,
     fs::File,
-    io::BufReader,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -231,13 +230,12 @@ impl Context {
     pub fn import_manifest(&self, py: Python, path: PathBuf) -> PyResult<()> {
         log::info!("importing manifest {}", self.id);
         with_cfg!(py, |ctx| {
-            let file = File::open(&path)
+            let bytes = std::fs::read(&path)
                 .map_err(|e| anyhow::anyhow!("Failed to open manifest file: {e}"))?;
-            let manifest: Manifest =
-                serde_json::from_reader(BufReader::new(file)).context(format!(
-                    "Failed to deserialize manifest from file: {}",
-                    path.clone().display()
-                ))?;
+            let manifest: Manifest = serde_json::from_slice(&bytes).context(format!(
+                "Failed to deserialize manifest from file: {}",
+                path.clone().display()
+            ))?;
 
             log::debug!(
                 "Importing manifest version {} with {} statements and {} blobs into graph {}",

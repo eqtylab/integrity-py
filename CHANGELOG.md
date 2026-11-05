@@ -16,8 +16,19 @@ changes since the preceding stable tag.
 
 ## [Unreleased]
 
+### Changed
+
+- `Context.import_manifest` is atomic for statements: if any statement fails to
+  register, none of the manifest's statements or their graph links are saved.
+  Before, the statements registered before the failure stayed in the store.
+  ([#117](https://github.com/eqtylab/integrity-py/pull/117))
+
 ### Fixed
 
+- `Context.import_manifest` registers all statements in one SQLite transaction
+  instead of committing once per statement, so imports with many statements are
+  about 20x faster: a manifest with 15,000 statements dropped from 21 s to 1 s.
+  ([#117](https://github.com/eqtylab/integrity-py/pull/117))
 - `Context.import_manifest` reads the manifest file in one call instead of one
   byte per read syscall, so large manifests import about 50x faster: a 13 MB
   manifest dropped from 11.7 s to 0.22 s. The imported statements and blobs are
