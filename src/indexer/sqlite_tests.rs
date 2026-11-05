@@ -863,6 +863,52 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_register_statements_batch_rolls_back_all_statements() -> Result<()> {
+        let db = setup_db().await?;
+        let graph = Context {
+            id: Uuid::new_v4(),
+            name: "batch".to_string(),
+            parent: None,
+        };
+        db.create_graph(&graph).await?;
+
+        let first = Statement::DataRegistration(
+            DataStatement::create(
+                vec!["urn:cid:first".to_string()],
+                "did:key:tester".to_string(),
+                None,
+            )
+            .await?,
+        );
+        let second = Statement::DataRegistration(
+            DataStatement::create(
+                vec!["urn:cid:second".to_string()],
+                "did:key:tester".to_string(),
+                None,
+            )
+            .await?,
+        );
+        sqlx::query(&format!(
+            "CREATE TRIGGER fail_second BEFORE INSERT ON data_statements \
+             WHEN NEW.id = '{}' BEGIN SELECT RAISE(ABORT, 'test failure'); END",
+            second.get_id()
+        ))
+        .execute(db.pool())
+        .await?;
+
+        let result = db
+            .register_statements_batch(vec![first, second], &graph.id)
+            .await;
+        assert!(result.is_err());
+        assert_eq!(data_statement_count(&db).await?, 0);
+        let links: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM statement_graph_link")
+            .fetch_one(db.pool())
+            .await?;
+        assert_eq!(links.0, 0);
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_retrieve_statements_includes_association_target_data_and_metadata() -> Result<()>
     {
         let db = setup_db().await?;

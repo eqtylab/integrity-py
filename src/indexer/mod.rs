@@ -268,15 +268,9 @@ impl Context {
                     .with_context(|| format!("Failed to store manifest blob '{cid}'"))?;
             }
 
-            for statement in manifest.statements.into_values() {
-                let statement_id = statement.get_id();
-                ctx.sql_lite
-                    .register_statement(&statement, &self.id)
-                    .await
-                    .with_context(|| {
-                        format!("Failed to register manifest statement '{statement_id}'")
-                    })?;
-            }
+            ctx.sql_lite
+                .register_statements_batch(manifest.statements.into_values(), &self.id)
+                .await?;
 
             log::info!("Manifest imported from {}", path.display());
             Ok::<_, anyhow::Error>(())
