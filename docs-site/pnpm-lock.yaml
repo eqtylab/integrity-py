@@ -116,11 +116,11 @@ importers:
         specifier: ^7.0.1
         version: 7.0.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1)
       '@eqtylab/docs':
-        specifier: ^0.15.0
-        version: 0.15.0(@astrojs/mdx@8.0.3(@astrojs/markdown-remark@7.3.2)(@astrojs/markdown-satteri@0.4.3)(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1)))(@astrojs/react@7.0.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.13.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@8.3.3(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+        specifier: ^0.17.0
+        version: 0.17.0(@astrojs/mdx@8.0.3(@astrojs/markdown-remark@7.3.2)(@astrojs/markdown-satteri@0.4.3)(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1)))(@astrojs/react@7.0.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@5.3.3(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@8.3.3(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       '@eqtylab/equality':
-        specifier: ^4.13.1
-        version: 4.13.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: ^5.3.3
+        version: 5.3.3(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       astro:
         specifier: ^7.3.6
         version: 7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1)
@@ -409,19 +409,19 @@ packages:
   '@emnapi/wasi-threads@1.2.3':
     resolution: {integrity: sha512-ELEBe8PsLvvJ6QMr0zLt8ffvOHW/dc1m3CEzNMg7aJUv3bMaoDtw2TXyDAwkYBuroxxuHEwhRTLJSe5sya547g==}
 
-  '@eqtylab/docs@0.15.0':
-    resolution: {integrity: sha512-+6Z/BxGjzlhkvFRVviIMKbGP8hIlbJ8qnVaaD82wsywDEVSG7XWeJiLIv8CwxmDY7r4ZcrI5MT/YKKvEfnoQdw==}
+  '@eqtylab/docs@0.17.0':
+    resolution: {integrity: sha512-jcx10aSngkyCzzAnkRPOUvL3BVNfoSskcizm7D6AszDSHESAsmyWSljYE5gw3+GR5Z+o5B7suDZsQHwNmLYbdA==}
     engines: {node: '>=22.12'}
     peerDependencies:
       '@astrojs/mdx': ^8.0.0
       '@astrojs/react': ^7.0.0
-      '@eqtylab/equality': ^4.1.0
+      '@eqtylab/equality': ^5.3.0
       astro: ^7.2.10
       react: ^18.2.0 || ^19.0.0
       react-dom: ^18.2.0 || ^19.0.0
 
-  '@eqtylab/equality@4.13.1':
-    resolution: {integrity: sha512-fui2Uub76NoS+B3Rx8aMThQk6uyZteKU7f6XTUnlUBsgMnpj5gZC7z+2G1VL76LQXOf+xpChRTgOTGG7vGoRSA==}
+  '@eqtylab/equality@5.3.3':
+    resolution: {integrity: sha512-gCyjrSbPMc9YnqFuCnt4igC4zjVQq2/sZkacU8akcbY6GXUdWk6wIb5GZq+NuAZylm+gi9ntLvFnIjsvvffimA==}
     peerDependencies:
       react: ^18.2.0 || ^19.0.0
       react-dom: ^18.2.0 || ^19.0.0
@@ -1306,19 +1306,6 @@ packages:
 
   '@radix-ui/react-roving-focus@1.1.19':
     resolution: {integrity: sha512-V9jI6hDjT7l3jsCQD9bLNvDLM3tH/gdbOTp7Tefp3hbbgCGQoK7tUvrWiRlcoBHIZ809ElXwNQwVo0B98LuTXQ==}
-    peerDependencies:
-      '@types/react': '*'
-      '@types/react-dom': '*'
-      react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
-      react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-      '@types/react-dom':
-        optional: true
-
-  '@radix-ui/react-scroll-area@1.2.18':
-    resolution: {integrity: sha512-Zn5Cd171wxsO3Dfg8HaW6RifTb9CYTKQJHs/G4+LN1GfmJpaQMZQyQxMprVPHpaz7QY4l9BxK2JwQuzHsXC8nA==}
     peerDependencies:
       '@types/react': '*'
       '@types/react-dom': '*'
@@ -3183,12 +3170,6 @@ packages:
       '@types/react':
         optional: true
 
-  vaul@1.1.2:
-    resolution: {integrity: sha512-ZFkClGpWyI2WUQjdLJ/BaGuV6AVQiJ3uELGk3OYtP+B6yCO7Cmn9vPFXVJkRaGkOJu3m8bQMgtyzNHixULceQA==}
-    peerDependencies:
-      react: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
-      react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
-
   verkit@0.5.0:
     resolution: {integrity: sha512-u4J1hr6Y+C/hit34GwL3eIcUf3wngT8TlYUjK7tk0jxydKLAq3sYvifjdTDA6U3KCKRcQCQDGf/srjxfZF3l7g==}
     engines: {node: '>=18.12.0'}
@@ -3720,12 +3701,12 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@eqtylab/docs@0.15.0(@astrojs/mdx@8.0.3(@astrojs/markdown-remark@7.3.2)(@astrojs/markdown-satteri@0.4.3)(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1)))(@astrojs/react@7.0.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@4.13.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@8.3.3(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
+  '@eqtylab/docs@0.17.0(@astrojs/mdx@8.0.3(@astrojs/markdown-remark@7.3.2)(@astrojs/markdown-satteri@0.4.3)(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1)))(@astrojs/react@7.0.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1))(@eqtylab/equality@5.3.3(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite@8.3.3(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
     dependencies:
       '@astrojs/markdown-remark': 7.3.2
       '@astrojs/mdx': 8.0.3(@astrojs/markdown-remark@7.3.2)(@astrojs/markdown-satteri@0.4.3)(astro@7.3.6(@astrojs/markdown-remark@7.3.2)(jiti@2.7.0)(yaml@2.9.1))
       '@astrojs/react': 7.0.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(yaml@2.9.1)
-      '@eqtylab/equality': 4.13.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@eqtylab/equality': 5.3.3(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@fontsource/ibm-plex-mono': 5.3.0
       '@fontsource/inter': 5.3.0
       '@iconify-json/lucide': 1.2.140
@@ -3749,7 +3730,7 @@ snapshots:
       - supports-color
       - vite
 
-  '@eqtylab/equality@4.13.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@eqtylab/equality@5.3.3(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@radix-ui/react-accordion': 1.2.20(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@radix-ui/react-alert-dialog': 1.1.23(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -3762,7 +3743,6 @@ snapshots:
       '@radix-ui/react-popover': 1.1.23(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@radix-ui/react-progress': 1.1.16(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@radix-ui/react-radio-group': 1.4.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@radix-ui/react-scroll-area': 1.2.18(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@radix-ui/react-select': 2.3.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@radix-ui/react-separator': 1.1.15(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@radix-ui/react-slot': 1.3.3(@types/react@19.3.0)(react@19.3.0)
@@ -3782,7 +3762,6 @@ snapshots:
       react-truncate-inside: 1.0.3(react@19.3.0)
       tailwind-merge: 2.6.1
       tw-animate-css: 1.4.0
-      vaul: 1.1.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
     transitivePeerDependencies:
       - '@emotion/is-prop-valid'
       - '@types/react'
@@ -4526,23 +4505,6 @@ snapshots:
       '@radix-ui/react-use-callback-ref': 1.1.4(@types/react@19.3.0)(react@19.3.0)
       '@radix-ui/react-use-controllable-state': 1.2.6(@types/react@19.3.0)(react@19.3.0)
       '@radix-ui/react-use-is-hydrated': 0.1.3(@types/react@19.3.0)(react@19.3.0)
-      '@radix-ui/react-use-layout-effect': 1.1.4(@types/react@19.3.0)(react@19.3.0)
-      react: 19.3.0
-      react-dom: 19.3.0(react@19.3.0)
-    optionalDependencies:
-      '@types/react': 19.3.0
-      '@types/react-dom': 19.3.0(@types/react@19.3.0)
-
-  '@radix-ui/react-scroll-area@1.2.18(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
-    dependencies:
-      '@radix-ui/number': 1.1.3
-      '@radix-ui/primitive': 1.1.7
-      '@radix-ui/react-compose-refs': 1.1.5(@types/react@19.3.0)(react@19.3.0)
-      '@radix-ui/react-context': 1.2.2(@types/react@19.3.0)(react@19.3.0)
-      '@radix-ui/react-direction': 1.1.4(@types/react@19.3.0)(react@19.3.0)
-      '@radix-ui/react-presence': 1.1.10(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@radix-ui/react-primitive': 2.1.10(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@radix-ui/react-use-callback-ref': 1.1.4(@types/react@19.3.0)(react@19.3.0)
       '@radix-ui/react-use-layout-effect': 1.1.4(@types/react@19.3.0)(react@19.3.0)
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
@@ -6787,15 +6749,6 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       '@types/react': 19.3.0
-
-  vaul@1.1.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
-    dependencies:
-      '@radix-ui/react-dialog': 1.1.23(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      react: 19.3.0
-      react-dom: 19.3.0(react@19.3.0)
-    transitivePeerDependencies:
-      - '@types/react'
-      - '@types/react-dom'
 
   verkit@0.5.0: {}
 
