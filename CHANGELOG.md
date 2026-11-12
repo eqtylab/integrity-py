@@ -24,7 +24,8 @@ changes since the preceding stable tag.
   cannot hold are now written as `%XX`. Other platforms are unchanged.
 - Windows: a directory's CID named its files with `\`, so the same directory got a
   different CID on Windows than on Linux and macOS. Files are now named with `/` on
-  every platform (integrity `win` branch).
+  every platform (integrity `win` branch). CIDs computed on Windows for directories
+  with subdirectories change; CIDs computed on Linux and macOS are unchanged.
 
 ## [2.5.1] - 2026-11-05
 
