@@ -16,6 +16,16 @@ changes since the preceding stable tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- Windows: creating a signer without a name failed with "The filename, directory
+  name, or volume label syntax is incorrect (os error 123)", because its key file
+  was named after its `did:key:` DID. On Windows, characters that file names
+  cannot hold are now written as `%XX`. Other platforms are unchanged.
+- Windows: a directory's CID named its files with `\`, so the same directory got a
+  different CID on Windows than on Linux and macOS. Files are now named with `/` on
+  every platform (integrity `win` branch).
+
 ## [2.5.1] - 2026-11-05
 
 ### Changed
