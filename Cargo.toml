@@ -36,8 +36,3 @@ uuid = { version = "1.4", features = ["v4", "js", "serde"] }
 
 [dev-dependencies]
 tempfile = "3"
-
-# Windows fixes in integrity (directory CIDs named with '/' on every platform), checked out
-# next to this repo on its `win` branch. Drop this once those fixes ship in an integrity tag.
-[patch."https://github.com/eqtylab/integrity"]
-integrity = { path = "../integrity" }
