@@ -16,13 +16,83 @@ changes since the preceding stable tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- A `vcomp_notary` signer reuses one HTTP client to check the notary's signing
+  key instead of building one before every credential, so writing a manifest
+  through a notary is faster: a request with 14 credentials dropped from 919 ms
+  to 305 ms, close to the 287 ms it takes with a local key. Key rotation is
+  still detected before each credential.
+
+## [2.5.1] - 2026-11-05
+
+### Changed
+
+- `Context.import_manifest` is atomic for statements: if any statement fails to
+  register, none of the manifest's statements or their graph links are saved.
+  Before, the statements registered before the failure stayed in the store.
+  ([#117](https://github.com/eqtylab/integrity-py/pull/117))
+
+### Fixed
+
+- `Context.import_manifest` registers all statements in one SQLite transaction
+  instead of committing once per statement, so imports with many statements are
+  about 20x faster: a manifest with 15,000 statements dropped from 21 s to 1 s,
+  and a 13 MB manifest with 135 statements from 0.21 s to 0.02 s.
+  ([#117](https://github.com/eqtylab/integrity-py/pull/117))
+- `Context.import_manifest` reads the manifest file in one call instead of one
+  byte per read syscall, so large manifests import about 50x faster: a 13 MB
+  manifest dropped from 11.7 s to 0.22 s. The imported statements and blobs are
+  unchanged. ([#116](https://github.com/eqtylab/integrity-py/pull/116))
+
+## [2.5.0] - 2026-10-21
+
 ### Added
 
+- `verify_vc(..., at=...)`: judges a credential's `validFrom` / `validUntil` at a
+  given time instead of now, as an RFC 3339 string or a timezone-aware `datetime`
+  (a naive `datetime` raises `ValueError`). They are checked before the proof, so
+  without it a credential that has since expired returns `False` with its signature
+  never checked; at a time inside its validity period the signature is checked for
+  real.
+  ([#99](https://github.com/eqtylab/integrity-py/pull/99))
+- `verify_vc_detailed`: the same check, returning
+  `{"valid", "reason", "detail", "at_applied"}` instead of a bool, typed as the
+  `VcVerification` TypedDict in the stubs. `reason` is
+  `expired`, `not_yet_valid`, `invalid_signature`, `missing_proof`, `invalid_proof`,
+  `malformed`, `invalid_claims`, `subject_mismatch`, `unsupported_suite`,
+  `unresolved_context`, `unresolved_key` (the last three: the proof could not be
+  completed), `unverifiable` (could not be completed, for another reason) or
+  `legacy_rejected`. Every reason is a rejection, never "not checked".
+  `at_applied` is `False` when the credential was never checked, and when `at` was
+  given to a credential with `issuanceDate`: `at` has no effect on those, because
+  an older verifier checks them and always judges dates at the current time.
+  ([#99](https://github.com/eqtylab/integrity-py/pull/99))
 - A changelog and contributor instructions for documenting PRs and releases.
   ([#83](https://github.com/eqtylab/integrity-py/pull/83))
 - A CI check requiring a matching changelog heading before stable release builds
   and PyPI publication, including manual releases.
   ([#83](https://github.com/eqtylab/integrity-py/pull/83))
+
+### Changed
+
+- The `integrity` dependency moves from `v0.0.17` to `v0.0.19`, which brings
+  `verify_vc_at` and the typed verification reasons above, and drops iroh's
+  networking stack from the build.
+  ([#99](https://github.com/eqtylab/integrity-py/pull/99))
+- The pinned Rust toolchain moves from 1.89.0 to 1.94.1, to match `integrity`. The
+  Nix shell now takes `cargo` and `clippy` from that toolchain rather than from
+  nixpkgs. ([#99](https://github.com/eqtylab/integrity-py/pull/99))
+- The SDK docs moved to https://integrity-py.docs.eqtylab.io/, with the 2.0 to 2.4
+  docs in its version picker. Links to the old GitHub Pages site redirect there.
+  ([#91](https://github.com/eqtylab/integrity-py/pull/91),
+  [#97](https://github.com/eqtylab/integrity-py/pull/97),
+  [#100](https://github.com/eqtylab/integrity-py/pull/100))
+
+### Security
+
+- Raise the minimum `urllib3` version from `2.7.0` to `2.8.0` for security fixes.
+  ([#101](https://github.com/eqtylab/integrity-py/pull/101))
 
 ## [2.4.2] - 2026-09-16
 
@@ -325,7 +395,9 @@ Initial stable tag in this repository, establishing the Rust-backed Python SDK.
   [#26](https://github.com/eqtylab/integrity-py/pull/26),
   [#27](https://github.com/eqtylab/integrity-py/pull/27))
 
-[Unreleased]: https://github.com/eqtylab/integrity-py/compare/v2.4.2...main
+[Unreleased]: https://github.com/eqtylab/integrity-py/compare/v2.5.1...main
+[2.5.1]: https://github.com/eqtylab/integrity-py/compare/v2.5.0...v2.5.1
+[2.5.0]: https://github.com/eqtylab/integrity-py/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/eqtylab/integrity-py/compare/v2.4.1...v2.4.2
 [2.4.1]: https://github.com/eqtylab/integrity-py/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/eqtylab/integrity-py/compare/v2.3.0...v2.4.0

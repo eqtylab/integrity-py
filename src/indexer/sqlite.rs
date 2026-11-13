@@ -573,6 +573,35 @@ impl Sqlite {
     pub async fn register_statement(&self, statement: &Statement, graph_id: &Uuid) -> Result<()> {
         log::trace!("Registering statement");
         let mut transaction = self.pool.begin().await?;
+        Self::register_statement_in_transaction(&mut transaction, statement, graph_id).await?;
+        transaction.commit().await?;
+        Ok(())
+    }
+
+    /// Imports a set of statements atomically, avoiding one SQLite commit per statement.
+    pub(crate) async fn register_statements_batch(
+        &self,
+        statements: impl IntoIterator<Item = Statement>,
+        graph_id: &Uuid,
+    ) -> Result<()> {
+        let mut transaction = self.pool.begin().await?;
+        for statement in statements {
+            let statement_id = statement.get_id();
+            Self::register_statement_in_transaction(&mut transaction, &statement, graph_id)
+                .await
+                .with_context(|| {
+                    format!("Failed to register manifest statement '{statement_id}'")
+                })?;
+        }
+        transaction.commit().await?;
+        Ok(())
+    }
+
+    async fn register_statement_in_transaction(
+        transaction: &mut Transaction<'_, SqliteDb>,
+        statement: &Statement,
+        graph_id: &Uuid,
+    ) -> Result<()> {
         match statement {
             Statement::ComputationRegistration(s) => {
                 let statement = serde_json::to_value(statement)?;
@@ -588,7 +617,7 @@ impl Sqlite {
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
             }
             Statement::DataRegistration(s) => {
@@ -605,7 +634,7 @@ impl Sqlite {
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
 
                 for data_item in s.data.to_vec_string() {
@@ -617,7 +646,7 @@ impl Sqlite {
                     )
                     .bind(&id)
                     .bind(data_item)
-                    .execute(&mut *transaction)
+                    .execute(&mut **transaction)
                     .await?;
                 }
             }
@@ -635,7 +664,7 @@ impl Sqlite {
                 .bind(&statement_data)
                 .bind(&s.registered_by)
                 .bind(&s.subject)
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
             }
             Statement::StorageRegistration(s) => {
@@ -653,7 +682,7 @@ impl Sqlite {
                 .bind(&statement_data)
                 .bind(&s.registered_by)
                 .bind(&s.data)
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
             }
             Statement::EntityRegistration(s) => {
@@ -670,7 +699,7 @@ impl Sqlite {
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
 
                 for entity in s.entity.to_vec_string() {
@@ -682,7 +711,7 @@ impl Sqlite {
                     )
                     .bind(&id)
                     .bind(entity)
-                    .execute(&mut *transaction)
+                    .execute(&mut **transaction)
                     .await?;
                 }
             }
@@ -711,7 +740,7 @@ impl Sqlite {
                 .bind(&s.registered_by)
                 .bind(&s.subject)
                 .bind(association_type)
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
 
                 for item in &s.association {
@@ -723,7 +752,7 @@ impl Sqlite {
                     )
                     .bind(&id)
                     .bind(item)
-                    .execute(&mut *transaction)
+                    .execute(&mut **transaction)
                     .await?;
                 }
             }
@@ -743,7 +772,7 @@ impl Sqlite {
                 .bind(&s.registered_by)
                 .bind(&s.subject)
                 .bind(&s.document)
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
             }
             Statement::CredentialSigstoreBundleRegistration(s) => {
@@ -761,7 +790,7 @@ impl Sqlite {
                 .bind(&statement_data)
                 .bind(&s.registered_by)
                 .bind(&s.subject)
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
             }
             Statement::CredentialRegistration(s) => {
@@ -788,7 +817,7 @@ impl Sqlite {
                 .bind(&statement_data)
                 .bind(&s.registered_by)
                 .bind(&subject_id)
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
             }
             Statement::CredentialDsseRegistration(s) => {
@@ -805,7 +834,7 @@ impl Sqlite {
                 .bind(&id)
                 .bind(&statement_data)
                 .bind(&s.registered_by)
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
             }
             Statement::DidRegistration(s) => {
@@ -827,17 +856,16 @@ impl Sqlite {
                 .bind(registered_by)
                 .bind(type_)
                 .bind(did)
-                .execute(&mut *transaction)
+                .execute(&mut **transaction)
                 .await?;
             }
         }
         Self::associate_statement_to_graph_in_transaction(
-            &mut transaction,
+            transaction,
             &statement.get_id(),
             graph_id,
         )
         .await?;
-        transaction.commit().await?;
         Ok(())
     }
 

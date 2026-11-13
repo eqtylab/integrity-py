@@ -424,29 +424,27 @@ jobs:
               core.setOutput('version', '');
             }
 
-  publish_release_docs:
+  # A tag is pushed before its wheel reports exist, so the tag's copy of the docs only holds
+  # placeholders. This saves the release's pages, with the real reports, as the version the site
+  # serves once a newer release ships, and opens a PR for it.
+  archive_release_docs:
     if: needs.release_metadata.outputs.publish_docs == 'true'
     needs: release_metadata
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
+      # To start CI and the docs build check on the archive branch: pushes made with
+      # github.token start no workflows.
+      actions: write
+    env:
+      VERSION: ${{ needs.release_metadata.outputs.version }}
     steps:
-      - name: Install Nix
-        uses: eqtylab-actions/install-nix-action@v31
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-
-      - name: Cachix
-        uses: eqtylab-actions/cachix-action@v16
-        with:
-          name: eqtylab
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          skipPush: true
-        continue-on-error: true
-
-      - name: Checkout Repo
+      - name: Checkout main
         uses: eqtylab-actions/checkout@v4
         with:
+          ref: main
+          # The script checks out the release tag in a worktree.
           fetch-depth: 0
 
       - name: Download x86_64 auditwheel report
@@ -454,12 +452,6 @@ jobs:
         with:
           name: auditwheel-report-ubuntu-latest
           path: docs/generated
-
-      - name: Download x86_64 wheel
-        uses: actions/download-artifact@v7
-        with:
-          name: linux-wheel-x86_64
-          path: dist
 
       - name: Download aarch64 auditwheel report
         uses: actions/download-artifact@v7
@@ -479,33 +471,22 @@ jobs:
           name: otool-report-macos-x86_64
           path: docs/generated
 
-      - name: Build nix shell
-        run: nix develop . -c true
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
 
-      - name: Rust Cache
-        uses: eqtylab-actions/rust-cache@v2
+      - name: Install the API renderer
+        run: python -m pip install griffe==1.14.0 griffe2md==1.2.5 mdformat==1.0.0
 
-      - name: Reset cached Cargo build scripts
-        run: rm -rf target/debug/build target/release/build
+      - name: Save the release's docs
+        # bash, not the default `bash -e`, so pipefail keeps the script's exit status through tee.
+        shell: bash
+        run: scripts/archive_release.sh "$VERSION" | tee "$RUNNER_TEMP/archive.log"
 
-      - name: Install dependencies
-        run: nix develop . -c just install
-
-      - name: Install released wheel into docs environment
-        run: nix develop . -c poetry run python -m pip install dist/*.whl
-
-      - name: Install mike
-        run: nix develop . -c poetry run python -m pip install mike
-
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Deploy versioned docs
+      # Safe to re-run while the report artifacts last (one day); see the script's header.
+      - name: Open the archive PR
+        shell: bash
         env:
-          VERSION: ${{ needs.release_metadata.outputs.version }}
-        run: |
-          git fetch origin gh-pages --depth=1 || true
-          nix develop . -c poetry run mike deploy --push --update-aliases "$VERSION" latest
-          nix develop . -c poetry run mike set-default --push latest
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/open_archive_pr.sh "$VERSION" "$RUNNER_TEMP/archive.log"

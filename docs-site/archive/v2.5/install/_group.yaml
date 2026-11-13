@@ -1,0 +1,5 @@
+label: Install
+order:
+  - requirements
+  - package-managers
+  - source

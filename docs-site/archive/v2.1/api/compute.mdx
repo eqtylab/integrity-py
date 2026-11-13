@@ -1,0 +1,110 @@
+---
+title: "Compute"
+description: "Compute nodes define the roots of a lineage graph in `eqty_sdk`."
+---
+
+Compute nodes define the roots of a lineage graph in `eqty_sdk`. When you use the `@compute` decorator, the SDK records the computation node along with its declared inputs and produced outputs, and that computation becomes the entry point for traversing the rest of the graph.
+
+This matters when exporting or viewing a manifest from a context: the compute nodes present in that context are used to build out the rest of the graph by following their linked assets, statements, and related lineage edges. In practice, that means compute-decorated functions are often the highest-value nodes to include when you want a manifest to tell a coherent end-to-end story.
+
+Most users will interact with compute through the `@compute` decorator, but the `Computation` object is useful when you want to construct or inspect computation metadata directly. Reach for it when you need more explicit control over the computation node itself, such as naming a computation, attaching metadata outside the decorator flow, or working with lineage structures in a more programmatic way.
+
+## `eqty_sdk.compute.Compute`
+
+```python
+Compute(func: Callable[..., Any], metadata: Optional[Dict[str, Any]] = None, _store: Optional[None] = None, ctx: Optional[Context] = None, **kwargs)
+```
+
+A wrapper class to hold and execute a function.
+
+This class is used to wrap a function and execute it with the provided arguments.
+
+Args:
+func: The function to be wrapped.
+metadata: Additional metadata associated with the computation.
+
+## `eqty_sdk.compute.Computation`
+
+```python
+Computation()
+```
+
+### `eqty_sdk.compute.Computation.add_input_cid`
+
+```python
+add_input_cid(cid: Union[List[CID], CID]) -> Computation
+```
+
+Adds the CID(s) to the computations input list.
+
+### `eqty_sdk.compute.Computation.add_input_path`
+
+```python
+add_input_path(path: Union[List[Path], List[str], Path, str]) -> Computation
+```
+
+Resolves the provide path(s) and adds the computed CID(s) to the computations input list.
+
+### `eqty_sdk.compute.Computation.add_input_object`
+
+```python
+add_input_object(obj: Union[List[Any], Any]) -> Computation
+```
+
+Serializes the obj(s), then calculates the CID for the serialized bytes. The CID(s) are appended to the computations input list.
+
+### `eqty_sdk.compute.Computation.add_output_cid`
+
+```python
+add_output_cid(cid: Union[List[CID], CID]) -> Computation
+```
+
+Adds the CID(s) to the computations output list.
+
+### `eqty_sdk.compute.Computation.add_output_path`
+
+```python
+add_output_path(path: Union[List[Path], List[str], Path, str]) -> Computation
+```
+
+Resolves the provide path(s) and adds the computed CID(s) to the computations output list.
+
+### `eqty_sdk.compute.Computation.add_output_object`
+
+```python
+add_output_object(obj: Union[List[Any], Any]) -> Computation
+```
+
+Serializes the obj(s), then calculates the CID for the serialized bytes. The CID(s) are appended to the computations output list.
+
+### `eqty_sdk.compute.Computation.set_computation_cid`
+
+```python
+set_computation_cid(cid: CID) -> Computation
+```
+
+Sets the computation CID with the provided cid.
+
+### `eqty_sdk.compute.Computation.set_computation_path`
+
+```python
+set_computation_path(path: Union[Path, str]) -> Computation
+```
+
+Resolves the path; cids the contents, then sets the computations CID.
+
+### `eqty_sdk.compute.Computation.set_computation_object`
+
+```python
+set_computation_object(obj: Any) -> Computation
+```
+
+Serializes the obj, then calculates the CID for the serialized bytes and sets the computations cid.
+
+### `eqty_sdk.compute.Computation.finalize`
+
+```python
+finalize() -> Computation
+```
+
+Creates the computation statement, and adds a metadata statement for the computation statement.

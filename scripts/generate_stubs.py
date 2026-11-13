@@ -35,6 +35,9 @@ class RustTypeMapper:
         "Uuid": "uuid.UUID",
         "uuid::Uuid": "uuid.UUID",
         "PyResult<()>": "None",
+        # verification.rs: the `at` argument, and what verify_vc_detailed returns.
+        "CheckTime": "Union[str, datetime]",
+        "VcVerification<'py>": "VcVerification",
     }
 
     @classmethod
@@ -524,6 +527,19 @@ class RustStubParser:
         return None, -1, -1
 
 
+# The dict verify_vc_detailed returns (`VcVerification` in verification.rs).
+VC_VERIFICATION_TYPED_DICT = [
+    "class VcVerification(TypedDict):",
+    '    """What `verify_vc_detailed` returns."""',
+    "",
+    "    valid: bool",
+    "    reason: Optional[str]",
+    "    detail: Optional[str]",
+    "    at_applied: bool",
+    "",
+]
+
+
 class StubGenerator:
     """Generates Python stub file from parsed Rust functions."""
 
@@ -538,9 +554,12 @@ class StubGenerator:
         lines.append('"""Type stubs for the eqty_sdk._rust module."""')
         lines.append("import eqty_sdk")
         lines.append("from pathlib import Path")
-        lines.append("from typing import Any, Dict, List, Optional, Tuple, Union")
+        lines.append("from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union")
+        lines.append("from datetime import datetime")
         lines.append("import uuid")
         lines.append("from os import PathLike")
+        lines.append("")
+        lines.extend(VC_VERIFICATION_TYPED_DICT)
         lines.append("")
 
         rust_module = modules.get("_rust")

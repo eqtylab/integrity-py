@@ -17,6 +17,7 @@ from eqty_sdk._rust import (
     signer as _signer_module,
     verify_statement,
     verify_vc,
+    verify_vc_detailed,
 )
 from eqty_sdk.asset import (
     Agent,
@@ -95,6 +96,7 @@ __all__ = [
     # Verification
     "verify_statement",
     "verify_vc",
+    "verify_vc_detailed",
     # Assets
     "Agent",
     "Asset",

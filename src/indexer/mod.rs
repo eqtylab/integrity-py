@@ -230,9 +230,9 @@ impl Context {
     pub fn import_manifest(&self, py: Python, path: PathBuf) -> PyResult<()> {
         log::info!("importing manifest {}", self.id);
         with_cfg!(py, |ctx| {
-            let file = File::open(&path)
+            let bytes = std::fs::read(&path)
                 .map_err(|e| anyhow::anyhow!("Failed to open manifest file: {e}"))?;
-            let manifest: Manifest = serde_json::from_reader(file).context(format!(
+            let manifest: Manifest = serde_json::from_slice(&bytes).context(format!(
                 "Failed to deserialize manifest from file: {}",
                 path.clone().display()
             ))?;
@@ -268,15 +268,9 @@ impl Context {
                     .with_context(|| format!("Failed to store manifest blob '{cid}'"))?;
             }
 
-            for statement in manifest.statements.into_values() {
-                let statement_id = statement.get_id();
-                ctx.sql_lite
-                    .register_statement(&statement, &self.id)
-                    .await
-                    .with_context(|| {
-                        format!("Failed to register manifest statement '{statement_id}'")
-                    })?;
-            }
+            ctx.sql_lite
+                .register_statements_batch(manifest.statements.into_values(), &self.id)
+                .await?;
 
             log::info!("Manifest imported from {}", path.display());
             Ok::<_, anyhow::Error>(())

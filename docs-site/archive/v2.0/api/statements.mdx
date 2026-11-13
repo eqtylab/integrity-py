@@ -1,0 +1,78 @@
+---
+title: "Statements"
+description: "These functions are for advanced use only."
+---
+
+These functions are for advanced use only. Prefer the higher-level SDK features such as assets, `@compute`, contexts, services, and signer workflows when those cover your use case. Reach for the low-level statement APIs when you need to construct or attach statements manually.
+
+## Functions
+
+## `add_data_statement`
+
+```python
+add_data_statement(data: List[_CID], *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None) -> List[_CID]
+```
+
+## `add_association_statement`
+
+```python
+add_association_statement(subject: str, association: List[str], association_type: _PyAssociationType, *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None) -> List[_CID]
+```
+
+### Association Types
+
+`ASSOCIATION_TYPES.CERTIFIES`
+
+`ASSOCIATION_TYPES.INCLUDES`
+
+`ASSOCIATION_TYPES.IS_INSTANCE_OF`
+
+## `add_computation_statement`
+
+```python
+add_computation_statement(inputs: List[_CID], outputs: List[_CID], computation: Optional[_CID] = None, *, operated_by: Optional[str] = None, executed_on: Optional[str] = None, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None) -> List[_CID]
+```
+
+## `add_did_statement`
+
+```python
+add_did_statement(did: str, *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None) -> List[_CID]
+```
+
+## `add_entity_statement`
+
+```python
+add_entity_statement(entity: str, *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None) -> List[_CID]
+```
+
+## `add_metadata_statement`
+
+```python
+add_metadata_statement(subject: str, metadata: str, *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None) -> List[_CID]
+```
+
+## `add_storage_statement`
+
+```python
+add_storage_statement(data: str, stored_on: str, *, operated_by: Optional[str] = None, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None) -> List[_CID]
+```
+
+Adds a storage statement linking data to a storage location.
+
+## `add_governance_statement`
+
+```python
+add_governance_statement(subject: str, document: str, *, _skip_proof: Optional[bool] = None, context: Optional[_Context] = None) -> List[_CID]
+```
+
+## `add_vc_statement`
+
+```python
+add_vc_statement(subject: str, *, timestamp: Optional[str] = None, context: Optional[_Context] = None) -> _CID
+```
+
+## `add_model_signing_statement`
+
+```python
+add_model_signing_statement(collection_cid: str, model_signing_name: str, *, context: Optional[_Context] = None) -> _CID
+```
