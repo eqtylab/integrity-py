@@ -16,6 +16,14 @@ changes since the preceding stable tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- A `vcomp_notary` signer no longer copies the notary's cached TEE manifest for
+  every credential it signs, or each time a Python call reads the SDK config.
+  Signing uses only the notary's URL and DID document. On an Azure SEV-SNP
+  host the manifest is 63 KB and each copy took 6 µs, about 0.2 ms over the
+  roughly 30 copies of a 14-credential request.
+
 ## [2.5.1] - 2026-11-05
 
 ### Changed
