@@ -491,9 +491,11 @@ impl Config {
     }
 }
 
+static NOTARY_HTTP: Lazy<reqwest::Client> = Lazy::new(reqwest::Client::new);
+
 /// Notary's current signing DID via /get_dids.
 async fn notary_container_did(url: &str) -> Result<String> {
-    let res: serde_json::Value = reqwest::Client::new()
+    let res: serde_json::Value = NOTARY_HTTP
         .get(format!("{url}/get_dids"))
         .send()
         .await?
