@@ -539,7 +539,14 @@ pub async fn sync_active_notary_signer(
     if signing_did == vcomp.did_doc.id {
         return Ok(SignerType::VCompNotarySigner(vcomp.clone()));
     }
-    let fresh = VCompNotarySigner::create(&vcomp.url, None).await?;
+    // Same connection: a notary that attributes per connection has attributed it already.
+    let fresh = VCompNotarySigner::create_with_connection(
+        &vcomp.url,
+        None,
+        vcomp.extra_headers,
+        vcomp.connection.clone(),
+    )
+    .await?;
     if fresh.did_doc.id != signing_did {
         bail!(
             "notary signing key {signing_did} does not match fetched credential key {}",
