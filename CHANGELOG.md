@@ -16,6 +16,15 @@ changes since the preceding stable tag.
 
 ## [Unreleased]
 
+### Added
+
+- `from_object(..., is_json=True)` on typed assets, `.with_context(ctx)` factories
+  and `Custom` canonicalizes a dict, list or JSON string with JCS (RFC 8785)
+  before hashing, so the CID ignores key order and formatting and matches JCS
+  CIDs computed elsewhere for the same JSON. These CIDs use the JSON-JCS codec
+  and differ from the default `from_object` CID for the same value.
+  ([#82](https://github.com/eqtylab/integrity-py/pull/82))
+
 ### Fixed
 
 - A `vcomp_notary` signer reuses one HTTP client to check the notary's signing

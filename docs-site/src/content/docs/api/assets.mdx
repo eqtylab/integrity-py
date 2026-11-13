@@ -140,6 +140,37 @@ class PromptTemplate:
 Use this with `Dataset.from_object(...)`, another typed asset's
 `from_object(...)`, or the `Computation` builder's object methods.
 
+### Canonical JSON with `is_json=True`
+
+By default, a dict or list is hashed as the bytes of `json.dumps(obj)`, so the
+same data with a different key order or whitespace gets a different CID. Pass
+`is_json=True` to canonicalize the value with
+[JCS (RFC 8785)](https://www.rfc-editor.org/rfc/rfc8785) before hashing instead:
+
+```python
+from eqty_sdk import Document
+
+request = Document.from_object({"model": "llama", "messages": []}, is_json=True)
+
+# a string is parsed as encoded JSON, so these get the same CID as above
+same = Document.from_object('{"messages":[],"model":"llama"}', is_json=True)
+```
+
+Use this when the CID has to match one computed by another system over the same
+JSON, such as a request or response body hashed by a service.
+
+`is_json=True` produces a different CID from the default for the same value: the
+CID is taken over the JCS bytes and uses the JSON-JCS codec, where the default
+uses the raw-binary codec. A string passed with `is_json=True` must be valid JSON.
+
+`is_json` is accepted by every typed asset's `from_object(...)`, by
+`.with_context(ctx).from_object(...)`, and by `Custom.from_object(...)`. The
+`Computation` builder's object methods and `@compute`'s automatic conversion of
+arguments and return values always use the default hashing. To record JCS-hashed
+JSON there, create the asset first and pass it to the `@compute` function, or pass
+its `cid` to the builder's `add_input_cid(...)`, `add_output_cid(...)` or
+`set_computation_cid(...)`.
+
 ## Adapt Runtime Values for `@compute`
 
 `to_eqty_asset()` is different from `serialize_for_hashing()`. It is an adapter
@@ -180,10 +211,14 @@ including `Binary`, `Dataset`, `Document`, `Model`, and `Prompt`.
 ### `eqty_sdk.asset.asset.TypedAsset.from_object`
 
 ```python
-from_object(obj: Any, _store: Optional[bool] = None, **kwargs) -> TypedAssetT
+from_object(obj: Any, _store: Optional[bool] = None, is_json: bool = False, **kwargs) -> TypedAssetT
 ```
 
 Create and register this asset type from an in-memory Python object.
+
+If `is_json` is set, `obj` (a dict/list, or a JSON-encoded string) is
+canonicalized with JCS before hashing, so the resulting CID is stable
+regardless of key order or formatting.
 {/* end generated */}
 
 {/* generated api eqty_sdk.asset.asset.TypedAsset.from_path */}
