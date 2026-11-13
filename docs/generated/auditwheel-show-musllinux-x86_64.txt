@@ -1,4 +1,4 @@
-eqty_sdk-2.5.0-cp38-abi3-musllinux_1_2_x86_64.whl is consistent with
+eqty_sdk-2.5.1-cp38-abi3-musllinux_1_2_x86_64.whl is consistent with
 the following platform tag: "musllinux_1_2_x86_64".
 
 The wheel references external versioned symbols in these
