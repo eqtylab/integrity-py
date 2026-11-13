@@ -23,6 +23,11 @@ changes since the preceding stable tag.
   through a notary is faster: a request with 14 credentials dropped from 919 ms
   to 305 ms, close to the 287 ms it takes with a local key. Key rotation is
   still detected before each credential.
+- A `vcomp_notary` signer no longer copies the notary's cached TEE manifest for
+  every credential it signs, or each time a Python call reads the SDK config.
+  Signing uses only the notary's URL and DID document. On an Azure SEV-SNP
+  host the manifest is 63 KB and each copy took 6 µs, about 0.2 ms over the
+  roughly 30 copies of a 14-credential request.
 
 ## [2.5.1] - 2026-11-05
 

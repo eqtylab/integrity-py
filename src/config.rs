@@ -212,7 +212,7 @@ pub struct Config {
     /// New connection to sqlite database for storing statements
     pub sql_lite: Arc<Sqlite>,
     /// Active signer only if it has been set during the session
-    pub active_signer: Option<ActiveSigner>,
+    pub active_signer: Option<Arc<ActiveSigner>>,
     /// Whether to store all blobs when computing CIDs
     pub store_all_blobs: bool,
     /// Default context used when no context is supplied.
@@ -393,9 +393,10 @@ impl Config {
     ///
     /// # Returns
     /// * `Result<String>` - The DID key string, or error if no active signer is set
-    pub fn get_active_signer_did_key(self) -> Result<String> {
+    pub fn get_active_signer_did_key(&self) -> Result<String> {
         let signer = self
             .active_signer
+            .as_ref()
             .ok_or_else(|| anyhow!("No active signer available"))?;
         Ok(signer.signer.get_did_doc().id)
     }
@@ -410,10 +411,10 @@ impl Config {
     pub async fn set_active_signer_async(signer: SignerType, name: Option<String>) -> Result<()> {
         let active_signer_name = name.unwrap_or_else(|| signer.get_did_doc().id.clone());
         Config::update_config_async(|ctx| {
-            ctx.active_signer = Some(ActiveSigner {
+            ctx.active_signer = Some(Arc::new(ActiveSigner {
                 name: active_signer_name,
                 signer,
-            });
+            }));
         })
         .await
     }
@@ -539,7 +540,7 @@ pub async fn sync_active_notary_signer(
 ) -> Result<SignerType> {
     let signing_did = notary_container_did(&vcomp.url).await?;
     if signing_did == vcomp.did_doc.id {
-        return Ok(SignerType::VCompNotarySigner(vcomp.clone()));
+        return Ok(signing_copy(vcomp));
     }
     let fresh = VCompNotarySigner::create(&vcomp.url, None).await?;
     if fresh.did_doc.id != signing_did {
@@ -549,9 +550,22 @@ pub async fn sync_active_notary_signer(
         );
     }
     register_vcomp_credentials(config, &fresh).await?;
-    let signer = SignerType::VCompNotarySigner(fresh);
-    Config::set_active_signer_async(signer.clone(), None).await?;
+    let signer = signing_copy(&fresh);
+    Config::set_active_signer_async(SignerType::VCompNotarySigner(fresh), None).await?;
     Ok(signer)
+}
+
+/// Copy the notary signer without the cached TEE manifest that signing never reads.
+fn signing_copy(vcomp: &VCompNotarySigner) -> SignerType {
+    SignerType::VCompNotarySigner(VCompNotarySigner {
+        version: vcomp.version.clone(),
+        url: vcomp.url.clone(),
+        did_doc: vcomp.did_doc.clone(),
+        operated_by: vcomp.operated_by.clone(),
+        executed_on: vcomp.executed_on.clone(),
+        credentials: None,
+        did_blobs: None,
+    })
 }
 
 /// Creates a VC statement for the given statement id and registers it to sqlite
@@ -566,7 +580,7 @@ pub async fn create_vc_for_statement(
         vc,
     };
 
-    let signer = match &config.active_signer {
+    let signer = match config.active_signer.as_deref() {
         Some(ActiveSigner {
             signer: SignerType::VCompNotarySigner(vcomp),
             ..
