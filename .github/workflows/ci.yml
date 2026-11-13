@@ -199,3 +199,52 @@ jobs:
           done
 
           exit "$failed"
+
+  # The release builds a Windows wheel, so test one: ':' in file names and '\' in paths only
+  # fail here. Linux runs the same steps so both OSes must match the same expected CIDs.
+  portable:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout Repo
+        uses: eqtylab-actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: '.python-version'
+
+      # Installs the version pinned in ./rust-toolchain, like the nix job.
+      - name: Setup Rust
+        run: rustup toolchain install
+
+      - name: Rust Cache
+        uses: eqtylab-actions/rust-cache@v2
+
+      - name: Install the extension
+        run: |
+          python -m pip install poetry
+          poetry config virtualenvs.in-project true
+          poetry env use python
+          poetry install --no-root
+          # Not ">=1.0,<2.0": poetry run goes through cmd.exe on Windows, which reads < and > as redirects.
+          poetry run pip install "maturin~=1.0"
+          poetry run maturin develop
+
+      - name: test-rs
+        run: cargo test
+
+      - name: test-py
+        run: poetry run python -m unittest discover tests
+
+      - name: test-example-manifests
+        env:
+          EQTY_SKIP_PROOF: "true"
+        run: poetry run python integration-tests/_example_manifests_test.py

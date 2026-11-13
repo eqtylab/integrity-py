@@ -2,3 +2,7 @@
 # of archived versions, stays expanded: a change to it is worth reading.
 docs-site/archive/** linguist-generated=true
 docs-site/archive/folders.json -linguist-generated
+
+# CIDs hash raw bytes: no CRLF conversion on Windows of files the tests hash.
+tests/fixtures/** -text
+examples/path-backed-assets.py -text

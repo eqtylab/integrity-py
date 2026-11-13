@@ -8,7 +8,7 @@ use pyo3::{exceptions::PyValueError, prelude::*, types::PyDict, Bound};
 
 use crate::{
     config::cfg_blocking,
-    signer::{Signer, SIGNER_DIR},
+    signer::{signer_path, Signer},
     statements, with_cfg, CID,
 };
 
@@ -115,7 +115,7 @@ fn build_did(
 
 fn load_saved_signer(name: &str) -> PyResult<SignerType> {
     let cfg = cfg_blocking()?;
-    let signer_file = cfg.app_dir.join(SIGNER_DIR).join(name);
+    let signer_file = signer_path(&cfg.app_dir, name);
     if !signer_file.exists() {
         return Err(PyValueError::new_err(format!(
             "No Signer named '{name}' found. Save or register the signer before using it."

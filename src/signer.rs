@@ -1,4 +1,9 @@
-use std::{ffi::CString, fs};
+use std::{
+    borrow::Cow,
+    ffi::CString,
+    fs,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Context as AnyhowContext;
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
@@ -318,7 +323,7 @@ fn set_active_signer(py: Python, signer: &Bound<'_, Signer>) -> PyResult<()> {
     let name = signer.borrow().name.clone();
     with_cfg!(py, |cfg| {
         log::debug!("Setting '{name}' as the active");
-        let signer_file = cfg.app_dir.join(SIGNER_DIR).join(&name);
+        let signer_file = signer_path(&cfg.app_dir, &name);
         if !signer_file.exists() {
             return Err(anyhow::anyhow!("No Signer named '{name}' found"));
         }
@@ -341,16 +346,53 @@ fn get_active_signer_did_key() -> PyResult<String> {
 /// Subdirectory name for storing signer key files.
 pub static SIGNER_DIR: &str = "signers";
 
+/// Returns the file name a signer called `name` is stored under.
+///
+/// An unnamed signer is stored under its DID (`did:key:z...`), and Windows rejects `:`
+/// and the other characters below in file names (os error 123). On Windows those
+/// characters, and `%` itself, are written as `%XX`. Other platforms keep the name as
+/// it is, so stores written by earlier releases still load.
+pub fn signer_file_name(name: &str) -> Cow<'_, str> {
+    if !cfg!(windows) {
+        return Cow::Borrowed(name);
+    }
+    let reserved = |c: char| {
+        c.is_ascii_control()
+            || matches!(
+                c,
+                '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*' | '%'
+            )
+    };
+    if !name.contains(reserved) {
+        return Cow::Borrowed(name);
+    }
+    let mut out = String::with_capacity(name.len() + 8);
+    for c in name.chars() {
+        if reserved(c) {
+            out.push_str(&format!("%{:02X}", c as u32));
+        } else {
+            out.push(c);
+        }
+    }
+    Cow::Owned(out)
+}
+
+/// Returns the path of the key file for the signer called `name` under `app_dir`.
+pub fn signer_path(app_dir: &Path, name: &str) -> PathBuf {
+    app_dir.join(SIGNER_DIR).join(&*signer_file_name(name))
+}
+
 fn signer_exists(name: Option<&str>) -> PyResult<()> {
     if name.is_none() {
         return Ok(());
     }
 
-    let signer_dir = cfg_blocking()?.app_dir.join(SIGNER_DIR);
     let name = name.unwrap();
     log::debug!("Adding Signer. Args= {name}");
 
-    if fs::exists(signer_dir.join(name)).expect("Error checking if signer exists") {
+    if fs::exists(signer_path(&cfg_blocking()?.app_dir, name))
+        .expect("Error checking if signer exists")
+    {
         // This is where a script that ran once already lands on its second run, so
         // point at the call that makes it idempotent rather than just saying no.
         let msg = format!(
@@ -416,7 +458,7 @@ fn maybe_load_signer(
 
     log::info!("Attempting to load exiting signer {name:?}");
 
-    let signer_path = cfg_blocking()?.app_dir.join(SIGNER_DIR).join(name);
+    let signer_path = signer_path(&cfg_blocking()?.app_dir, name);
     if !signer_path.exists() {
         return Ok(None);
     }
@@ -460,9 +502,29 @@ fn save_signer(signer: &SignerType, name: Option<&str>) -> PyResult<Signer> {
     let name = name.unwrap_or(&did_key);
     let signer_dir = cfg_blocking()?.app_dir.join(SIGNER_DIR);
     fs::create_dir_all(signer_dir.clone())?;
-    utils_save_signer(signer, signer_dir, name)?;
+    utils_save_signer(signer, signer_dir, &signer_file_name(name))?;
     Ok(Signer {
         name: name.to_owned(),
         did_key,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn signer_file_name_is_valid_on_windows() {
+        let did = "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK";
+        if cfg!(windows) {
+            assert_eq!(
+                signer_file_name(did),
+                "did%3Akey%3Az6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"
+            );
+            assert_eq!(signer_file_name("a%b/c"), "a%25b%2Fc");
+        } else {
+            assert_eq!(signer_file_name(did), did);
+        }
+        assert_eq!(signer_file_name("my-signer"), "my-signer");
+    }
 }
