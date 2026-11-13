@@ -201,10 +201,17 @@ jobs:
           exit "$failed"
 
   # The release builds a Windows wheel, so test one: ':' in file names and '\' in paths only
-  # fail here.
-  windows:
-    name: Windows Tests
-    runs-on: windows-latest
+  # fail here. Linux runs the same steps so both OSes must match the same expected CIDs.
+  portable:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout Repo
         uses: eqtylab-actions/checkout@v4
@@ -214,30 +221,30 @@ jobs:
         with:
           python-version-file: '.python-version'
 
+      # Installs the version pinned in ./rust-toolchain, like the nix job.
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup toolchain install
 
       - name: Rust Cache
         uses: eqtylab-actions/rust-cache@v2
 
       - name: Install the extension
-        shell: pwsh
         run: |
-          python -m venv .venv
-          .venv\Scripts\python -m pip install --upgrade pip maturin base58 model-signing==1.1.1
-          $env:VIRTUAL_ENV = "$PWD\.venv"
-          .venv\Scripts\maturin develop --release
+          python -m pip install poetry
+          poetry config virtualenvs.in-project true
+          poetry env use python
+          poetry install --no-root
+          # Not ">=1.0,<2.0": poetry run goes through cmd.exe on Windows, which reads < and > as redirects.
+          poetry run pip install "maturin~=1.0"
+          poetry run maturin develop
 
       - name: test-rs
-        shell: pwsh
         run: cargo test
 
       - name: test-py
-        shell: pwsh
-        run: .venv\Scripts\python -m unittest discover tests
+        run: poetry run python -m unittest discover tests
 
       - name: test-example-manifests
-        shell: pwsh
         env:
           EQTY_SKIP_PROOF: "true"
-        run: .venv\Scripts\python integration-tests/_example_manifests_test.py
+        run: poetry run python integration-tests/_example_manifests_test.py

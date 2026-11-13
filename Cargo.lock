@@ -579,7 +579,7 @@ checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
 [[package]]
 name = "cacaos"
 version = "0.5.1"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "async-trait",
  "hex",
@@ -681,7 +681,7 @@ dependencies = [
 [[package]]
 name = "cid"
 version = "0.8.6"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "multibase 0.9.2",
  "multihash 0.16.3",
@@ -2723,8 +2723,8 @@ dependencies = [
 
 [[package]]
 name = "integrity"
-version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+version = "0.0.20"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "integrity-blob",
  "integrity-cid",
@@ -2740,8 +2740,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-blob"
-version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+version = "0.0.20"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2754,8 +2754,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-cid"
-version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+version = "0.0.20"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "anyhow",
  "blake3",
@@ -2773,8 +2773,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-dsse"
-version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+version = "0.0.20"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2785,8 +2785,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-intoto-attestation"
-version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+version = "0.0.20"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2801,8 +2801,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-jsonld"
-version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+version = "0.0.20"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "anyhow",
  "blake3",
@@ -2825,8 +2825,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-lineage-models"
-version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+version = "0.0.20"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2853,8 +2853,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-model-signing"
-version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+version = "0.0.20"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "anyhow",
  "bs58 0.5.1",
@@ -2873,8 +2873,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-signer"
-version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+version = "0.0.20"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2896,8 +2896,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-sigstore"
-version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+version = "0.0.20"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "serde",
  "serde_json",
@@ -2905,8 +2905,8 @@ dependencies = [
 
 [[package]]
 name = "integrity-vc"
-version = "0.0.19"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+version = "0.0.20"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3585,7 +3585,7 @@ checksum = "6800badb6cb2082ffd7b6a67e6125bb39f18782f793520caee8cb8846be06112"
 [[package]]
 name = "libipld"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "async-trait",
  "cached",
@@ -3604,7 +3604,7 @@ dependencies = [
 [[package]]
 name = "libipld-cbor"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "byteorder",
  "libipld-core",
@@ -3627,7 +3627,7 @@ dependencies = [
 [[package]]
 name = "libipld-core"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "anyhow",
  "cid 0.8.6",
@@ -3641,7 +3641,7 @@ dependencies = [
 [[package]]
 name = "libipld-json"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "libipld-core",
  "multihash 0.16.3",
@@ -3652,7 +3652,7 @@ dependencies = [
 [[package]]
 name = "libipld-macro"
 version = "0.14.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "libipld-core",
 ]
@@ -3941,7 +3941,7 @@ dependencies = [
 [[package]]
 name = "multihash"
 version = "0.16.3"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "blake2b_simd 1.0.4",
  "blake2s_simd",
@@ -5972,7 +5972,7 @@ dependencies = [
 [[package]]
 name = "ssi"
 version = "0.7.0"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "ssi-caips 0.1.0",
  "ssi-core 0.1.0",
@@ -6756,7 +6756,7 @@ dependencies = [
 [[package]]
 name = "ssi-ucan"
 version = "0.1.1"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "base64 0.12.3",
  "chrono",
@@ -6803,7 +6803,7 @@ dependencies = [
 [[package]]
 name = "ssi-vc"
 version = "0.2.1"
-source = "git+https://github.com/eqtylab/integrity?tag=v0.0.19#84a0b3e2d116b342962fb49a1fba3e2253517d40"
+source = "git+https://github.com/eqtylab/integrity?branch=win#2e505ad2ec91e8398aa95eb7b8ee24b0540282da"
 dependencies = [
  "async-trait",
  "base64 0.12.3",
@@ -7088,6 +7088,17 @@ name = "syn"
 version = "2.0.117"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e665b8803e7b1d2a727f4023456bbbbe74da67099c585258af0ad9c5013b9b99"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
+name = "syn"
+version = "3.0.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ae9ccbea3a7b0b09443036490c8f34a8b1b760fd345e5c0dae0aac718faea79"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7586,9 +7597,9 @@ checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
 
 [[package]]
 name = "utoipa"
-version = "3.5.0"
+version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d82b1bc5417102a73e8464c686eef947bdfb99fcdfc0a4f228e81afa9526470a"
+checksum = "8765fe27aeff71012a3f90fa474cf1df863a7d0dd81ed25de4e63fff2544994f"
 dependencies = [
  "indexmap 2.13.0",
  "serde",
@@ -7598,15 +7609,14 @@ dependencies = [
 
 [[package]]
 name = "utoipa-gen"
-version = "3.5.0"
+version = "6.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05d96dcd6fc96f3df9b3280ef480770af1b7c5d14bc55192baa9b067976d920c"
+checksum = "d935f1c83fdf8b88f09bbe050d0cea78ea4afee6d7b0317403228c1200b2c8ab"
 dependencies = [
- "proc-macro-error",
  "proc-macro2",
  "quote",
  "regex",
- "syn 2.0.117",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -7850,7 +7860,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

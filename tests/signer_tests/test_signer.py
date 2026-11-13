@@ -62,6 +62,16 @@ class SignerTests(unittest.TestCase):
 
         self.assertEqual(loaded.did_key, created.did_key)
 
+    def test_unnamed_signer_round_trips_through_did_file_name(self):
+        """Unnamed signers are stored under their DID, whose ':' Windows file names reject."""
+        created = Signer.new()
+        self.assertEqual(created.name, created.did_key)
+        self.assertTrue(created.name.startswith("did:key:z"))
+
+        loaded = Signer.load(created.name)
+        self.assertEqual(loaded.name, created.name)
+        self.assertEqual(loaded.did_key, created.did_key)
+
     def test_load_raises_lookup_error_when_missing(self):
         with self.assertRaises(LookupError):
             Signer.load(f"missing-{uuid.uuid4()}")
