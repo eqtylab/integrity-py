@@ -23,6 +23,12 @@ changes since the preceding stable tag.
   through a notary is faster: a request with 14 credentials dropped from 919 ms
   to 305 ms, close to the 287 ms it takes with a local key. Key rotation is
   still detected before each credential.
+- A `vcomp_notary` signer no longer copies the notary's cached TEE manifest each
+  time the signer is copied: for every credential it signs, for model signing, and
+  each time a Python call reads the SDK config. integrity now shares the manifest
+  between copies (eqtylab/integrity#63). On an Azure SEV-SNP host the manifest is
+  63 KB and each copy took 6 µs, about 0.2 ms over the roughly 30 copies of a
+  14-credential request.
 
 ## [2.5.1] - 2026-11-05
 

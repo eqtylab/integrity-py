@@ -189,7 +189,7 @@ impl Context {
                         }
                     }
                     if let Some(did_blobs) = &notary.did_blobs {
-                        for (cid, data) in did_blobs {
+                        for (cid, data) in did_blobs.iter() {
                             blobs.insert(cid.clone(), BASE64.encode(data));
                         }
                     }
