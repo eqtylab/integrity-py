@@ -3,6 +3,7 @@ import os
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 from eqty_sdk import Compute, compute
 from tests import get_statement_count_by_type, setup_sdk
@@ -46,15 +47,13 @@ class ComputeIssueVC(unittest.TestCase):
         setup_sdk()
 
     def setUp(self):
-        self._prev_timestamp = os.environ.get("EQTY_TIMESTAMP")
-        os.environ["EQTY_TIMESTAMP"] = datetime.now(timezone.utc).isoformat(timespec="microseconds")
+        env = mock.patch.dict(
+            os.environ,
+            {"EQTY_TIMESTAMP": datetime.now(timezone.utc).isoformat(timespec="microseconds")},
+        )
+        env.start()
+        self.addCleanup(env.stop)
         self._baseline_vc_count = get_statement_count_by_type("CredentialRegistration") or 0
-
-    def tearDown(self):
-        if self._prev_timestamp is None:
-            os.environ.pop("EQTY_TIMESTAMP", None)
-        else:
-            os.environ["EQTY_TIMESTAMP"] = self._prev_timestamp
 
     def _vc_delta(self) -> int:
         current = get_statement_count_by_type("CredentialRegistration") or 0

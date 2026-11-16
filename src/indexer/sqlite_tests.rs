@@ -336,6 +336,20 @@ mod tests {
         db.register_statement(&data, &graph.id).await?;
         let credential = credential_statement("urn:cid:credential1", &data.get_id(), registrant)?;
         db.register_statement(&credential, &graph.id).await?;
+        let governance = Statement::GovernanceRegistration(
+            GovernanceStatement::create(
+                "urn:cid:input1".to_string(),
+                "urn:cid:declaration".to_string(),
+                registrant.into(),
+                None,
+            )
+            .await?,
+        );
+        db.register_statement(&governance, &graph.id).await?;
+        let governance_credential =
+            credential_statement("urn:cid:credential2", &governance.get_id(), registrant)?;
+        db.register_statement(&governance_credential, &graph.id)
+            .await?;
         // An identity credential about a DID is found by DID, not through a graph, so it
         // must outlive the graph it was registered in.
         let identity = credential_statement("urn:cid:identity", registrant, registrant)?;
@@ -344,6 +358,11 @@ mod tests {
         db.delete_graph_tree(&graph.id).await?;
 
         assert_eq!(data_statement_count(&db).await?, 0);
+        let governance_count: i64 = sqlx::query("SELECT COUNT(*) FROM governance_statements")
+            .fetch_one(db.pool())
+            .await?
+            .get(0);
+        assert_eq!(governance_count, 0);
         assert_eq!(credential_ids(&db).await?, vec!["urn:cid:identity"]);
         Ok(())
     }
@@ -405,6 +424,75 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_retrieve_statements_leaves_out_other_graphs_credentials() -> Result<()> {
+        let db = setup_db().await?;
+        let first = root_context("first");
+        let second = root_context("second");
+        let child = Context {
+            id: Uuid::new_v4(),
+            name: "child".to_string(),
+            parent: Some(first.id),
+        };
+        for graph in [&first, &second, &child] {
+            db.create_graph(graph).await?;
+        }
+
+        // Each graph holds the same data and computation statements, with credentials that
+        // only that graph links to, as stores written before credentials were reused do.
+        let registrant = "did:key:tester";
+        let data = Statement::DataRegistration(
+            DataStatement::create(vec!["urn:cid:input1".to_string()], registrant.into(), None)
+                .await?,
+        );
+        let computation = Statement::ComputationRegistration(
+            ComputationStatement::create(
+                None,
+                vec!["urn:cid:input1".to_string()],
+                vec!["urn:cid:output1".to_string()],
+                registrant.to_string(),
+                None,
+                registrant.to_string(),
+                None,
+            )
+            .await?,
+        );
+        for (graph, name) in [(&first, "first"), (&second, "second")] {
+            for statement in [&data, &computation] {
+                db.register_statement(statement, &graph.id).await?;
+                let id = format!("urn:cid:{name}-{}", statement.get_id());
+                let credential = credential_statement(&id, &statement.get_id(), registrant)?;
+                db.register_statement(&credential, &graph.id).await?;
+            }
+        }
+        db.register_statement(&data, &child.id).await?;
+
+        let credentials = |statements: Vec<Statement>| -> Vec<String> {
+            let mut ids: Vec<String> = statements
+                .iter()
+                .filter(|s| matches!(s, Statement::CredentialRegistration(_)))
+                .map(|s| s.get_id())
+                .collect();
+            ids.sort();
+            ids
+        };
+        let first_credential =
+            |statement: &Statement| format!("urn:cid:first-{}", statement.get_id());
+
+        let mut expected = vec![first_credential(&data), first_credential(&computation)];
+        expected.sort();
+        assert_eq!(
+            credentials(db.retrieve_statements(&first.id).await?),
+            expected
+        );
+        // A child graph's export includes credentials its parent links to.
+        assert_eq!(
+            credentials(db.retrieve_statements(&child.id).await?),
+            vec![first_credential(&data)]
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_find_credential_matches_subject_and_registrant() -> Result<()> {
         let db = setup_db().await?;
         let graph = root_context("request");
@@ -425,6 +513,40 @@ mod tests {
             .find_credential("urn:cid:other", "did:a")
             .await?
             .is_none());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_register_statement_with_credential_keeps_stored_credential() -> Result<()> {
+        let db = setup_db().await?;
+        let first = root_context("first");
+        let second = root_context("second");
+        db.create_graph(&first).await?;
+        db.create_graph(&second).await?;
+
+        let registrant = "did:key:tester";
+        let data = Statement::DataRegistration(
+            DataStatement::create(vec!["urn:cid:input1".to_string()], registrant.into(), None)
+                .await?,
+        );
+        // Another connection stores its credential after this caller checked for one.
+        let stored = credential_statement("urn:cid:stored", &data.get_id(), registrant)?;
+        db.register_statement(&stored, &first.id).await?;
+
+        let late = credential_statement("urn:cid:late", &data.get_id(), registrant)?;
+        let registered = db
+            .register_statement_with_credential(&data, late, &second.id)
+            .await?;
+
+        assert_eq!(registered.get_id(), "urn:cid:stored");
+        assert_eq!(credential_ids(&db).await?, vec!["urn:cid:stored"]);
+        let ids: Vec<String> = db
+            .retrieve_statements(&second.id)
+            .await?
+            .iter()
+            .map(|s| s.get_id())
+            .collect();
+        assert!(ids.contains(&"urn:cid:stored".to_string()));
         Ok(())
     }
 

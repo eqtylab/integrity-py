@@ -11,8 +11,9 @@ use anyhow::{anyhow, bail, Result};
 use integrity::{
     blob_store::{BlobStore, LocalFs},
     cid::iroh::{CidIgnoreConfig, HashingConfig},
-    lineage::models::statements::{Statement, StatementTrait},
+    lineage::models::statements::{Statement, StatementTrait, VcStatement},
     signer::{SignerType, VCompNotarySigner},
+    vc,
 };
 use once_cell::sync::Lazy;
 use pyo3::prelude::*;
@@ -578,12 +579,11 @@ pub async fn register_statement_with_vc(
     }
 
     let vc_statement = credential_for_statement(config, &statement_id, timestamp).await?;
-    let vc_id = CID::new(vc_statement.get_id());
-    config
+    let vc_statement = config
         .sql_lite
-        .register_statements_batch([statement, vc_statement], &graph_id)
+        .register_statement_with_credential(&statement, vc_statement, &graph_id)
         .await?;
-    Ok(vec![statement_id, vc_id])
+    Ok(vec![statement_id, CID::new(vc_statement.get_id())])
 }
 
 /// Returns the active signer's credential for `statement_id`, issuing one if it has none.
@@ -592,29 +592,28 @@ async fn credential_for_statement(
     statement_id: &CID,
     timestamp: Option<String>,
 ) -> Result<Statement> {
-    use integrity::{lineage::models::statements::VcStatement, vc};
-
-    let signer = match &config.active_signer {
-        Some(ActiveSigner {
-            signer: SignerType::VCompNotarySigner(vcomp),
-            ..
-        }) => sync_active_notary_signer(config, vcomp).await?,
-        Some(active) => active.signer.clone(),
-        None => bail!("An active signer is not set"),
+    let Some(active) = &config.active_signer else {
+        bail!("An active signer is not set");
     };
-
-    let registered_by = signer.get_did_doc().id.clone();
 
     // Statement IDs are content hashes, so registering the same content again (for example
     // the same asset in another request within the same second) yields the same statement.
     // Reuse the credential this signer already issued for it instead of issuing another.
+    // This runs before a notary signer is synced, so reusing a credential needs no request
+    // to the notary.
     if let Some(existing) = config
         .sql_lite
-        .find_credential(&statement_id.to_string(), &registered_by)
+        .find_credential(&statement_id.to_string(), &active.signer.get_did_doc().id)
         .await?
     {
         return Ok(existing);
     }
+
+    let signer = match &active.signer {
+        SignerType::VCompNotarySigner(vcomp) => sync_active_notary_signer(config, vcomp).await?,
+        signer => signer.clone(),
+    };
+    let registered_by = signer.get_did_doc().id.clone();
 
     let vc = vc::issue_vc(&statement_id.to_string(), signer).await?;
     let vc = serde_json::from_value(serde_json::to_value(vc)?)?;

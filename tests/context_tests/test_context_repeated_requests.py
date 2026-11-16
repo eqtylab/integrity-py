@@ -3,6 +3,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from eqty_sdk import CID, Code, Computation, Context, Dataset, Model
 from tests import get_statement_count_by_type, setup_sdk
@@ -22,14 +23,9 @@ class RepeatedRequestTests(unittest.TestCase):
         setup_sdk()
 
     def setUp(self):
-        self._prev_timestamp = os.environ.get("EQTY_TIMESTAMP")
-        os.environ["EQTY_TIMESTAMP"] = "2026-11-16T12:00:00Z"
-
-    def tearDown(self):
-        if self._prev_timestamp is None:
-            os.environ.pop("EQTY_TIMESTAMP", None)
-        else:
-            os.environ["EQTY_TIMESTAMP"] = self._prev_timestamp
+        env = mock.patch.dict(os.environ, {"EQTY_TIMESTAMP": "2026-11-16T12:00:00Z"})
+        env.start()
+        self.addCleanup(env.stop)
 
     def _request(self, i: int, out_dir: Path) -> dict:
         ctx = Context.new(f"repeated-request-{i}")
