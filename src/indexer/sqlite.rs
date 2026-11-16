@@ -16,6 +16,47 @@ fn extract_credential_subject_id(subject: &serde_json::Value) -> Result<String> 
         .ok_or_else(|| anyhow::anyhow!("Credential subject missing or malformed 'id' field"))
 }
 
+/// Statement tables whose rows belong to the graphs that link them, and are deleted once
+/// no graph links them any more.
+const GRAPH_OWNED_STATEMENT_TABLES: [&str; 7] = [
+    "computation_statements",
+    "data_statements",
+    "metadata_statements",
+    "storage_statements",
+    "entity_statements",
+    "association_statements",
+    "governance_statements",
+];
+
+/// A recursive CTE named `graph_hierarchy`, holding the graph bound to `?1` and its ancestors.
+const GRAPH_HIERARCHY_CTE: &str = r#"
+    graph_hierarchy(graph_id) AS (
+        SELECT graph_id FROM graphs WHERE graph_id = ?1
+        UNION ALL
+        SELECT g.parent_id FROM graphs g
+        JOIN graph_hierarchy gh ON g.graph_id = gh.graph_id
+        WHERE g.parent_id IS NOT NULL
+    )
+"#;
+
+/// Whether credential `vc` belongs in an export of `graph_hierarchy`.
+///
+/// A credential about a DID or a DID statement is always included, because exports find
+/// those by DID. Any other credential is included only if it is linked to the exported graph
+/// or one of its ancestors, so an export leaves out other graphs' credentials for the same
+/// statement.
+const CREDENTIAL_IN_HIERARCHY: &str = r#"
+    (
+        vc.credential_subject LIKE 'did:%'
+        OR vc.credential_subject IN (SELECT id FROM did_statements)
+        OR EXISTS (
+            SELECT 1 FROM statement_graph_link vc_link
+            JOIN graph_hierarchy gh ON vc_link.graph_id = gh.graph_id
+            WHERE vc_link.statement_id = vc.id
+        )
+    )
+"#;
+
 /// Provides persistent storage for statements organized in graphs
 /// with support for hierarchical relationships and queries.
 pub struct Sqlite {
@@ -228,6 +269,9 @@ impl Sqlite {
                 registered_by TEXT NOT NULL,
                 credential_subject TEXT NOT NULL
             );
+
+            CREATE INDEX IF NOT EXISTS idx_credential_statements_subject
+                ON credential_statements(credential_subject);
         "#;
         sqlx::query(credential_table).execute(&self.pool).await?;
 
@@ -306,6 +350,15 @@ impl Sqlite {
         Ok(Self { pool })
     }
 
+    /// Begins a transaction that holds the write lock from the start.
+    ///
+    /// Use it for a transaction that reads before it writes. In a deferred transaction, SQLite
+    /// fails that first write at once with "database is locked" if another connection is
+    /// committing, without waiting for the busy timeout.
+    async fn begin_write(&self) -> Result<Transaction<'static, SqliteDb>> {
+        Ok(self.pool.begin_with("BEGIN IMMEDIATE").await?)
+    }
+
     /// Creates a record in the "graphs" table
     pub async fn create_graph(&self, context: &Context) -> Result<()> {
         if let Some(parent_id) = context.parent {
@@ -338,10 +391,12 @@ impl Sqlite {
         Ok(())
     }
 
-    /// Deletes a graph and all descendant graphs, along with statements linked to those graphs.
+    /// Deletes a graph and all descendant graphs, along with statements and credentials
+    /// that no remaining graph links.
     pub async fn delete_graph_tree(&self, graph_id: &Uuid) -> Result<()> {
         // Get all graph ids in the subtree (including the root).
         log::debug!("Deleting graph tree for {graph_id}");
+        let mut transaction = self.begin_write().await?;
         let graph_rows = sqlx::query(
             r#"
             WITH RECURSIVE descendants AS (
@@ -357,7 +412,7 @@ impl Sqlite {
             "#,
         )
         .bind(graph_id.to_string())
-        .fetch_all(&self.pool)
+        .fetch_all(&mut *transaction)
         .await?;
 
         if graph_rows.is_empty() {
@@ -381,7 +436,7 @@ impl Sqlite {
         for gid in &graph_ids {
             stmt_sql = stmt_sql.bind(gid);
         }
-        let stmt_rows = stmt_sql.fetch_all(&self.pool).await?;
+        let stmt_rows = stmt_sql.fetch_all(&mut *transaction).await?;
         let statement_ids: Vec<String> = stmt_rows
             .into_iter()
             .map(|row| row.get::<String, _>("statement_id"))
@@ -397,52 +452,33 @@ impl Sqlite {
         for gid in &graph_ids {
             link_sql = link_sql.bind(gid);
         }
-        link_sql.execute(&self.pool).await?;
+        link_sql.execute(&mut *transaction).await?;
         log::debug!("Deleted statement graph links");
 
-        if !statement_ids.is_empty() {
-            let stmt_placeholders = vec!["?"; statement_ids.len()].join(", ");
-            let tables = [
-                "computation_statements",
-                "data_statements",
-                "metadata_statements",
-                "storage_statements",
-                "entity_statements",
-                "association_statements",
-            ];
+        Self::delete_unlinked_statements(&mut transaction, &statement_ids).await?;
 
-            for table in tables {
-                let q = format!("DELETE FROM {} WHERE id IN ({})", table, stmt_placeholders);
-                let mut sql = sqlx::query(&q);
-                for sid in &statement_ids {
-                    sql = sql.bind(sid);
-                }
-                sql.execute(&self.pool).await?;
-                log::debug!("Deleted statements from {table}");
-            }
-        }
-
-        // Delete graphs (disable FK checks to avoid parent/child ordering issues).
-        sqlx::query("PRAGMA foreign_keys = OFF;")
-            .execute(&self.pool)
+        // Check foreign keys at commit, so the order graphs are deleted in doesn't matter.
+        // This lasts until the transaction ends.
+        sqlx::query("PRAGMA defer_foreign_keys = ON;")
+            .execute(&mut *transaction)
             .await?;
         let graph_del_query = format!("DELETE FROM graphs WHERE graph_id IN ({})", placeholders);
         let mut graph_del_sql = sqlx::query(&graph_del_query);
         for gid in &graph_ids {
             graph_del_sql = graph_del_sql.bind(gid);
         }
-        graph_del_sql.execute(&self.pool).await?;
+        graph_del_sql.execute(&mut *transaction).await?;
         log::debug!("Deleted graphs");
-        sqlx::query("PRAGMA foreign_keys = ON;")
-            .execute(&self.pool)
-            .await?;
 
+        transaction.commit().await?;
         Ok(())
     }
 
-    /// Deletes a graph and its statements only if it has no child graphs.
+    /// Deletes a graph and the statements and credentials that no remaining graph links,
+    /// only if it has no child graphs.
     pub async fn delete_graph_no_children(&self, graph_id: &Uuid) -> Result<()> {
         log::debug!("Deleting graph without children: {graph_id}");
+        let mut transaction = self.begin_write().await?;
         let child_count: (i64,) = sqlx::query_as(
             r#"
             SELECT COUNT(*) as count
@@ -451,7 +487,7 @@ impl Sqlite {
             "#,
         )
         .bind(graph_id.to_string())
-        .fetch_one(&self.pool)
+        .fetch_one(&mut *transaction)
         .await?;
 
         if child_count.0 > 0 {
@@ -470,7 +506,7 @@ impl Sqlite {
             "#,
         )
         .bind(graph_id.to_string())
-        .fetch_all(&self.pool)
+        .fetch_all(&mut *transaction)
         .await?;
 
         let statement_ids: Vec<String> = stmt_rows
@@ -485,49 +521,32 @@ impl Sqlite {
         // Delete links first.
         sqlx::query("DELETE FROM statement_graph_link WHERE graph_id = ?1")
             .bind(graph_id.to_string())
-            .execute(&self.pool)
+            .execute(&mut *transaction)
             .await?;
         log::debug!("Deleted statement graph links for {graph_id}");
 
-        if !statement_ids.is_empty() {
-            let stmt_placeholders = vec!["?"; statement_ids.len()].join(", ");
-            let tables = [
-                "computation_statements",
-                "data_statements",
-                "metadata_statements",
-                "storage_statements",
-                "entity_statements",
-                "association_statements",
-            ];
-
-            for table in tables {
-                let q = format!("DELETE FROM {} WHERE id IN ({})", table, stmt_placeholders);
-                let mut sql = sqlx::query(&q);
-                for sid in &statement_ids {
-                    sql = sql.bind(sid);
-                }
-                sql.execute(&self.pool).await?;
-                log::debug!("Deleted statements from {table}");
-            }
-        }
+        Self::delete_unlinked_statements(&mut transaction, &statement_ids).await?;
 
         sqlx::query("DELETE FROM graphs WHERE graph_id = ?1")
             .bind(graph_id.to_string())
-            .execute(&self.pool)
+            .execute(&mut *transaction)
             .await?;
         log::debug!("Deleted graph {graph_id}");
 
+        transaction.commit().await?;
         Ok(())
     }
 
-    /// Deletes statements linked directly to a graph while preserving the graph.
+    /// Deletes statements and credentials linked directly to a graph that no other graph
+    /// links, while preserving the graph.
     pub async fn delete_graph_statements(&self, graph_id: &Uuid) -> Result<()> {
         log::debug!("Deleting statements for graph: {graph_id}");
+        let mut transaction = self.begin_write().await?;
         let stmt_rows = sqlx::query(
             "SELECT DISTINCT statement_id FROM statement_graph_link WHERE graph_id = ?1",
         )
         .bind(graph_id.to_string())
-        .fetch_all(&self.pool)
+        .fetch_all(&mut *transaction)
         .await?;
 
         let statement_ids: Vec<String> = stmt_rows
@@ -537,36 +556,120 @@ impl Sqlite {
 
         sqlx::query("DELETE FROM statement_graph_link WHERE graph_id = ?1")
             .bind(graph_id.to_string())
-            .execute(&self.pool)
+            .execute(&mut *transaction)
             .await?;
 
+        Self::delete_unlinked_statements(&mut transaction, &statement_ids).await?;
+        transaction.commit().await?;
+        Ok(())
+    }
+
+    /// Deletes those of the given statements and credentials that no graph links any more.
+    ///
+    /// Call this after removing graph links, in the same transaction. A credential is kept while its subject is still
+    /// linked to a graph, and so is a credential about a DID or a DID statement, because
+    /// exports find those by DID rather than through a graph.
+    async fn delete_unlinked_statements(
+        transaction: &mut Transaction<'_, SqliteDb>,
+        statement_ids: &[String],
+    ) -> Result<()> {
         if statement_ids.is_empty() {
             return Ok(());
         }
 
         let placeholders = vec!["?"; statement_ids.len()].join(", ");
-        let tables = [
-            "computation_statements",
-            "data_statements",
-            "metadata_statements",
-            "storage_statements",
-            "entity_statements",
-            "association_statements",
-        ];
-
-        for table in tables {
+        for table in GRAPH_OWNED_STATEMENT_TABLES {
             let q = format!(
                 "DELETE FROM {table} WHERE id IN ({placeholders}) \
                  AND id NOT IN (SELECT statement_id FROM statement_graph_link)"
             );
             let mut sql = sqlx::query(&q);
-            for statement_id in &statement_ids {
+            for statement_id in statement_ids {
                 sql = sql.bind(statement_id);
             }
-            sql.execute(&self.pool).await?;
+            sql.execute(&mut **transaction).await?;
+            log::debug!("Deleted unlinked statements from {table}");
         }
 
+        let q = format!(
+            "DELETE FROM credential_statements WHERE id IN ({placeholders}) \
+             AND id NOT IN (SELECT statement_id FROM statement_graph_link) \
+             AND credential_subject NOT LIKE 'did:%' \
+             AND credential_subject NOT IN (SELECT statement_id FROM statement_graph_link) \
+             AND credential_subject NOT IN (SELECT id FROM did_statements)"
+        );
+        let mut sql = sqlx::query(&q);
+        for statement_id in statement_ids {
+            sql = sql.bind(statement_id);
+        }
+        sql.execute(&mut **transaction).await?;
+        log::debug!("Deleted unlinked credentials");
+
         Ok(())
+    }
+
+    /// Returns a credential that `registered_by` already issued for `subject`.
+    pub async fn find_credential(
+        &self,
+        subject: &str,
+        registered_by: &str,
+    ) -> Result<Option<Statement>> {
+        Self::find_credential_with(&self.pool, subject, registered_by).await
+    }
+
+    async fn find_credential_with<'e>(
+        executor: impl sqlx::SqliteExecutor<'e>,
+        subject: &str,
+        registered_by: &str,
+    ) -> Result<Option<Statement>> {
+        let row = sqlx::query(
+            r#"
+            SELECT statement FROM credential_statements
+            WHERE credential_subject = ?1 AND registered_by = ?2
+            ORDER BY id
+            LIMIT 1
+            "#,
+        )
+        .bind(subject)
+        .bind(registered_by)
+        .fetch_optional(executor)
+        .await?;
+        row.map(|row| {
+            let statement: String = row.get("statement");
+            serde_json::from_str(&statement).context("Failed to parse stored credential")
+        })
+        .transpose()
+    }
+
+    /// Registers `statement` and a credential for it in `graph_id`, in one transaction.
+    ///
+    /// If the credential's signer already has a credential for `statement`, that one is
+    /// registered instead of `credential`. This covers another connection storing one after
+    /// the caller checked with [`Self::find_credential`] and before this call. Returns the
+    /// credential that was registered.
+    pub(crate) async fn register_statement_with_credential(
+        &self,
+        statement: &Statement,
+        credential: Statement,
+        graph_id: &Uuid,
+    ) -> Result<Statement> {
+        let mut transaction = self.begin_write().await?;
+        let credential = Self::find_credential_with(
+            &mut *transaction,
+            &statement.get_id(),
+            credential.get_registered_by(),
+        )
+        .await?
+        .unwrap_or(credential);
+        for statement in [statement, &credential] {
+            Self::register_statement_in_transaction(&mut transaction, statement, graph_id)
+                .await
+                .with_context(|| {
+                    format!("Failed to register statement '{}'", statement.get_id())
+                })?;
+        }
+        transaction.commit().await?;
+        Ok(credential)
     }
 
     /// Registers a statement in the database, optionally associating it with a graph.
@@ -589,9 +692,7 @@ impl Sqlite {
             let statement_id = statement.get_id();
             Self::register_statement_in_transaction(&mut transaction, &statement, graph_id)
                 .await
-                .with_context(|| {
-                    format!("Failed to register manifest statement '{statement_id}'")
-                })?;
+                .with_context(|| format!("Failed to register statement '{statement_id}'"))?;
         }
         transaction.commit().await?;
         Ok(())
@@ -955,8 +1056,9 @@ impl Sqlite {
         log::debug!("Found '{}' directly linked statements", direct_rows.len());
         let mut statements = rows_to_statements(direct_rows)?;
 
-        // Create placeholders for the IN clause
-        let compute_query_str = r#"
+        let compute_query_str = format!(
+            r#"
+            WITH RECURSIVE {GRAPH_HIERARCHY_CTE}
             SELECT
               s.statement
               , vc.statement as vc
@@ -965,20 +1067,23 @@ impl Sqlite {
             FROM computation_statements s
             LEFT JOIN statement_graph_link l ON s.id = l.statement_id
             LEFT JOIN graphs g ON l.graph_id = g.graph_id
-            LEFT JOIN credential_statements vc ON vc.credential_subject = s.id
+            LEFT JOIN credential_statements vc
+              ON vc.credential_subject = s.id AND {CREDENTIAL_IN_HIERARCHY}
             LEFT JOIN metadata_statements metadata on metadata.subject = s.id
             LEFT JOIN did_statements did ON s.registered_by = did.did
             WHERE g.graph_id = ?1
-        "#;
+        "#
+        );
 
-        let compute_rows = sqlx::query(compute_query_str)
+        let compute_rows = sqlx::query(&compute_query_str)
             .bind(graph_id.to_string())
             .fetch_all(&self.pool)
             .await?;
 
         if compute_rows.is_empty() {
             log::info!("No computation statements found for graph(s) {graph_id:?}");
-            self.get_global_statements(&mut statements).await?;
+            self.get_global_statements(graph_id, &mut statements)
+                .await?;
             return Ok(statements.into_values().collect());
         }
 
@@ -1021,7 +1126,8 @@ impl Sqlite {
             statements.extend(rows_to_statements(association_rows)?);
         }
 
-        self.get_global_statements(&mut statements).await?;
+        self.get_global_statements(graph_id, &mut statements)
+            .await?;
 
         Ok(statements.into_values().collect())
     }
@@ -1090,10 +1196,12 @@ impl Sqlite {
 
     async fn get_global_statements(
         &self,
+        graph_id: &Uuid,
         statements: &mut HashMap<String, Statement>,
     ) -> Result<()> {
-        // Get the Credential, CredDsse, CredSigStore, DID Statements
-        // for ALL the previously fetched statements regardless of project
+        // Get the Credential, CredSigStore and DID statements for all the previously fetched
+        // statements. Credentials come from this graph and its ancestors (see
+        // CREDENTIAL_IN_HIERARCHY); the rest come from any graph.
         let mut dids = HashSet::new();
         let mut credential_subjects = HashSet::new();
         let mut referenced_cids = HashSet::new();
@@ -1108,17 +1216,21 @@ impl Sqlite {
         credential_lookup_subjects.extend(dids.iter().cloned());
 
         log::debug!("Getting credential statements for subjects: {credential_lookup_subjects:?}");
-        let placeholders = vec!["?"; credential_lookup_subjects.len()].join(", ");
+        // ?1 is the graph ID, so the subjects start at ?2.
+        let placeholders = (2..credential_lookup_subjects.len() + 2)
+            .map(|i| format!("?{i}"))
+            .collect::<Vec<_>>()
+            .join(", ");
         let global_query = format!(
             r#"
+            WITH RECURSIVE {GRAPH_HIERARCHY_CTE}
             SELECT statement, NULL as metadata, NULL as vc, NULL as did
-            FROM credential_statements
-            WHERE credential_subject IN ({})
-        "#,
-            placeholders
+            FROM credential_statements vc
+            WHERE credential_subject IN ({placeholders}) AND {CREDENTIAL_IN_HIERARCHY}
+        "#
         );
 
-        let mut sql_query = sqlx::query(&global_query);
+        let mut sql_query = sqlx::query(&global_query).bind(graph_id.to_string());
         for credential_subject in &credential_lookup_subjects {
             sql_query = sql_query.bind(credential_subject);
         }

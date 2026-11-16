@@ -1,12 +1,13 @@
 use anyhow::anyhow;
 use integrity::{
-    lineage::models::statements::{ComputationStatement, Statement, StatementTrait},
+    lineage::models::statements::{ComputationStatement, Statement},
     signer::SignerType,
 };
 use pyo3::{pyfunction, PyResult, Python};
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Context, CID,
+    config::register_statement_with_vc, resolve_skip_proof, resolve_timestamp, with_cfg, Context,
+    CID,
 };
 
 #[pyfunction]
@@ -73,18 +74,6 @@ pub fn add_computation_statement(
             .await?,
         );
 
-        ctx.sql_lite
-            .register_statement(&statement, &graph_id)
-            .await?;
-
-        let id = CID::new(statement.get_id());
-        let mut statement_ids: Vec<CID> = vec![id.clone()];
-
-        if !skip_proof {
-            let vc_id = create_vc_for_statement(&ctx, &id, graph_id, timestamp).await?;
-            statement_ids.push(vc_id);
-        };
-
-        Ok(statement_ids)
+        Ok(register_statement_with_vc(&ctx, statement, graph_id, timestamp, skip_proof).await?)
     })
 }
