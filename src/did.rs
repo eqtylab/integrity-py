@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::Context as AnyhowContext;
 use integrity::{
     blob_store::BlobStore,
@@ -92,7 +94,7 @@ fn build_did(
             }
 
             if let Some(blobs) = vcomp_signer.did_blobs {
-                for (_, data) in blobs {
+                for (_, data) in Arc::unwrap_or_clone(blobs) {
                     cfg.blob_store.put(data, 0, None).await?;
                 }
             }

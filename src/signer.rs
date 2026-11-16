@@ -1,4 +1,4 @@
-use std::{ffi::CString, fs};
+use std::{ffi::CString, fs, sync::Arc};
 
 use anyhow::Context as AnyhowContext;
 use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
@@ -437,14 +437,14 @@ fn persist_vcomp_signer_data(py: Python, vcomp_signer: VCompNotarySigner) -> PyR
     with_cfg!(py, |cfg| {
         if let Some(blobs) = vcomp_signer.did_blobs {
             log::debug!("Saving {} vcomp blobs to store", blobs.len());
-            for (cid, data) in blobs {
+            for (cid, data) in Arc::unwrap_or_clone(blobs) {
                 let codec = get_multicodec(&cid)?;
                 cfg.blob_store.put(data, codec, Some(&cid)).await?;
             }
         }
         if let Some(statements) = vcomp_signer.credentials {
             log::debug!("Saving {} vcomp statements to store", statements.len());
-            for (_, statement) in statements {
+            for (_, statement) in Arc::unwrap_or_clone(statements) {
                 let id = cfg.default_context.id;
                 let s = serde_json::from_value::<Statement>(statement)?;
                 cfg.sql_lite.register_statement(&s, &id).await?;

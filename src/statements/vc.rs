@@ -18,7 +18,7 @@ pub fn add_vc_statement(
 ) -> PyResult<CID> {
     with_cfg!(py, |ctx| {
         let graph_id = ctx.resolve_graph_id(context);
-        let signer = match ctx.active_signer.as_deref() {
+        let signer = match &ctx.active_signer {
             Some(ActiveSigner {
                 signer: SignerType::VCompNotarySigner(vcomp),
                 ..
