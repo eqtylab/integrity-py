@@ -9,7 +9,8 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Context, CID,
+    config::register_statement_with_vc, resolve_skip_proof, resolve_timestamp, with_cfg, Context,
+    CID,
 };
 
 /// Represents an unhashed entity with a UUID identifier.
@@ -144,17 +145,16 @@ fn create_entity_statements(
             .await?,
         );
         let entity_statement_id: CID = entity_statement.get_id().into();
-        ctx.sql_lite
-            .register_statement(&entity_statement, &graph_id)
-            .await?;
-        statement_ids.push(entity_statement_id.clone());
-
-        if !skip_proof {
-            let vc_id =
-                create_vc_for_statement(&ctx, &entity_statement_id, graph_id, timestamp.clone())
-                    .await?;
-            statement_ids.push(vc_id);
-        };
+        statement_ids.extend(
+            register_statement_with_vc(
+                &ctx,
+                entity_statement,
+                graph_id,
+                timestamp.clone(),
+                skip_proof,
+            )
+            .await?,
+        );
 
         let metadata_value: Value = serde_json::from_str(&metadata_json)
             .map_err(|e| anyhow!("Invalid metadata JSON: {e}"))?;

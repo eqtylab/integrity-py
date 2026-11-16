@@ -18,6 +18,16 @@ changes since the preceding stable tag.
 
 ### Fixed
 
+- A manifest no longer includes credentials issued in other contexts. A signer now reuses
+  its credential when the same statement is registered again (such as the same code or
+  model within one second), instead of issuing a new one each time.
+- `Context.delete_tree()`, `Context.delete()` and `Context.register(delete_statements=True)`
+  also delete the context's credentials, except those about a DID, and keep statements
+  another context still links to. Each delete runs in one transaction.
+- Writing a manifest is faster: exports no longer slow down as the local store grows, the
+  manifest file is written buffered, and a statement is stored with its credential in one
+  transaction (a typical request manifest went from 145 fsyncs to 69). If signing fails,
+  the statement is no longer stored without its credential.
 - A `vcomp_notary` signer reuses one HTTP client to check the notary's signing
   key instead of building one before every credential, so writing a manifest
   through a notary is faster: a request with 14 credentials dropped from 919 ms

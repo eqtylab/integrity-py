@@ -1,10 +1,9 @@
-use integrity::lineage::models::statements::{
-    DidStatement, DidStatementRegular, Statement, StatementTrait,
-};
+use integrity::lineage::models::statements::{DidStatement, DidStatementRegular, Statement};
 use pyo3::{pyfunction, PyResult, Python};
 
 use crate::{
-    config::create_vc_for_statement, resolve_skip_proof, resolve_timestamp, with_cfg, Context, CID,
+    config::register_statement_with_vc, resolve_skip_proof, resolve_timestamp, with_cfg, Context,
+    CID,
 };
 
 #[pyfunction]
@@ -27,18 +26,6 @@ pub fn add_did_statement(
             DidStatementRegular::create(did, registered_by, timestamp.clone()).await?,
         )));
 
-        ctx.sql_lite
-            .register_statement(&statement, &graph_id)
-            .await?;
-
-        let id: CID = statement.get_id().into();
-        let mut statement_ids: Vec<CID> = vec![id.clone()];
-
-        if !skip_proof {
-            let vc_id = create_vc_for_statement(&ctx, &id, graph_id, timestamp).await?;
-            statement_ids.push(vc_id);
-        }
-
-        Ok(statement_ids)
+        Ok(register_statement_with_vc(&ctx, statement, graph_id, timestamp, skip_proof).await?)
     })
 }

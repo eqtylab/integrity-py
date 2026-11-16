@@ -149,11 +149,11 @@ class Context:
         ...
 
     def delete_tree(self) -> None:
-        """Deletes this context, all descendant contexts, and their local statements.  This only removes local context and statement records; it does not delete blobs from the local blob store. Use this when the context hierarchy is no longer needed locally."""
+        """Deletes this context, all descendant contexts, and their local statements.  Statements still linked to another context are kept, and so are their credentials. This only removes local context and statement records; it does not delete blobs from the local blob store. Use this when the context hierarchy is no longer needed locally."""
         ...
 
     def delete(self) -> None:
-        """Deletes this context and its local statements.  Raises an error if this context has child contexts. Use `delete_tree()` to delete a context together with its descendants. This does not delete blobs from the local blob store."""
+        """Deletes this context and its local statements.  Statements still linked to another context are kept, and so are their credentials. Raises an error if this context has child contexts. Use `delete_tree()` to delete a context together with its descendants. This does not delete blobs from the local blob store."""
         ...
 
     def export(self, path: PathLike[str]) -> None:

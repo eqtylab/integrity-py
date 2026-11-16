@@ -289,6 +289,145 @@ mod tests {
         Ok(())
     }
 
+    /// Builds a credential registration for `subject`, registered by `registered_by`.
+    fn credential_statement(id: &str, subject: &str, registered_by: &str) -> Result<Statement> {
+        Ok(serde_json::from_value(json!({
+            "@context": "urn:cid:bafkr4ic7ydwk3rtoltyzx4zn3vvu3r7hpzxtmbzmnksotx7k5nbnwclf6m",
+            "@id": id,
+            "@type": "CredentialRegistration",
+            "credential": {
+                "@context": ["https://www.w3.org/ns/credentials/v2"],
+                "type": ["VerifiableCredential"],
+                "issuer": registered_by,
+                "validFrom": "2026-03-18T15:35:04Z",
+                "credentialSubject": {"id": subject}
+            },
+            "registeredBy": registered_by,
+            "timestamp": "2026-03-18T15:35:04Z"
+        }))?)
+    }
+
+    async fn credential_ids(db: &Sqlite) -> Result<Vec<String>> {
+        let rows = sqlx::query("SELECT id FROM credential_statements ORDER BY id")
+            .fetch_all(db.pool())
+            .await?;
+        Ok(rows.into_iter().map(|row| row.get("id")).collect())
+    }
+
+    fn root_context(name: &str) -> Context {
+        Context {
+            id: Uuid::new_v4(),
+            name: name.to_string(),
+            parent: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_delete_graph_tree_removes_credentials_for_deleted_statements() -> Result<()> {
+        let db = setup_db().await?;
+        let graph = root_context("request");
+        db.create_graph(&graph).await?;
+
+        let registrant = "did:key:tester";
+        let data = Statement::DataRegistration(
+            DataStatement::create(vec!["urn:cid:input1".to_string()], registrant.into(), None)
+                .await?,
+        );
+        db.register_statement(&data, &graph.id).await?;
+        let credential = credential_statement("urn:cid:credential1", &data.get_id(), registrant)?;
+        db.register_statement(&credential, &graph.id).await?;
+        // An identity credential about a DID is found by DID, not through a graph, so it
+        // must outlive the graph it was registered in.
+        let identity = credential_statement("urn:cid:identity", registrant, registrant)?;
+        db.register_statement(&identity, &graph.id).await?;
+
+        db.delete_graph_tree(&graph.id).await?;
+
+        assert_eq!(data_statement_count(&db).await?, 0);
+        assert_eq!(credential_ids(&db).await?, vec!["urn:cid:identity"]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_delete_graph_tree_keeps_statements_shared_with_another_graph() -> Result<()> {
+        let db = setup_db().await?;
+        let first = root_context("first");
+        let second = root_context("second");
+        db.create_graph(&first).await?;
+        db.create_graph(&second).await?;
+
+        let registrant = "did:key:tester";
+        let data = Statement::DataRegistration(
+            DataStatement::create(vec!["urn:cid:input1".to_string()], registrant.into(), None)
+                .await?,
+        );
+        let credential = credential_statement("urn:cid:credential1", &data.get_id(), registrant)?;
+        for graph in [&first, &second] {
+            db.register_statement(&data, &graph.id).await?;
+            db.register_statement(&credential, &graph.id).await?;
+        }
+
+        db.delete_graph_tree(&first.id).await?;
+
+        assert_eq!(data_statement_count(&db).await?, 1);
+        assert_eq!(credential_ids(&db).await?, vec!["urn:cid:credential1"]);
+        let ids: Vec<String> = db
+            .retrieve_statements(&second.id)
+            .await?
+            .iter()
+            .map(|s| s.get_id())
+            .collect();
+        assert!(ids.contains(&data.get_id()));
+        assert!(ids.contains(&"urn:cid:credential1".to_string()));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_delete_graph_no_children_removes_credentials_for_deleted_statements() -> Result<()>
+    {
+        let db = setup_db().await?;
+        let graph = root_context("request");
+        db.create_graph(&graph).await?;
+
+        let registrant = "did:key:tester";
+        let data = Statement::DataRegistration(
+            DataStatement::create(vec!["urn:cid:input1".to_string()], registrant.into(), None)
+                .await?,
+        );
+        db.register_statement(&data, &graph.id).await?;
+        let credential = credential_statement("urn:cid:credential1", &data.get_id(), registrant)?;
+        db.register_statement(&credential, &graph.id).await?;
+
+        db.delete_graph_no_children(&graph.id).await?;
+
+        assert!(credential_ids(&db).await?.is_empty());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_find_credential_matches_subject_and_registrant() -> Result<()> {
+        let db = setup_db().await?;
+        let graph = root_context("request");
+        db.create_graph(&graph).await?;
+        let credential = credential_statement("urn:cid:credential1", "urn:cid:subject", "did:a")?;
+        db.register_statement(&credential, &graph.id).await?;
+
+        let found = db.find_credential("urn:cid:subject", "did:a").await?;
+        assert_eq!(
+            found.map(|s| s.get_id()).as_deref(),
+            Some("urn:cid:credential1")
+        );
+        assert!(db
+            .find_credential("urn:cid:subject", "did:b")
+            .await?
+            .is_none());
+        assert!(db
+            .find_credential("urn:cid:other", "did:a")
+            .await?
+            .is_none());
+        Ok(())
+    }
+
     #[tokio::test]
     async fn test_purge_reinitializes_schema() -> Result<()> {
         let db = setup_db().await?;
@@ -335,6 +474,7 @@ mod tests {
                 "idx_association_statements_subject",
             ),
             ("governance_statements", "idx_governance_statements_subject"),
+            ("credential_statements", "idx_credential_statements_subject"),
         ];
 
         for (table, index) in expected_indexes {
