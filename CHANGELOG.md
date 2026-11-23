@@ -19,7 +19,7 @@ changes since the preceding stable tag.
 ### Changed
 
 - A `vcomp_notary` signer signs over one kept-alive connection when the notary
-  announces `x-argus-connection-attribution: per-connection`, instead of
+  announces `x-connection-attribution: per-connection`, instead of
   opening a connection per signature. Against a notary that does not announce
   it, behaviour is unchanged: one connection per request. The signer no longer
   follows redirects on any path. A key-rotation refresh reuses the signer's
