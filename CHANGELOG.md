@@ -16,6 +16,16 @@ changes since the preceding stable tag.
 
 ## [Unreleased]
 
+### Changed
+
+- A `vcomp_notary` signer signs over one kept-alive connection when the notary
+  announces `x-connection-attribution: per-connection`, instead of
+  opening a connection per signature. Against a notary that does not announce
+  it, behaviour is unchanged: one connection per request. The signer no longer
+  follows redirects on any path. A key-rotation refresh reuses the signer's
+  existing connection. Via `integrity`'s new
+  `NotaryConnection` (branch `keepalive`, pending the next tag).
+
 ### Fixed
 
 - A `vcomp_notary` signer reuses one HTTP client to check the notary's signing
