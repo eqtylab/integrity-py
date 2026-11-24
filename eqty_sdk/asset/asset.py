@@ -10,6 +10,7 @@ from eqty_sdk._rust import (
     CID,
     Context,
     get_cid_for_bytes,
+    get_cid_for_json,
     get_cid_for_path,
 )
 from eqty_sdk.context import get_active_context
@@ -140,11 +141,16 @@ class Asset:
         asset_type: Union[AssetType, str],
         ctx: Optional[Context] = None,
         _store: Optional[bool] = None,
+        is_json: bool = False,
         **kwargs,
     ) -> AssetT:
         ctx = ctx or get_active_context()
-        serialized_bytes = serialize_for_hashing(obj)
-        cid = get_cid_for_bytes(serialized_bytes, _store)
+        if is_json:
+            json_str = obj if isinstance(obj, str) else json.dumps(obj)
+            cid = get_cid_for_json(json_str, _store)
+        else:
+            serialized_bytes = serialize_for_hashing(obj)
+            cid = get_cid_for_bytes(serialized_bytes, _store)
         kwargs.setdefault("name", get_asset_name(asset_type, cid))
 
         asset = cls(obj, asset_type, cid, is_dir=False, custom_ctx=ctx, **kwargs)
@@ -191,8 +197,10 @@ class Asset:
             def from_cid(self, cid: CID, **kwargs) -> AssetT:
                 return cls._from_cid(cid, asset_type, ctx, **kwargs)
 
-            def from_object(self, obj: Any, _store: Optional[bool] = None, **kwargs) -> AssetT:
-                return cls._from_object(obj, asset_type, ctx, _store, **kwargs)
+            def from_object(
+                self, obj: Any, _store: Optional[bool] = None, is_json: bool = False, **kwargs
+            ) -> AssetT:
+                return cls._from_object(obj, asset_type, ctx, _store, is_json, **kwargs)
 
         return _Factory()
 
@@ -348,10 +356,19 @@ class TypedAsset(Asset, Generic[AssetT]):
 
     @classmethod
     def from_object(
-        cls: type[TypedAssetT], obj: Any, _store: Optional[bool] = None, **kwargs
+        cls: type[TypedAssetT],
+        obj: Any,
+        _store: Optional[bool] = None,
+        is_json: bool = False,
+        **kwargs,
     ) -> TypedAssetT:
-        """Create and register this asset type from an in-memory Python object."""
-        return cls._from_object(obj, cls._asset_type, _store=_store, **kwargs)
+        """Create and register this asset type from an in-memory Python object.
+
+        If ``is_json`` is set, ``obj`` (a dict/list, or a JSON-encoded string) is
+        canonicalized with JCS before hashing, so the resulting CID is stable
+        regardless of key order or formatting.
+        """
+        return cls._from_object(obj, cls._asset_type, _store=_store, is_json=is_json, **kwargs)
 
     @classmethod
     def with_context(cls: type[TypedAssetT], ctx: Context) -> Any:

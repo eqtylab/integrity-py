@@ -36,10 +36,17 @@ class Custom(Asset):
         obj: Any,
         asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM,
         _store: Optional[bool] = None,
+        is_json: bool = False,
         **kwargs,
     ) -> "Custom":
+        """Create and register a custom asset from an in-memory Python object.
+
+        If ``is_json`` is set, ``obj`` (a dict/list, or a JSON-encoded string) is
+        canonicalized with JCS before hashing, so the resulting CID is stable
+        regardless of key order or formatting.
+        """
         custom_type = _resolve_type(asset_type)
-        return Custom._from_object(obj, custom_type, _store=_store, **kwargs)
+        return Custom._from_object(obj, custom_type, _store=_store, is_json=is_json, **kwargs)
 
     @staticmethod
     def with_context(ctx: Context, asset_type: Optional[Union[AssetType, str]] = AssetType.CUSTOM):
