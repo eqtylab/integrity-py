@@ -11,7 +11,9 @@ use anyhow::{anyhow, bail, Result};
 use integrity::{
     blob_store::{BlobStore, LocalFs},
     cid::iroh::{CidIgnoreConfig, HashingConfig},
+    lineage::models::statements::{Statement, StatementTrait, VcStatement},
     signer::{SignerType, VCompNotarySigner},
+    vc,
 };
 use once_cell::sync::Lazy;
 use pyo3::prelude::*;
@@ -512,7 +514,6 @@ async fn register_vcomp_credentials(
     config: &Config,
     signer: &VCompNotarySigner,
 ) -> Result<Vec<CID>> {
-    use integrity::lineage::models::statements::{Statement, StatementTrait};
     let mut ids = Vec::new();
     if let Some(statements) = &signer.credentials {
         for value in statements.values() {
@@ -554,38 +555,209 @@ pub async fn sync_active_notary_signer(
     Ok(signer)
 }
 
-/// Creates a VC statement for the given statement id and registers it to sqlite
-pub async fn create_vc_for_statement(
+/// Registers `statement` in `graph_id` together with a credential for it, in one transaction.
+///
+/// The credential is signed before the transaction begins, so the database isn't locked while
+/// a notary signs. If the active signer already issued a credential for this statement, that
+/// credential is reused. With `skip_proof`, only the statement is registered.
+///
+/// Returns the statement's ID, followed by the credential's ID unless `skip_proof` is set.
+pub async fn register_statement_with_vc(
     config: &Config,
-    statement_id: &CID,
+    statement: Statement,
     graph_id: Uuid,
     timestamp: Option<String>,
-) -> Result<CID> {
-    use integrity::{
-        lineage::models::statements::{Statement, StatementTrait, VcStatement},
-        vc,
+    skip_proof: bool,
+) -> Result<Vec<CID>> {
+    let statement_id = CID::new(statement.get_id());
+    if skip_proof {
+        config
+            .sql_lite
+            .register_statement(&statement, &graph_id)
+            .await?;
+        return Ok(vec![statement_id]);
+    }
+
+    let vc_statement = credential_for_statement(config, &statement_id, timestamp).await?;
+    let vc_statement = config
+        .sql_lite
+        .register_statement_with_credential(&statement, vc_statement, &graph_id)
+        .await?;
+    Ok(vec![statement_id, CID::new(vc_statement.get_id())])
+}
+
+/// Returns the active signer's credential for `statement_id`, issuing one if it has none.
+async fn credential_for_statement(
+    config: &Config,
+    statement_id: &CID,
+    timestamp: Option<String>,
+) -> Result<Statement> {
+    let Some(active) = &config.active_signer else {
+        bail!("An active signer is not set");
     };
 
-    let signer = match &config.active_signer {
-        Some(ActiveSigner {
-            signer: SignerType::VCompNotarySigner(vcomp),
-            ..
-        }) => sync_active_notary_signer(config, vcomp).await?,
-        Some(active) => active.signer.clone(),
-        None => bail!("An active signer is not set"),
-    };
+    // Statement IDs are content hashes, so registering the same content again (for example
+    // the same asset in another request within the same second) yields the same statement.
+    // Reuse the credential this signer already issued for it instead of issuing another.
+    // This runs before a notary signer is synced, so reusing a credential needs no request
+    // to the notary.
+    if let Some(existing) = config
+        .sql_lite
+        .find_credential(&statement_id.to_string(), &active.signer.get_did_doc().id)
+        .await?
+    {
+        return Ok(existing);
+    }
 
+    let signer = match &active.signer {
+        SignerType::VCompNotarySigner(vcomp) => sync_active_notary_signer(config, vcomp).await?,
+        signer => signer.clone(),
+    };
     let registered_by = signer.get_did_doc().id.clone();
+
     let vc = vc::issue_vc(&statement_id.to_string(), signer).await?;
     let vc = serde_json::from_value(serde_json::to_value(vc)?)?;
-    let vc_statement =
-        Statement::CredentialRegistration(VcStatement::create(vc, registered_by, timestamp).await?);
-    let vc_id = vc_statement.get_id();
+    Ok(Statement::CredentialRegistration(
+        VcStatement::create(vc, registered_by, timestamp).await?,
+    ))
+}
 
-    config
-        .sql_lite
-        .register_statement(&vc_statement, &graph_id)
-        .await?;
+#[cfg(test)]
+mod tests {
+    use integrity::{lineage::models::statements::DataStatement, signer::Ed25519Signer};
+    use pyo3_async_runtimes::tokio::get_runtime;
+    use sqlx::Row;
+    use tempfile::tempdir;
 
-    Ok(CID::new(vc_id))
+    use super::*;
+    use crate::indexer::Context;
+
+    async fn count(config: &Config, query: &str) -> i64 {
+        sqlx::query(query)
+            .fetch_one(config.sql_lite.pool())
+            .await
+            .unwrap()
+            .get(0)
+    }
+
+    async fn data_statement(registered_by: &str) -> Statement {
+        Statement::DataRegistration(
+            DataStatement::create(
+                vec!["urn:cid:input1".to_string()],
+                registered_by.to_string(),
+                Some("2026-11-16T12:00:00Z".to_string()),
+            )
+            .await
+            .unwrap(),
+        )
+    }
+
+    /// Runs `f` against a fresh store, with an Ed25519 signer unless `with_signer` is false.
+    fn with_store(with_signer: bool, f: impl AsyncFnOnce(Config)) {
+        let _config_guard = lock_test_config();
+        let temp_dir = tempdir().unwrap();
+        get_runtime().block_on(async {
+            Config::reset_internal().await.unwrap();
+            Config::init(temp_dir.path().to_path_buf(), None)
+                .await
+                .unwrap();
+            if with_signer {
+                let signer = SignerType::ED25519(Ed25519Signer::create().unwrap());
+                Config::set_active_signer_async(signer, None).await.unwrap();
+            }
+            f(cfg_async().await).await;
+            Config::reset_internal().await.unwrap();
+        });
+    }
+
+    #[test]
+    fn test_register_statement_with_vc_reuses_credential_for_repeated_statement() {
+        with_store(true, async |config| {
+            let did = config.clone().get_active_signer_did_key().unwrap();
+            let first = Context::default();
+            let second = Context::default();
+            config.sql_lite.create_graph(&first).await.unwrap();
+            config.sql_lite.create_graph(&second).await.unwrap();
+
+            let a = register_statement_with_vc(
+                &config,
+                data_statement(&did).await,
+                first.id,
+                None,
+                false,
+            )
+            .await
+            .unwrap();
+            let b = register_statement_with_vc(
+                &config,
+                data_statement(&did).await,
+                second.id,
+                None,
+                false,
+            )
+            .await
+            .unwrap();
+
+            assert_eq!(a.len(), 2);
+            let ids = |ids: &[CID]| ids.iter().map(|id| id.to_string()).collect::<Vec<_>>();
+            assert_eq!(
+                ids(&a),
+                ids(&b),
+                "the repeated statement should reuse its credential"
+            );
+            assert_eq!(
+                count(&config, "SELECT COUNT(*) FROM credential_statements").await,
+                1
+            );
+            let links = format!(
+                "SELECT COUNT(*) FROM statement_graph_link WHERE statement_id = '{}'",
+                a[1]
+            );
+            assert_eq!(count(&config, &links).await, 2);
+        });
+    }
+
+    #[test]
+    fn test_register_statement_with_vc_skip_proof_registers_only_statement() {
+        with_store(true, async |config| {
+            let did = config.clone().get_active_signer_did_key().unwrap();
+            let graph = config.default_context.id;
+            let ids =
+                register_statement_with_vc(&config, data_statement(&did).await, graph, None, true)
+                    .await
+                    .unwrap();
+
+            assert_eq!(ids.len(), 1);
+            assert_eq!(
+                count(&config, "SELECT COUNT(*) FROM data_statements").await,
+                1
+            );
+            assert_eq!(
+                count(&config, "SELECT COUNT(*) FROM credential_statements").await,
+                0
+            );
+        });
+    }
+
+    #[test]
+    fn test_register_statement_with_vc_writes_nothing_when_signing_fails() {
+        with_store(false, async |config| {
+            let graph = config.default_context.id;
+            let result = register_statement_with_vc(
+                &config,
+                data_statement("did:key:tester").await,
+                graph,
+                None,
+                false,
+            )
+            .await;
+
+            assert!(result.is_err());
+            assert_eq!(
+                count(&config, "SELECT COUNT(*) FROM data_statements").await,
+                0,
+                "a statement must not be stored without the credential it was meant to have"
+            );
+        });
+    }
 }

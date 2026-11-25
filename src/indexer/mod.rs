@@ -6,6 +6,7 @@ use std::{
     collections::HashMap,
     env, fmt,
     fs::File,
+    io::{BufWriter, Write},
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -144,9 +145,10 @@ impl Context {
 
     /// Deletes this context, all descendant contexts, and their local statements.
     ///
-    /// This only removes local context and statement records; it does not delete
-    /// blobs from the local blob store. Use this when the context hierarchy is no
-    /// longer needed locally.
+    /// Statements still linked to another context are kept, and so are their
+    /// credentials. This only removes local context and statement records; it does
+    /// not delete blobs from the local blob store. Use this when the context
+    /// hierarchy is no longer needed locally.
     fn delete_tree(&self, py: Python<'_>) -> PyResult<()> {
         with_cfg!(py, |ctx| {
             ctx.sql_lite.delete_graph_tree(&self.id).await?;
@@ -157,9 +159,10 @@ impl Context {
 
     /// Deletes this context and its local statements.
     ///
-    /// Raises an error if this context has child contexts. Use `delete_tree()` to
-    /// delete a context together with its descendants. This does not delete blobs
-    /// from the local blob store.
+    /// Statements still linked to another context are kept, and so are their
+    /// credentials. Raises an error if this context has child contexts. Use
+    /// `delete_tree()` to delete a context together with its descendants. This does
+    /// not delete blobs from the local blob store.
     fn delete(&self, py: Python<'_>) -> PyResult<()> {
         with_cfg!(py, |ctx| {
             ctx.sql_lite.delete_graph_no_children(&self.id).await?;
@@ -214,9 +217,12 @@ impl Context {
 
             let file = File::create(&path)
                 .map_err(|e| anyhow::anyhow!("Failed to create manifest file: {e}"))?;
+            let mut writer = BufWriter::new(file);
 
-            serde_json::to_writer(&file, &manifest)
+            serde_json::to_writer(&mut writer, &manifest)
                 .context("Failed to serialize manifest to file")?;
+            // Flush explicitly: dropping a BufWriter discards any write error.
+            writer.flush().context("Failed to write manifest to file")?;
 
             log::info!("Manifest exported to {}", path.display());
 
